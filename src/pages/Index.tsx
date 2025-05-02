@@ -11,9 +11,11 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { FileText, Share, User, Users } from "lucide-react";
+import { useAuth } from "@/providers/AuthProvider";
 
 const Index = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const { user } = useAuth();
   
   return (
     <PageContainer>
@@ -30,7 +32,7 @@ const Index = () => {
       
       <div className="mb-6">
         <div className="text-sm text-muted-foreground">
-          A secure place to store and share documents with your clients and team members.
+          Welcome {user?.email}! This is your secure place to store and share documents.
         </div>
       </div>
       
