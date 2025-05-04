@@ -13,7 +13,6 @@ export interface ColumnMapping {
 export const requiredFields = [
   "first_name",
   "last_name",
-  "job_title",
   "department"
 ];
 
@@ -21,7 +20,6 @@ export const requiredFields = [
 export const availableFields = [
   "first_name",
   "last_name",
-  "job_title",
   "department",
   "hours_per_week",
   "hourly_rate",
@@ -40,7 +38,6 @@ export const availableFields = [
 export const fieldLabels: Record<string, string> = {
   first_name: "First Name",
   last_name: "Last Name",
-  job_title: "Job Title",
   department: "Department",
   hours_per_week: "Hours Per Week",
   hourly_rate: "Hourly Rate",

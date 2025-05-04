@@ -21,7 +21,6 @@ export const createEmployee = async (employeeData: EmployeeFormValues, userId: s
       user_id: userId,
       first_name: employeeData.first_name,
       last_name: employeeData.last_name,
-      job_title: employeeData.job_title,
       department: employeeData.department,
       hours_per_week: employeeData.hours_per_week,
       hourly_rate: employeeData.hourly_rate,
@@ -45,7 +44,6 @@ export const updateEmployee = async (id: string, employeeData: EmployeeFormValue
     .update({
       first_name: employeeData.first_name,
       last_name: employeeData.last_name,
-      job_title: employeeData.job_title,
       department: employeeData.department,
       hours_per_week: employeeData.hours_per_week,
       hourly_rate: employeeData.hourly_rate,

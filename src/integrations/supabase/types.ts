@@ -24,7 +24,6 @@ export type Database = {
           hourly_rate: number | null
           hours_per_week: number | null
           id: string
-          job_title: string
           last_name: string
           payroll_id: string | null
           postcode: string | null
@@ -45,7 +44,6 @@ export type Database = {
           hourly_rate?: number | null
           hours_per_week?: number | null
           id?: string
-          job_title: string
           last_name: string
           payroll_id?: string | null
           postcode?: string | null
@@ -66,7 +64,6 @@ export type Database = {
           hourly_rate?: number | null
           hours_per_week?: number | null
           id?: string
-          job_title?: string
           last_name?: string
           payroll_id?: string | null
           postcode?: string | null

@@ -19,7 +19,6 @@ interface Employee {
   id: string;
   first_name: string;
   last_name: string;
-  job_title: string;
   department: string;
   hire_date: string;
   email: string | null;
@@ -41,7 +40,6 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
     return (
       employee.first_name.toLowerCase().includes(searchLower) ||
       employee.last_name.toLowerCase().includes(searchLower) ||
-      employee.job_title.toLowerCase().includes(searchLower) ||
       employee.department.toLowerCase().includes(searchLower) ||
       (employee.email && employee.email.toLowerCase().includes(searchLower)) ||
       (employee.payroll_id && employee.payroll_id.toLowerCase().includes(searchLower))
@@ -55,7 +53,6 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Payroll ID</TableHead>
-            <TableHead>Position</TableHead>
             <TableHead>Department</TableHead>
             <TableHead>Email</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -68,7 +65,6 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
                 {employee.first_name} {employee.last_name}
               </TableCell>
               <TableCell>{employee.payroll_id || "—"}</TableCell>
-              <TableCell>{employee.job_title}</TableCell>
               <TableCell>{employee.department}</TableCell>
               <TableCell>{employee.email || "—"}</TableCell>
               <TableCell className="text-right space-x-2">
