@@ -32,6 +32,7 @@ interface Employee {
   emergency_contact: string | null;
   created_at: string;
   updated_at: string;
+  user_id: string;
 }
 
 const EmployeeDetails = () => {

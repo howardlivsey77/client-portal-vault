@@ -11,7 +11,10 @@ export type Database = {
     Tables: {
       employees: {
         Row: {
-          address: string | null
+          address1: string | null
+          address2: string | null
+          address3: string | null
+          address4: string | null
           created_at: string
           department: string
           emergency_contact: string | null
@@ -21,12 +24,16 @@ export type Database = {
           job_title: string
           last_name: string
           phone_number: string | null
+          postcode: string | null
           salary: number
           updated_at: string
           user_id: string
         }
         Insert: {
-          address?: string | null
+          address1?: string | null
+          address2?: string | null
+          address3?: string | null
+          address4?: string | null
           created_at?: string
           department: string
           emergency_contact?: string | null
@@ -36,12 +43,16 @@ export type Database = {
           job_title: string
           last_name: string
           phone_number?: string | null
+          postcode?: string | null
           salary: number
           updated_at?: string
           user_id: string
         }
         Update: {
-          address?: string | null
+          address1?: string | null
+          address2?: string | null
+          address3?: string | null
+          address4?: string | null
           created_at?: string
           department?: string
           emergency_contact?: string | null
@@ -51,6 +62,7 @@ export type Database = {
           job_title?: string
           last_name?: string
           phone_number?: string | null
+          postcode?: string | null
           salary?: number
           updated_at?: string
           user_id?: string

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,7 +35,11 @@ interface Employee {
   hire_date: string;
   salary: number;
   phone_number: string | null;
-  address: string | null;
+  address1: string | null;
+  address2: string | null;
+  address3: string | null;
+  address4: string | null;
+  postcode: string | null;
   emergency_contact: string | null;
 }
 
