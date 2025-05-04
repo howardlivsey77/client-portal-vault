@@ -7,7 +7,7 @@ import { Loader2, FileSpreadsheet } from "lucide-react";
 import { FileUploader } from "./import/FileUploader";
 import { ColumnMappingUI } from "./import/ColumnMapping";
 import { EmployeePreview } from "./import/EmployeePreview";
-import { transformData, saveMappings } from "./import/ImportUtils";
+import { transformData, saveMappings, areRequiredFieldsMapped } from "./import/ImportUtils";
 import { EmployeeData, ColumnMapping } from "./import/ImportConstants";
 
 interface EmployeeImportProps {
@@ -36,9 +36,9 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
     setColumnMappings(columnMappings);
     setOriginalHeaders(headers);
     
-    // Check if we need to show mapping UI
-    const missingRequiredMappings = preview.length === 0;
-    setShowMappingUI(missingRequiredMappings);
+    // Check if we need to show mapping UI based on required fields
+    const allRequiredMapped = areRequiredFieldsMapped(columnMappings);
+    setShowMappingUI(!allRequiredMapped || preview.length === 0);
   };
   
   // Update a specific column mapping
@@ -60,6 +60,22 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
     
     // Automatically save mappings when they're applied
     saveMappings(columnMappings);
+    
+    // Show toast based on the result
+    if (transformedData.length === 0) {
+      toast({
+        title: "No valid data found",
+        description: "Please check your column mappings to ensure required fields are mapped correctly.",
+        variant: "destructive"
+      });
+      // Re-open mapping UI if no valid data
+      setShowMappingUI(true);
+    } else {
+      toast({
+        title: "Mappings applied successfully",
+        description: `${transformedData.length} employee records are ready to import.`
+      });
+    }
   };
   
   const handleImport = async () => {
@@ -88,17 +104,14 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
         last_name: emp.last_name,
         job_title: emp.job_title,
         department: emp.department,
-        salary: emp.salary,
         hours_per_week: emp.hours_per_week || 40,
         hourly_rate: emp.hourly_rate || 0,
         email: emp.email || null,
-        phone_number: emp.phone_number || null,
         address1: emp.address1 || null,
         address2: emp.address2 || null,
         address3: emp.address3 || null,
         address4: emp.address4 || null,
         postcode: emp.postcode || null,
-        emergency_contact: emp.emergency_contact || null,
         date_of_birth: emp.date_of_birth || null,
         hire_date: emp.hire_date || null,
         payroll_id: emp.payroll_id || null,

@@ -1,3 +1,4 @@
+
 import * as XLSX from "xlsx";
 import { EmployeeData, ColumnMapping, availableFields, requiredFields } from "./ImportConstants";
 
@@ -108,7 +109,12 @@ export const autoMapColumns = (headers: string[]): ColumnMapping[] => {
 
 // Transform raw data based on column mappings
 export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): EmployeeData[] => {
-  return data.map(row => {
+  // First check if we have any data to transform
+  if (!data || data.length === 0) {
+    return [];
+  }
+  
+  const results = data.map(row => {
     const transformedRow: EmployeeData = {};
     
     mappings.forEach(mapping => {
@@ -122,21 +128,23 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): 
     if (!transformedRow.hourly_rate) transformedRow.hourly_rate = 0;
     
     // Convert numeric fields
-    if (transformedRow.salary) transformedRow.salary = Number(transformedRow.salary);
     if (transformedRow.hours_per_week) transformedRow.hours_per_week = Number(transformedRow.hours_per_week);
     if (transformedRow.hourly_rate) transformedRow.hourly_rate = Number(transformedRow.hourly_rate);
     
     return transformedRow;
-  }).filter(row => 
-    // Filter out rows without required fields
+  });
+  
+  // Filter out rows without required fields
+  return results.filter(row => 
     requiredFields.every(field => row[field] !== undefined && row[field] !== null && row[field] !== '')
   );
 };
 
 // Check if all required fields are mapped
 export const areRequiredFieldsMapped = (columnMappings: ColumnMapping[]): boolean => {
-  return requiredFields.every(field => 
-    columnMappings.some(mapping => mapping.targetField === field)
+  // Check if every required field has at least one column mapped to it
+  return requiredFields.every(requiredField => 
+    columnMappings.some(mapping => mapping.targetField === requiredField)
   );
 };
 
