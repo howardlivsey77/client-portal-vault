@@ -20,6 +20,8 @@ export type Database = {
           emergency_contact: string | null
           first_name: string
           hire_date: string
+          hourly_rate: number | null
+          hours_per_week: number | null
           id: string
           job_title: string
           last_name: string
@@ -39,6 +41,8 @@ export type Database = {
           emergency_contact?: string | null
           first_name: string
           hire_date?: string
+          hourly_rate?: number | null
+          hours_per_week?: number | null
           id?: string
           job_title: string
           last_name: string
@@ -58,6 +62,8 @@ export type Database = {
           emergency_contact?: string | null
           first_name?: string
           hire_date?: string
+          hourly_rate?: number | null
+          hours_per_week?: number | null
           id?: string
           job_title?: string
           last_name?: string

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,8 @@ interface EmployeeData {
   job_title: string;
   department: string;
   salary: number;
+  hours_per_week?: number;
+  hourly_rate?: number;
   phone_number?: string;
   address1?: string;
   address2?: string;
@@ -94,7 +95,9 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
             !isNaN(Number(row.salary))
           ).map(row => ({
             ...row,
-            salary: Number(row.salary)
+            salary: Number(row.salary),
+            hours_per_week: row.hours_per_week ? Number(row.hours_per_week) : 40,
+            hourly_rate: row.hourly_rate ? Number(row.hourly_rate) : 0
           }));
           
           resolve(validData);
@@ -139,6 +142,8 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
         job_title: emp.job_title,
         department: emp.department,
         salary: emp.salary,
+        hours_per_week: emp.hours_per_week || 40,
+        hourly_rate: emp.hourly_rate || 0,
         phone_number: emp.phone_number || null,
         address1: emp.address1 || null,
         address2: emp.address2 || null,
@@ -186,7 +191,7 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
         />
         <p className="text-sm text-muted-foreground">
           File must contain columns: first_name, last_name, job_title, department, salary.
-          Optional: phone_number, address1, address2, address3, address4, postcode, emergency_contact.
+          Optional: hours_per_week, hourly_rate, phone_number, address1, address2, address3, address4, postcode, emergency_contact.
         </p>
       </div>
       

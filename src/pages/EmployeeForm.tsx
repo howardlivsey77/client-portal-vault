@@ -43,6 +43,8 @@ const employeeSchema = z.object({
   job_title: z.string().min(1, "Job title is required"),
   department: z.string().min(1, "Department is required"),
   salary: z.coerce.number().min(0, "Salary must be a positive number"),
+  hours_per_week: z.coerce.number().min(0, "Hours per week must be a positive number").default(40),
+  hourly_rate: z.coerce.number().min(0, "Hourly rate must be a positive number").default(0),
   phone_number: z.string().optional(),
   address1: z.string().optional(),
   address2: z.string().optional(),
@@ -72,6 +74,8 @@ const EmployeeForm = () => {
       job_title: "",
       department: "",
       salary: 0,
+      hours_per_week: 40,
+      hourly_rate: 0,
       phone_number: "",
       address1: "",
       address2: "",
@@ -106,6 +110,8 @@ const EmployeeForm = () => {
           job_title: data.job_title,
           department: data.department,
           salary: data.salary,
+          hours_per_week: data.hours_per_week || 40,
+          hourly_rate: data.hourly_rate || 0,
           phone_number: data.phone_number || "",
           address1: data.address1 || "",
           address2: data.address2 || "",
@@ -156,6 +162,8 @@ const EmployeeForm = () => {
             job_title: data.job_title,
             department: data.department,
             salary: data.salary,
+            hours_per_week: data.hours_per_week,
+            hourly_rate: data.hourly_rate,
             phone_number: data.phone_number || null,
             address1: data.address1 || null,
             address2: data.address2 || null,
@@ -183,6 +191,8 @@ const EmployeeForm = () => {
             job_title: data.job_title,
             department: data.department,
             salary: data.salary,
+            hours_per_week: data.hours_per_week,
+            hourly_rate: data.hourly_rate,
             phone_number: data.phone_number || null,
             address1: data.address1 || null,
             address2: data.address2 || null,
@@ -353,26 +363,72 @@ const EmployeeForm = () => {
                 />
               </div>
               
-              <FormField
-                control={form.control}
-                name="salary"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Salary (USD) *</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="0.00"
-                        min={0}
-                        step="0.01"
-                        {...field} 
-                        disabled={readOnly}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <FormField
+                  control={form.control}
+                  name="salary"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Salary (USD) *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="0.00"
+                          min={0}
+                          step="0.01"
+                          {...field} 
+                          disabled={readOnly}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="hours_per_week"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hours Per Week *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="40"
+                          min={0}
+                          step="0.5"
+                          {...field} 
+                          disabled={readOnly}
+                        />
+                      </FormControl>
+                      <FormDescription>Standard working hours per week</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="hourly_rate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hourly Rate (USD) *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="0.00"
+                          min={0}
+                          step="0.01"
+                          {...field} 
+                          disabled={readOnly}
+                        />
+                      </FormControl>
+                      <FormDescription>For hourly employees or overtime</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               
               <FormField
                 control={form.control}

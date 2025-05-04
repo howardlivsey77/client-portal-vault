@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +22,8 @@ interface Employee {
   department: string;
   hire_date: string;
   salary: number;
+  hours_per_week: number | null;
+  hourly_rate: number | null;
   phone_number: string | null;
   address1: string | null;
   address2: string | null;
@@ -202,6 +203,16 @@ const EmployeeDetails = () => {
               <div className="mt-2">
                 <p className="text-sm font-medium text-muted-foreground">Salary</p>
                 <p className="font-semibold">{formatCurrency(employee.salary)}</p>
+              </div>
+              
+              <div className="mt-2">
+                <p className="text-sm font-medium text-muted-foreground">Hours Per Week</p>
+                <p>{employee.hours_per_week || 40}</p>
+              </div>
+              
+              <div className="mt-2">
+                <p className="text-sm font-medium text-muted-foreground">Hourly Rate</p>
+                <p>{formatCurrency(employee.hourly_rate || 0)}</p>
               </div>
             </div>
           </CardContent>
