@@ -98,6 +98,7 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
         emergency_contact: emp.emergency_contact || null,
         date_of_birth: emp.date_of_birth || null,
         hire_date: emp.hire_date || null,
+        payroll_id: emp.payroll_id || null,
         user_id: user.id,
       }));
       
@@ -148,7 +149,7 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
         </Button>
         <Button 
           onClick={handleImport} 
-          disabled={(showMappingUI) || !preview.length || loading}
+          disabled={loading || (preview.length === 0)}
         >
           {loading ? (
             <>
