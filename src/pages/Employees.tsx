@@ -1,17 +1,6 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+
+import { useState } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
 import { 
   Card,
   CardContent,
@@ -19,132 +8,28 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, Plus, RefreshCw, Search, Trash2, UserCog, Users } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
-import { Input } from "@/components/ui/input";
-import { formatCurrency } from "@/lib/formatters";
-import { ImportEmployeeDialog } from "@/components/employees/ImportEmployeeDialog";
-
-interface Employee {
-  id: string;
-  first_name: string;
-  last_name: string;
-  job_title: string;
-  department: string;
-  hire_date: string;
-  salary: number;
-  email: string | null;
-  phone_number: string | null;
-  address1: string | null;
-  address2: string | null;
-  address3: string | null;
-  address4: string | null;
-  postcode: string | null;
-  emergency_contact: string | null;
-}
+import { useEmployees } from "@/hooks/useEmployees";
+import { EmployeeTable } from "@/components/employees/EmployeeTable";
+import { EmptyEmployeeState } from "@/components/employees/EmptyEmployeeState";
+import { EmployeeSearch } from "@/components/employees/EmployeeSearch";
+import { EmployeeActions } from "@/components/employees/EmployeeActions";
 
 const Employees = () => {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const { isAdmin } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  
-  useEffect(() => {
-    fetchEmployees();
-  }, []);
-  
-  const fetchEmployees = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("employees")
-        .select("*")
-        .order("last_name", { ascending: true });
-        
-      if (error) throw error;
-      
-      setEmployees(data || []);
-    } catch (error: any) {
-      toast({
-        title: "Error fetching employees",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const deleteEmployee = async (id: string) => {
-    // Only admin users can delete employees
-    if (!isAdmin) {
-      toast({
-        title: "Permission denied",
-        description: "Only administrators can delete employee records.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (!confirm("Are you sure you want to delete this employee record?")) {
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      const { error } = await supabase
-        .from("employees")
-        .delete()
-        .eq("id", id);
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Employee deleted",
-        description: "The employee record has been successfully deleted.",
-      });
-      
-      // Update the employees list
-      setEmployees(employees.filter(emp => emp.id !== id));
-    } catch (error: any) {
-      toast({
-        title: "Error deleting employee",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const filteredEmployees = employees.filter(employee => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      employee.first_name.toLowerCase().includes(searchLower) ||
-      employee.last_name.toLowerCase().includes(searchLower) ||
-      employee.job_title.toLowerCase().includes(searchLower) ||
-      employee.department.toLowerCase().includes(searchLower) ||
-      (employee.email && employee.email.toLowerCase().includes(searchLower))
-    );
-  });
+  const { employees, loading, fetchEmployees, deleteEmployee } = useEmployees();
   
   return (
     <PageContainer>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Employee Management</h1>
-        
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={fetchEmployees} disabled={loading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          
-          {isAdmin && (
-            <ImportEmployeeDialog onSuccess={fetchEmployees} />
-          )}
-        </div>
+        <EmployeeActions 
+          isAdmin={isAdmin} 
+          loading={loading} 
+          onRefresh={fetchEmployees}
+        />
       </div>
       
       <Card>
@@ -153,14 +38,8 @@ const Employees = () => {
           <CardDescription>
             Manage employee records and information.
           </CardDescription>
-          <div className="mt-4 relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input 
-              placeholder="Search employees..." 
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)} 
-            />
+          <div className="mt-4">
+            <EmployeeSearch searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
           </div>
         </CardHeader>
         <CardContent>
@@ -168,66 +47,14 @@ const Employees = () => {
             <div className="flex justify-center py-6">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-          ) : filteredEmployees.length > 0 ? (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Salary</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEmployees.map((employee) => (
-                    <TableRow key={employee.id}>
-                      <TableCell className="font-medium">
-                        {employee.first_name} {employee.last_name}
-                      </TableCell>
-                      <TableCell>{employee.job_title}</TableCell>
-                      <TableCell>{employee.department}</TableCell>
-                      <TableCell>{employee.email || "—"}</TableCell>
-                      <TableCell>{formatCurrency(employee.salary)}</TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => navigate(`/employee/${employee.id}`)}
-                        >
-                          <UserCog className="h-4 w-4" />
-                        </Button>
-                        {isAdmin && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => deleteEmployee(employee.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+          ) : employees.length > 0 ? (
+            <EmployeeTable 
+              employees={employees} 
+              onDelete={deleteEmployee}
+              searchTerm={searchTerm}
+            />
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Users className="h-16 w-16 text-muted-foreground/50" />
-              <h3 className="mt-4 text-xl font-medium">No employees found</h3>
-              <p className="mt-2 text-center text-sm text-muted-foreground">
-                {searchTerm ? "No employees match your search criteria." : "No employees have been added yet."}
-              </p>
-              {!searchTerm && isAdmin && (
-                <Button onClick={() => navigate("/employee/new")} className="mt-4">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Employee
-                </Button>
-              )}
-            </div>
+            <EmptyEmployeeState isAdmin={isAdmin} searchTerm={searchTerm} />
           )}
         </CardContent>
       </Card>
