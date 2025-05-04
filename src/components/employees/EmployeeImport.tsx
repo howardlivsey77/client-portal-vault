@@ -7,7 +7,7 @@ import { Loader2, FileSpreadsheet } from "lucide-react";
 import { FileUploader } from "./import/FileUploader";
 import { ColumnMappingUI } from "./import/ColumnMapping";
 import { EmployeePreview } from "./import/EmployeePreview";
-import { transformData, saveMappings } from "./import/ImportUtils";
+import { transformData, saveMappings, loadSavedMappings } from "./import/ImportUtils";
 import { EmployeeData, ColumnMapping } from "./import/ImportConstants";
 
 interface EmployeeImportProps {
@@ -31,14 +31,16 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
     columnMappings: ColumnMapping[],
     headers: string[]
   ) => {
+    console.log("File processed:", { rawData, preview, columnMappings });
     setRawData(rawData);
     setPreview(preview);
     setColumnMappings(columnMappings);
     setOriginalHeaders(headers);
+    setFile(file);
     
-    // Check if we need to show mapping UI
-    const missingRequiredMappings = preview.length === 0;
-    setShowMappingUI(missingRequiredMappings);
+    // Check if we need to show mapping UI - always show when file is uploaded
+    const shouldShowMapping = rawData.length > 0 && (preview.length === 0 || headers.length > 0);
+    setShowMappingUI(shouldShowMapping);
   };
   
   // Update a specific column mapping
@@ -54,12 +56,19 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
   
   // Apply mappings and update preview
   const applyMappings = () => {
+    console.log("Applying mappings:", columnMappings);
     const transformedData = transformData(rawData, columnMappings);
+    console.log("Transformed data:", transformedData);
     setPreview(transformedData);
     setShowMappingUI(false);
     
     // Automatically save mappings when they're applied
     saveMappings(columnMappings);
+    
+    toast({
+      title: "Mappings applied",
+      description: `${transformedData.length} valid employees found.`,
+    });
   };
   
   const handleImport = async () => {
@@ -105,6 +114,8 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
         user_id: user.id,
       }));
       
+      console.log("Importing employees:", employees);
+      
       // Insert employees
       const { error } = await supabase
         .from("employees")
@@ -119,6 +130,7 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
       
       onSuccess();
     } catch (error: any) {
+      console.error("Import error:", error);
       toast({
         title: "Error importing employees",
         description: error.message,
@@ -152,7 +164,7 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
         </Button>
         <Button 
           onClick={handleImport} 
-          disabled={loading || (preview.length === 0)}
+          disabled={loading || preview.length === 0}
         >
           {loading ? (
             <>
