@@ -15,7 +15,11 @@ interface EmployeeData {
   department: string;
   salary: number;
   phone_number?: string;
-  address?: string;
+  address1?: string;
+  address2?: string;
+  address3?: string;
+  address4?: string;
+  postcode?: string;
   emergency_contact?: string;
 }
 
@@ -130,7 +134,18 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
       
       // Prepare employees data
       const employees = preview.map(emp => ({
-        ...emp,
+        first_name: emp.first_name,
+        last_name: emp.last_name,
+        job_title: emp.job_title,
+        department: emp.department,
+        salary: emp.salary,
+        phone_number: emp.phone_number || null,
+        address1: emp.address1 || null,
+        address2: emp.address2 || null,
+        address3: emp.address3 || null,
+        address4: emp.address4 || null,
+        postcode: emp.postcode || null,
+        emergency_contact: emp.emergency_contact || null,
         user_id: user.id,
       }));
       
@@ -171,7 +186,7 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
         />
         <p className="text-sm text-muted-foreground">
           File must contain columns: first_name, last_name, job_title, department, salary.
-          Optional: phone_number, address, emergency_contact.
+          Optional: phone_number, address1, address2, address3, address4, postcode, emergency_contact.
         </p>
       </div>
       

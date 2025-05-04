@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -43,7 +44,11 @@ const employeeSchema = z.object({
   department: z.string().min(1, "Department is required"),
   salary: z.coerce.number().min(0, "Salary must be a positive number"),
   phone_number: z.string().optional(),
-  address: z.string().optional(),
+  address1: z.string().optional(),
+  address2: z.string().optional(),
+  address3: z.string().optional(),
+  address4: z.string().optional(),
+  postcode: z.string().optional(),
   emergency_contact: z.string().optional(),
 });
 
@@ -68,7 +73,11 @@ const EmployeeForm = () => {
       department: "",
       salary: 0,
       phone_number: "",
-      address: "",
+      address1: "",
+      address2: "",
+      address3: "",
+      address4: "",
+      postcode: "",
       emergency_contact: "",
     },
   });
@@ -98,7 +107,11 @@ const EmployeeForm = () => {
           department: data.department,
           salary: data.salary,
           phone_number: data.phone_number || "",
-          address: data.address || "",
+          address1: data.address1 || "",
+          address2: data.address2 || "",
+          address3: data.address3 || "",
+          address4: data.address4 || "",
+          postcode: data.postcode || "",
           emergency_contact: data.emergency_contact || "",
         });
       }
@@ -144,7 +157,11 @@ const EmployeeForm = () => {
             department: data.department,
             salary: data.salary,
             phone_number: data.phone_number || null,
-            address: data.address || null,
+            address1: data.address1 || null,
+            address2: data.address2 || null,
+            address3: data.address3 || null,
+            address4: data.address4 || null,
+            postcode: data.postcode || null,
             emergency_contact: data.emergency_contact || null,
           })
           .eq("id", id);
@@ -167,7 +184,11 @@ const EmployeeForm = () => {
             department: data.department,
             salary: data.salary,
             phone_number: data.phone_number || null,
-            address: data.address || null,
+            address1: data.address1 || null,
+            address2: data.address2 || null,
+            address3: data.address3 || null,
+            address4: data.address4 || null,
+            postcode: data.postcode || null,
             emergency_contact: data.emergency_contact || null,
           });
           
@@ -372,23 +393,102 @@ const EmployeeForm = () => {
                 )}
               />
               
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Address" 
-                        {...field} 
-                        disabled={readOnly}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Address Fields */}
+              <div className="space-y-4 border p-4 rounded-md">
+                <h3 className="font-medium">Address Information</h3>
+                
+                <FormField
+                  control={form.control}
+                  name="address1"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address Line 1</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Street address, P.O. box, company name" 
+                          {...field} 
+                          disabled={readOnly}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="address2"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address Line 2</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Apartment, suite, unit, building, floor, etc." 
+                          {...field} 
+                          disabled={readOnly}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="address3"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Address Line 3</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="City, town, etc." 
+                            {...field} 
+                            disabled={readOnly}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="address4"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Address Line 4</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="State, province, region, etc." 
+                            {...field} 
+                            disabled={readOnly}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="postcode"
+                  render={({ field }) => (
+                    <FormItem className="max-w-xs">
+                      <FormLabel>Postcode / ZIP</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Postal or ZIP code" 
+                          {...field} 
+                          disabled={readOnly}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               
               <FormField
                 control={form.control}

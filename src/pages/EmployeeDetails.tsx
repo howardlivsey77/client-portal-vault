@@ -24,7 +24,11 @@ interface Employee {
   hire_date: string;
   salary: number;
   phone_number: string | null;
-  address: string | null;
+  address1: string | null;
+  address2: string | null;
+  address3: string | null;
+  address4: string | null;
+  postcode: string | null;
   emergency_contact: string | null;
   created_at: string;
   updated_at: string;
@@ -134,6 +138,15 @@ const EmployeeDetails = () => {
     );
   }
   
+  // Format address for display
+  const formattedAddress = [
+    employee.address1,
+    employee.address2,
+    employee.address3,
+    employee.address4,
+    employee.postcode
+  ].filter(Boolean).join(", ");
+  
   return (
     <PageContainer>
       <div className="mb-6">
@@ -206,7 +219,14 @@ const EmployeeDetails = () => {
               
               <div className="mt-2">
                 <p className="text-sm font-medium text-muted-foreground">Address</p>
-                <p>{employee.address || "Not provided"}</p>
+                <div className="space-y-1">
+                  {employee.address1 && <p>{employee.address1}</p>}
+                  {employee.address2 && <p>{employee.address2}</p>}
+                  {employee.address3 && <p>{employee.address3}</p>}
+                  {employee.address4 && <p>{employee.address4}</p>}
+                  {employee.postcode && <p>{employee.postcode}</p>}
+                  {!formattedAddress && <p>Not provided</p>}
+                </div>
               </div>
               
               <div className="mt-2">
