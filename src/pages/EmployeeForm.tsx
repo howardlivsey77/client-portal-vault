@@ -5,7 +5,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
 import { 
@@ -16,45 +15,17 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
-import { 
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ArrowLeft, Loader2, Pencil, Save } from "lucide-react";
+import { Form } from "@/components/ui/form";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-
-// Define form schema using zod
-const employeeSchema = z.object({
-  first_name: z.string().min(1, "First name is required"),
-  last_name: z.string().min(1, "Last name is required"),
-  job_title: z.string().min(1, "Job title is required"),
-  department: z.string().min(1, "Department is required"),
-  salary: z.coerce.number().min(0, "Salary must be a positive number"),
-  hours_per_week: z.coerce.number().min(0, "Hours per week must be a positive number").default(40),
-  hourly_rate: z.coerce.number().min(0, "Hourly rate must be a positive number").default(0),
-  phone_number: z.string().optional(),
-  address1: z.string().optional(),
-  address2: z.string().optional(),
-  address3: z.string().optional(),
-  address4: z.string().optional(),
-  postcode: z.string().optional(),
-  emergency_contact: z.string().optional(),
-});
-
-type EmployeeFormValues = z.infer<typeof employeeSchema>;
+import { employeeSchema, EmployeeFormValues, departments } from "@/types/employee";
+import { PersonalInfoFields } from "@/components/employees/PersonalInfoFields";
+import { JobInfoFields } from "@/components/employees/JobInfoFields";
+import { CompensationFields } from "@/components/employees/CompensationFields";
+import { ContactFields } from "@/components/employees/ContactFields";
+import { AddressFields } from "@/components/employees/AddressFields";
+import { EmployeeFormActions } from "@/components/employees/EmployeeFormActions";
+import { fetchEmployeeById, createEmployee, updateEmployee } from "@/services/employeeService";
 
 const EmployeeForm = () => {
   const { id } = useParams();
@@ -95,13 +66,8 @@ const EmployeeForm = () => {
   
   const fetchEmployeeData = async () => {
     try {
-      const { data, error } = await supabase
-        .from("employees")
-        .select("*")
-        .eq("id", id)
-        .single();
-        
-      if (error) throw error;
+      if (!id) return;
+      const data = await fetchEmployeeById(id);
       
       if (data) {
         form.reset({
@@ -152,29 +118,9 @@ const EmployeeForm = () => {
         throw new Error("User not authenticated");
       }
       
-      if (isEditMode) {
+      if (isEditMode && id) {
         // Update existing employee
-        const { error } = await supabase
-          .from("employees")
-          .update({
-            first_name: data.first_name,
-            last_name: data.last_name,
-            job_title: data.job_title,
-            department: data.department,
-            salary: data.salary,
-            hours_per_week: data.hours_per_week,
-            hourly_rate: data.hourly_rate,
-            phone_number: data.phone_number || null,
-            address1: data.address1 || null,
-            address2: data.address2 || null,
-            address3: data.address3 || null,
-            address4: data.address4 || null,
-            postcode: data.postcode || null,
-            emergency_contact: data.emergency_contact || null,
-          })
-          .eq("id", id);
-          
-        if (error) throw error;
+        await updateEmployee(id, data);
         
         toast({
           title: "Employee updated",
@@ -182,27 +128,7 @@ const EmployeeForm = () => {
         });
       } else {
         // Create new employee
-        const { error } = await supabase
-          .from("employees")
-          .insert({
-            user_id: user.id, // Assign the employee to the current user
-            first_name: data.first_name,
-            last_name: data.last_name,
-            job_title: data.job_title,
-            department: data.department,
-            salary: data.salary,
-            hours_per_week: data.hours_per_week,
-            hourly_rate: data.hourly_rate,
-            phone_number: data.phone_number || null,
-            address1: data.address1 || null,
-            address2: data.address2 || null,
-            address3: data.address3 || null,
-            address4: data.address4 || null,
-            postcode: data.postcode || null,
-            emergency_contact: data.emergency_contact || null,
-          });
-          
-        if (error) throw error;
+        await createEmployee(data, user.id);
         
         toast({
           title: "Employee created",
@@ -222,19 +148,6 @@ const EmployeeForm = () => {
       setSubmitLoading(false);
     }
   };
-  
-  const departments = [
-    "Engineering",
-    "Sales",
-    "Marketing",
-    "Human Resources",
-    "Finance",
-    "Operations",
-    "Customer Support",
-    "Research & Development",
-    "Legal",
-    "Executive",
-  ];
   
   if (loading) {
     return (
@@ -276,322 +189,31 @@ const EmployeeForm = () => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="first_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>First Name *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="First name" 
-                          {...field} 
-                          disabled={readOnly}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="last_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Last Name *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Last name" 
-                          {...field} 
-                          disabled={readOnly}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              {/* Personal Information */}
+              <PersonalInfoFields form={form} readOnly={readOnly} />
               
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="job_title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Job Title *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Job title" 
-                          {...field} 
-                          disabled={readOnly}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="department"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Department *</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                        disabled={readOnly}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a department" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {departments.map((dept) => (
-                            <SelectItem key={dept} value={dept}>
-                              {dept}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              {/* Job Information */}
+              <JobInfoFields form={form} readOnly={readOnly} departments={departments} />
               
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                <FormField
-                  control={form.control}
-                  name="salary"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Salary (USD) *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="0.00"
-                          min={0}
-                          step="0.01"
-                          {...field} 
-                          disabled={readOnly}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="hours_per_week"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Hours Per Week *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="40"
-                          min={0}
-                          step="0.5"
-                          {...field} 
-                          disabled={readOnly}
-                        />
-                      </FormControl>
-                      <FormDescription>Standard working hours per week</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="hourly_rate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Hourly Rate (USD) *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="0.00"
-                          min={0}
-                          step="0.01"
-                          {...field} 
-                          disabled={readOnly}
-                        />
-                      </FormControl>
-                      <FormDescription>For hourly employees or overtime</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              {/* Compensation Information */}
+              <CompensationFields form={form} readOnly={readOnly} />
               
-              <FormField
-                control={form.control}
-                name="phone_number"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Phone number" 
-                        {...field} 
-                        disabled={readOnly}
-                      />
-                    </FormControl>
-                    <FormDescription>Optional contact information</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Contact Information */}
+              <ContactFields form={form} readOnly={readOnly} />
               
-              {/* Address Fields */}
-              <div className="space-y-4 border p-4 rounded-md">
-                <h3 className="font-medium">Address Information</h3>
-                
-                <FormField
-                  control={form.control}
-                  name="address1"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address Line 1</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Street address, P.O. box, company name" 
-                          {...field} 
-                          disabled={readOnly}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="address2"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address Line 2</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Apartment, suite, unit, building, floor, etc." 
-                          {...field} 
-                          disabled={readOnly}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="address3"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Address Line 3</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="City, town, etc." 
-                            {...field} 
-                            disabled={readOnly}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="address4"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Address Line 4</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="State, province, region, etc." 
-                            {...field} 
-                            disabled={readOnly}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <FormField
-                  control={form.control}
-                  name="postcode"
-                  render={({ field }) => (
-                    <FormItem className="max-w-xs">
-                      <FormLabel>Postcode / ZIP</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Postal or ZIP code" 
-                          {...field} 
-                          disabled={readOnly}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="emergency_contact"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Emergency Contact</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Emergency contact details" 
-                        {...field} 
-                        disabled={readOnly}
-                      />
-                    </FormControl>
-                    <FormDescription>Name and phone number of emergency contact</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Address Information */}
+              <AddressFields form={form} readOnly={readOnly} />
             </CardContent>
             
-            <CardFooter className="flex justify-end space-x-2">
-              <Button 
-                variant="outline" 
-                type="button"
-                onClick={() => navigate("/employees")}
-              >
-                Cancel
-              </Button>
-              
-              {isAdmin && !readOnly && (
-                <Button type="submit" disabled={submitLoading}>
-                  {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  <Save className="mr-2 h-4 w-4" />
-                  {isEditMode ? "Update Employee" : "Save Employee"}
-                </Button>
-              )}
-              
-              {isAdmin && readOnly && isEditMode && (
-                <Button 
-                  type="button" 
-                  onClick={() => setReadOnly(false)}
-                >
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edit
-                </Button>
-              )}
+            <CardFooter>
+              <EmployeeFormActions 
+                isAdmin={isAdmin}
+                readOnly={readOnly}
+                isEditMode={isEditMode}
+                submitLoading={submitLoading}
+                onCancel={() => navigate("/employees")}
+                setReadOnly={setReadOnly}
+              />
             </CardFooter>
           </form>
         </Form>
