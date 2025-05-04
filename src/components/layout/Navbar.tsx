@@ -18,6 +18,8 @@ interface NavbarProps {
 
 export function Navbar({ toggleSidebar }: NavbarProps) {
   const { user, isAdmin, signOut } = useAuth();
+  
+  console.log("Navbar rendering - User:", user?.email, "Admin status:", isAdmin);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background">

@@ -36,13 +36,13 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
 
         // When auth changes, check if user is admin
         if (session?.user) {
-          checkUserAdmin(session.user.id);
+          await checkUserAdmin(session.user.id);
         } else {
           setIsAdmin(false);
         }
@@ -77,6 +77,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   
   const checkUserAdmin = async (userId: string) => {
     try {
+      console.log("Checking admin status for user ID:", userId);
       const { data, error } = await supabase
         .from("profiles")
         .select("is_admin")
@@ -86,11 +87,13 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       if (error) {
         console.error("Error checking admin status:", error);
         setIsAdmin(false);
-      } else {
-        setIsAdmin(data?.is_admin || false);
-      }
+        return;
+      } 
+      
+      console.log("Admin status check result:", data);
+      setIsAdmin(data?.is_admin || false);
     } catch (error) {
-      console.error("Error checking admin status:", error);
+      console.error("Exception checking admin status:", error);
       setIsAdmin(false);
     }
   };
@@ -113,6 +116,8 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     isLoading,
     signOut,
   };
+
+  console.log("Auth context updated - User:", user?.email, "Admin:", isAdmin);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
