@@ -39,7 +39,7 @@ const requiredFields = [
   "salary"
 ];
 
-// All available fields for mapping
+// All available fields for mapping - updated to include all employee table columns
 const availableFields = [
   "first_name",
   "last_name",
@@ -48,6 +48,8 @@ const availableFields = [
   "salary",
   "hours_per_week",
   "hourly_rate",
+  "date_of_birth",
+  "hire_date",
   "email",
   "phone_number",
   "address1",
@@ -67,6 +69,8 @@ const fieldLabels: Record<string, string> = {
   salary: "Salary",
   hours_per_week: "Hours Per Week",
   hourly_rate: "Hourly Rate",
+  date_of_birth: "Date of Birth",
+  hire_date: "Hire Date",
   email: "Email Address",
   phone_number: "Phone Number",
   address1: "Address Line 1",
