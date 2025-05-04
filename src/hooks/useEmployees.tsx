@@ -20,6 +20,7 @@ interface Employee {
   address4: string | null;
   postcode: string | null;
   emergency_contact: string | null;
+  date_of_birth: string | null;
 }
 
 export const useEmployees = () => {

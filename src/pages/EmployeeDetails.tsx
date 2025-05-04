@@ -35,6 +35,7 @@ interface Employee {
   created_at: string;
   updated_at: string;
   user_id: string;
+  date_of_birth: string | null;
 }
 
 const EmployeeDetails = () => {
@@ -194,6 +195,11 @@ const EmployeeDetails = () => {
               <div className="mt-4">
                 <p className="text-sm font-medium text-muted-foreground">Department</p>
                 <p>{employee.department}</p>
+              </div>
+              
+              <div className="mt-2">
+                <p className="text-sm font-medium text-muted-foreground">Date of Birth</p>
+                <p>{employee.date_of_birth ? formatDate(employee.date_of_birth) : "Not provided"}</p>
               </div>
               
               <div className="mt-2">

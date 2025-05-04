@@ -46,6 +46,7 @@ const EmployeeForm = () => {
       salary: 0,
       hours_per_week: 40,
       hourly_rate: 0,
+      date_of_birth: null,
       email: "",
       phone_number: "",
       address1: "",
@@ -70,6 +71,9 @@ const EmployeeForm = () => {
       const data = await fetchEmployeeById(id);
       
       if (data) {
+        // Convert date_of_birth string to Date object if it exists
+        const dateOfBirth = data.date_of_birth ? new Date(data.date_of_birth) : null;
+        
         form.reset({
           first_name: data.first_name,
           last_name: data.last_name,
@@ -78,6 +82,7 @@ const EmployeeForm = () => {
           salary: data.salary,
           hours_per_week: data.hours_per_week || 40,
           hourly_rate: data.hourly_rate || 0,
+          date_of_birth: dateOfBirth,
           email: data.email || "",
           phone_number: data.phone_number || "",
           address1: data.address1 || "",
