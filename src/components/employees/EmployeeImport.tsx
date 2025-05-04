@@ -7,7 +7,7 @@ import { Loader2, FileSpreadsheet } from "lucide-react";
 import { FileUploader } from "./import/FileUploader";
 import { ColumnMappingUI } from "./import/ColumnMapping";
 import { EmployeePreview } from "./import/EmployeePreview";
-import { transformData, saveMappings, areRequiredFieldsMapped } from "./import/ImportUtils";
+import { transformData, saveMappings, areRequiredFieldsMapped, excelDateToISO } from "./import/ImportUtils";
 import { EmployeeData, ColumnMapping } from "./import/ImportConstants";
 
 interface EmployeeImportProps {
