@@ -15,33 +15,51 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [session, setSession] = useState<any>(null);
+  const [authInitialized, setAuthInitialized] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     // Check if user is already logged in
     const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setSession(data.session);
-      if (data.session) {
-        navigate("/");
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Auth page - Error checking session:", error);
+          setAuthInitialized(true);
+          return;
+        }
+        
+        console.log("Auth page - Session check:", data.session?.user?.email);
+        
+        if (data.session) {
+          console.log("Auth page - User already logged in, redirecting to home");
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Auth page - Exception checking session:", error);
+      } finally {
+        setAuthInitialized(true);
       }
     };
     
     checkSession();
 
-    // Listen for auth changes
+    // Set up auth change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
+      (event, session) => {
+        console.log("Auth page - Auth state changed:", event);
         if (session) {
+          console.log("Auth page - User logged in, redirecting to home");
           navigate("/");
         }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -49,23 +67,28 @@ const Auth = () => {
     setLoading(true);
     
     try {
+      console.log("Attempting sign in with email:", email);
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) {
+        console.error("Sign in error:", error);
         toast({
           title: "Login failed",
           description: error.message,
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Welcome back!",
-          description: "You've been successfully logged in.",
-        });
+        return;
       }
+      
+      toast({
+        title: "Welcome back!",
+        description: "You've been successfully logged in.",
+      });
+      
+      // Navigation will happen via the auth state change listener
     } catch (error: any) {
       toast({
         title: "Error",
@@ -82,7 +105,7 @@ const Auth = () => {
     setLoading(true);
     
     try {
-      // Register user without checking for invite code
+      console.log("Attempting sign up with email:", email);
       const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -94,17 +117,21 @@ const Auth = () => {
       });
       
       if (signUpError) {
+        console.error("Sign up error:", signUpError);
         toast({
           title: "Registration failed",
           description: signUpError.message,
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Welcome!",
-          description: "Your account has been created successfully.",
-        });
+        return;
       }
+      
+      toast({
+        title: "Welcome!",
+        description: "Your account has been created successfully.",
+      });
+      
+      // Navigation will happen via the auth state change listener
     } catch (error: any) {
       toast({
         title: "Error",
@@ -115,6 +142,17 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  // Show loading indicator until we've checked the session
+  if (!authInitialized) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center min-h-[70vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer>
