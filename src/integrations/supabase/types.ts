@@ -19,7 +19,6 @@ export type Database = {
           date_of_birth: string | null
           department: string
           email: string | null
-          emergency_contact: string | null
           first_name: string
           hire_date: string
           hourly_rate: number | null
@@ -28,9 +27,7 @@ export type Database = {
           job_title: string
           last_name: string
           payroll_id: string | null
-          phone_number: string | null
           postcode: string | null
-          salary: number
           updated_at: string
           user_id: string
         }
@@ -43,7 +40,6 @@ export type Database = {
           date_of_birth?: string | null
           department: string
           email?: string | null
-          emergency_contact?: string | null
           first_name: string
           hire_date?: string
           hourly_rate?: number | null
@@ -52,9 +48,7 @@ export type Database = {
           job_title: string
           last_name: string
           payroll_id?: string | null
-          phone_number?: string | null
           postcode?: string | null
-          salary: number
           updated_at?: string
           user_id: string
         }
@@ -67,7 +61,6 @@ export type Database = {
           date_of_birth?: string | null
           department?: string
           email?: string | null
-          emergency_contact?: string | null
           first_name?: string
           hire_date?: string
           hourly_rate?: number | null
@@ -76,9 +69,7 @@ export type Database = {
           job_title?: string
           last_name?: string
           payroll_id?: string | null
-          phone_number?: string | null
           postcode?: string | null
-          salary?: number
           updated_at?: string
           user_id?: string
         }

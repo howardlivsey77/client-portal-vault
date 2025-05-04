@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -45,19 +46,16 @@ const EmployeeForm = () => {
       last_name: "",
       job_title: "",
       department: "",
-      salary: 0,
       hours_per_week: 40,
       hourly_rate: 0,
       date_of_birth: null,
       hire_date: new Date(),
       email: "",
-      phone_number: "",
       address1: "",
       address2: "",
       address3: "",
       address4: "",
       postcode: "",
-      emergency_contact: "",
     },
   });
   
@@ -83,19 +81,17 @@ const EmployeeForm = () => {
           last_name: data.last_name,
           job_title: data.job_title,
           department: data.department,
-          salary: data.salary,
           hours_per_week: data.hours_per_week || 40,
           hourly_rate: data.hourly_rate || 0,
           date_of_birth: dateOfBirth,
           hire_date: hireDate,
           email: data.email || "",
-          phone_number: data.phone_number || "",
           address1: data.address1 || "",
           address2: data.address2 || "",
           address3: data.address3 || "",
           address4: data.address4 || "",
           postcode: data.postcode || "",
-          emergency_contact: data.emergency_contact || "",
+          payroll_id: data.payroll_id || "",
         });
       }
     } catch (error: any) {

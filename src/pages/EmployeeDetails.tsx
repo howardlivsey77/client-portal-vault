@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,17 +22,14 @@ interface Employee {
   job_title: string;
   department: string;
   hire_date: string;
-  salary: number;
   hours_per_week: number | null;
   hourly_rate: number | null;
   email: string | null;
-  phone_number: string | null;
   address1: string | null;
   address2: string | null;
   address3: string | null;
   address4: string | null;
   postcode: string | null;
-  emergency_contact: string | null;
   created_at: string;
   updated_at: string;
   user_id: string;
@@ -214,11 +212,6 @@ const EmployeeDetails = () => {
               </div>
               
               <div className="mt-2">
-                <p className="text-sm font-medium text-muted-foreground">Salary</p>
-                <p className="font-semibold">{formatCurrency(employee.salary)}</p>
-              </div>
-              
-              <div className="mt-2">
                 <p className="text-sm font-medium text-muted-foreground">Hours Per Week</p>
                 <p>{employee.hours_per_week || 40}</p>
               </div>
@@ -243,11 +236,6 @@ const EmployeeDetails = () => {
               </div>
               
               <div className="mt-2">
-                <p className="text-sm font-medium text-muted-foreground">Phone Number</p>
-                <p>{employee.phone_number || "Not provided"}</p>
-              </div>
-              
-              <div className="mt-2">
                 <p className="text-sm font-medium text-muted-foreground">Address</p>
                 <div className="space-y-1">
                   {employee.address1 && <p>{employee.address1}</p>}
@@ -257,11 +245,6 @@ const EmployeeDetails = () => {
                   {employee.postcode && <p>{employee.postcode}</p>}
                   {!formattedAddress && <p>Not provided</p>}
                 </div>
-              </div>
-              
-              <div className="mt-2">
-                <p className="text-sm font-medium text-muted-foreground">Emergency Contact</p>
-                <p>{employee.emergency_contact || "Not provided"}</p>
               </div>
             </div>
           </CardContent>
