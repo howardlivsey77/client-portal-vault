@@ -27,10 +27,10 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/invites" element={<ProtectedRoute adminOnly={true}><InviteManagement /></ProtectedRoute>} />
-            <Route path="/employees" element={<ProtectedRoute adminOnly={true}><Employees /></ProtectedRoute>} />
-            <Route path="/employee/new" element={<ProtectedRoute adminOnly={true}><EmployeeForm /></ProtectedRoute>} />
-            <Route path="/employee/:id" element={<ProtectedRoute adminOnly={true}><EmployeeDetails /></ProtectedRoute>} />
-            <Route path="/employee/edit/:id" element={<ProtectedRoute adminOnly={true}><EmployeeForm /></ProtectedRoute>} />
+            <Route path="/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
+            <Route path="/employee/new" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
+            <Route path="/employee/:id" element={<ProtectedRoute><EmployeeDetails /></ProtectedRoute>} />
+            <Route path="/employee/edit/:id" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

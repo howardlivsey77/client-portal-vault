@@ -6,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
 import { 
@@ -53,12 +52,13 @@ type EmployeeFormValues = z.infer<typeof employeeSchema>;
 
 const EmployeeForm = () => {
   const { id } = useParams();
-  const isEditMode = id !== "new";
+  const isEditMode = id !== undefined && id !== "new";
   const [loading, setLoading] = useState(isEditMode);
   const [submitLoading, setSubmitLoading] = useState(false);
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [readOnly, setReadOnly] = useState(!isAdmin);
   
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
@@ -206,19 +206,6 @@ const EmployeeForm = () => {
     "Executive",
   ];
   
-  if (!isAdmin) {
-    return (
-      <PageContainer>
-        <div className="flex justify-center items-center h-[50vh]">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
-            <p className="text-muted-foreground">You need administrator privileges to access this page.</p>
-          </div>
-        </div>
-      </PageContainer>
-    );
-  }
-  
   if (loading) {
     return (
       <PageContainer>
@@ -236,14 +223,24 @@ const EmployeeForm = () => {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Employees
         </Button>
-        <h1 className="text-3xl font-bold">{isEditMode ? "Edit Employee" : "Add New Employee"}</h1>
+        <h1 className="text-3xl font-bold">
+          {isEditMode 
+            ? (readOnly ? "View Employee" : "Edit Employee") 
+            : "Add New Employee"}
+        </h1>
       </div>
       
       <Card>
         <CardHeader>
-          <CardTitle>{isEditMode ? "Edit Employee Information" : "New Employee Information"}</CardTitle>
+          <CardTitle>
+            {isEditMode 
+              ? (readOnly ? "View Employee Information" : "Edit Employee Information") 
+              : "New Employee Information"}
+          </CardTitle>
           <CardDescription>
-            Enter the employee details below. Required fields are marked with an asterisk (*).
+            {readOnly 
+              ? "View employee details below." 
+              : "Enter the employee details below. Required fields are marked with an asterisk (*)."}
           </CardDescription>
         </CardHeader>
         <Form {...form}>
@@ -257,7 +254,11 @@ const EmployeeForm = () => {
                     <FormItem>
                       <FormLabel>First Name *</FormLabel>
                       <FormControl>
-                        <Input placeholder="First name" {...field} />
+                        <Input 
+                          placeholder="First name" 
+                          {...field} 
+                          disabled={readOnly}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -271,7 +272,11 @@ const EmployeeForm = () => {
                     <FormItem>
                       <FormLabel>Last Name *</FormLabel>
                       <FormControl>
-                        <Input placeholder="Last name" {...field} />
+                        <Input 
+                          placeholder="Last name" 
+                          {...field} 
+                          disabled={readOnly}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -287,7 +292,11 @@ const EmployeeForm = () => {
                     <FormItem>
                       <FormLabel>Job Title *</FormLabel>
                       <FormControl>
-                        <Input placeholder="Job title" {...field} />
+                        <Input 
+                          placeholder="Job title" 
+                          {...field} 
+                          disabled={readOnly}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -303,6 +312,7 @@ const EmployeeForm = () => {
                       <Select 
                         onValueChange={field.onChange} 
                         defaultValue={field.value}
+                        disabled={readOnly}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -336,6 +346,7 @@ const EmployeeForm = () => {
                         min={0}
                         step="0.01"
                         {...field} 
+                        disabled={readOnly}
                       />
                     </FormControl>
                     <FormMessage />
@@ -350,7 +361,11 @@ const EmployeeForm = () => {
                   <FormItem>
                     <FormLabel>Phone Number</FormLabel>
                     <FormControl>
-                      <Input placeholder="Phone number" {...field} />
+                      <Input 
+                        placeholder="Phone number" 
+                        {...field} 
+                        disabled={readOnly}
+                      />
                     </FormControl>
                     <FormDescription>Optional contact information</FormDescription>
                     <FormMessage />
@@ -365,7 +380,11 @@ const EmployeeForm = () => {
                   <FormItem>
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="Address" {...field} />
+                      <Input 
+                        placeholder="Address" 
+                        {...field} 
+                        disabled={readOnly}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -379,7 +398,11 @@ const EmployeeForm = () => {
                   <FormItem>
                     <FormLabel>Emergency Contact</FormLabel>
                     <FormControl>
-                      <Input placeholder="Emergency contact details" {...field} />
+                      <Input 
+                        placeholder="Emergency contact details" 
+                        {...field} 
+                        disabled={readOnly}
+                      />
                     </FormControl>
                     <FormDescription>Name and phone number of emergency contact</FormDescription>
                     <FormMessage />
@@ -396,11 +419,24 @@ const EmployeeForm = () => {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitLoading}>
-                {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                <Save className="mr-2 h-4 w-4" />
-                {isEditMode ? "Update Employee" : "Save Employee"}
-              </Button>
+              
+              {isAdmin && !readOnly && (
+                <Button type="submit" disabled={submitLoading}>
+                  {submitLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <Save className="mr-2 h-4 w-4" />
+                  {isEditMode ? "Update Employee" : "Save Employee"}
+                </Button>
+              )}
+              
+              {isAdmin && readOnly && isEditMode && (
+                <Button 
+                  type="button" 
+                  onClick={() => setReadOnly(false)}
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+                </Button>
+              )}
             </CardFooter>
           </form>
         </Form>

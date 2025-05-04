@@ -67,6 +67,16 @@ const EmployeeDetails = () => {
   };
   
   const deleteEmployee = async () => {
+    // Only admin users can delete employees
+    if (!isAdmin) {
+      toast({
+        title: "Permission denied",
+        description: "Only administrators can delete employee records.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (!confirm("Are you sure you want to delete this employee record?")) {
       return;
     }
@@ -97,19 +107,6 @@ const EmployeeDetails = () => {
       setLoading(false);
     }
   };
-  
-  if (!isAdmin) {
-    return (
-      <PageContainer>
-        <div className="flex justify-center items-center h-[50vh]">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
-            <p className="text-muted-foreground">You need administrator privileges to access this page.</p>
-          </div>
-        </div>
-      </PageContainer>
-    );
-  }
   
   if (loading) {
     return (
@@ -148,17 +145,19 @@ const EmployeeDetails = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Employee Details</h1>
           
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => navigate(`/employee/edit/${employee.id}`)}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit
-            </Button>
-            
-            <Button variant="destructive" onClick={deleteEmployee}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </Button>
-          </div>
+          {isAdmin && (
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => navigate(`/employee/edit/${employee.id}`)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
+              
+              <Button variant="destructive" onClick={deleteEmployee}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </Button>
+            </div>
+          )}
         </div>
       </div>
       

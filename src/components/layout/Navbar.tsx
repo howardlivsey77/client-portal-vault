@@ -41,15 +41,13 @@ export function Navbar({ toggleSidebar }: NavbarProps) {
               Documents
             </Link>
             {isAdmin === true && (
-              <>
-                <Link to="/invites" className="text-sm font-medium transition-colors hover:text-primary">
-                  Invitations
-                </Link>
-                <Link to="/employees" className="text-sm font-medium transition-colors hover:text-primary">
-                  Employees
-                </Link>
-              </>
+              <Link to="/invites" className="text-sm font-medium transition-colors hover:text-primary">
+                Invitations
+              </Link>
             )}
+            <Link to="/employees" className="text-sm font-medium transition-colors hover:text-primary">
+              Employees
+            </Link>
           </nav>
         </div>
 
@@ -80,21 +78,19 @@ export function Navbar({ toggleSidebar }: NavbarProps) {
                   </Link>
                 </DropdownMenuItem>
                 {isAdmin === true && (
-                  <>
-                    <DropdownMenuItem asChild>
-                      <Link to="/invites" className="w-full cursor-pointer">
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        <span>Manage Invites</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/employees" className="w-full cursor-pointer">
-                        <Users className="mr-2 h-4 w-4" />
-                        <span>Employees</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
+                  <DropdownMenuItem asChild>
+                    <Link to="/invites" className="w-full cursor-pointer">
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      <span>Manage Invites</span>
+                    </Link>
+                  </DropdownMenuItem>
                 )}
+                <DropdownMenuItem asChild>
+                  <Link to="/employees" className="w-full cursor-pointer">
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Employees</span>
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/profile" className="w-full cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />

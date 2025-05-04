@@ -73,6 +73,16 @@ const Employees = () => {
   };
   
   const deleteEmployee = async (id: string) => {
+    // Only admin users can delete employees
+    if (!isAdmin) {
+      toast({
+        title: "Permission denied",
+        description: "Only administrators can delete employee records.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (!confirm("Are you sure you want to delete this employee record?")) {
       return;
     }
@@ -114,19 +124,6 @@ const Employees = () => {
     );
   });
   
-  if (!isAdmin) {
-    return (
-      <PageContainer>
-        <div className="flex justify-center items-center h-[50vh]">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
-            <p className="text-muted-foreground">You need administrator privileges to access this page.</p>
-          </div>
-        </div>
-      </PageContainer>
-    );
-  }
-  
   return (
     <PageContainer>
       <div className="flex items-center justify-between mb-6">
@@ -138,10 +135,12 @@ const Employees = () => {
             Refresh
           </Button>
           
-          <Button onClick={() => navigate("/employee/new")}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Employee
-          </Button>
+          {isAdmin && (
+            <Button onClick={() => navigate("/employee/new")}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Employee
+            </Button>
+          )}
         </div>
       </div>
       
@@ -195,13 +194,15 @@ const Employees = () => {
                         >
                           <UserCog className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteEmployee(employee.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        {isAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteEmployee(employee.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -213,9 +214,9 @@ const Employees = () => {
               <Users className="h-16 w-16 text-muted-foreground/50" />
               <h3 className="mt-4 text-xl font-medium">No employees found</h3>
               <p className="mt-2 text-center text-sm text-muted-foreground">
-                {searchTerm ? "No employees match your search criteria." : "Add your first employee to get started."}
+                {searchTerm ? "No employees match your search criteria." : "No employees have been added yet."}
               </p>
-              {!searchTerm && (
+              {!searchTerm && isAdmin && (
                 <Button onClick={() => navigate("/employee/new")} className="mt-4">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Employee
