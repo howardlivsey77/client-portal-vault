@@ -72,7 +72,7 @@ export const PersonalInfoFields = ({ form, readOnly }: PersonalInfoFieldsProps) 
                     disabled={readOnly}
                   >
                     {field.value ? (
-                      format(field.value, "PPP")
+                      format(field.value, "dd/MM/yyyy")
                     ) : (
                       <span>Select date</span>
                     )}

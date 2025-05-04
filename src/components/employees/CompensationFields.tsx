@@ -17,7 +17,7 @@ export const CompensationFields = ({ form, readOnly }: CompensationFieldsProps) 
         name="salary"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Salary (USD) *</FormLabel>
+            <FormLabel>Salary (GBP) *</FormLabel>
             <FormControl>
               <Input 
                 type="number" 
@@ -60,7 +60,7 @@ export const CompensationFields = ({ form, readOnly }: CompensationFieldsProps) 
         name="hourly_rate"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Hourly Rate (USD) *</FormLabel>
+            <FormLabel>Hourly Rate (GBP) *</FormLabel>
             <FormControl>
               <Input 
                 type="number" 

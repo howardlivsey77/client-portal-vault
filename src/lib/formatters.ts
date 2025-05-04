@@ -1,23 +1,23 @@
 
 /**
- * Formats a number as currency (USD)
+ * Formats a number as currency (GBP)
  */
 export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-GB', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'GBP',
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   }).format(value);
 }
 
 /**
- * Formats a date to a friendly display format
+ * Formats a date to UK format (dd/MM/yyyy)
  */
 export function formatDate(date: string | Date): string {
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat('en-GB', {
     year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+    month: '2-digit',
+    day: '2-digit'
   }).format(new Date(date));
 }
