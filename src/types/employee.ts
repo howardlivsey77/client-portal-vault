@@ -10,6 +10,7 @@ export const employeeSchema = z.object({
   salary: z.coerce.number().min(0, "Salary must be a positive number"),
   hours_per_week: z.coerce.number().min(0, "Hours per week must be a positive number").default(40),
   hourly_rate: z.coerce.number().min(0, "Hourly rate must be a positive number").default(0),
+  email: z.string().email("Invalid email address").optional(),
   phone_number: z.string().optional(),
   address1: z.string().optional(),
   address2: z.string().optional(),

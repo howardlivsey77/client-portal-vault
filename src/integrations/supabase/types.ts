@@ -17,6 +17,7 @@ export type Database = {
           address4: string | null
           created_at: string
           department: string
+          email: string | null
           emergency_contact: string | null
           first_name: string
           hire_date: string
@@ -38,6 +39,7 @@ export type Database = {
           address4?: string | null
           created_at?: string
           department: string
+          email?: string | null
           emergency_contact?: string | null
           first_name: string
           hire_date?: string
@@ -59,6 +61,7 @@ export type Database = {
           address4?: string | null
           created_at?: string
           department?: string
+          email?: string | null
           emergency_contact?: string | null
           first_name?: string
           hire_date?: string

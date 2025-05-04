@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +33,7 @@ interface Employee {
   department: string;
   hire_date: string;
   salary: number;
+  email: string | null;
   phone_number: string | null;
   address1: string | null;
   address2: string | null;
@@ -125,7 +125,8 @@ const Employees = () => {
       employee.first_name.toLowerCase().includes(searchLower) ||
       employee.last_name.toLowerCase().includes(searchLower) ||
       employee.job_title.toLowerCase().includes(searchLower) ||
-      employee.department.toLowerCase().includes(searchLower)
+      employee.department.toLowerCase().includes(searchLower) ||
+      (employee.email && employee.email.toLowerCase().includes(searchLower))
     );
   });
   
@@ -175,6 +176,7 @@ const Employees = () => {
                     <TableHead>Name</TableHead>
                     <TableHead>Position</TableHead>
                     <TableHead>Department</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Salary</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -187,6 +189,7 @@ const Employees = () => {
                       </TableCell>
                       <TableCell>{employee.job_title}</TableCell>
                       <TableCell>{employee.department}</TableCell>
+                      <TableCell>{employee.email || "—"}</TableCell>
                       <TableCell>{formatCurrency(employee.salary)}</TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button

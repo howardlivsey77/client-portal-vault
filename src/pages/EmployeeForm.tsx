@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -47,6 +46,7 @@ const EmployeeForm = () => {
       salary: 0,
       hours_per_week: 40,
       hourly_rate: 0,
+      email: "",
       phone_number: "",
       address1: "",
       address2: "",
@@ -78,6 +78,7 @@ const EmployeeForm = () => {
           salary: data.salary,
           hours_per_week: data.hours_per_week || 40,
           hourly_rate: data.hourly_rate || 0,
+          email: data.email || "",
           phone_number: data.phone_number || "",
           address1: data.address1 || "",
           address2: data.address2 || "",

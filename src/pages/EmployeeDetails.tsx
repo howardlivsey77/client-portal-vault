@@ -24,6 +24,7 @@ interface Employee {
   salary: number;
   hours_per_week: number | null;
   hourly_rate: number | null;
+  email: string | null;
   phone_number: string | null;
   address1: string | null;
   address2: string | null;
@@ -225,6 +226,11 @@ const EmployeeDetails = () => {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 gap-2">
               <div>
+                <p className="text-sm font-medium text-muted-foreground">Email</p>
+                <p>{employee.email || "Not provided"}</p>
+              </div>
+              
+              <div className="mt-2">
                 <p className="text-sm font-medium text-muted-foreground">Phone Number</p>
                 <p>{employee.phone_number || "Not provided"}</p>
               </div>
