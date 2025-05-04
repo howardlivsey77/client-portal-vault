@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -25,6 +24,7 @@ import { CompensationFields } from "@/components/employees/CompensationFields";
 import { ContactFields } from "@/components/employees/ContactFields";
 import { AddressFields } from "@/components/employees/AddressFields";
 import { HireDateField } from "@/components/employees/HireDateField";
+import { PayrollIdField } from "@/components/employees/PayrollIdField";
 import { EmployeeFormActions } from "@/components/employees/EmployeeFormActions";
 import { fetchEmployeeById, createEmployee, updateEmployee } from "@/services/employeeService";
 
@@ -207,6 +207,11 @@ const EmployeeForm = () => {
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <JobInfoFields form={form} readOnly={readOnly} departments={departments} />
                 <HireDateField form={form} readOnly={readOnly} />
+              </div>
+
+              {/* Payroll ID */}
+              <div className="max-w-xs">
+                <PayrollIdField form={form} readOnly={readOnly} />
               </div>
               
               {/* Compensation Information */}

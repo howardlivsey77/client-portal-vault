@@ -36,6 +36,7 @@ export const createEmployee = async (employeeData: EmployeeFormValues, userId: s
       address4: employeeData.address4 || null,
       postcode: employeeData.postcode || null,
       emergency_contact: employeeData.emergency_contact || null,
+      payroll_id: employeeData.payroll_id || null,
     });
     
   if (error) throw error;
@@ -62,6 +63,7 @@ export const updateEmployee = async (id: string, employeeData: EmployeeFormValue
       address4: employeeData.address4 || null,
       postcode: employeeData.postcode || null,
       emergency_contact: employeeData.emergency_contact || null,
+      payroll_id: employeeData.payroll_id || null,
     })
     .eq("id", id);
     

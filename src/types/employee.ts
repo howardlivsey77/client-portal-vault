@@ -20,6 +20,7 @@ export const employeeSchema = z.object({
   address4: z.string().optional(),
   postcode: z.string().optional(),
   emergency_contact: z.string().optional(),
+  payroll_id: z.string().optional(),
 });
 
 export type EmployeeFormValues = z.infer<typeof employeeSchema>;

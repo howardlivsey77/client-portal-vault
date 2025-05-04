@@ -21,6 +21,7 @@ interface Employee {
   postcode: string | null;
   emergency_contact: string | null;
   date_of_birth: string | null;
+  payroll_id: string | null;
 }
 
 export const useEmployees = () => {

@@ -26,6 +26,7 @@ interface Employee {
   salary: number;
   email: string | null;
   phone_number: string | null;
+  payroll_id: string | null;
 }
 
 interface EmployeeTableProps {
@@ -45,7 +46,8 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
       employee.last_name.toLowerCase().includes(searchLower) ||
       employee.job_title.toLowerCase().includes(searchLower) ||
       employee.department.toLowerCase().includes(searchLower) ||
-      (employee.email && employee.email.toLowerCase().includes(searchLower))
+      (employee.email && employee.email.toLowerCase().includes(searchLower)) ||
+      (employee.payroll_id && employee.payroll_id.toLowerCase().includes(searchLower))
     );
   });
 
@@ -55,6 +57,7 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
+            <TableHead>Payroll ID</TableHead>
             <TableHead>Position</TableHead>
             <TableHead>Department</TableHead>
             <TableHead>Email</TableHead>
@@ -68,6 +71,7 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
               <TableCell className="font-medium">
                 {employee.first_name} {employee.last_name}
               </TableCell>
+              <TableCell>{employee.payroll_id || "—"}</TableCell>
               <TableCell>{employee.job_title}</TableCell>
               <TableCell>{employee.department}</TableCell>
               <TableCell>{employee.email || "—"}</TableCell>
