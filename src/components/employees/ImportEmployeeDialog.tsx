@@ -26,7 +26,7 @@ export const ImportEmployeeDialog = ({
           <DialogTitle>Import Employees</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-center p-4 border-2 border-dashed rounded-lg bg-muted/50 px-[13px]">
+          <div className="flex items-center justify-center p-4 border-2 border-dashed bg-muted/50 mx-[26px] px-[10px] rounded-md">
             <div className="text-center">
               <FileSpreadsheet className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
               <p className="text-sm font-medium">Import from Excel or CSV</p>
