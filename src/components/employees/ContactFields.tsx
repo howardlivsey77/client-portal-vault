@@ -13,7 +13,7 @@ export const ContactFields = ({ form, readOnly }: ContactFieldsProps) => {
   return (
     <div>
       <h3 className="text-lg font-medium mb-4">Contact Information</h3>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6">
         <FormField
           control={form.control}
           name="email"
@@ -25,44 +25,6 @@ export const ContactFields = ({ form, readOnly }: ContactFieldsProps) => {
                   placeholder="employee@example.com" 
                   type="email"
                   {...field}
-                  value={field.value || ""}
-                  disabled={readOnly}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="phone_number"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Phone Number</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="Phone number" 
-                  {...field} 
-                  value={field.value || ""}
-                  disabled={readOnly}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="emergency_contact"
-          render={({ field }) => (
-            <FormItem className="md:col-span-2">
-              <FormLabel>Emergency Contact</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="Emergency contact information" 
-                  {...field} 
                   value={field.value || ""}
                   disabled={readOnly}
                 />

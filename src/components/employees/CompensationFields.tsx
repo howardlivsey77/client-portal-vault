@@ -3,7 +3,6 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessa
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { EmployeeFormValues } from "@/types/employee";
-import { formatCurrency } from "@/lib/formatters";
 
 interface CompensationFieldsProps {
   form: UseFormReturn<EmployeeFormValues>;
@@ -12,28 +11,7 @@ interface CompensationFieldsProps {
 
 export const CompensationFields = ({ form, readOnly }: CompensationFieldsProps) => {
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-      <FormField
-        control={form.control}
-        name="salary"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Salary (GBP) *</FormLabel>
-            <FormControl>
-              <Input 
-                type="number" 
-                placeholder="0.00"
-                min={0}
-                step="0.01"
-                {...field} 
-                disabled={readOnly}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">      
       <FormField
         control={form.control}
         name="hours_per_week"

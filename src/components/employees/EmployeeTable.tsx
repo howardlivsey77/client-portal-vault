@@ -13,7 +13,6 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Trash2, UserCog } from "lucide-react";
-import { formatCurrency } from "@/lib/formatters";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Employee {
@@ -23,9 +22,7 @@ interface Employee {
   job_title: string;
   department: string;
   hire_date: string;
-  salary: number;
   email: string | null;
-  phone_number: string | null;
   payroll_id: string | null;
 }
 
@@ -61,7 +58,6 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
             <TableHead>Position</TableHead>
             <TableHead>Department</TableHead>
             <TableHead>Email</TableHead>
-            <TableHead>Salary</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -75,7 +71,6 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
               <TableCell>{employee.job_title}</TableCell>
               <TableCell>{employee.department}</TableCell>
               <TableCell>{employee.email || "—"}</TableCell>
-              <TableCell>{formatCurrency(employee.salary)}</TableCell>
               <TableCell className="text-right space-x-2">
                 <Button
                   variant="ghost"
