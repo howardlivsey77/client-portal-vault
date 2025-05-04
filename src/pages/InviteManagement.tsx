@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -126,9 +125,9 @@ const InviteManagement = () => {
         return;
       }
       
-      // Generate random invite code
-      const inviteCode = Math.random().toString(36).substring(2, 15) + 
-                         Math.random().toString(36).substring(2, 15);
+      // Generate a simpler unique invite code
+      // Just use a random string, no specific UUID format required
+      const inviteCode = Math.random().toString(36).substring(2, 10);
       
       // Set expiration to 7 days from now
       const expiresAt = new Date();
