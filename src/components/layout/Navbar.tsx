@@ -10,25 +10,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/providers/AuthProvider";
-import { FileText, LogOut, Menu, Settings, User, UserPlus } from "lucide-react";
+import { FileText, LogOut, Settings, User, UserPlus } from "lucide-react";
 
-interface NavbarProps {
-  toggleSidebar?: () => void;
-}
-
-export function Navbar({ toggleSidebar }: NavbarProps) {
+export function Navbar() {
   const { user, isAdmin, signOut } = useAuth();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
-          {toggleSidebar && (
-            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="md:hidden">
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle menu</span>
-            </Button>
-          )}
           <Link to="/" className="flex items-center space-x-2">
             <FileText className="h-6 w-6" />
             <span className="font-bold">Document Vault</span>
