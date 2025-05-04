@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Save, Trash2, Check } from "lucide-react";
+import { ArrowRight, Save, Trash2 } from "lucide-react";
 import { 
   Select,
   SelectContent,
@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ColumnMapping, availableFields, fieldLabels, requiredFields } from "./ImportConstants";
+import { ColumnMapping, availableFields, fieldLabels } from "./ImportConstants";
 import { areRequiredFieldsMapped, saveMappings, clearSavedMappings } from "./ImportUtils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -25,7 +25,7 @@ export const ColumnMappingUI = ({
   updateColumnMapping, 
   applyMappings 
 }: ColumnMappingUIProps) => {
-  const allFieldsMapped = areRequiredFieldsMapped(columnMappings);
+  const requiredFieldsMapped = areRequiredFieldsMapped(columnMappings);
   const { toast } = useToast();
   
   const handleSaveMappings = () => {
@@ -45,17 +45,7 @@ export const ColumnMappingUI = ({
       });
     }
   };
-
-  // Helper to check if a field is required
-  const isRequiredField = (field: string): boolean => {
-    return requiredFields.includes(field);
-  };
   
-  // Helper to check if a mapping is for a required field
-  const isMappingForRequiredField = (mapping: ColumnMapping): boolean => {
-    return mapping.targetField !== null && isRequiredField(mapping.targetField);
-  };
-
   return (
     <div className="border rounded-md p-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -80,24 +70,17 @@ export const ColumnMappingUI = ({
             Clear Saved
           </Button>
           <Button 
+            variant="outline"
             size="sm"
             onClick={applyMappings}
-            disabled={!allFieldsMapped}
-            className={allFieldsMapped ? "bg-green-600 hover:bg-green-700" : ""}
+            disabled={!requiredFieldsMapped}
           >
-            {allFieldsMapped ? (
-              <>
-                <Check className="h-4 w-4 mr-1" />
-                Apply Mapping
-              </>
-            ) : (
-              "Apply Mapping"
-            )}
+            Apply Mapping
           </Button>
         </div>
       </div>
       
-      {!allFieldsMapped && (
+      {!requiredFieldsMapped && (
         <Alert variant="destructive" className="mb-4">
           <AlertTitle>Missing required fields</AlertTitle>
           <AlertDescription>
@@ -124,13 +107,8 @@ export const ColumnMappingUI = ({
                 <SelectContent>
                   <SelectItem value="none">Do not import</SelectItem>
                   {availableFields.map(field => (
-                    <SelectItem 
-                      key={field} 
-                      value={field}
-                      className={isRequiredField(field) ? "font-semibold" : ""}
-                    >
+                    <SelectItem key={field} value={field}>
                       {fieldLabels[field] || field}
-                      {isRequiredField(field) ? " *" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -138,12 +116,6 @@ export const ColumnMappingUI = ({
             </div>
           </div>
         ))}
-      </div>
-
-      <div className="mt-2 text-xs text-muted-foreground">
-        <p>* Required fields must be mapped to complete the import</p>
-        <p>Fields successfully mapped: {columnMappings.filter(m => m.targetField !== null).length}/{availableFields.length}</p>
-        <p>Required fields mapped: {columnMappings.filter(isMappingForRequiredField).length}/{requiredFields.length}</p>
       </div>
     </div>
   );

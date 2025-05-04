@@ -71,11 +71,9 @@ export const autoMapColumns = (headers: string[]): ColumnMapping[] => {
   if (savedMappings && headers.every(header => 
     savedMappings.some(mapping => mapping.sourceColumn === header)
   )) {
-    console.log("Using saved mappings");
     return savedMappings;
   }
   
-  console.log("Auto-mapping columns");
   // Otherwise, perform auto-mapping
   return headers.map(header => {
     const normalizedHeader = header.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -110,14 +108,7 @@ export const autoMapColumns = (headers: string[]): ColumnMapping[] => {
 
 // Transform raw data based on column mappings
 export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): EmployeeData[] => {
-  console.log("Transforming data with mappings:", { dataLength: data.length, mappings });
-  
-  if (!data || data.length === 0) {
-    console.warn("No data to transform");
-    return [];
-  }
-  
-  const transformedData = data.map(row => {
+  return data.map(row => {
     const transformedRow: EmployeeData = {};
     
     mappings.forEach(mapping => {
@@ -136,38 +127,23 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): 
     if (transformedRow.hourly_rate) transformedRow.hourly_rate = Number(transformedRow.hourly_rate);
     
     return transformedRow;
-  }).filter(row => {
+  }).filter(row => 
     // Filter out rows without required fields
-    const hasRequiredFields = requiredFields.every(field => 
-      row[field] !== undefined && row[field] !== null && row[field] !== ''
-    );
-    
-    if (!hasRequiredFields) {
-      console.warn("Row missing required fields:", row);
-    }
-    
-    return hasRequiredFields;
-  });
-  
-  console.log(`Transformed ${transformedData.length} rows out of ${data.length}`);
-  return transformedData;
+    requiredFields.every(field => row[field] !== undefined && row[field] !== null && row[field] !== '')
+  );
 };
 
 // Check if all required fields are mapped
 export const areRequiredFieldsMapped = (columnMappings: ColumnMapping[]): boolean => {
-  const result = requiredFields.every(field => 
+  return requiredFields.every(field => 
     columnMappings.some(mapping => mapping.targetField === field)
   );
-  
-  console.log("Required fields mapped:", result);
-  return result;
 };
 
 // Save column mappings to localStorage
 export const saveMappings = (mappings: ColumnMapping[]): void => {
   try {
     localStorage.setItem('employeeImportMappings', JSON.stringify(mappings));
-    console.log("Saved mappings to localStorage:", mappings);
   } catch (error) {
     console.error("Failed to save column mappings:", error);
   }
@@ -177,9 +153,7 @@ export const saveMappings = (mappings: ColumnMapping[]): void => {
 export const loadSavedMappings = (): ColumnMapping[] | null => {
   try {
     const savedMappings = localStorage.getItem('employeeImportMappings');
-    const parsedMappings = savedMappings ? JSON.parse(savedMappings) : null;
-    console.log("Loaded mappings from localStorage:", parsedMappings);
-    return parsedMappings;
+    return savedMappings ? JSON.parse(savedMappings) : null;
   } catch (error) {
     console.error("Failed to load saved column mappings:", error);
     return null;
@@ -190,7 +164,6 @@ export const loadSavedMappings = (): ColumnMapping[] | null => {
 export const clearSavedMappings = (): void => {
   try {
     localStorage.removeItem('employeeImportMappings');
-    console.log("Cleared saved mappings from localStorage");
   } catch (error) {
     console.error("Failed to clear saved column mappings:", error);
   }
