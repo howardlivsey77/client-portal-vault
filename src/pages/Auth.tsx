@@ -18,7 +18,14 @@ const Auth = () => {
 
   // If already logged in or still checking session, don't render form
   if (loading || session) {
-    return <PageContainer />;
+    return (
+      <PageContainer>
+        {/* Empty container while loading or redirecting */}
+        <div className="flex items-center justify-center min-h-screen">
+          {loading && <p className="text-muted-foreground">Loading...</p>}
+        </div>
+      </PageContainer>
+    );
   }
 
   return (
