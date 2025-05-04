@@ -40,7 +40,7 @@ export function Navbar({ toggleSidebar }: NavbarProps) {
             <Link to="/" className="text-sm font-medium transition-colors hover:text-primary">
               Documents
             </Link>
-            {isAdmin && (
+            {isAdmin === true && (
               <>
                 <Link to="/invites" className="text-sm font-medium transition-colors hover:text-primary">
                   Invitations
@@ -68,7 +68,7 @@ export function Navbar({ toggleSidebar }: NavbarProps) {
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">{user.email}</p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      {isAdmin ? "Administrator" : "User"}
+                      {isAdmin === true ? "Administrator" : "User"}
                     </p>
                   </div>
                 </DropdownMenuLabel>
@@ -79,7 +79,7 @@ export function Navbar({ toggleSidebar }: NavbarProps) {
                     <span>Documents</span>
                   </Link>
                 </DropdownMenuItem>
-                {isAdmin && (
+                {isAdmin === true && (
                   <>
                     <DropdownMenuItem asChild>
                       <Link to="/invites" className="w-full cursor-pointer">
