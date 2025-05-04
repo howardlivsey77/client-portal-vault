@@ -21,7 +21,7 @@ export const ImportEmployeeDialog = ({
           Add Employee
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg bg-slate-50 mx-0 px-[12px] py-[16px]">
+      <DialogContent className="sm:max-w-lg bg-slate-50 py-[16px] px-[3px] mx-0">
         <DialogHeader>
           <DialogTitle>Import Employees</DialogTitle>
         </DialogHeader>
