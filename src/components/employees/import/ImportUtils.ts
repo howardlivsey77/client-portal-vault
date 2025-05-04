@@ -1,4 +1,3 @@
-
 import * as XLSX from "xlsx";
 import { EmployeeData, ColumnMapping, availableFields, requiredFields } from "./ImportConstants";
 
@@ -65,6 +64,17 @@ export const readFileData = async (file: File): Promise<{data: EmployeeData[], h
 
 // Automatically map columns based on similarity
 export const autoMapColumns = (headers: string[]): ColumnMapping[] => {
+  // Try to load saved mappings first
+  const savedMappings = loadSavedMappings();
+  
+  // If we have saved mappings that match our headers, use those
+  if (savedMappings && headers.every(header => 
+    savedMappings.some(mapping => mapping.sourceColumn === header)
+  )) {
+    return savedMappings;
+  }
+  
+  // Otherwise, perform auto-mapping
   return headers.map(header => {
     const normalizedHeader = header.toLowerCase().replace(/[^a-z0-9]/g, '');
     
@@ -83,6 +93,12 @@ export const autoMapColumns = (headers: string[]): ColumnMapping[] => {
       if (normalizedHeader.includes(normalizedField) || normalizedField.includes(normalizedHeader)) {
         return { sourceColumn: header, targetField: field };
       }
+    }
+    
+    // Check if we have a saved mapping for this header
+    const savedMapping = savedMappings?.find(mapping => mapping.sourceColumn === header);
+    if (savedMapping) {
+      return savedMapping;
     }
     
     // No match found
@@ -122,4 +138,33 @@ export const areRequiredFieldsMapped = (columnMappings: ColumnMapping[]): boolea
   return requiredFields.every(field => 
     columnMappings.some(mapping => mapping.targetField === field)
   );
+};
+
+// Save column mappings to localStorage
+export const saveMappings = (mappings: ColumnMapping[]): void => {
+  try {
+    localStorage.setItem('employeeImportMappings', JSON.stringify(mappings));
+  } catch (error) {
+    console.error("Failed to save column mappings:", error);
+  }
+};
+
+// Load saved column mappings from localStorage
+export const loadSavedMappings = (): ColumnMapping[] | null => {
+  try {
+    const savedMappings = localStorage.getItem('employeeImportMappings');
+    return savedMappings ? JSON.parse(savedMappings) : null;
+  } catch (error) {
+    console.error("Failed to load saved column mappings:", error);
+    return null;
+  }
+};
+
+// Clear saved mappings
+export const clearSavedMappings = (): void => {
+  try {
+    localStorage.removeItem('employeeImportMappings');
+  } catch (error) {
+    console.error("Failed to clear saved column mappings:", error);
+  }
 };

@@ -7,7 +7,7 @@ import { Loader2, FileSpreadsheet } from "lucide-react";
 import { FileUploader } from "./import/FileUploader";
 import { ColumnMappingUI } from "./import/ColumnMapping";
 import { EmployeePreview } from "./import/EmployeePreview";
-import { transformData } from "./import/ImportUtils";
+import { transformData, saveMappings } from "./import/ImportUtils";
 import { EmployeeData, ColumnMapping } from "./import/ImportConstants";
 
 interface EmployeeImportProps {
@@ -57,6 +57,9 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
     const transformedData = transformData(rawData, columnMappings);
     setPreview(transformedData);
     setShowMappingUI(false);
+    
+    // Automatically save mappings when they're applied
+    saveMappings(columnMappings);
   };
   
   const handleImport = async () => {
