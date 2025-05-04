@@ -102,7 +102,6 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
       const employees = preview.map(emp => ({
         first_name: emp.first_name,
         last_name: emp.last_name,
-        job_title: emp.job_title,
         department: emp.department,
         hours_per_week: emp.hours_per_week || 40,
         hourly_rate: emp.hourly_rate || 0,

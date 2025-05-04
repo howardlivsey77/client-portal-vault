@@ -44,7 +44,6 @@ const EmployeeForm = () => {
     defaultValues: {
       first_name: "",
       last_name: "",
-      job_title: "",
       department: "",
       hours_per_week: 40,
       hourly_rate: 0,
@@ -79,7 +78,6 @@ const EmployeeForm = () => {
         form.reset({
           first_name: data.first_name,
           last_name: data.last_name,
-          job_title: data.job_title,
           department: data.department,
           hours_per_week: data.hours_per_week || 40,
           hourly_rate: data.hourly_rate || 0,

@@ -19,7 +19,6 @@ interface Employee {
   id: string;
   first_name: string;
   last_name: string;
-  job_title: string;
   department: string;
   hire_date: string;
   hours_per_week: number | null;
@@ -188,7 +187,6 @@ const EmployeeDetails = () => {
                 <h3 className="font-semibold text-lg">
                   {employee.first_name} {employee.last_name}
                 </h3>
-                <p className="text-muted-foreground">{employee.job_title}</p>
               </div>
               
               <div className="mt-4">

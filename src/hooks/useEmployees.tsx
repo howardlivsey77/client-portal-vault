@@ -8,7 +8,6 @@ interface Employee {
   id: string;
   first_name: string;
   last_name: string;
-  job_title: string;
   department: string;
   hire_date: string;
   email: string | null;
