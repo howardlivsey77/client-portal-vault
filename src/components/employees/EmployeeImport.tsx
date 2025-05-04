@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -380,14 +379,14 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 <div className="w-2/3">
                   <Select
-                    value={mapping.targetField || ""}
-                    onValueChange={(value) => updateColumnMapping(mapping.sourceColumn, value || null)}
+                    value={mapping.targetField || "none"}
+                    onValueChange={(value) => updateColumnMapping(mapping.sourceColumn, value === "none" ? null : value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a field" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Do not import</SelectItem>
+                      <SelectItem value="none">Do not import</SelectItem>
                       {availableFields.map(field => (
                         <SelectItem key={field} value={field}>
                           {fieldLabels[field] || field}
