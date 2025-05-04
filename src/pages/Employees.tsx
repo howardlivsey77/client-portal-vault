@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +23,7 @@ import { Loader2, Plus, RefreshCw, Search, Trash2, UserCog, Users } from "lucide
 import { useAuth } from "@/providers/AuthProvider";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/formatters";
+import { ImportEmployeeDialog } from "@/components/employees/ImportEmployeeDialog";
 
 interface Employee {
   id: string;
@@ -136,10 +136,7 @@ const Employees = () => {
           </Button>
           
           {isAdmin && (
-            <Button onClick={() => navigate("/employee/new")}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Employee
-            </Button>
+            <ImportEmployeeDialog onSuccess={fetchEmployees} />
           )}
         </div>
       </div>
