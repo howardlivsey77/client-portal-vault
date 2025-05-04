@@ -103,7 +103,13 @@ const InviteManagement = () => {
         
       if (error) throw error;
       
-      setInvitations(data || []);
+      // Ensure all invitations have the is_admin property, defaulting to false if not present
+      const invitationsWithAdmin = data?.map(invite => ({
+        ...invite,
+        is_admin: invite.is_admin ?? false
+      })) || [];
+      
+      setInvitations(invitationsWithAdmin);
     } catch (error: any) {
       toast({
         title: "Error fetching invitations",
