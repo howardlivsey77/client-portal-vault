@@ -33,33 +33,22 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Temporary direct access to set admin status until we can fix the RLS issue
-  const checkAdminWithoutRLS = async (userId: string) => {
+  // Check admin status using the new security definer function
+  const checkAdminStatus = async (userId: string) => {
     try {
-      // Hard-code the admin check for known admin users as a temporary fix
-      if (userId === "94f95aea-cbc9-4e87-b870-8da7d8e24814" || 
-          user?.email === "howard.livsey@ingenisoft.co.uk") {
-        console.log("Setting admin status to true for known admin user");
-        setIsAdmin(true);
-        return;
-      }
-      
-      // Fallback to regular check
       const { data, error } = await supabase
-        .from("profiles")
-        .select("is_admin")
-        .eq("id", userId)
-        .maybeSingle();
+        .rpc('is_user_admin', { user_id: userId });
       
       if (error) {
-        console.error("Error in direct admin check:", error);
-        return;
+        console.error("Error checking admin status:", error);
+        return false;
       }
       
-      console.log("Direct admin check result:", data);
-      setIsAdmin(data?.is_admin || false);
+      console.log("Admin check result:", data);
+      return !!data; // Convert to boolean
     } catch (error) {
-      console.error("Exception in direct admin check:", error);
+      console.error("Exception in admin check:", error);
+      return false;
     }
   };
 
@@ -72,8 +61,8 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
 
         // When auth changes, check if user is admin
         if (session?.user) {
-          // Use our temporary fix instead
-          await checkAdminWithoutRLS(session.user.id);
+          const adminStatus = await checkAdminStatus(session.user.id);
+          setIsAdmin(adminStatus);
         } else {
           setIsAdmin(false);
         }
@@ -90,8 +79,8 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Use our temporary fix instead
-          await checkAdminWithoutRLS(session.user.id);
+          const adminStatus = await checkAdminStatus(session.user.id);
+          setIsAdmin(adminStatus);
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
