@@ -33,29 +33,6 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Modified function to check if user is admin without triggering RLS issues
-  const checkUserAdmin = async (userId: string) => {
-    try {
-      console.log("Checking admin status for user ID:", userId);
-      
-      // Using a service role function to bypass RLS
-      const { data, error } = await supabase
-        .rpc('is_user_admin', { user_id: userId });
-      
-      if (error) {
-        console.error("Error checking admin status:", error);
-        setIsAdmin(false);
-        return;
-      }
-      
-      console.log("Admin status check result:", data);
-      setIsAdmin(!!data);
-    } catch (error) {
-      console.error("Exception checking admin status:", error);
-      setIsAdmin(false);
-    }
-  };
-  
   // Temporary direct access to set admin status until we can fix the RLS issue
   const checkAdminWithoutRLS = async (userId: string) => {
     try {
