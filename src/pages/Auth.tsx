@@ -14,7 +14,6 @@ import { Loader2 } from "lucide-react";
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [session, setSession] = useState<any>(null);
   const navigate = useNavigate();
@@ -82,38 +81,8 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     
-    if (!inviteCode) {
-      toast({
-        title: "Invite code required",
-        description: "Please enter a valid invitation code to register.",
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
-    }
-
     try {
-      // First, check if invite code is valid
-      const { data: inviteData, error: inviteError } = await supabase
-        .from("invitations")
-        .select("*")
-        .eq("invite_code", inviteCode)
-        .eq("email", email)
-        .eq("is_accepted", false)
-        .gt("expires_at", new Date().toISOString())
-        .maybeSingle();
-
-      if (inviteError || !inviteData) {
-        toast({
-          title: "Invalid invitation",
-          description: "The invitation code is invalid, expired, or already used.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Register user
+      // Register user without checking for invite code
       const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -131,15 +100,6 @@ const Auth = () => {
           variant: "destructive",
         });
       } else {
-        // Mark invitation as accepted
-        await supabase
-          .from("invitations")
-          .update({
-            is_accepted: true,
-            accepted_at: new Date().toISOString()
-          })
-          .eq("id", inviteData.id);
-
         toast({
           title: "Welcome!",
           description: "Your account has been created successfully.",
@@ -231,16 +191,6 @@ const Auth = () => {
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="invite-code">Invitation Code</Label>
-                    <Input 
-                      id="invite-code" 
-                      type="text"
-                      value={inviteCode}
-                      onChange={(e) => setInviteCode(e.target.value)}
                       required
                     />
                   </div>
