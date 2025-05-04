@@ -204,7 +204,7 @@ const EmployeeDetails = () => {
               
               <div className="mt-2">
                 <p className="text-sm font-medium text-muted-foreground">Hire Date</p>
-                <p>{formatDate(employee.hire_date)}</p>
+                <p>{employee.hire_date ? formatDate(employee.hire_date) : "Not provided"}</p>
               </div>
               
               <div className="mt-2">

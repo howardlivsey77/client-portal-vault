@@ -40,7 +40,7 @@ export const JobInfoFields = ({ form, readOnly, departments }: JobInfoFieldsProp
             <FormLabel>Department *</FormLabel>
             <Select 
               onValueChange={field.onChange} 
-              defaultValue={field.value}
+              value={field.value || undefined}
               disabled={readOnly}
             >
               <FormControl>

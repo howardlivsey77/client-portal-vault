@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -23,6 +24,7 @@ import { JobInfoFields } from "@/components/employees/JobInfoFields";
 import { CompensationFields } from "@/components/employees/CompensationFields";
 import { ContactFields } from "@/components/employees/ContactFields";
 import { AddressFields } from "@/components/employees/AddressFields";
+import { HireDateField } from "@/components/employees/HireDateField";
 import { EmployeeFormActions } from "@/components/employees/EmployeeFormActions";
 import { fetchEmployeeById, createEmployee, updateEmployee } from "@/services/employeeService";
 
@@ -47,6 +49,7 @@ const EmployeeForm = () => {
       hours_per_week: 40,
       hourly_rate: 0,
       date_of_birth: null,
+      hire_date: new Date(),
       email: "",
       phone_number: "",
       address1: "",
@@ -73,6 +76,7 @@ const EmployeeForm = () => {
       if (data) {
         // Convert date_of_birth string to Date object if it exists
         const dateOfBirth = data.date_of_birth ? new Date(data.date_of_birth) : null;
+        const hireDate = data.hire_date ? new Date(data.hire_date) : new Date();
         
         form.reset({
           first_name: data.first_name,
@@ -83,6 +87,7 @@ const EmployeeForm = () => {
           hours_per_week: data.hours_per_week || 40,
           hourly_rate: data.hourly_rate || 0,
           date_of_birth: dateOfBirth,
+          hire_date: hireDate,
           email: data.email || "",
           phone_number: data.phone_number || "",
           address1: data.address1 || "",
@@ -199,7 +204,10 @@ const EmployeeForm = () => {
               <PersonalInfoFields form={form} readOnly={readOnly} />
               
               {/* Job Information */}
-              <JobInfoFields form={form} readOnly={readOnly} departments={departments} />
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <JobInfoFields form={form} readOnly={readOnly} departments={departments} />
+                <HireDateField form={form} readOnly={readOnly} />
+              </div>
               
               {/* Compensation Information */}
               <CompensationFields form={form} readOnly={readOnly} />

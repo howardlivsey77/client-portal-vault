@@ -3,6 +3,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessa
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { EmployeeFormValues } from "@/types/employee";
+import { formatCurrency } from "@/lib/formatters";
 
 interface CompensationFieldsProps {
   form: UseFormReturn<EmployeeFormValues>;
