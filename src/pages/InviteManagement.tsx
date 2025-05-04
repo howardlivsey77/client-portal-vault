@@ -31,9 +31,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, Mail, Plus, RefreshCw, Trash2, User, Shield } from "lucide-react";
+import { Loader2, Mail, Plus, RefreshCw, Trash2, User } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { Checkbox } from "@/components/ui/checkbox";
 
 interface Invitation {
   id: string;
@@ -43,7 +42,6 @@ interface Invitation {
   expires_at: string;
   is_accepted: boolean;
   accepted_at: string | null;
-  is_admin: boolean;
 }
 
 const InviteManagement = () => {
@@ -53,7 +51,6 @@ const InviteManagement = () => {
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [isAdminInvite, setIsAdminInvite] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -103,13 +100,7 @@ const InviteManagement = () => {
         
       if (error) throw error;
       
-      // Ensure all invitations have the is_admin property, defaulting to false if not present
-      const invitationsWithAdmin = data?.map(invite => ({
-        ...invite,
-        is_admin: invite.is_admin ?? false
-      })) || [];
-      
-      setInvitations(invitationsWithAdmin);
+      setInvitations(data || []);
     } catch (error: any) {
       toast({
         title: "Error fetching invitations",
@@ -135,9 +126,9 @@ const InviteManagement = () => {
         return;
       }
       
-      // Generate a simpler unique invite code
-      // Just use a random string, no specific UUID format required
-      const inviteCode = Math.random().toString(36).substring(2, 10);
+      // Generate random invite code
+      const inviteCode = Math.random().toString(36).substring(2, 15) + 
+                         Math.random().toString(36).substring(2, 15);
       
       // Set expiration to 7 days from now
       const expiresAt = new Date();
@@ -150,8 +141,7 @@ const InviteManagement = () => {
           invite_code: inviteCode,
           issued_by: userId,
           expires_at: expiresAt.toISOString(),
-          is_accepted: false,
-          is_admin: isAdminInvite
+          is_accepted: false
         });
       
       if (error) {
@@ -167,10 +157,9 @@ const InviteManagement = () => {
       } else {
         toast({
           title: "Invitation created",
-          description: `Invitation sent to ${email}${isAdminInvite ? ' with admin privileges' : ''}`,
+          description: `Invitation sent to ${email}`,
         });
         setEmail("");
-        setIsAdminInvite(false);
         setInviteDialogOpen(false);
         fetchInvitations();
       }
@@ -265,16 +254,6 @@ const InviteManagement = () => {
                       onChange={(e) => setEmail(e.target.value)}
                     />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="admin-privileges" 
-                      checked={isAdminInvite}
-                      onCheckedChange={() => setIsAdminInvite(!isAdminInvite)} 
-                    />
-                    <Label htmlFor="admin-privileges" className="cursor-pointer">
-                      Grant admin privileges
-                    </Label>
-                  </div>
                 </div>
                 
                 <DialogFooter>
@@ -314,7 +293,6 @@ const InviteManagement = () => {
                   <TableHead>Email</TableHead>
                   <TableHead>Invitation Code</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Role</TableHead>
                   <TableHead>Issued</TableHead>
                   <TableHead>Expires</TableHead>
                   <TableHead className="text-right">Action</TableHead>
@@ -340,16 +318,6 @@ const InviteManagement = () => {
                       >
                         {invitation.is_accepted ? "Accepted" : "Pending"}
                       </span>
-                    </TableCell>
-                    <TableCell>
-                      {invitation.is_admin ? (
-                        <div className="flex items-center">
-                          <Shield className="h-4 w-4 mr-1 text-amber-500" />
-                          <span>Admin</span>
-                        </div>
-                      ) : (
-                        <span>User</span>
-                      )}
                     </TableCell>
                     <TableCell>
                       {formatDistanceToNow(new Date(invitation.issued_at), { addSuffix: true })}
