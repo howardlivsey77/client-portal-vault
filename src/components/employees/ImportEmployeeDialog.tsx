@@ -31,7 +31,7 @@ export const ImportEmployeeDialog = ({ onSuccess }: ImportEmployeeDialogProps) =
           Add Employee
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Import Employees</DialogTitle>
         </DialogHeader>
