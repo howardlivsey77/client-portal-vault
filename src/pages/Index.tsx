@@ -3,6 +3,7 @@ import { useState } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { DocumentGrid } from "@/components/dashboard/DocumentGrid";
 import { DocumentUploadModal } from "@/components/dashboard/DocumentUploadModal";
+import { EmployeeDashboard } from "@/components/dashboard/EmployeeDashboard";
 import { Button } from "@/components/ui/button";
 import {
   Tabs,
@@ -20,7 +21,7 @@ const Index = () => {
   return (
     <PageContainer>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Document Vault</h1>
+        <h1 className="text-3xl font-bold">Dashboard</h1>
         
         <div className="flex items-center gap-2">
           <Button onClick={() => setUploadModalOpen(true)}>
@@ -32,31 +33,22 @@ const Index = () => {
       
       <div className="mb-6">
         <div className="text-sm text-muted-foreground">
-          Welcome {user?.email}! This is your secure place to store and share documents.
+          Welcome {user?.email}! Here's an overview of your company's data.
         </div>
       </div>
       
-      <Tabs defaultValue="all" className="mb-8">
-        <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="all">All Documents</TabsTrigger>
-            <TabsTrigger value="shared">Shared with Me</TabsTrigger>
-            <TabsTrigger value="recent">Recent</TabsTrigger>
-          </TabsList>
-          
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <Share className="mr-2 h-4 w-4" />
-              Share
-            </Button>
-            <Button variant="outline" size="sm">
-              <Users className="mr-2 h-4 w-4" />
-              Manage Access
-            </Button>
-          </div>
-        </div>
+      <Tabs defaultValue="overview" className="mb-8">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="shared">Shared with Me</TabsTrigger>
+        </TabsList>
         
-        <TabsContent value="all" className="mt-6 animate-fade-in">
+        <TabsContent value="overview" className="mt-6 animate-fade-in">
+          <EmployeeDashboard />
+        </TabsContent>
+        
+        <TabsContent value="documents" className="mt-6 animate-fade-in">
           <DocumentGrid onAddDocument={() => setUploadModalOpen(true)} />
         </TabsContent>
         
@@ -66,16 +58,6 @@ const Index = () => {
             <h3 className="mt-4 text-xl font-medium">No shared documents</h3>
             <p className="mt-2 text-center text-sm text-muted-foreground">
               Documents shared with you will appear here.
-            </p>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="recent" className="mt-6 animate-fade-in">
-          <div className="flex flex-col items-center justify-center py-12">
-            <FileText className="h-16 w-16 text-muted-foreground/50" />
-            <h3 className="mt-4 text-xl font-medium">No recent documents</h3>
-            <p className="mt-2 text-center text-sm text-muted-foreground">
-              Your recently accessed documents will appear here.
             </p>
           </div>
         </TabsContent>
