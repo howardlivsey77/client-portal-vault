@@ -77,6 +77,17 @@ export default {
 					700: '#0369a1',
 					800: '#075985',
 					900: '#0c4a6e',
+				},
+				monday: {
+					blue: '#0073ea',
+					green: '#00c875',
+					yellow: '#ffcb00',
+					red: '#e44258',
+					purple: '#784bd1',
+					teal: '#00d2d2',
+					darkblue: '#0a1b35',
+					lightgray: '#f5f6f8',
+					gray: '#676879'
 				}
 			},
 			borderRadius: {

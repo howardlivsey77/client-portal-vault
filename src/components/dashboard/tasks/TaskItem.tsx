@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Calendar, Clock, Edit, Trash2, CheckCircle } from "lucide-react";
+import { Calendar, Clock, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,18 +34,18 @@ export function TaskItem({ task, onEdit, onDelete, userEmails }: TaskItemProps) 
   
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'low': return 'bg-blue-100 text-blue-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'high': return 'bg-red-100 text-red-800';
+      case 'low': return 'bg-monday-teal text-white';
+      case 'medium': return 'bg-monday-yellow text-monday-darkblue';
+      case 'high': return 'bg-monday-red text-white';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
   
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'todo': return 'bg-gray-100 text-gray-800';
-      case 'in_progress': return 'bg-blue-100 text-blue-800';
-      case 'done': return 'bg-green-100 text-green-800';
+      case 'todo': return 'bg-monday-gray text-white';
+      case 'in_progress': return 'bg-monday-blue text-white';
+      case 'done': return 'bg-monday-green text-white';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -94,11 +94,11 @@ export function TaskItem({ task, onEdit, onDelete, userEmails }: TaskItemProps) 
   };
   
   return (
-    <Card className="mb-4 overflow-hidden">
-      <CardHeader className="pb-2">
+    <Card className="monday-card mb-4 overflow-hidden">
+      <CardHeader className="pb-2 border-b">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg">{task.title}</CardTitle>
+            <CardTitle className="text-lg text-monday-darkblue">{task.title}</CardTitle>
             {task.assigned_to && (
               <CardDescription className="mt-1">
                 Assigned to: {userEmails[task.assigned_to] || 'Unknown user'}
@@ -116,12 +116,12 @@ export function TaskItem({ task, onEdit, onDelete, userEmails }: TaskItemProps) 
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-2">
+      <CardContent className="pt-3">
         <p className="text-sm text-gray-600 whitespace-pre-wrap">
           {task.description || 'No description provided'}
         </p>
         
-        <div className="flex items-center mt-4 text-sm text-gray-500">
+        <div className="flex items-center mt-4 text-sm text-monday-gray">
           {task.due_date && (
             <div className="flex items-center mr-4">
               <Calendar className="w-4 h-4 mr-1" />
@@ -134,7 +134,7 @@ export function TaskItem({ task, onEdit, onDelete, userEmails }: TaskItemProps) 
           </div>
         </div>
       </CardContent>
-      <CardFooter className="pt-2 flex justify-between">
+      <CardFooter className="pt-2 flex justify-between border-t">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" disabled={isUpdating}>
@@ -157,7 +157,7 @@ export function TaskItem({ task, onEdit, onDelete, userEmails }: TaskItemProps) 
           <Button variant="outline" size="sm" onClick={() => onEdit(task)}>
             <Edit className="w-4 h-4 mr-1" /> Edit
           </Button>
-          <Button variant="outline" size="sm" onClick={handleDelete}>
+          <Button variant="destructive" size="sm" onClick={handleDelete}>
             <Trash2 className="w-4 h-4 mr-1" /> Delete
           </Button>
         </div>

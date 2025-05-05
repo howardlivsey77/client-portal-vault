@@ -16,7 +16,7 @@ export function PageContainer({ children, title }: PageContainerProps) {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-monday-lightgray">
       <Navbar toggleSidebar={toggleSidebar} />
       
       <div className="flex flex-1">
@@ -26,7 +26,7 @@ export function PageContainer({ children, title }: PageContainerProps) {
           <main className="flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-8">
             {title && (
               <div className="mb-6">
-                <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-monday-darkblue">{title}</h1>
               </div>
             )}
             {children}
