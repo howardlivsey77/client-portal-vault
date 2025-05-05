@@ -23,7 +23,7 @@ export function GenderDistribution({
   return <Card className="col-span-full lg:col-span-1">
       <CardHeader className="py-[23px]">
         <CardTitle>Gender Distribution</CardTitle>
-        <CardDescription>Employees by gender</CardDescription>
+        <CardDescription className="py-0 my-0">Employees by gender</CardDescription>
       </CardHeader>
       <CardContent className="flex justify-center py-[14px]">
         <div className="flex flex-col items-center w-full">
