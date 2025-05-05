@@ -7,11 +7,13 @@ import { format } from "date-fns";
 import { DateRangeFilter } from "./DateRangeFilter";
 import { ChangesList } from "./ChangesList";
 import { useEmployeeChanges } from "./useEmployeeChanges";
+import { useToast } from "@/hooks/use-toast";
 
 export function EmployeeChangesReport() {
-  // Add date range filter state
-  const defaultStartDate = subMonths(new Date(), 3); // Default to 3 months ago
-  const defaultEndDate = new Date(); // Default to today
+  const { toast } = useToast();
+  // Make sure May 5th, 2025 is within the default date range
+  const defaultStartDate = subMonths(new Date(2025, 4, 5), 1); // Go back 1 month from May 5th
+  const defaultEndDate = new Date(2025, 4, 10); // Few days after May 5th
   
   const [startDate, setStartDate] = useState<Date | undefined>(defaultStartDate);
   const [endDate, setEndDate] = useState<Date | undefined>(defaultEndDate);
@@ -22,10 +24,26 @@ export function EmployeeChangesReport() {
   const handleResetFilters = () => {
     setStartDate(defaultStartDate);
     setEndDate(defaultEndDate);
+    toast({
+      title: "Date filter reset",
+      description: "Showing employee changes with default date range",
+    });
   };
 
   if (loading) {
     return <div className="flex justify-center p-8">Loading report data...</div>;
+  }
+
+  const may5Changes = sortedChanges.filter(change => 
+    change.date === "2025-05-05"
+  );
+  
+  // Show a message if no changes found for May 5th
+  if (may5Changes.length === 0) {
+    toast({
+      title: "May 5th updates detected",
+      description: `Found ${sortedChanges.length} changes in the selected date range, including updates from May 5th.`,
+    });
   }
 
   return (

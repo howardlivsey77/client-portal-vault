@@ -3,12 +3,15 @@ import { formatDate } from "@/lib/formatters";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { ChangeTypeIndicator } from "./ChangeTypeIndicator";
 import { EmployeeChange } from "./types";
+import { useState } from "react";
 
 interface ChangesListProps {
   changes: EmployeeChange[];
 }
 
 export function ChangesList({ changes }: ChangesListProps) {
+  const isMay5th = (date: string) => date === "2025-05-05";
+  
   return (
     <Table>
       <TableHeader>
@@ -24,8 +27,13 @@ export function ChangesList({ changes }: ChangesListProps) {
       <TableBody>
         {changes.length > 0 ? (
           changes.map((change) => (
-            <TableRow key={`${change.id}`}>
-              <TableCell className="font-medium">{formatDate(change.date)}</TableCell>
+            <TableRow 
+              key={`${change.id}`}
+              className={isMay5th(change.date) ? "bg-blue-50" : ""}
+            >
+              <TableCell className={`font-medium ${isMay5th(change.date) ? "font-bold" : ""}`}>
+                {formatDate(change.date)}
+              </TableCell>
               <TableCell>{change.employeeName}</TableCell>
               <TableCell>
                 <ChangeTypeIndicator type={change.type} />
