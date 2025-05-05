@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/providers/AuthProvider";
-import { FileText, LogOut, Menu, Settings, User, UserPlus, Users } from "lucide-react";
+import { FileText, LogOut, Menu, Settings, User, UserPlus } from "lucide-react";
 
 interface NavbarProps {
   toggleSidebar?: () => void;
@@ -45,9 +45,7 @@ export function Navbar({ toggleSidebar }: NavbarProps) {
                 Invitations
               </Link>
             )}
-            <Link to="/employees" className="text-sm font-medium transition-colors hover:text-primary">
-              Employees
-            </Link>
+            {/* Removed Employees link from here as it's now in the sidebar */}
           </nav>
         </div>
 
@@ -87,7 +85,7 @@ export function Navbar({ toggleSidebar }: NavbarProps) {
                 )}
                 <DropdownMenuItem asChild>
                   <Link to="/employees" className="w-full cursor-pointer">
-                    <Users className="mr-2 h-4 w-4" />
+                    <User className="mr-2 h-4 w-4" />
                     <span>Employees</span>
                   </Link>
                 </DropdownMenuItem>
