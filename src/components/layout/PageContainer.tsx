@@ -29,7 +29,9 @@ export function PageContainer({ children, title }: PageContainerProps) {
                 <h1 className="text-2xl font-bold tracking-tight text-monday-darkblue">{title}</h1>
               </div>
             )}
-            {children}
+            <div className="animate-fade-in">
+              {children}
+            </div>
           </main>
         </div>
       </div>

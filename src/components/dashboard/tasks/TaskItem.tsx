@@ -95,8 +95,8 @@ export function TaskItem({ task, onEdit, onDelete, userEmails }: TaskItemProps) 
   
   return (
     <Card className="monday-card mb-4 overflow-hidden">
-      <CardHeader className="pb-2 border-b">
-        <div className="flex justify-between items-start">
+      <CardHeader className="monday-card-header pb-2">
+        <div className="flex justify-between items-start w-full">
           <div>
             <CardTitle className="text-lg text-monday-darkblue">{task.title}</CardTitle>
             {task.assigned_to && (
@@ -116,7 +116,7 @@ export function TaskItem({ task, onEdit, onDelete, userEmails }: TaskItemProps) 
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-3">
+      <CardContent className="monday-card-content pt-3">
         <p className="text-sm text-gray-600 whitespace-pre-wrap">
           {task.description || 'No description provided'}
         </p>
@@ -134,7 +134,7 @@ export function TaskItem({ task, onEdit, onDelete, userEmails }: TaskItemProps) 
           </div>
         </div>
       </CardContent>
-      <CardFooter className="pt-2 flex justify-between border-t">
+      <CardFooter className="monday-card-footer pt-2 flex justify-between">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" disabled={isUpdating}>

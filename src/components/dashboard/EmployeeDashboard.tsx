@@ -18,19 +18,26 @@ export function EmployeeDashboard() {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <EmployeeOverview 
-        totalEmployees={stats.totalEmployees}
-        departmentCount={stats.departmentCount}
-        departmentData={departmentData}
-      />
-      <EmployeeDemographics 
-        totalEmployees={stats.totalEmployees}
-        genderData={genderData}
-        averageAge={stats.averageAge}
-      />
-      <TaskOverview />
-      <RecentHires recentHires={recentHires} />
+    <div className="space-y-6">
+      <h2 className="monday-section-title">Company Overview</h2>
+      <div className="monday-grid">
+        <EmployeeOverview 
+          totalEmployees={stats.totalEmployees}
+          departmentCount={stats.departmentCount}
+          departmentData={departmentData}
+        />
+        <EmployeeDemographics 
+          totalEmployees={stats.totalEmployees}
+          genderData={genderData}
+          averageAge={stats.averageAge}
+        />
+        <TaskOverview />
+      </div>
+      
+      <div className="pt-4">
+        <h2 className="monday-section-title">Recent Activity</h2>
+        <RecentHires recentHires={recentHires} />
+      </div>
     </div>
   );
 }

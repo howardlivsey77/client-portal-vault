@@ -136,4 +136,36 @@
   .monday-sidebar-item.active {
     @apply bg-monday-blue/10 text-monday-blue;
   }
+
+  .monday-card-header {
+    @apply p-4 border-b border-border flex items-center justify-between;
+  }
+  
+  .monday-card-content {
+    @apply p-4;
+  }
+  
+  .monday-card-footer {
+    @apply p-4 border-t border-border;
+  }
+
+  .monday-badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .monday-grid {
+    @apply grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+
+  .monday-section-title {
+    @apply text-xl font-semibold text-monday-darkblue mb-4;
+  }
+  
+  .monday-page-title {
+    @apply text-3xl font-bold text-monday-darkblue;
+  }
+  
+  .monday-tile {
+    @apply monday-card p-0 overflow-hidden;
+  }
 }

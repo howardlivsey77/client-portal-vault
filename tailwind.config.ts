@@ -87,7 +87,13 @@ export default {
 					teal: '#00d2d2',
 					darkblue: '#0a1b35',
 					lightgray: '#f5f6f8',
-					gray: '#676879'
+					gray: '#676879',
+					lightblue: '#cce5ff',
+					lightgreen: '#d7f8ec',
+					lightyellow: '#fff7d8',
+					lightred: '#ffedef',
+					lightpurple: '#e6dff8',
+					dark: '#323338'
 				}
 			},
 			borderRadius: {
@@ -115,12 +121,21 @@ export default {
 				'fade-in': {
 					'0%': { opacity: '0' },
 					'100%': { opacity: '1' }
+				},
+				'slide-in': {
+					'0%': { transform: 'translateX(-10px)', opacity: '0' },
+					'100%': { transform: 'translateX(0)', opacity: '1' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'fade-in': 'fade-in 0.5s ease-out'
+				'fade-in': 'fade-in 0.5s ease-out',
+				'slide-in': 'slide-in 0.3s ease-out'
+			},
+			boxShadow: {
+				'monday': '0 4px 8px rgba(0, 0, 0, 0.05)',
+				'monday-hover': '0 8px 16px rgba(0, 0, 0, 0.1)'
 			}
 		}
 	},

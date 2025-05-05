@@ -4,6 +4,8 @@ import { CheckSquare, Clock, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchTasks } from "./tasks/taskService";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface TaskSummary {
   total: number;
@@ -13,6 +15,7 @@ interface TaskSummary {
 }
 
 export function TaskOverview() {
+  const navigate = useNavigate();
   const { data: tasks, isLoading } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => fetchTasks(),
@@ -20,12 +23,12 @@ export function TaskOverview() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader className="pb-2">
+      <Card className="monday-tile">
+        <CardHeader className="monday-card-header">
           <Skeleton className="h-6 w-32" />
           <Skeleton className="h-4 w-24" />
         </CardHeader>
-        <CardContent>
+        <CardContent className="monday-card-content">
           <div className="grid gap-4">
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
@@ -58,44 +61,52 @@ export function TaskOverview() {
   }, { total: 0, completed: 0, inProgress: 0, overdue: 0 }) : 
   { total: 0, completed: 0, inProgress: 0, overdue: 0 };
 
+  const handleViewAllTasks = () => {
+    navigate("/?tab=tasks");
+  };
+
   return (
-    <Card className="col-span-full lg:col-span-1">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
+    <Card className="monday-tile">
+      <CardHeader className="monday-card-header">
         <div className="space-y-0.5">
-          <CardTitle>Task Summary</CardTitle>
+          <CardTitle className="text-xl font-bold text-monday-darkblue">Task Summary</CardTitle>
           <CardDescription>Overview of your tasks</CardDescription>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="monday-card-content">
         <div className="grid gap-4">
           <div className="flex items-center justify-between border-b pb-2">
-            <div className="text-sm font-medium">Total Tasks</div>
-            <div className="font-bold">{summary.total}</div>
+            <div className="text-sm font-medium text-monday-darkblue">Total Tasks</div>
+            <div className="font-bold text-monday-darkblue">{summary.total}</div>
           </div>
           
           <div className="flex items-center justify-between border-b pb-2">
             <div className="flex items-center">
-              <CheckSquare className="mr-2 h-4 w-4 text-green-500" />
+              <CheckSquare className="mr-2 h-4 w-4 text-monday-green" />
               <div className="text-sm font-medium">Completed</div>
             </div>
-            <div className="font-bold">{summary.completed}</div>
+            <div className="font-bold text-monday-green">{summary.completed}</div>
           </div>
           
           <div className="flex items-center justify-between border-b pb-2">
             <div className="flex items-center">
-              <Clock className="mr-2 h-4 w-4 text-blue-500" />
+              <Clock className="mr-2 h-4 w-4 text-monday-blue" />
               <div className="text-sm font-medium">In Progress</div>
             </div>
-            <div className="font-bold">{summary.inProgress}</div>
+            <div className="font-bold text-monday-blue">{summary.inProgress}</div>
           </div>
           
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <AlertCircle className="mr-2 h-4 w-4 text-amber-500" />
+              <AlertCircle className="mr-2 h-4 w-4 text-monday-yellow" />
               <div className="text-sm font-medium">Overdue</div>
             </div>
-            <div className="font-bold">{summary.overdue}</div>
+            <div className="font-bold text-monday-yellow">{summary.overdue}</div>
           </div>
+          
+          <Button onClick={handleViewAllTasks} variant="default" className="mt-2 w-full">
+            View All Tasks
+          </Button>
         </div>
       </CardContent>
     </Card>

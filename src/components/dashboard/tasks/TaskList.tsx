@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
@@ -7,6 +8,7 @@ import { TaskDialog } from "./TaskDialog";
 import { Task } from "./types";
 import { fetchTasks, fetchUserProfiles } from "./taskService";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
 
 export function TaskList() {
   const queryClient = useQueryClient();
@@ -59,7 +61,7 @@ export function TaskList() {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Tasks</h2>
+          <h2 className="monday-section-title">Tasks</h2>
           <Skeleton className="h-9 w-28" />
         </div>
         {[1, 2, 3].map((index) => (
@@ -72,8 +74,8 @@ export function TaskList() {
   if (isError) {
     return (
       <div className="py-10 text-center">
-        <h2 className="text-xl font-semibold mb-2">Error Loading Tasks</h2>
-        <p className="text-gray-500">There was an error loading tasks. Please try again.</p>
+        <h2 className="monday-section-title mb-2">Error Loading Tasks</h2>
+        <p className="text-monday-gray mb-4">There was an error loading tasks. Please try again.</p>
         <Button 
           variant="outline" 
           className="mt-4" 
@@ -86,9 +88,9 @@ export function TaskList() {
   }
   
   return (
-    <div>
+    <div className="animate-fade-in">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Tasks</h2>
+        <h2 className="monday-section-title">Tasks</h2>
         <Button onClick={handleAddTask}>
           <Plus className="mr-1 h-4 w-4" /> Add Task
         </Button>
@@ -107,13 +109,13 @@ export function TaskList() {
           ))}
         </div>
       ) : (
-        <div className="py-10 text-center border rounded-lg">
-          <h3 className="text-lg font-medium mb-2">No tasks found</h3>
-          <p className="text-gray-500 mb-4">Create a new task to get started</p>
-          <Button onClick={handleAddTask}>
+        <Card className="monday-card py-10 text-center">
+          <h3 className="text-lg font-medium mb-2 text-monday-darkblue">No tasks found</h3>
+          <p className="text-monday-gray mb-4">Create a new task to get started</p>
+          <Button onClick={handleAddTask} variant="purple">
             <Plus className="mr-1 h-4 w-4" /> Add Task
           </Button>
-        </div>
+        </Card>
       )}
       
       <TaskDialog 
