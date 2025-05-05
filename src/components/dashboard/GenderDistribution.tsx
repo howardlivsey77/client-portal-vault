@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { BarChart, Bar, XAxis, ResponsiveContainer, LabelList, Tooltip } from "recharts";
+import { Users } from "lucide-react";
 
 interface GenderData {
   name: string;
@@ -25,58 +25,88 @@ export function GenderDistribution({
       </Card>;
   }
   
-  // Calculate total for summary
+  // Calculate total for summary and percentages
   const total = genderData.reduce((sum, item) => sum + item.value, 0);
+
+  // Transform data for horizontal bar chart
+  const chartData = genderData.map(item => ({
+    ...item,
+    percentage: ((item.value / total) * 100).toFixed(1)
+  }));
   
-  return <Card className="col-span-full lg:col-span-1">
-      <CardHeader className="py-[23px]">
-        <CardTitle>Gender Distribution</CardTitle>
-        <CardDescription className="py-0 my-0">Employees by gender</CardDescription>
+  return (
+    <Card className="col-span-full lg:col-span-1">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div>
+          <CardTitle>Gender Distribution</CardTitle>
+          <CardDescription>Employees by gender</CardDescription>
+        </div>
+        <Users className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent className="flex justify-center px-0 py-[38px]">
-        <div className="flex flex-col items-center w-full">
-          <ChartContainer className="h-[200px] w-full max-w-md" config={{
-          gender: {
-            label: "Gender"
-          }
-        }}>
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie 
-                  data={genderData} 
-                  dataKey="value" 
-                  nameKey="name" 
-                  cx="50%" 
-                  cy="50%" 
-                  innerRadius={30} 
-                  outerRadius={80} 
-                  paddingAngle={2}
-                  label={false} // Remove labels from inside the chart to prevent overlap
-                >
-                  {genderData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                </Pie>
-                <Tooltip formatter={(value) => [`${value} employees (${((Number(value) / total) * 100).toFixed(1)}%)`, 'Count']} />
-              </PieChart>
+      <CardContent>
+        <div className="space-y-4">
+          {/* Modern bar chart */}
+          <div className="h-[180px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={chartData}
+                margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+              >
+                <XAxis type="number" hide />
+                <Tooltip
+                  formatter={(value) => [`${value} employees`, 'Count']}
+                  labelFormatter={() => ''}
+                />
+                {chartData.map((entry, index) => (
+                  <Bar
+                    key={`bar-${index}`}
+                    dataKey="value"
+                    fill={entry.color}
+                    background={{ fill: '#f3f4f6' }}
+                    radius={[4, 4, 4, 4]}
+                    barSize={30}
+                  >
+                    <LabelList
+                      dataKey="name"
+                      position="insideLeft"
+                      fill="#ffffff"
+                      offset={10}
+                    />
+                    <LabelList
+                      dataKey="value"
+                      position="right"
+                      fill="#374151"
+                      offset={10}
+                    />
+                  </Bar>
+                ))}
+              </BarChart>
             </ResponsiveContainer>
-          </ChartContainer>
-          
-          {/* Enhanced legend with counts and percentages */}
-          <div className="w-full px-4 mt-4">
-            <div className="flex justify-center items-center space-x-8">
-              {genderData.map((item, index) => (
-                <div key={index} className="flex items-center">
-                  <div className="h-3 w-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></div>
-                  <span className="text-sm font-medium">{item.name}: {item.value} ({((item.value / total) * 100).toFixed(1)}%)</span>
-                </div>
-              ))}
-            </div>
           </div>
-          
-          {/* Summary at the bottom */}
-          <div className="mt-4 text-sm text-center text-muted-foreground">
-            Total: {total} employees
+
+          {/* Legend with percentages */}
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+            {chartData.map((item, index) => (
+              <div key={index} className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div
+                    className="h-3 w-3 rounded-full mr-2"
+                    style={{ backgroundColor: item.color }}
+                  ></div>
+                  <span className="text-sm font-medium">{item.name}</span>
+                </div>
+                <span className="text-sm">
+                  {item.value} ({item.percentage}%)
+                </span>
+              </div>
+            ))}
+            <div className="col-span-2 text-sm font-medium text-center pt-2 text-muted-foreground">
+              Total: {total} employees
+            </div>
           </div>
         </div>
       </CardContent>
-    </Card>;
+    </Card>
+  );
 }
