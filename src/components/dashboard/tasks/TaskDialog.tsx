@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +36,6 @@ interface TaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task: Task | null;
-  folderId: string | null;
   onTaskSaved: () => void;
 }
 

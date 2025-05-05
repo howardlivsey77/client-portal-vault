@@ -96,7 +96,7 @@ const Index = () => {
         </TabsContent>
         
         <TabsContent value="tasks" className="mt-6 animate-fade-in">
-          <TaskList folderId={null} />
+          <TaskList />
         </TabsContent>
         
         <TabsContent value="shared" className="mt-6 animate-fade-in">
