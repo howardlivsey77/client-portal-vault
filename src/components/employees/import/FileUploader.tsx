@@ -77,6 +77,8 @@ export const FileUploader = ({
         .filter(emp => emp.email)
         .map(emp => emp.email);
       
+      console.log("Checking for existing employees with emails:", emails);
+      
       // Query database for existing employees with matching emails
       const { data: existingEmployees, error } = await supabase
         .from("employees")
@@ -105,8 +107,8 @@ export const FileUploader = ({
         className="px-0 my-[2px] mx-0" 
       />
       <p className="text-sm text-muted-foreground">
-        File must contain columns for first name, last name, job title, department.
-        Additional fields like email, address, etc. can also be imported.
+        File must contain columns for first name, last name, department.
+        Additional fields like email, address, hourly rates, etc. can also be imported.
       </p>
     </div>
   );

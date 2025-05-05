@@ -45,11 +45,15 @@ export const readFileData = async (file: File): Promise<{data: EmployeeData[], h
           return;
         }
         
+        console.log("Parsed data from file:", parsedData);
+        console.log("Headers from file:", headers);
+        
         resolve({
           data: parsedData,
           headers: headers
         });
       } catch (error) {
+        console.error("Error parsing file:", error);
         reject(error);
       }
     };
@@ -86,6 +90,19 @@ export const autoMapColumns = (headers: string[]): ColumnMapping[] => {
     
     if (exactMatch) {
       return { sourceColumn: header, targetField: exactMatch };
+    }
+    
+    // Special case for rate fields
+    if (/rate\s*2/i.test(header)) {
+      return { sourceColumn: header, targetField: "rate_2" };
+    }
+    
+    if (/rate\s*3/i.test(header)) {
+      return { sourceColumn: header, targetField: "rate_3" };
+    }
+    
+    if (/rate\s*4/i.test(header)) {
+      return { sourceColumn: header, targetField: "rate_4" };
     }
     
     // Then try to find a partial match
@@ -139,6 +156,8 @@ export const excelDateToISO = (excelDate: number | string): string | null => {
 
 // Transform raw data based on column mappings
 export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): EmployeeData[] => {
+  console.log("Transforming data with mappings:", mappings);
+  
   // First check if we have any data to transform
   if (!data || data.length === 0) {
     return [];
@@ -154,7 +173,17 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): 
           const dateValue = row[mapping.sourceColumn];
           const isoDate = excelDateToISO(dateValue);
           transformedRow[mapping.targetField] = isoDate;
-        } else {
+        } 
+        // Handle rate fields to ensure they're numeric
+        else if (mapping.targetField === 'rate_2' || mapping.targetField === 'rate_3' || mapping.targetField === 'rate_4' || 
+                 mapping.targetField === 'hourly_rate') {
+          const rateValue = row[mapping.sourceColumn];
+          if (rateValue !== undefined && rateValue !== null && rateValue !== '') {
+            // Parse rate as number
+            transformedRow[mapping.targetField] = Number(rateValue);
+          }
+        }
+        else {
           transformedRow[mapping.targetField] = row[mapping.sourceColumn];
         }
       }
@@ -170,6 +199,8 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): 
     
     return transformedRow;
   });
+  
+  console.log("Transformed rows:", results);
   
   // Filter out rows without required fields
   return results.filter(row => 

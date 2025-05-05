@@ -6,8 +6,11 @@ import { createHourlyRate } from "./hourlyRateService";
 // Create additional hourly rates for an employee
 export const createAdditionalRates = async (employeeId: string, rates: { rate_2?: any, rate_3?: any, rate_4?: any }) => {
   try {
+    console.log("Creating additional rates for employee", employeeId, "with rates:", rates);
+    
     // Create Rate 2 if provided and valid
     if (rates.rate_2 && !isNaN(Number(rates.rate_2)) && Number(rates.rate_2) > 0) {
+      console.log("Creating Rate 2:", rates.rate_2);
       await createHourlyRate({
         employee_id: employeeId,
         rate_name: "Rate 2",
@@ -18,6 +21,7 @@ export const createAdditionalRates = async (employeeId: string, rates: { rate_2?
     
     // Create Rate 3 if provided and valid
     if (rates.rate_3 && !isNaN(Number(rates.rate_3)) && Number(rates.rate_3) > 0) {
+      console.log("Creating Rate 3:", rates.rate_3);
       await createHourlyRate({
         employee_id: employeeId,
         rate_name: "Rate 3",
@@ -28,6 +32,7 @@ export const createAdditionalRates = async (employeeId: string, rates: { rate_2?
     
     // Create Rate 4 if provided and valid
     if (rates.rate_4 && !isNaN(Number(rates.rate_4)) && Number(rates.rate_4) > 0) {
+      console.log("Creating Rate 4:", rates.rate_4);
       await createHourlyRate({
         employee_id: employeeId,
         rate_name: "Rate 4",
@@ -53,6 +58,9 @@ export const createNewEmployees = async (
       rate_3: emp.rate_3,
       rate_4: emp.rate_4
     };
+    
+    console.log("Creating new employee with data:", emp);
+    console.log("Additional rates:", additionalRates);
     
     // Insert the employee
     const newEmployeeData = {
@@ -99,6 +107,9 @@ export const updateExistingEmployees = async (
       rate_3: imported.rate_3,
       rate_4: imported.rate_4
     };
+    
+    console.log("Updating employee:", existing.id);
+    console.log("Additional rates:", additionalRates);
     
     const updates: any = {};
     

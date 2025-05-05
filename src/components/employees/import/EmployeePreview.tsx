@@ -35,7 +35,7 @@ export const EmployeePreview = ({ preview }: EmployeePreviewProps) => {
                 <td className="py-1">{emp.hourly_rate || "-"}</td>
                 <td className="py-1">
                   {[emp.rate_2, emp.rate_3, emp.rate_4]
-                    .filter(rate => rate)
+                    .filter(rate => rate !== undefined && rate !== null && rate !== '')
                     .map((rate, i) => `£${rate}`).join(", ") || "-"}
                 </td>
               </tr>
