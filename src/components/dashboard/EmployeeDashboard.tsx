@@ -1,6 +1,5 @@
 
 import { EmployeeOverview } from "./EmployeeOverview";
-import { DepartmentDistribution } from "./DepartmentDistribution";
 import { RecentHires } from "./RecentHires";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
@@ -17,13 +16,12 @@ export function EmployeeDashboard() {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2">
       <EmployeeOverview 
         totalEmployees={stats.totalEmployees}
         departmentCount={stats.departmentCount}
         departmentData={departmentData}
       />
-      <DepartmentDistribution departmentData={departmentData} />
       <RecentHires recentHires={recentHires} />
     </div>
   );
