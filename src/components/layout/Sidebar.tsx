@@ -10,6 +10,7 @@ import {
   Share, 
   Users 
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -35,17 +36,29 @@ export function Sidebar({ isOpen }: SidebarProps) {
           Dashboard
         </div>
         <div className="mt-2 space-y-1 px-2">
-          <Button variant="ghost" className="w-full justify-start">
-            <Home className="mr-2 h-4 w-4" />
-            Overview
+          <Button variant="ghost" className="w-full justify-start" asChild>
+            <Link to="/">
+              <Home className="mr-2 h-4 w-4" />
+              Overview
+            </Link>
           </Button>
-          <Button variant="ghost" className="w-full justify-start bg-sidebar-accent">
-            <FileText className="mr-2 h-4 w-4" />
-            Documents
+          <Button variant="ghost" className="w-full justify-start" asChild>
+            <Link to="/employees">
+              <Users className="mr-2 h-4 w-4" />
+              Employees
+            </Link>
           </Button>
-          <Button variant="ghost" className="w-full justify-start">
-            <Share className="mr-2 h-4 w-4" />
-            Shared with me
+          <Button variant="ghost" className="w-full justify-start bg-sidebar-accent" asChild>
+            <Link to="/">
+              <FileText className="mr-2 h-4 w-4" />
+              Documents
+            </Link>
+          </Button>
+          <Button variant="ghost" className="w-full justify-start" asChild>
+            <Link to="/">
+              <Share className="mr-2 h-4 w-4" />
+              Shared with me
+            </Link>
           </Button>
         </div>
         
@@ -53,28 +66,38 @@ export function Sidebar({ isOpen }: SidebarProps) {
           Categories
         </div>
         <div className="mt-2 space-y-1 px-2">
-          <Button variant="ghost" className="w-full justify-start">
-            <FolderOpen className="mr-2 h-4 w-4" />
-            Contracts
+          <Button variant="ghost" className="w-full justify-start" asChild>
+            <Link to="/">
+              <FolderOpen className="mr-2 h-4 w-4" />
+              Contracts
+            </Link>
           </Button>
-          <Button variant="ghost" className="w-full justify-start">
-            <FolderOpen className="mr-2 h-4 w-4" />
-            Reports
+          <Button variant="ghost" className="w-full justify-start" asChild>
+            <Link to="/">
+              <FolderOpen className="mr-2 h-4 w-4" />
+              Reports
+            </Link>
           </Button>
-          <Button variant="ghost" className="w-full justify-start">
-            <FolderOpen className="mr-2 h-4 w-4" />
-            Invoices
+          <Button variant="ghost" className="w-full justify-start" asChild>
+            <Link to="/">
+              <FolderOpen className="mr-2 h-4 w-4" />
+              Invoices
+            </Link>
           </Button>
         </div>
         
         <div className="mt-auto px-2 space-y-1">
-          <Button variant="ghost" className="w-full justify-start">
-            <Users className="mr-2 h-4 w-4" />
-            Team Access
+          <Button variant="ghost" className="w-full justify-start" asChild>
+            <Link to="/">
+              <Users className="mr-2 h-4 w-4" />
+              Team Access
+            </Link>
           </Button>
-          <Button variant="ghost" className="w-full justify-start">
-            <Settings className="mr-2 h-4 w-4" />
-            Settings
+          <Button variant="ghost" className="w-full justify-start" asChild>
+            <Link to="/">
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </Link>
           </Button>
         </div>
       </nav>
