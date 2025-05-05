@@ -63,6 +63,19 @@ export function Sidebar({ isOpen }: SidebarProps) {
             variant="ghost" 
             className={cn(
               "monday-sidebar-item w-full justify-start", 
+              location.search.includes("tasks") && "active"
+            )} 
+            asChild
+          >
+            <Link to={getTabUrl("tasks")}>
+              <CheckSquare className="h-4 w-4" />
+              Tasks
+            </Link>
+          </Button>
+          <Button 
+            variant="ghost" 
+            className={cn(
+              "monday-sidebar-item w-full justify-start", 
               location.pathname.includes("/employees") && "active"
             )} 
             asChild
@@ -70,6 +83,19 @@ export function Sidebar({ isOpen }: SidebarProps) {
             <Link to="/employees">
               <Users className="h-4 w-4" />
               Employees
+            </Link>
+          </Button>
+          <Button 
+            variant="ghost" 
+            className={cn(
+              "monday-sidebar-item w-full justify-start", 
+              location.search.includes("payroll") && "active"
+            )} 
+            asChild
+          >
+            <Link to={getTabUrl("payroll")}>
+              <Receipt className="h-4 w-4" />
+              Payroll Input
             </Link>
           </Button>
           <Button 
@@ -89,19 +115,6 @@ export function Sidebar({ isOpen }: SidebarProps) {
             variant="ghost" 
             className={cn(
               "monday-sidebar-item w-full justify-start", 
-              location.search.includes("tasks") && "active"
-            )} 
-            asChild
-          >
-            <Link to={getTabUrl("tasks")}>
-              <CheckSquare className="h-4 w-4" />
-              Tasks
-            </Link>
-          </Button>
-          <Button 
-            variant="ghost" 
-            className={cn(
-              "monday-sidebar-item w-full justify-start", 
               location.search.includes("reports") && "active"
             )} 
             asChild
@@ -109,19 +122,6 @@ export function Sidebar({ isOpen }: SidebarProps) {
             <Link to={getTabUrl("reports")}>
               <ChartBar className="h-4 w-4" />
               Reports
-            </Link>
-          </Button>
-          <Button 
-            variant="ghost" 
-            className={cn(
-              "monday-sidebar-item w-full justify-start", 
-              location.search.includes("payroll") && "active"
-            )} 
-            asChild
-          >
-            <Link to={getTabUrl("payroll")}>
-              <Receipt className="h-4 w-4" />
-              Payroll Input
             </Link>
           </Button>
           <Button 
