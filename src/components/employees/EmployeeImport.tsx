@@ -7,7 +7,8 @@ import { Loader2, FileSpreadsheet } from "lucide-react";
 import { FileUploader } from "./import/FileUploader";
 import { ColumnMappingUI } from "./import/ColumnMapping";
 import { EmployeePreview } from "./import/EmployeePreview";
-import { transformData, saveMappings, areRequiredFieldsMapped, excelDateToISO } from "./import/ImportUtils";
+import { EmployeeChangesConfirmation } from "./import/EmployeeChangesConfirmation";
+import { transformData, saveMappings, areRequiredFieldsMapped } from "./import/ImportUtils";
 import { EmployeeData, ColumnMapping } from "./import/ImportConstants";
 
 interface EmployeeImportProps {
@@ -23,18 +24,24 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
   const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
   const [showMappingUI, setShowMappingUI] = useState(false);
   const [originalHeaders, setOriginalHeaders] = useState<string[]>([]);
+  const [existingEmployees, setExistingEmployees] = useState<EmployeeData[]>([]);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [newEmployees, setNewEmployees] = useState<EmployeeData[]>([]);
+  const [updatedEmployees, setUpdatedEmployees] = useState<{existing: EmployeeData; imported: EmployeeData}[]>([]);
   const { toast } = useToast();
 
   const handleFileProcessed = (
     rawData: EmployeeData[],
     preview: EmployeeData[],
     columnMappings: ColumnMapping[],
-    headers: string[]
+    headers: string[],
+    existingEmps: EmployeeData[]
   ) => {
     setRawData(rawData);
     setPreview(preview);
     setColumnMappings(columnMappings);
     setOriginalHeaders(headers);
+    setExistingEmployees(existingEmps);
     
     // Check if we need to show mapping UI based on required fields
     const allRequiredMapped = areRequiredFieldsMapped(columnMappings);
@@ -78,7 +85,8 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
     }
   };
   
-  const handleImport = async () => {
+  // Prepare for import - analyze changes and show confirmation dialog
+  const prepareImport = () => {
     if (!preview.length) {
       toast({
         title: "No valid data found",
@@ -88,6 +96,58 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
       return;
     }
     
+    // Compare imported data with existing data to find changes
+    const newEmps: EmployeeData[] = [];
+    const updatedEmps: {existing: EmployeeData; imported: EmployeeData}[] = [];
+    
+    preview.forEach(importedEmp => {
+      // Check if employee exists by email
+      const existingEmp = existingEmployees.find(existing => 
+        existing.email && importedEmp.email && 
+        existing.email.toLowerCase() === importedEmp.email.toLowerCase()
+      );
+      
+      if (existingEmp) {
+        // Check if any fields are different
+        const hasChanges = Object.keys(importedEmp).some(key => {
+          // Skip id and other non-updatable fields
+          if (key === 'id') return false;
+          
+          // Check if the value is different and not empty
+          return importedEmp[key] !== undefined && 
+                 importedEmp[key] !== null && 
+                 importedEmp[key] !== '' && 
+                 importedEmp[key] !== existingEmp[key];
+        });
+        
+        if (hasChanges) {
+          updatedEmps.push({
+            existing: existingEmp,
+            imported: importedEmp
+          });
+        }
+      } else {
+        // New employee
+        newEmps.push(importedEmp);
+      }
+    });
+    
+    setNewEmployees(newEmps);
+    setUpdatedEmployees(updatedEmps);
+    
+    // Show confirmation dialog if there are changes
+    if (newEmps.length > 0 || updatedEmps.length > 0) {
+      setShowConfirmDialog(true);
+    } else {
+      toast({
+        title: "No changes detected",
+        description: "All employees are already up to date."
+      });
+    }
+  };
+  
+  // Execute the import after confirmation
+  const handleImport = async () => {
     setLoading(true);
     
     try {
@@ -98,35 +158,59 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
         throw new Error("User not authenticated");
       }
       
-      // Prepare employees data
-      const employees = preview.map(emp => ({
-        first_name: emp.first_name,
-        last_name: emp.last_name,
-        department: emp.department,
-        hours_per_week: emp.hours_per_week || 40,
-        hourly_rate: emp.hourly_rate || 0,
-        email: emp.email || null,
-        address1: emp.address1 || null,
-        address2: emp.address2 || null,
-        address3: emp.address3 || null,
-        address4: emp.address4 || null,
-        postcode: emp.postcode || null,
-        date_of_birth: emp.date_of_birth || null,
-        hire_date: emp.hire_date || null,
-        payroll_id: emp.payroll_id || null,
-        user_id: user.id,
-      }));
+      // Process new employees
+      if (newEmployees.length > 0) {
+        const newEmployeesData = newEmployees.map(emp => ({
+          first_name: emp.first_name,
+          last_name: emp.last_name,
+          department: emp.department,
+          hours_per_week: emp.hours_per_week || 40,
+          hourly_rate: emp.hourly_rate || 0,
+          email: emp.email || null,
+          address1: emp.address1 || null,
+          address2: emp.address2 || null,
+          address3: emp.address3 || null,
+          address4: emp.address4 || null,
+          postcode: emp.postcode || null,
+          date_of_birth: emp.date_of_birth || null,
+          hire_date: emp.hire_date || null,
+          payroll_id: emp.payroll_id || null,
+          user_id: user.id,
+        }));
+        
+        const { error: insertError } = await supabase
+          .from("employees")
+          .insert(newEmployeesData);
+        
+        if (insertError) throw insertError;
+      }
       
-      // Insert employees
-      const { error } = await supabase
-        .from("employees")
-        .insert(employees);
-      
-      if (error) throw error;
+      // Process updated employees
+      for (const { existing, imported } of updatedEmployees) {
+        const updates: any = {};
+        
+        // Only include fields that have changed
+        Object.keys(imported).forEach(key => {
+          if (key !== 'id' && imported[key] !== undefined && imported[key] !== null && 
+              imported[key] !== '' && imported[key] !== existing[key]) {
+            updates[key] = imported[key];
+          }
+        });
+        
+        // Update employee if there are changes
+        if (Object.keys(updates).length > 0) {
+          const { error: updateError } = await supabase
+            .from("employees")
+            .update(updates)
+            .eq("id", existing.id);
+          
+          if (updateError) throw updateError;
+        }
+      }
       
       toast({
         title: "Import successful",
-        description: `${employees.length} employees have been imported.`,
+        description: `${newEmployees.length} employees added and ${updatedEmployees.length} employees updated.`,
       });
       
       onSuccess();
@@ -138,6 +222,7 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
       });
     } finally {
       setLoading(false);
+      setShowConfirmDialog(false);
     }
   };
   
@@ -163,22 +248,30 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
           Cancel
         </Button>
         <Button 
-          onClick={handleImport} 
+          onClick={prepareImport} 
           disabled={loading || (preview.length === 0)}
         >
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Importing...
+              Processing...
             </>
           ) : (
             <>
               <FileSpreadsheet className="mr-2 h-4 w-4" />
-              Import {preview.length} Employees
+              Review Changes
             </>
           )}
         </Button>
       </div>
+      
+      <EmployeeChangesConfirmation
+        isOpen={showConfirmDialog}
+        onClose={() => setShowConfirmDialog(false)}
+        onConfirm={handleImport}
+        newEmployees={newEmployees}
+        updatedEmployees={updatedEmployees}
+      />
     </div>
   );
 };
