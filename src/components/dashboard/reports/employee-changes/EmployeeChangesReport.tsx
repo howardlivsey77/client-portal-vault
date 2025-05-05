@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays } from "lucide-react";
 import { subMonths } from "date-fns";
@@ -29,26 +29,31 @@ export function EmployeeChangesReport() {
       description: "Showing employee changes with default date range",
     });
   };
+  
+  // Use an effect to show toast notifications about May 5th changes
+  useEffect(() => {
+    if (!loading && sortedChanges.length > 0) {
+      const may5Changes = sortedChanges.filter(change => 
+        change.date === "2025-05-05"
+      );
+      
+      // Show a message about May 5th changes
+      if (may5Changes.length === 0) {
+        toast({
+          title: "May 5th changes",
+          description: "No employee changes were found for May 5th, 2025.",
+        });
+      } else {
+        toast({
+          title: "May 5th changes detected",
+          description: `Found ${may5Changes.length} real employee changes on May 5th, 2025.`,
+        });
+      }
+    }
+  }, [loading, sortedChanges, toast]);
 
   if (loading) {
     return <div className="flex justify-center p-8">Loading report data...</div>;
-  }
-
-  const may5Changes = sortedChanges.filter(change => 
-    change.date === "2025-05-05"
-  );
-  
-  // Show a message if no changes found for May 5th
-  if (may5Changes.length === 0) {
-    toast({
-      title: "May 5th changes",
-      description: "No employee changes were found for May 5th, 2025.",
-    });
-  } else {
-    toast({
-      title: "May 5th changes detected",
-      description: `Found ${may5Changes.length} real employee changes on May 5th, 2025.`,
-    });
   }
 
   return (
