@@ -10,20 +10,11 @@ interface EmployeeOverviewProps {
     value: number;
     color: string;
   }>;
-  genderData?: Array<{
-    name: string;
-    value: number;
-    color: string;
-  }>;
 }
 
-export function EmployeeOverview({
-  totalEmployees,
-  departmentCount,
-  departmentData,
-  genderData = []
-}: EmployeeOverviewProps) {
-  return <Card className="col-span-full lg:col-span-1">
+export function EmployeeOverview({ totalEmployees, departmentCount, departmentData }: EmployeeOverviewProps) {
+  return (
+    <Card className="col-span-full lg:col-span-1">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div className="space-y-0.5">
           <CardTitle>Employee Overview</CardTitle>
@@ -40,17 +31,19 @@ export function EmployeeOverview({
             <div className="text-sm font-medium">Departments</div>
             <div className="font-bold">{departmentCount}</div>
           </div>
-          
           <div className="pt-2">
             <div className="text-sm font-medium mb-2">Department Distribution</div>
             <div className="grid grid-cols-2 gap-2">
-              {departmentData.map(dept => <Badge key={dept.name} variant="outline" className="justify-between">
+              {departmentData.map((dept) => (
+                <Badge key={dept.name} variant="outline" className="justify-between">
                   <span className="truncate">{dept.name}</span>
                   <span className="ml-2">{dept.value}</span>
-                </Badge>)}
+                </Badge>
+              ))}
             </div>
           </div>
         </div>
       </CardContent>
-    </Card>;
+    </Card>
+  );
 }
