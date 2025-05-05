@@ -31,12 +31,9 @@ export function GenderDistribution({
   
   return (
     <Card className="col-span-full lg:col-span-1">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div>
-          <CardTitle>Gender Distribution</CardTitle>
-          <CardDescription>Employees by gender</CardDescription>
-        </div>
-        <Users className="h-4 w-4 text-muted-foreground" />
+      <CardHeader>
+        <CardTitle>Gender Distribution</CardTitle>
+        <CardDescription>Employees by gender</CardDescription>
       </CardHeader>
       <CardContent className="flex justify-center">
         <div className="flex flex-col items-center w-full">
@@ -66,7 +63,7 @@ export function GenderDistribution({
           </ChartContainer>
           <ChartLegend>
             <ChartLegendContent payload={genderData.map((item) => ({
-              value: `${item.name} (${item.value})`,
+              value: item.name,
               color: item.color,
               dataKey: item.name
             }))} />
