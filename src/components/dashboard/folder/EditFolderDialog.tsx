@@ -28,12 +28,15 @@ export function EditFolderDialog({
   folderName, 
   onEditFolder 
 }: EditFolderDialogProps) {
+  // Track folder name in local state
   const [editingFolderName, setEditingFolderName] = useState(folderName);
   
-  // Update state when prop changes
+  // Immediately update internal state when the dialog opens with a new folder
   useEffect(() => {
-    setEditingFolderName(folderName);
-  }, [folderName]);
+    if (open) {
+      setEditingFolderName(folderName);
+    }
+  }, [folderName, open]);
 
   const handleSaveFolder = () => {
     if (!folderId || !editingFolderName.trim()) return;
