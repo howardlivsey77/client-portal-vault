@@ -10,7 +10,7 @@ const DEPARTMENT_COLORS = [
 ];
 
 export function EmployeeDashboard() {
-  const { stats, departmentData, recentHires, loading } = useDashboardData(DEPARTMENT_COLORS);
+  const { stats, departmentData, genderData, recentHires, loading } = useDashboardData(DEPARTMENT_COLORS);
 
   if (loading) {
     return <div className="flex justify-center p-8">Loading dashboard data...</div>;
@@ -23,7 +23,10 @@ export function EmployeeDashboard() {
         departmentCount={stats.departmentCount}
         departmentData={departmentData}
       />
-      <EmployeeDemographics totalEmployees={stats.totalEmployees} />
+      <EmployeeDemographics 
+        totalEmployees={stats.totalEmployees}
+        genderData={genderData}
+      />
       <RecentHires recentHires={recentHires} />
     </div>
   );
