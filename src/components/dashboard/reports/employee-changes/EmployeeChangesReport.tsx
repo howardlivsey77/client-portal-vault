@@ -1,13 +1,15 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, FileExcel } from "lucide-react";
 import { subMonths } from "date-fns";
 import { format } from "date-fns";
 import { DateRangeFilter } from "./DateRangeFilter";
 import { ChangesList } from "./ChangesList";
 import { useEmployeeChanges } from "./useEmployeeChanges";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import * as XLSX from "xlsx";
 
 export function EmployeeChangesReport() {
   const { toast } = useToast();
@@ -52,6 +54,55 @@ export function EmployeeChangesReport() {
     }
   }, [loading, sortedChanges, toast]);
 
+  // Function to export data to Excel
+  const handleExportToExcel = () => {
+    if (sortedChanges.length === 0) {
+      toast({
+        title: "Export failed",
+        description: "No data available to export",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Format the data for Excel export
+      const excelData = sortedChanges.map(change => ({
+        Date: format(new Date(change.date), "dd/MM/yyyy"),
+        Employee: change.employeeName,
+        Type: change.type,
+        Field: change.field || "-",
+        "Old Value": change.oldValue || "-",
+        "New Value": change.newValue || "-",
+      }));
+
+      // Create a worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Create a workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Employee Changes");
+      
+      // Generate Excel file name with current date
+      const fileName = `employee_changes_${format(new Date(), "yyyy-MM-dd")}.xlsx`;
+      
+      // Export to Excel
+      XLSX.writeFile(workbook, fileName);
+
+      toast({
+        title: "Export successful",
+        description: `Data exported to ${fileName}`,
+      });
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast({
+        title: "Export failed",
+        description: "An error occurred while exporting data",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center p-8">Loading report data...</div>;
   }
@@ -76,14 +127,26 @@ export function EmployeeChangesReport() {
       
       <Card className="overflow-hidden border border-monday-border bg-white shadow-sm">
         <CardHeader className="bg-monday-lightest-gray border-b border-monday-border">
-          <CardTitle className="text-lg font-medium text-monday-darkblue">
-            Real Employee Changes
-            {startDate && endDate && (
-              <span className="text-sm font-normal text-monday-gray ml-2">
-                ({format(startDate, "PP")} - {format(endDate, "PP")})
-              </span>
-            )}
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg font-medium text-monday-darkblue">
+              Real Employee Changes
+              {startDate && endDate && (
+                <span className="text-sm font-normal text-monday-gray ml-2">
+                  ({format(startDate, "PP")} - {format(endDate, "PP")})
+                </span>
+              )}
+            </CardTitle>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleExportToExcel}
+              disabled={sortedChanges.length === 0}
+              className="flex items-center gap-2"
+            >
+              <FileExcel className="h-4 w-4" />
+              Export to Excel
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {sortedChanges.length > 0 ? (
