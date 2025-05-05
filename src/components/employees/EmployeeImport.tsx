@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { EmployeePreview } from "./import/EmployeePreview";
 import { EmployeeChangesConfirmation } from "./import/EmployeeChangesConfirmation";
 import { transformData, saveMappings, areRequiredFieldsMapped } from "./import/ImportUtils";
 import { EmployeeData, ColumnMapping } from "./import/ImportConstants";
+import { createHourlyRate } from "@/services/hourlyRateService";
 
 interface EmployeeImportProps {
   onSuccess: () => void;
@@ -48,7 +48,6 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
     setShowMappingUI(!allRequiredMapped || preview.length === 0);
   };
   
-  // Update a specific column mapping
   const updateColumnMapping = (sourceColumn: string, targetField: string | null) => {
     setColumnMappings(prevMappings => 
       prevMappings.map(mapping => 
@@ -59,23 +58,19 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
     );
   };
   
-  // Apply mappings and update preview
   const applyMappings = () => {
     const transformedData = transformData(rawData, columnMappings);
     setPreview(transformedData);
     setShowMappingUI(false);
     
-    // Automatically save mappings when they're applied
     saveMappings(columnMappings);
     
-    // Show toast based on the result
     if (transformedData.length === 0) {
       toast({
         title: "No valid data found",
         description: "Please check your column mappings to ensure required fields are mapped correctly.",
         variant: "destructive"
       });
-      // Re-open mapping UI if no valid data
       setShowMappingUI(true);
     } else {
       toast({
@@ -85,7 +80,6 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
     }
   };
   
-  // Prepare for import - analyze changes and show confirmation dialog
   const prepareImport = () => {
     if (!preview.length) {
       toast({
@@ -96,24 +90,19 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
       return;
     }
     
-    // Compare imported data with existing data to find changes
     const newEmps: EmployeeData[] = [];
     const updatedEmps: {existing: EmployeeData; imported: EmployeeData}[] = [];
     
     preview.forEach(importedEmp => {
-      // Check if employee exists by email
       const existingEmp = existingEmployees.find(existing => 
         existing.email && importedEmp.email && 
         existing.email.toLowerCase() === importedEmp.email.toLowerCase()
       );
       
       if (existingEmp) {
-        // Check if any fields are different
         const hasChanges = Object.keys(importedEmp).some(key => {
-          // Skip id and other non-updatable fields
-          if (key === 'id') return false;
+          if (key === 'id' || key.startsWith('rate_')) return false;
           
-          // Check if the value is different and not empty
           return importedEmp[key] !== undefined && 
                  importedEmp[key] !== null && 
                  importedEmp[key] !== '' && 
@@ -127,7 +116,6 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
           });
         }
       } else {
-        // New employee
         newEmps.push(importedEmp);
       }
     });
@@ -135,7 +123,6 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
     setNewEmployees(newEmps);
     setUpdatedEmployees(updatedEmps);
     
-    // Show confirmation dialog if there are changes
     if (newEmps.length > 0 || updatedEmps.length > 0) {
       setShowConfirmDialog(true);
     } else {
@@ -146,7 +133,6 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
     }
   };
   
-  // Execute the import after confirmation
   const handleImport = async () => {
     setLoading(true);
     
@@ -160,38 +146,69 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
       
       // Process new employees
       if (newEmployees.length > 0) {
-        const newEmployeesData = newEmployees.map(emp => ({
-          first_name: emp.first_name,
-          last_name: emp.last_name,
-          department: emp.department,
-          hours_per_week: emp.hours_per_week || 40,
-          hourly_rate: emp.hourly_rate || 0,
-          email: emp.email || null,
-          address1: emp.address1 || null,
-          address2: emp.address2 || null,
-          address3: emp.address3 || null,
-          address4: emp.address4 || null,
-          postcode: emp.postcode || null,
-          date_of_birth: emp.date_of_birth || null,
-          hire_date: emp.hire_date || null,
-          payroll_id: emp.payroll_id || null,
-          user_id: user.id,
-        }));
-        
-        const { error: insertError } = await supabase
-          .from("employees")
-          .insert(newEmployeesData);
-        
-        if (insertError) throw insertError;
+        for (const emp of newEmployees) {
+          // Extract additional rates
+          const additionalRates = {
+            rate_2: emp.rate_2,
+            rate_3: emp.rate_3,
+            rate_4: emp.rate_4
+          };
+          
+          // Remove rate fields from employee data
+          const employeeData = { ...emp };
+          delete employeeData.rate_2;
+          delete employeeData.rate_3;
+          delete employeeData.rate_4;
+          
+          // Insert the employee
+          const newEmployeeData = {
+            first_name: emp.first_name,
+            last_name: emp.last_name,
+            department: emp.department,
+            hours_per_week: emp.hours_per_week || 40,
+            hourly_rate: emp.hourly_rate || 0,
+            email: emp.email || null,
+            address1: emp.address1 || null,
+            address2: emp.address2 || null,
+            address3: emp.address3 || null,
+            address4: emp.address4 || null,
+            postcode: emp.postcode || null,
+            date_of_birth: emp.date_of_birth || null,
+            hire_date: emp.hire_date || null,
+            payroll_id: emp.payroll_id || null,
+            user_id: user.id,
+          };
+          
+          const { data: employeeInsertData, error: insertError } = await supabase
+            .from("employees")
+            .insert(newEmployeeData)
+            .select()
+            .single();
+          
+          if (insertError) throw insertError;
+          
+          // Create additional hourly rates if provided
+          if (employeeInsertData) {
+            await createAdditionalRates(employeeInsertData.id, additionalRates);
+          }
+        }
       }
       
       // Process updated employees
       for (const { existing, imported } of updatedEmployees) {
+        // Extract additional rates
+        const additionalRates = {
+          rate_2: imported.rate_2,
+          rate_3: imported.rate_3,
+          rate_4: imported.rate_4
+        };
+        
         const updates: any = {};
         
-        // Only include fields that have changed
+        // Only include fields that have changed and are not rate fields
         Object.keys(imported).forEach(key => {
-          if (key !== 'id' && imported[key] !== undefined && imported[key] !== null && 
+          if (key !== 'id' && !key.startsWith('rate_') && 
+              imported[key] !== undefined && imported[key] !== null && 
               imported[key] !== '' && imported[key] !== existing[key]) {
             updates[key] = imported[key];
           }
@@ -206,6 +223,9 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
           
           if (updateError) throw updateError;
         }
+        
+        // Create additional hourly rates if provided
+        await createAdditionalRates(existing.id, additionalRates);
       }
       
       toast({
@@ -223,6 +243,43 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
     } finally {
       setLoading(false);
       setShowConfirmDialog(false);
+    }
+  };
+  
+  const createAdditionalRates = async (employeeId: string, rates: { rate_2?: any, rate_3?: any, rate_4?: any }) => {
+    try {
+      // Create Rate 2 if provided and valid
+      if (rates.rate_2 && !isNaN(Number(rates.rate_2)) && Number(rates.rate_2) > 0) {
+        await createHourlyRate({
+          employee_id: employeeId,
+          rate_name: "Rate 2",
+          hourly_rate: Number(rates.rate_2),
+          is_default: false
+        });
+      }
+      
+      // Create Rate 3 if provided and valid
+      if (rates.rate_3 && !isNaN(Number(rates.rate_3)) && Number(rates.rate_3) > 0) {
+        await createHourlyRate({
+          employee_id: employeeId,
+          rate_name: "Rate 3",
+          hourly_rate: Number(rates.rate_3),
+          is_default: false
+        });
+      }
+      
+      // Create Rate 4 if provided and valid
+      if (rates.rate_4 && !isNaN(Number(rates.rate_4)) && Number(rates.rate_4) > 0) {
+        await createHourlyRate({
+          employee_id: employeeId,
+          rate_name: "Rate 4",
+          hourly_rate: Number(rates.rate_4),
+          is_default: false
+        });
+      }
+    } catch (error) {
+      console.error("Error creating additional hourly rates:", error);
+      // Continue with the import even if rate creation fails
     }
   };
   

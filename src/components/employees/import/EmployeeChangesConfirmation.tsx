@@ -23,6 +23,15 @@ export const EmployeeChangesConfirmation = ({
   newEmployees,
   updatedEmployees
 }: EmployeeChangesConfirmationProps) => {
+  // Helper function to format hourly rates for display
+  const formatRates = (emp: EmployeeData) => {
+    const rates = [];
+    if (emp.rate_2) rates.push(`Rate 2: £${emp.rate_2}`);
+    if (emp.rate_3) rates.push(`Rate 3: £${emp.rate_3}`);
+    if (emp.rate_4) rates.push(`Rate 4: £${emp.rate_4}`);
+    return rates.length > 0 ? rates.join(", ") : null;
+  };
+
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent className="max-w-4xl">
@@ -46,6 +55,7 @@ export const EmployeeChangesConfirmation = ({
                       <TableHead>Name</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Email</TableHead>
+                      <TableHead>Hourly Rates</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -57,6 +67,12 @@ export const EmployeeChangesConfirmation = ({
                         </TableCell>
                         <TableCell>{emp.department}</TableCell>
                         <TableCell>{emp.email || "-"}</TableCell>
+                        <TableCell>
+                          <div>Base: £{emp.hourly_rate || 0}</div>
+                          {formatRates(emp) && (
+                            <div className="text-xs text-muted-foreground mt-1">{formatRates(emp)}</div>
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -84,7 +100,9 @@ export const EmployeeChangesConfirmation = ({
                       
                       // Compare all fields and list changes
                       Object.keys(empPair.imported).forEach(key => {
-                        if (key !== 'id' && empPair.existing[key] !== empPair.imported[key] && empPair.imported[key]) {
+                        if (key !== 'id' && !key.startsWith('rate_') && 
+                            empPair.existing[key] !== empPair.imported[key] && 
+                            empPair.imported[key]) {
                           changes.push({
                             field: key,
                             oldValue: empPair.existing[key],
@@ -92,6 +110,16 @@ export const EmployeeChangesConfirmation = ({
                           });
                         }
                       });
+                      
+                      // Add additional hourly rates if present
+                      const ratesText = formatRates(empPair.imported);
+                      if (ratesText) {
+                        changes.push({
+                          field: "additional_rates",
+                          oldValue: "-",
+                          newValue: ratesText
+                        });
+                      }
                       
                       return changes.map((change, j) => (
                         <TableRow key={`change-${i}-${j}`}>

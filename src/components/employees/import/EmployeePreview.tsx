@@ -20,23 +20,29 @@ export const EmployeePreview = ({ preview }: EmployeePreviewProps) => {
           <thead>
             <tr className="border-b">
               <th className="text-left py-2">Name</th>
-              <th className="text-left py-2">Position</th>
               <th className="text-left py-2">Department</th>
               <th className="text-left py-2">Email</th>
+              <th className="text-left py-2">Base Rate</th>
+              <th className="text-left py-2">Rates</th>
             </tr>
           </thead>
           <tbody>
             {preview.slice(0, 5).map((emp, i) => (
               <tr key={i} className="border-b">
                 <td className="py-1">{emp.first_name} {emp.last_name}</td>
-                <td className="py-1">{emp.job_title}</td>
                 <td className="py-1">{emp.department}</td>
                 <td className="py-1">{emp.email || "-"}</td>
+                <td className="py-1">{emp.hourly_rate || "-"}</td>
+                <td className="py-1">
+                  {[emp.rate_2, emp.rate_3, emp.rate_4]
+                    .filter(rate => rate)
+                    .map((rate, i) => `£${rate}`).join(", ") || "-"}
+                </td>
               </tr>
             ))}
             {preview.length > 5 && (
               <tr>
-                <td colSpan={4} className="py-1 text-center">
+                <td colSpan={5} className="py-1 text-center">
                   ...{preview.length - 5} more
                 </td>
               </tr>
