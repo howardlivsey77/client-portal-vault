@@ -10,6 +10,7 @@ import { useEmployeeChanges } from "./useEmployeeChanges";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
+import { formatCurrency } from "@/lib/formatters";
 
 export function EmployeeChangesReport() {
   const { toast } = useToast();
@@ -66,15 +67,37 @@ export function EmployeeChangesReport() {
     }
 
     try {
-      // Format the data for Excel export
-      const excelData = sortedChanges.map(change => ({
-        Date: format(new Date(change.date), "dd/MM/yyyy"),
-        Employee: change.employeeName,
-        Type: change.type,
-        Field: change.field || "-",
-        "Old Value": change.oldValue || "-",
-        "New Value": change.newValue || "-",
-      }));
+      // Format the data for Excel export with proper GBP formatting
+      const excelData = sortedChanges.map(change => {
+        // Format currency values for Excel export
+        let oldValue = change.oldValue || '-';
+        let newValue = change.newValue || '-';
+        
+        // Check if this is a monetary field and format it as GBP if needed
+        if (change.field === 'Hourly Rate' || change.field === 'Salary' || 
+            change.field?.toLowerCase().includes('rate') || 
+            change.field?.toLowerCase().includes('pay')) {
+          // Remove any existing currency symbol for clean formatting
+          if (oldValue !== '-' && !isNaN(parseFloat(oldValue.replace(/[^0-9.-]+/g, '')))) {
+            const numValue = parseFloat(oldValue.replace(/[^0-9.-]+/g, ''));
+            oldValue = formatCurrency(numValue);
+          }
+          
+          if (newValue !== '-' && !isNaN(parseFloat(newValue.replace(/[^0-9.-]+/g, '')))) {
+            const numValue = parseFloat(newValue.replace(/[^0-9.-]+/g, ''));
+            newValue = formatCurrency(numValue);
+          }
+        }
+        
+        return {
+          Date: format(new Date(change.date), "dd/MM/yyyy"),
+          Employee: change.employeeName,
+          Type: change.type,
+          Field: change.field || "-",
+          "Old Value": oldValue,
+          "New Value": newValue,
+        };
+      });
 
       // Create a worksheet
       const worksheet = XLSX.utils.json_to_sheet(excelData);

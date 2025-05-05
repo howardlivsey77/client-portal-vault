@@ -1,8 +1,8 @@
-
 import { useState, useMemo, useEffect } from "react";
 import { EmployeeChange } from "./types";
 import { isAfter, isBefore, parseISO, startOfDay, endOfDay, format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCurrency } from "@/lib/formatters";
 
 export function useEmployeeChanges(startDate?: Date, endDate?: Date) {
   const [realChanges, setRealChanges] = useState<EmployeeChange[]>([]);
@@ -42,8 +42,8 @@ export function useEmployeeChanges(startDate?: Date, endDate?: Date) {
             type: 'modification',
             details: 'Updated via Excel import',
             field: 'Hourly Rate',
-            oldValue: '$22.50',
-            newValue: `$${employee.hourly_rate}`
+            oldValue: formatCurrency(22.50),
+            newValue: formatCurrency(employee.hourly_rate)
           });
           
           changes.push({
