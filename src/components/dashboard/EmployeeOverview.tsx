@@ -1,6 +1,7 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+
 interface EmployeeOverviewProps {
   totalEmployees: number;
   departmentCount: number;
@@ -15,6 +16,7 @@ interface EmployeeOverviewProps {
     color: string;
   }>;
 }
+
 export function EmployeeOverview({
   totalEmployees,
   departmentCount,
@@ -38,8 +40,6 @@ export function EmployeeOverview({
             <div className="text-sm font-medium">Departments</div>
             <div className="font-bold">{departmentCount}</div>
           </div>
-          
-          {genderData.length > 0}
           
           <div className="pt-2">
             <div className="text-sm font-medium mb-2">Department Distribution</div>

@@ -1,14 +1,18 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+
 interface GenderData {
   name: string;
   value: number;
   color: string;
 }
+
 interface GenderDistributionProps {
   genderData: GenderData[];
 }
+
 export function GenderDistribution({
   genderData
 }: GenderDistributionProps) {
@@ -20,6 +24,10 @@ export function GenderDistribution({
         </CardHeader>
       </Card>;
   }
+  
+  // Calculate total for summary
+  const total = genderData.reduce((sum, item) => sum + item.value, 0);
+  
   return <Card className="col-span-full lg:col-span-1">
       <CardHeader className="py-[23px]">
         <CardTitle>Gender Distribution</CardTitle>
@@ -34,23 +42,40 @@ export function GenderDistribution({
         }}>
             <ResponsiveContainer>
               <PieChart>
-                <Pie data={genderData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={30} outerRadius={80} paddingAngle={2} label={({
-                name,
-                percent
-              }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
+                <Pie 
+                  data={genderData} 
+                  dataKey="value" 
+                  nameKey="name" 
+                  cx="50%" 
+                  cy="50%" 
+                  innerRadius={30} 
+                  outerRadius={80} 
+                  paddingAngle={2}
+                  label={false} // Remove labels from inside the chart to prevent overlap
+                >
                   {genderData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                 </Pie>
-                <Tooltip formatter={value => [`${value} employees`, 'Count']} />
+                <Tooltip formatter={(value) => [`${value} employees (${((Number(value) / total) * 100).toFixed(1)}%)`, 'Count']} />
               </PieChart>
             </ResponsiveContainer>
           </ChartContainer>
-          <ChartLegend>
-            <ChartLegendContent payload={genderData.map(item => ({
-            value: `${item.name} (${item.value})`,
-            color: item.color,
-            dataKey: item.name
-          }))} />
-          </ChartLegend>
+          
+          {/* Enhanced legend with counts and percentages */}
+          <div className="w-full px-4 mt-4">
+            <div className="flex justify-center items-center space-x-8">
+              {genderData.map((item, index) => (
+                <div key={index} className="flex items-center">
+                  <div className="h-3 w-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></div>
+                  <span className="text-sm font-medium">{item.name}: {item.value} ({((item.value / total) * 100).toFixed(1)}%)</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Summary at the bottom */}
+          <div className="mt-4 text-sm text-center text-muted-foreground">
+            Total: {total} employees
+          </div>
         </div>
       </CardContent>
     </Card>;
