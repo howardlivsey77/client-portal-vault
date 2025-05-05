@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { ArrowLeft, Loader2, Pencil, Trash2 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/formatters";
+import { HourlyRatesList } from "@/components/employees/HourlyRatesList";
 
 interface Employee {
   id: string;
@@ -221,8 +221,11 @@ const EmployeeDetails = () => {
               </div>
               
               <div className="mt-2">
-                <p className="text-sm font-medium text-muted-foreground">Hourly Rate</p>
+                <p className="text-sm font-medium text-muted-foreground">Default Hourly Rate</p>
                 <p>{formatCurrency(employee.hourly_rate || 0)}</p>
+                
+                {/* Display hourly rates */}
+                {employee.id && <HourlyRatesList employeeId={employee.id} />}
               </div>
             </div>
           </CardContent>

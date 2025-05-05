@@ -209,7 +209,12 @@ const EmployeeForm = () => {
               </div>
               
               {/* Compensation Information */}
-              <CompensationFields form={form} readOnly={readOnly} />
+              <CompensationFields 
+                form={form} 
+                readOnly={readOnly}
+                employeeId={id !== "new" ? id : undefined}
+                isNew={!isEditMode}
+              />
               
               {/* Contact Information */}
               <ContactFields form={form} readOnly={readOnly} />
