@@ -21,7 +21,7 @@ export function GenderDistribution({
       </Card>;
   }
   return <Card className="col-span-full lg:col-span-1">
-      <CardHeader>
+      <CardHeader className="py-[23px]">
         <CardTitle>Gender Distribution</CardTitle>
         <CardDescription>Employees by gender</CardDescription>
       </CardHeader>
