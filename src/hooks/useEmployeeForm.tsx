@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { employeeSchema, EmployeeFormValues } from "@/types/employee";
+import { employeeSchema, EmployeeFormValues, genderOptions } from "@/types/employee";
 import { fetchEmployeeById, createEmployee, updateEmployee } from "@/services/employeeService";
 
 export const useEmployeeForm = (employeeId?: string) => {
@@ -45,6 +44,12 @@ export const useEmployeeForm = (employeeId?: string) => {
         const dateOfBirth = data.date_of_birth ? new Date(data.date_of_birth) : null;
         const hireDate = data.hire_date ? new Date(data.hire_date) : new Date();
         
+        // Validate gender to ensure it matches one of the allowed values
+        const validGender = data.gender && 
+          ["Male", "Female", "Other", "Prefer not to say"].includes(data.gender)
+            ? data.gender as "Male" | "Female" | "Other" | "Prefer not to say"
+            : undefined;
+        
         form.reset({
           first_name: data.first_name,
           last_name: data.last_name,
@@ -60,7 +65,7 @@ export const useEmployeeForm = (employeeId?: string) => {
           address4: data.address4 || "",
           postcode: data.postcode || "",
           payroll_id: data.payroll_id || "",
-          gender: data.gender || undefined,
+          gender: validGender,
         });
       }
     } catch (error: any) {
