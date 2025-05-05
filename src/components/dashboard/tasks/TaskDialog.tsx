@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,7 +43,6 @@ export function TaskDialog({
   open,
   onOpenChange,
   task,
-  folderId,
   onTaskSaved
 }: TaskDialogProps) {
   const isEditing = !!task;
@@ -56,7 +54,7 @@ export function TaskDialog({
     status: "todo",
     due_date: null,
     assigned_to: null,
-    folder_id: folderId
+    folder_id: null
   });
   
   const [users, setUsers] = useState<{id: string, email: string}[]>([]);
@@ -73,7 +71,7 @@ export function TaskDialog({
           status: task.status as TaskStatus,
           due_date: task.due_date ? new Date(task.due_date) : null,
           assigned_to: task.assigned_to,
-          folder_id: task.folder_id || folderId
+          folder_id: task.folder_id
         });
       } else {
         // Create mode - reset form
@@ -84,7 +82,7 @@ export function TaskDialog({
           status: "todo",
           due_date: null,
           assigned_to: null,
-          folder_id: folderId
+          folder_id: null
         });
       }
       
@@ -93,7 +91,7 @@ export function TaskDialog({
         .then(data => setUsers(data))
         .catch(err => console.error("Failed to load users", err));
     }
-  }, [open, task, folderId]);
+  }, [open, task]);
   
   const handleChange = (field: keyof TaskFormData, value: any) => {
     setFormData(prev => ({

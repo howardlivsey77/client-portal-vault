@@ -37,7 +37,7 @@ const Index = () => {
   const handleFolderSelect = (folderId: string | null) => {
     setSelectedFolderId(folderId);
     // If not already on documents tab, switch to it
-    if (activeTab !== "documents" && activeTab !== "tasks") {
+    if (activeTab !== "documents") {
       setActiveTab("documents");
     }
   };
@@ -96,17 +96,7 @@ const Index = () => {
         </TabsContent>
         
         <TabsContent value="tasks" className="mt-6 animate-fade-in">
-          <div className="flex flex-col md:flex-row gap-6">
-            <div className="w-full md:w-64">
-              <FolderExplorer 
-                onFolderSelect={handleFolderSelect}
-                selectedFolderId={selectedFolderId}
-              />
-            </div>
-            <div className="flex-1">
-              <TaskList folderId={selectedFolderId} />
-            </div>
-          </div>
+          <TaskList folderId={null} />
         </TabsContent>
         
         <TabsContent value="shared" className="mt-6 animate-fade-in">

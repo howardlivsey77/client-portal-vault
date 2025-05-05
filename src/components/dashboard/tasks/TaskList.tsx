@@ -9,19 +9,15 @@ import { Task } from "./types";
 import { fetchTasks, fetchUserProfiles } from "./taskService";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface TaskListProps {
-  folderId: string | null;
-}
-
-export function TaskList({ folderId }: TaskListProps) {
+export function TaskList() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [userEmails, setUserEmails] = useState<Record<string, string>>({});
   
   const { data: tasks, isLoading, isError } = useQuery({
-    queryKey: ['tasks', folderId],
-    queryFn: () => fetchTasks(folderId),
+    queryKey: ['tasks'],
+    queryFn: () => fetchTasks(),
   });
   
   // Fetch user profiles for assignment display
@@ -53,11 +49,11 @@ export function TaskList({ folderId }: TaskListProps) {
   };
   
   const handleDeleteTask = (taskId: string) => {
-    queryClient.invalidateQueries({ queryKey: ['tasks', folderId] });
+    queryClient.invalidateQueries({ queryKey: ['tasks'] });
   };
   
   const handleTaskSaved = () => {
-    queryClient.invalidateQueries({ queryKey: ['tasks', folderId] });
+    queryClient.invalidateQueries({ queryKey: ['tasks'] });
   };
   
   if (isLoading) {
@@ -82,7 +78,7 @@ export function TaskList({ folderId }: TaskListProps) {
         <Button 
           variant="outline" 
           className="mt-4" 
-          onClick={() => queryClient.invalidateQueries({ queryKey: ['tasks', folderId] })}
+          onClick={() => queryClient.invalidateQueries({ queryKey: ['tasks'] })}
         >
           Retry
         </Button>
@@ -125,7 +121,7 @@ export function TaskList({ folderId }: TaskListProps) {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         task={selectedTask}
-        folderId={folderId}
+        folderId={null}
         onTaskSaved={handleTaskSaved}
       />
     </div>
