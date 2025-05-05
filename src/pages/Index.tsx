@@ -16,6 +16,7 @@ import { useAuth } from "@/providers/AuthProvider";
 
 const Index = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
   const { user } = useAuth();
   
   return (
@@ -37,7 +38,12 @@ const Index = () => {
         </div>
       </div>
       
-      <Tabs defaultValue="overview" className="mb-8">
+      <Tabs 
+        defaultValue="overview" 
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="mb-8"
+      >
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
