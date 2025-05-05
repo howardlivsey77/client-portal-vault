@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { DocumentGrid } from "@/components/dashboard/DocumentGrid";
 import { DocumentUploadModal } from "@/components/dashboard/DocumentUploadModal";
@@ -13,11 +13,22 @@ import {
 } from "@/components/ui/tabs";
 import { FileText, Share, User, Users } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
+import { useLocation } from "react-router-dom";
 
 const Index = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const { user } = useAuth();
+  const location = useLocation();
+  
+  // Parse the tab from URL query parameters
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get("tab");
+    if (tabParam && ["overview", "documents", "shared"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location.search]);
   
   return (
     <PageContainer>

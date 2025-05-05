@@ -10,13 +10,21 @@ import {
   Share, 
   Users 
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 interface SidebarProps {
   isOpen: boolean;
 }
 
 export function Sidebar({ isOpen }: SidebarProps) {
+  const location = useLocation();
+  const isHome = location.pathname === '/';
+  
+  // Function to create a URL that navigates to the home page with a specific tab
+  const getTabUrl = (tab: string) => {
+    return `/?tab=${tab}`;
+  };
+
   return (
     <aside
       className={cn(
@@ -37,7 +45,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
         </div>
         <div className="mt-2 space-y-1 px-2">
           <Button variant="ghost" className="w-full justify-start" asChild>
-            <Link to="/">
+            <Link to={getTabUrl("overview")}>
               <Home className="mr-2 h-4 w-4" />
               Overview
             </Link>
@@ -49,13 +57,13 @@ export function Sidebar({ isOpen }: SidebarProps) {
             </Link>
           </Button>
           <Button variant="ghost" className="w-full justify-start bg-sidebar-accent" asChild>
-            <Link to="/">
+            <Link to={getTabUrl("documents")}>
               <FileText className="mr-2 h-4 w-4" />
               Documents
             </Link>
           </Button>
           <Button variant="ghost" className="w-full justify-start" asChild>
-            <Link to="/">
+            <Link to={getTabUrl("shared")}>
               <Share className="mr-2 h-4 w-4" />
               Shared with me
             </Link>
