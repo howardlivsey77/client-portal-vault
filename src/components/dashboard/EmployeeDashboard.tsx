@@ -1,6 +1,7 @@
 
 import { EmployeeOverview } from "./EmployeeOverview";
 import { RecentHires } from "./RecentHires";
+import { EmployeeDemographics } from "./EmployeeDemographics";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
 const DEPARTMENT_COLORS = [
@@ -16,12 +17,13 @@ export function EmployeeDashboard() {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <EmployeeOverview 
         totalEmployees={stats.totalEmployees}
         departmentCount={stats.departmentCount}
         departmentData={departmentData}
       />
+      <EmployeeDemographics totalEmployees={stats.totalEmployees} />
       <RecentHires recentHires={recentHires} />
     </div>
   );
