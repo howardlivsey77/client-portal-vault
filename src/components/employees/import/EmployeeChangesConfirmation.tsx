@@ -98,7 +98,7 @@ export const EmployeeChangesConfirmation = ({
                     {updatedEmployees.flatMap((empPair, i) => {
                       const changes: { field: string; oldValue: any; newValue: any }[] = [];
                       
-                      // Compare all fields and list changes
+                      // Compare all standard fields and list changes
                       Object.keys(empPair.imported).forEach(key => {
                         if (key !== 'id' && !key.startsWith('rate_') && 
                             empPair.existing[key] !== empPair.imported[key] && 
@@ -111,15 +111,24 @@ export const EmployeeChangesConfirmation = ({
                         }
                       });
                       
-                      // Add additional hourly rates if present
-                      const ratesText = formatRates(empPair.imported);
-                      if (ratesText) {
-                        changes.push({
-                          field: "additional_rates",
-                          oldValue: "-",
-                          newValue: ratesText
-                        });
-                      }
+                      // Add rate changes - always show rates as changes if they exist in the import
+                      const importedRates = {
+                        rate_2: empPair.imported.rate_2,
+                        rate_3: empPair.imported.rate_3,
+                        rate_4: empPair.imported.rate_4
+                      };
+                      
+                      Object.entries(importedRates).forEach(([key, value]) => {
+                        if (value) {
+                          const fieldName = key === 'rate_2' ? 'Rate 2' : 
+                                           key === 'rate_3' ? 'Rate 3' : 'Rate 4';
+                          changes.push({
+                            field: fieldName,
+                            oldValue: "-",
+                            newValue: `£${value}`
+                          });
+                        }
+                      });
                       
                       return changes.map((change, j) => (
                         <TableRow key={`change-${i}-${j}`}>

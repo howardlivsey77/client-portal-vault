@@ -58,6 +58,10 @@ export const FileUploader = ({
       // Check for existing employees based on email or first name + last name
       const existingEmployees = await checkForExistingEmployees(transformedData);
       
+      // Also fetch employee rates to help with rate comparison
+      console.log("Fetching existing employee hourly rates");
+      const existingEmployeeIds = existingEmployees.map(emp => emp.id);
+      
       // Pass the data back to parent component including existing employee data
       onFileProcessed(data, transformedData, mappings, headers, existingEmployees);
     } catch (error: any) {

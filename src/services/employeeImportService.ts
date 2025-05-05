@@ -132,7 +132,8 @@ export const updateExistingEmployees = async (
       if (updateError) throw updateError;
     }
     
-    // Create additional hourly rates if provided
+    // Create additional hourly rates if provided, regardless of whether they exist already
+    // This will create new rate entries each time an import is done with rates
     await createAdditionalRates(existing.id, additionalRates);
   }
 };

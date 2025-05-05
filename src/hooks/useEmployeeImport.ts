@@ -102,7 +102,8 @@ export const useEmployeeImport = (onSuccess: () => void) => {
       );
       
       if (existingEmp) {
-        const hasChanges = Object.keys(importedEmp).some(key => {
+        // Check for changes in standard fields
+        const hasStandardChanges = Object.keys(importedEmp).some(key => {
           if (key === 'id' || key.startsWith('rate_')) return false;
           
           return importedEmp[key] !== undefined && 
@@ -110,8 +111,17 @@ export const useEmployeeImport = (onSuccess: () => void) => {
                 importedEmp[key] !== '' && 
                 importedEmp[key] !== existingEmp[key];
         });
+
+        // Check for changes in rate fields
+        const hasRateChanges = ['rate_2', 'rate_3', 'rate_4'].some(rateKey => 
+          importedEmp[rateKey] !== undefined && 
+          importedEmp[rateKey] !== null && 
+          importedEmp[rateKey] !== '' && 
+          // Consider any imported rate as a change since we can't easily compare with existing rates
+          !!importedEmp[rateKey]
+        );
         
-        if (hasChanges) {
+        if (hasStandardChanges || hasRateChanges) {
           updatedEmps.push({
             existing: existingEmp,
             imported: importedEmp
