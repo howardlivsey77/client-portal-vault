@@ -238,6 +238,7 @@ export function TaskDialog({
                     selected={formData.due_date || undefined}
                     onSelect={(date) => handleChange("due_date", date)}
                     initialFocus
+                    className="p-3 pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
@@ -246,14 +247,14 @@ export function TaskDialog({
             <div>
               <label htmlFor="assigned_to" className="block text-sm font-medium mb-1">Assigned To</label>
               <Select
-                value={formData.assigned_to || ""}
-                onValueChange={(value) => handleChange("assigned_to", value || null)}
+                value={formData.assigned_to || "unassigned"}
+                onValueChange={(value) => handleChange("assigned_to", value === "unassigned" ? null : value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Assign to..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
                   {users.map((user) => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.email}

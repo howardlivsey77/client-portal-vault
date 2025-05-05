@@ -24,7 +24,13 @@ export const createTask = async (taskData: TaskFormData): Promise<Task> => {
     .from('tasks')
     .insert([
       {
-        ...taskData,
+        title: taskData.title,
+        description: taskData.description,
+        priority: taskData.priority,
+        status: taskData.status,
+        due_date: taskData.due_date ? taskData.due_date.toISOString() : null,
+        assigned_to: taskData.assigned_to,
+        folder_id: taskData.folder_id,
         created_by: (await supabase.auth.getUser()).data.user?.id,
       }
     ])
@@ -40,9 +46,15 @@ export const createTask = async (taskData: TaskFormData): Promise<Task> => {
 };
 
 export const updateTask = async (taskId: string, taskData: Partial<TaskFormData>): Promise<Task> => {
+  // Convert Date objects to ISO strings for the database
+  const dataToUpdate = {
+    ...taskData,
+    due_date: taskData.due_date ? taskData.due_date.toISOString() : undefined
+  };
+
   const { data, error } = await supabase
     .from('tasks')
-    .update(taskData)
+    .update(dataToUpdate)
     .eq('id', taskId)
     .select()
     .single();
