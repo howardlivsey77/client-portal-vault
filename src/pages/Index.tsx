@@ -12,11 +12,11 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { FileText, Share, CheckSquare, ChartBar } from "lucide-react";
+import { FileText, Share, CheckSquare, ChartBar, Receipt } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "react-router-dom";
 import { TaskList } from "@/components/dashboard/tasks/TaskList";
-import { EmployeeChangesReport } from "@/components/dashboard/reports/EmployeeChangesReport";
+import { EmployeeChangesReport } from "@/components/dashboard/reports/employee-changes/EmployeeChangesReport";
 
 const Index = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -29,7 +29,7 @@ const Index = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get("tab");
-    if (tabParam && ["overview", "documents", "shared", "tasks", "reports"].includes(tabParam)) {
+    if (tabParam && ["overview", "documents", "shared", "tasks", "reports", "payroll"].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [location.search]);
@@ -73,6 +73,7 @@ const Index = () => {
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="payroll">Payroll Input</TabsTrigger>
           <TabsTrigger value="shared">Shared with Me</TabsTrigger>
         </TabsList>
         
@@ -103,6 +104,16 @@ const Index = () => {
         
         <TabsContent value="reports" className="mt-6 animate-fade-in">
           <EmployeeChangesReport />
+        </TabsContent>
+        
+        <TabsContent value="payroll" className="mt-6 animate-fade-in">
+          <div className="flex flex-col items-center justify-center py-12">
+            <Receipt className="h-16 w-16 text-muted-foreground/50" />
+            <h3 className="mt-4 text-xl font-medium">Payroll Input</h3>
+            <p className="mt-2 text-center text-sm text-muted-foreground">
+              Manage payroll input data and process employee pay information.
+            </p>
+          </div>
         </TabsContent>
         
         <TabsContent value="shared" className="mt-6 animate-fade-in">

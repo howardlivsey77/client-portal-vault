@@ -9,7 +9,8 @@ import {
   Share, 
   Users,
   CheckSquare,
-  ChartBar
+  ChartBar,
+  Receipt
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -108,6 +109,19 @@ export function Sidebar({ isOpen }: SidebarProps) {
             <Link to={getTabUrl("reports")}>
               <ChartBar className="h-4 w-4" />
               Reports
+            </Link>
+          </Button>
+          <Button 
+            variant="ghost" 
+            className={cn(
+              "monday-sidebar-item w-full justify-start", 
+              location.search.includes("payroll") && "active"
+            )} 
+            asChild
+          >
+            <Link to={getTabUrl("payroll")}>
+              <Receipt className="h-4 w-4" />
+              Payroll Input
             </Link>
           </Button>
           <Button 
