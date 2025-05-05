@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { DocumentGrid } from "@/components/dashboard/DocumentGrid";
 import { DocumentUploadModal } from "@/components/dashboard/DocumentUploadModal";
+import { FolderExplorer } from "@/components/dashboard/FolderExplorer";
 import { EmployeeDashboard } from "@/components/dashboard/EmployeeDashboard";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,13 +12,14 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { FileText, Share, User, Users } from "lucide-react";
+import { FileText, Share, Users } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "react-router-dom";
 
 const Index = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const { user } = useAuth();
   const location = useLocation();
   
@@ -66,12 +68,25 @@ const Index = () => {
         </TabsContent>
         
         <TabsContent value="documents" className="mt-6 animate-fade-in">
-          <DocumentGrid onAddDocument={() => setUploadModalOpen(true)} />
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="w-full md:w-64">
+              <FolderExplorer 
+                onFolderSelect={setSelectedFolderId}
+                selectedFolderId={selectedFolderId}
+              />
+            </div>
+            <div className="flex-1">
+              <DocumentGrid 
+                onAddDocument={() => setUploadModalOpen(true)} 
+                selectedFolderId={selectedFolderId}
+              />
+            </div>
+          </div>
         </TabsContent>
         
         <TabsContent value="shared" className="mt-6 animate-fade-in">
           <div className="flex flex-col items-center justify-center py-12">
-            <User className="h-16 w-16 text-muted-foreground/50" />
+            <Share className="h-16 w-16 text-muted-foreground/50" />
             <h3 className="mt-4 text-xl font-medium">No shared documents</h3>
             <p className="mt-2 text-center text-sm text-muted-foreground">
               Documents shared with you will appear here.
@@ -82,7 +97,8 @@ const Index = () => {
       
       <DocumentUploadModal 
         open={uploadModalOpen} 
-        onOpenChange={setUploadModalOpen} 
+        onOpenChange={setUploadModalOpen}
+        selectedFolderId={selectedFolderId}
       />
     </PageContainer>
   );

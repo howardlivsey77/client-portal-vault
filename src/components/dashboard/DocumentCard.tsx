@@ -5,7 +5,10 @@ import { Card } from "@/components/ui/card";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
-  DropdownMenuItem, 
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { 
@@ -14,27 +17,48 @@ import {
   FileText, 
   MoreVertical, 
   Share,
-  Trash
+  Trash,
+  FolderOpen
 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { FolderItem } from "./FolderExplorer";
 
 export interface DocumentCardProps {
+  id: string;
   title: string;
   type: string;
   updatedAt: string;
   size: string;
+  folderId: string | null;
   icon?: React.ReactNode;
   className?: string;
 }
 
 export function DocumentCard({
+  id,
   title,
   type,
   updatedAt,
   size,
+  folderId,
   icon,
   className,
   ...props
 }: DocumentCardProps) {
+  const [folders, setFolders] = useState<FolderItem[]>([]);
+
+  // Load folder structure from localStorage
+  useEffect(() => {
+    const savedFolders = localStorage.getItem('documentFolders');
+    if (savedFolders) {
+      try {
+        setFolders(JSON.parse(savedFolders));
+      } catch (e) {
+        console.error('Error parsing saved folders', e);
+      }
+    }
+  }, []);
+
   const getFileIcon = () => {
     switch (type.toLowerCase()) {
       case 'pdf':
@@ -48,6 +72,34 @@ export function DocumentCard({
       default:
         return <FileText className="h-8 w-8 text-gray-500" />;
     }
+  };
+
+  const moveToFolder = (targetFolderId: string | null) => {
+    if (typeof window.moveDocument === 'function') {
+      window.moveDocument(id, targetFolderId);
+    }
+  };
+
+  // Recursive function to render folder items in the dropdown menu
+  const renderFolderItems = (folderList: FolderItem[]) => {
+    return folderList.map(folder => (
+      <DropdownMenuItem 
+        key={folder.id}
+        onClick={() => moveToFolder(folder.id)}
+      >
+        {folder.name}
+        {folder.children.length > 0 && (
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="ml-auto">
+              <FolderOpen className="h-4 w-4 ml-2" />
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              {renderFolderItems(folder.children)}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        )}
+      </DropdownMenuItem>
+    ));
   };
 
   return (
@@ -86,6 +138,18 @@ export function DocumentCard({
               <Share className="mr-2 h-4 w-4" />
               <span>Share</span>
             </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <FolderOpen className="mr-2 h-4 w-4" />
+                <span>Move to folder</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem onClick={() => moveToFolder(null)}>
+                  All Documents
+                </DropdownMenuItem>
+                {renderFolderItems(folders)}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
             <DropdownMenuItem className="text-destructive">
               <Trash className="mr-2 h-4 w-4" />
               <span>Delete</span>

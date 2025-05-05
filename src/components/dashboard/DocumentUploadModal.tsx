@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,21 +13,70 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload } from "lucide-react";
+import { Upload, FolderOpen } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Document } from "./DocumentGrid";
+import { FolderItem } from "./FolderExplorer";
 
 interface DocumentUploadModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  selectedFolderId: string | null;
 }
 
-export function DocumentUploadModal({ open, onOpenChange }: DocumentUploadModalProps) {
+export function DocumentUploadModal({ open, onOpenChange, selectedFolderId }: DocumentUploadModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState<string>("");
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [category, setCategory] = useState<string>("contracts");
   const [uploading, setUploading] = useState(false);
+  const [folderStructure, setFolderStructure] = useState<FolderItem[]>([]);
   const { toast } = useToast();
+  
+  // Initialize selected folder from prop
+  useEffect(() => {
+    setSelectedFolder(selectedFolderId);
+  }, [selectedFolderId, open]);
+  
+  // Load folder structure
+  useEffect(() => {
+    const savedFolders = localStorage.getItem('documentFolders');
+    if (savedFolders) {
+      try {
+        setFolderStructure(JSON.parse(savedFolders));
+      } catch (e) {
+        console.error('Error parsing saved folders', e);
+      }
+    }
+  }, [open]);
+  
+  // Get folder name by ID
+  const getFolderNameById = (id: string | null): string => {
+    if (!id) return "All Documents";
+    
+    // Recursive function to find folder by id
+    const findFolder = (folders: FolderItem[], id: string): string | null => {
+      for (const folder of folders) {
+        if (folder.id === id) {
+          return folder.name;
+        }
+        
+        const childResult = findFolder(folder.children, id);
+        if (childResult) return childResult;
+      }
+      
+      return null;
+    };
+    
+    for (const folder of folderStructure) {
+      if (folder.id === id) return folder.name;
+      
+      const childName = findFolder(folder.children, id);
+      if (childName) return childName;
+    }
+    
+    return "Unknown Folder";
+  };
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -47,6 +96,10 @@ export function DocumentUploadModal({ open, onOpenChange }: DocumentUploadModalP
     setCategory(value);
   };
   
+  const handleFolderChange = (folderId: string) => {
+    setSelectedFolder(folderId === "none" ? null : folderId);
+  };
+  
   const handleUpload = () => {
     if (!file) return;
     
@@ -60,7 +113,8 @@ export function DocumentUploadModal({ open, onOpenChange }: DocumentUploadModalP
         title: title || file.name.split('.')[0],
         type: file.name.split('.').pop()?.toUpperCase() || "FILE",
         updatedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+        size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+        folderId: selectedFolder
       };
       
       // Add the document to the list if the addDocument function exists
@@ -72,7 +126,7 @@ export function DocumentUploadModal({ open, onOpenChange }: DocumentUploadModalP
       
       toast({
         title: "Document uploaded",
-        description: `${file.name} has been successfully uploaded.`,
+        description: `${file.name} has been successfully uploaded to ${getFolderNameById(selectedFolder)}.`,
       });
       
       // Reset form and close modal
@@ -81,6 +135,25 @@ export function DocumentUploadModal({ open, onOpenChange }: DocumentUploadModalP
       setTitle("");
       setCategory("contracts");
     }, 1500);
+  };
+  
+  // Recursively render folder options
+  const renderFolderOptions = (folders: FolderItem[], level = 0) => {
+    const options: JSX.Element[] = [];
+    
+    folders.forEach(folder => {
+      options.push(
+        <SelectItem key={folder.id} value={folder.id}>
+          {"\u00A0".repeat(level * 2) + folder.name}
+        </SelectItem>
+      );
+      
+      if (folder.children.length > 0) {
+        options.push(...renderFolderOptions(folder.children, level + 1));
+      }
+    });
+    
+    return options;
   };
   
   return (
@@ -139,6 +212,27 @@ export function DocumentUploadModal({ open, onOpenChange }: DocumentUploadModalP
               value={title}
               onChange={handleTitleChange}
             />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="folder">Folder</Label>
+            <Select 
+              value={selectedFolder || "none"} 
+              onValueChange={handleFolderChange}
+            >
+              <SelectTrigger id="folder" className="w-full">
+                <SelectValue placeholder="Select folder" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">
+                  <div className="flex items-center">
+                    <FolderOpen className="mr-2 h-4 w-4" />
+                    All Documents
+                  </div>
+                </SelectItem>
+                {renderFolderOptions(folderStructure)}
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="space-y-2">
