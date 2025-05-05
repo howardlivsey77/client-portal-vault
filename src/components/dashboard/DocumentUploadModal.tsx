@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Document } from "./DocumentGrid";
 
 interface DocumentUploadModalProps {
   open: boolean;
@@ -23,13 +24,27 @@ interface DocumentUploadModalProps {
 
 export function DocumentUploadModal({ open, onOpenChange }: DocumentUploadModalProps) {
   const [file, setFile] = useState<File | null>(null);
+  const [title, setTitle] = useState<string>("");
+  const [category, setCategory] = useState<string>("contracts");
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
+      // Use file name as default title if title is empty
+      if (!title) {
+        setTitle(e.target.files[0].name.split('.')[0]);
+      }
     }
+  };
+  
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(e.target.value);
+  };
+  
+  const handleCategoryChange = (value: string) => {
+    setCategory(value);
   };
   
   const handleUpload = () => {
@@ -39,6 +54,20 @@ export function DocumentUploadModal({ open, onOpenChange }: DocumentUploadModalP
     
     // Simulate upload - in a real app, this would be an API call
     setTimeout(() => {
+      // Generate a new document object
+      const newDocument: Document = {
+        id: `new-${Date.now()}`, // Generate a temporary id
+        title: title || file.name.split('.')[0],
+        type: file.name.split('.').pop()?.toUpperCase() || "FILE",
+        updatedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+      };
+      
+      // Add the document to the list if the addDocument function exists
+      if (typeof window.addDocument === 'function') {
+        window.addDocument(newDocument);
+      }
+      
       setUploading(false);
       
       toast({
@@ -46,8 +75,11 @@ export function DocumentUploadModal({ open, onOpenChange }: DocumentUploadModalP
         description: `${file.name} has been successfully uploaded.`,
       });
       
+      // Reset form and close modal
       onOpenChange(false);
       setFile(null);
+      setTitle("");
+      setCategory("contracts");
     }, 1500);
   };
   
@@ -101,12 +133,17 @@ export function DocumentUploadModal({ open, onOpenChange }: DocumentUploadModalP
           
           <div className="space-y-2">
             <Label htmlFor="document-title">Title</Label>
-            <Input id="document-title" placeholder="Enter document title" />
+            <Input 
+              id="document-title" 
+              placeholder="Enter document title" 
+              value={title}
+              onChange={handleTitleChange}
+            />
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
-            <Select defaultValue="contracts">
+            <Select value={category} onValueChange={handleCategoryChange}>
               <SelectTrigger id="category" className="w-full">
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>

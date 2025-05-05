@@ -1,14 +1,23 @@
 
+import { useState } from "react";
 import { DocumentCard } from "./DocumentCard";
 import { AddDocumentButton } from "./AddDocumentButton";
+
+export interface Document {
+  id: string;
+  title: string;
+  type: string;
+  updatedAt: string;
+  size: string;
+}
 
 interface DocumentGridProps {
   onAddDocument: () => void;
 }
 
 export function DocumentGrid({ onAddDocument }: DocumentGridProps) {
-  // This would typically come from your backend
-  const documents = [
+  // Initial documents list
+  const initialDocuments = [
     {
       id: "1",
       title: "Contract Agreement - Q2 2023",
@@ -60,6 +69,17 @@ export function DocumentGrid({ onAddDocument }: DocumentGridProps) {
     }
   ];
   
+  const [documents, setDocuments] = useState<Document[]>(initialDocuments);
+  
+  // Method to add a new document to the list
+  const addDocument = (newDoc: Document) => {
+    setDocuments(prevDocs => [newDoc, ...prevDocs]);
+  };
+  
+  // Add the addDocument method to window for access from other components
+  // This is a simple approach for component communication without prop drilling or context
+  window.addDocument = addDocument;
+  
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <AddDocumentButton onClick={onAddDocument} />
@@ -75,4 +95,11 @@ export function DocumentGrid({ onAddDocument }: DocumentGridProps) {
       ))}
     </div>
   );
+}
+
+// Extend Window interface to include our addDocument function
+declare global {
+  interface Window {
+    addDocument: (doc: Document) => void;
+  }
 }
