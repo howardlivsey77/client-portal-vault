@@ -32,6 +32,15 @@ const Index = () => {
     }
   }, [location.search]);
   
+  // Handle folder selection
+  const handleFolderSelect = (folderId: string | null) => {
+    setSelectedFolderId(folderId);
+    // If not already on documents tab, switch to it
+    if (activeTab !== "documents") {
+      setActiveTab("documents");
+    }
+  };
+  
   return (
     <PageContainer>
       <div className="flex items-center justify-between mb-6">
@@ -71,7 +80,7 @@ const Index = () => {
           <div className="flex flex-col md:flex-row gap-6">
             <div className="w-full md:w-64">
               <FolderExplorer 
-                onFolderSelect={setSelectedFolderId}
+                onFolderSelect={handleFolderSelect}
                 selectedFolderId={selectedFolderId}
               />
             </div>

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -8,7 +8,8 @@ import {
   ChevronRight,
   ChevronDown,
   Folder,
-  MoreVertical
+  MoreVertical,
+  Pencil
 } from "lucide-react";
 import { 
   DropdownMenu, 
@@ -25,6 +26,17 @@ import {
   DialogTitle,
   DialogClose
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
 
 export interface FolderItem {
   id: string;
@@ -62,6 +74,11 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
   const [newFolderName, setNewFolderName] = useState("");
   const [isAddingFolder, setIsAddingFolder] = useState(false);
   const [currentParentId, setCurrentParentId] = useState<string | null>(null);
+  
+  // States for folder editing
+  const [isEditingFolder, setIsEditingFolder] = useState(false);
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
+  const [editingFolderName, setEditingFolderName] = useState("");
   
   // Save folder structure to localStorage whenever it changes
   const updateFolderStructure = (newStructure: FolderItem[]) => {
@@ -103,8 +120,69 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
       }));
     }
     
+    toast({
+      title: "Folder created",
+      description: `Folder "${newFolderName.trim()}" has been created successfully.`
+    });
+    
     setNewFolderName("");
     setIsAddingFolder(false);
+  };
+  
+  // Open dialog to edit a folder
+  const openEditFolderDialog = (folderId: string) => {
+    // Find the folder to edit
+    const findFolder = (folders: FolderItem[], id: string): FolderItem | null => {
+      for (const folder of folders) {
+        if (folder.id === id) {
+          return folder;
+        }
+        if (folder.children.length > 0) {
+          const childResult = findFolder(folder.children, id);
+          if (childResult) return childResult;
+        }
+      }
+      return null;
+    };
+    
+    const folderToEdit = findFolder(folderStructure, folderId);
+    if (folderToEdit) {
+      setEditingFolderId(folderId);
+      setEditingFolderName(folderToEdit.name);
+      setIsEditingFolder(true);
+    }
+  };
+  
+  // Save edited folder name
+  const saveEditedFolder = () => {
+    if (!editingFolderId || !editingFolderName.trim()) return;
+    
+    const updateFolderName = (folders: FolderItem[], id: string, newName: string): FolderItem[] => {
+      return folders.map(folder => {
+        if (folder.id === id) {
+          return { ...folder, name: newName.trim() };
+        }
+        if (folder.children.length > 0) {
+          return {
+            ...folder,
+            children: updateFolderName(folder.children, id, newName)
+          };
+        }
+        return folder;
+      });
+    };
+    
+    const updatedStructure = updateFolderName(folderStructure, editingFolderId, editingFolderName);
+    updateFolderStructure(updatedStructure);
+    
+    toast({
+      title: "Folder renamed",
+      description: `Folder has been renamed to "${editingFolderName.trim()}".`
+    });
+    
+    setIsEditingFolder(false);
+    setEditingFolderId(null);
+    setEditingFolderName("");
   };
   
   // Helper function to add a subfolder
@@ -209,7 +287,12 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => openEditFolderDialog(folder.id)}>
+                    <Pencil className="h-3 w-3 mr-2" />
+                    Rename Folder
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => openAddFolderDialog(folder.id)}>
+                    <FolderPlus className="h-3 w-3 mr-2" />
                     Add Subfolder
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -294,6 +377,36 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
             </DialogClose>
             <Button onClick={addFolder} disabled={!newFolderName.trim()}>
               Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit folder dialog */}
+      <Dialog open={isEditingFolder} onOpenChange={setIsEditingFolder}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rename Folder</DialogTitle>
+            <DialogDescription>
+              Enter a new name for this folder
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Input 
+              value={editingFolderName} 
+              onChange={(e) => setEditingFolderName(e.target.value)}
+              placeholder="Folder name"
+              autoFocus
+            />
+          </div>
+          
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button onClick={saveEditedFolder} disabled={!editingFolderName.trim()}>
+              Save
             </Button>
           </DialogFooter>
         </DialogContent>
