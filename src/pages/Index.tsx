@@ -12,10 +12,11 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { FileText, Share, CheckSquare } from "lucide-react";
+import { FileText, Share, CheckSquare, ChartBar } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "react-router-dom";
 import { TaskList } from "@/components/dashboard/tasks/TaskList";
+import { EmployeeChangesReport } from "@/components/dashboard/reports/EmployeeChangesReport";
 
 const Index = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -28,7 +29,7 @@ const Index = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get("tab");
-    if (tabParam && ["overview", "documents", "shared", "tasks"].includes(tabParam)) {
+    if (tabParam && ["overview", "documents", "shared", "tasks", "reports"].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [location.search]);
@@ -71,6 +72,7 @@ const Index = () => {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="shared">Shared with Me</TabsTrigger>
         </TabsList>
         
@@ -97,6 +99,10 @@ const Index = () => {
         
         <TabsContent value="tasks" className="mt-6 animate-fade-in">
           <TaskList />
+        </TabsContent>
+        
+        <TabsContent value="reports" className="mt-6 animate-fade-in">
+          <EmployeeChangesReport />
         </TabsContent>
         
         <TabsContent value="shared" className="mt-6 animate-fade-in">
