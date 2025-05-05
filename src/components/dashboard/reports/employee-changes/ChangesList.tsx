@@ -3,7 +3,6 @@ import { formatDate } from "@/lib/formatters";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { ChangeTypeIndicator } from "./ChangeTypeIndicator";
 import { EmployeeChange } from "./types";
-import { useState } from "react";
 
 interface ChangesListProps {
   changes: EmployeeChange[];
