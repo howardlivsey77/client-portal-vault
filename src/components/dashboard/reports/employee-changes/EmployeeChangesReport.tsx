@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, FileExcel } from "lucide-react";
+import { CalendarDays, FileText } from "lucide-react";
 import { subMonths } from "date-fns";
 import { format } from "date-fns";
 import { DateRangeFilter } from "./DateRangeFilter";
@@ -143,7 +143,7 @@ export function EmployeeChangesReport() {
               disabled={sortedChanges.length === 0}
               className="flex items-center gap-2"
             >
-              <FileExcel className="h-4 w-4" />
+              <FileText className="h-4 w-4" />
               Export to Excel
             </Button>
           </div>
