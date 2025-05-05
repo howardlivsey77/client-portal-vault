@@ -1,12 +1,10 @@
 
 import { useState, useMemo, useEffect } from "react";
-import { useEmployees } from "@/hooks/useEmployees";
 import { EmployeeChange } from "./types";
 import { isAfter, isBefore, parseISO, startOfDay, endOfDay, format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useEmployeeChanges(startDate?: Date, endDate?: Date) {
-  const { employees, loading } = useEmployees();
   const [realChanges, setRealChanges] = useState<EmployeeChange[]>([]);
   const [loadingChanges, setLoadingChanges] = useState(false);
   
@@ -71,81 +69,9 @@ export function useEmployeeChanges(startDate?: Date, endDate?: Date) {
     fetchRealChanges();
   }, []);
   
-  // Generate employee changes data (simulated + real changes)
-  const generateEmployeeChanges = (): EmployeeChange[] => {
-    const changes: EmployeeChange[] = [...realChanges];
-    
-    // Add hire changes
-    employees.forEach(employee => {
-      changes.push({
-        id: `${employee.id}-hire`,
-        employeeName: `${employee.first_name} ${employee.last_name}`,
-        date: employee.hire_date,
-        type: 'hire',
-        details: `Hired into ${employee.department} department`,
-        field: 'Status',
-        oldValue: 'Not Employed',
-        newValue: 'Active Employee'
-      });
-      
-      // Simulate some department changes (for demonstration purposes)
-      if (Math.random() > 0.7) {
-        const departments = ['HR', 'Engineering', 'Marketing', 'Sales', 'Finance'];
-        const oldDept = employee.department;
-        const newDept = departments[Math.floor(Math.random() * departments.length)];
-        
-        // Only add if the departments are different
-        if (oldDept !== newDept) {
-          // Generate a random date between hire date and now
-          const hireDate = new Date(employee.hire_date);
-          const now = new Date();
-          const changeDateTimestamp = hireDate.getTime() + Math.random() * (now.getTime() - hireDate.getTime());
-          const changeDate = new Date(changeDateTimestamp);
-          
-          changes.push({
-            id: `${employee.id}-dept-${changeDate.getTime()}`,
-            employeeName: `${employee.first_name} ${employee.last_name}`,
-            date: changeDate.toISOString().split('T')[0],
-            type: 'modification',
-            details: 'Department changed',
-            field: 'Department',
-            oldValue: oldDept,
-            newValue: newDept
-          });
-        }
-      }
-      
-      // Simulate some address changes
-      if (Math.random() > 0.6 && employee.address1) {
-        const oldAddress = employee.address1;
-        const newAddress = oldAddress + " (Updated)";
-        
-        const hireDate = new Date(employee.hire_date);
-        const now = new Date();
-        const changeDateTimestamp = hireDate.getTime() + Math.random() * (now.getTime() - hireDate.getTime());
-        const changeDate = new Date(changeDateTimestamp);
-        
-        changes.push({
-          id: `${employee.id}-address-${changeDate.getTime()}`,
-          employeeName: `${employee.first_name} ${employee.last_name}`,
-          date: changeDate.toISOString().split('T')[0],
-          type: 'modification',
-          details: 'Address updated',
-          field: 'Address',
-          oldValue: oldAddress,
-          newValue: newAddress
-        });
-      }
-    });
-    
-    return changes;
-  };
-  
-  const employeeChanges = useMemo(() => generateEmployeeChanges(), [employees, realChanges]);
-  
   // Filter and sort changes by date
   const filteredChanges = useMemo(() => {
-    let filtered = [...employeeChanges];
+    let filtered = [...realChanges];
     
     // Apply date filters
     if (startDate || endDate) {
@@ -177,10 +103,10 @@ export function useEmployeeChanges(startDate?: Date, endDate?: Date) {
     return filtered.sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
-  }, [employeeChanges, startDate, endDate]);
+  }, [realChanges, startDate, endDate]);
   
   return {
     changes: filteredChanges,
-    loading: loading || loadingChanges
+    loading: loadingChanges
   };
 }

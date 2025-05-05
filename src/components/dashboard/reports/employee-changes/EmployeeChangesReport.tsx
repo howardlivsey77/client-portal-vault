@@ -41,8 +41,13 @@ export function EmployeeChangesReport() {
   // Show a message if no changes found for May 5th
   if (may5Changes.length === 0) {
     toast({
-      title: "May 5th updates detected",
-      description: `Found ${sortedChanges.length} changes in the selected date range, including updates from May 5th.`,
+      title: "May 5th changes",
+      description: "No employee changes were found for May 5th, 2025.",
+    });
+  } else {
+    toast({
+      title: "May 5th changes detected",
+      description: `Found ${may5Changes.length} real employee changes on May 5th, 2025.`,
     });
   }
 
@@ -67,7 +72,7 @@ export function EmployeeChangesReport() {
       <Card className="overflow-hidden border border-monday-border bg-white shadow-sm">
         <CardHeader className="bg-monday-lightest-gray border-b border-monday-border">
           <CardTitle className="text-lg font-medium text-monday-darkblue">
-            Employee Changes
+            Real Employee Changes
             {startDate && endDate && (
               <span className="text-sm font-normal text-monday-gray ml-2">
                 ({format(startDate, "PP")} - {format(endDate, "PP")})
@@ -76,7 +81,13 @@ export function EmployeeChangesReport() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <ChangesList changes={sortedChanges} />
+          {sortedChanges.length > 0 ? (
+            <ChangesList changes={sortedChanges} />
+          ) : (
+            <div className="p-6 text-center text-monday-gray">
+              No real employee changes found in the selected date range
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
