@@ -18,6 +18,7 @@ interface Employee {
   postcode: string | null;
   date_of_birth: string | null;
   payroll_id: string | null;
+  gender: string | null;
 }
 
 export const useEmployees = () => {

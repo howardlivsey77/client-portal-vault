@@ -34,6 +34,7 @@ interface Employee {
   user_id: string;
   date_of_birth: string | null;
   payroll_id: string | null;
+  gender: string | null;
 }
 
 const EmployeeDetails = () => {
@@ -192,6 +193,11 @@ const EmployeeDetails = () => {
               <div className="mt-4">
                 <p className="text-sm font-medium text-muted-foreground">Department</p>
                 <p>{employee.department}</p>
+              </div>
+              
+              <div className="mt-2">
+                <p className="text-sm font-medium text-muted-foreground">Gender</p>
+                <p>{employee.gender || "Not specified"}</p>
               </div>
               
               <div className="mt-2">

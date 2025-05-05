@@ -31,7 +31,8 @@ export const availableFields = [
   "address3",
   "address4",
   "postcode",
-  "payroll_id"
+  "payroll_id",
+  "gender"
 ];
 
 // Human-readable field labels
@@ -49,5 +50,6 @@ export const fieldLabels: Record<string, string> = {
   address3: "Address Line 3",
   address4: "Address Line 4",
   postcode: "Postcode",
-  payroll_id: "Payroll ID"
+  payroll_id: "Payroll ID",
+  gender: "Gender"
 };

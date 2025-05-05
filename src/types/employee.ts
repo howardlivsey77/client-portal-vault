@@ -17,6 +17,7 @@ export const employeeSchema = z.object({
   address4: z.string().optional(),
   postcode: z.string().optional(),
   payroll_id: z.string().optional(),
+  gender: z.enum(["Male", "Female", "Other", "Prefer not to say"]).optional(),
 });
 
 export type EmployeeFormValues = z.infer<typeof employeeSchema>;
@@ -32,4 +33,11 @@ export const departments = [
   "Research & Development",
   "Legal",
   "Executive",
+];
+
+export const genderOptions = [
+  { label: "Male", value: "Male" },
+  { label: "Female", value: "Female" },
+  { label: "Other", value: "Other" },
+  { label: "Prefer not to say", value: "Prefer not to say" }
 ];

@@ -20,6 +20,7 @@ export type Database = {
           department: string
           email: string | null
           first_name: string
+          gender: string | null
           hire_date: string
           hourly_rate: number | null
           hours_per_week: number | null
@@ -40,6 +41,7 @@ export type Database = {
           department: string
           email?: string | null
           first_name: string
+          gender?: string | null
           hire_date?: string
           hourly_rate?: number | null
           hours_per_week?: number | null
@@ -60,6 +62,7 @@ export type Database = {
           department?: string
           email?: string | null
           first_name?: string
+          gender?: string | null
           hire_date?: string
           hourly_rate?: number | null
           hours_per_week?: number | null

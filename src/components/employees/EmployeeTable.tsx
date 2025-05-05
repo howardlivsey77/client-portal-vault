@@ -23,6 +23,7 @@ interface Employee {
   hire_date: string;
   email: string | null;
   payroll_id: string | null;
+  gender: string | null;
 }
 
 interface EmployeeTableProps {
@@ -42,7 +43,8 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
       employee.last_name.toLowerCase().includes(searchLower) ||
       employee.department.toLowerCase().includes(searchLower) ||
       (employee.email && employee.email.toLowerCase().includes(searchLower)) ||
-      (employee.payroll_id && employee.payroll_id.toLowerCase().includes(searchLower))
+      (employee.payroll_id && employee.payroll_id.toLowerCase().includes(searchLower)) ||
+      (employee.gender && employee.gender.toLowerCase().includes(searchLower))
     );
   });
 
@@ -54,6 +56,7 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
             <TableHead>Name</TableHead>
             <TableHead>Payroll ID</TableHead>
             <TableHead>Department</TableHead>
+            <TableHead>Gender</TableHead>
             <TableHead>Email</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -66,6 +69,7 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
               </TableCell>
               <TableCell>{employee.payroll_id || "—"}</TableCell>
               <TableCell>{employee.department}</TableCell>
+              <TableCell>{employee.gender || "—"}</TableCell>
               <TableCell>{employee.email || "—"}</TableCell>
               <TableCell className="text-right space-x-2">
                 <Button
