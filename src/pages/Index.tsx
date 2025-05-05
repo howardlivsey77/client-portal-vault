@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { DocumentGrid } from "@/components/dashboard/DocumentGrid";
@@ -11,9 +12,10 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { FileText, Share } from "lucide-react";
+import { FileText, Share, CheckSquare } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "react-router-dom";
+import { TaskList } from "@/components/dashboard/tasks/TaskList";
 
 const Index = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -26,7 +28,7 @@ const Index = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get("tab");
-    if (tabParam && ["overview", "documents", "shared"].includes(tabParam)) {
+    if (tabParam && ["overview", "documents", "shared", "tasks"].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [location.search]);
@@ -35,7 +37,7 @@ const Index = () => {
   const handleFolderSelect = (folderId: string | null) => {
     setSelectedFolderId(folderId);
     // If not already on documents tab, switch to it
-    if (activeTab !== "documents") {
+    if (activeTab !== "documents" && activeTab !== "tasks") {
       setActiveTab("documents");
     }
   };
@@ -68,6 +70,7 @@ const Index = () => {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="shared">Shared with Me</TabsTrigger>
         </TabsList>
         
@@ -88,6 +91,20 @@ const Index = () => {
                 onAddDocument={() => setUploadModalOpen(true)} 
                 selectedFolderId={selectedFolderId}
               />
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="tasks" className="mt-6 animate-fade-in">
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="w-full md:w-64">
+              <FolderExplorer 
+                onFolderSelect={handleFolderSelect}
+                selectedFolderId={selectedFolderId}
+              />
+            </div>
+            <div className="flex-1">
+              <TaskList folderId={selectedFolderId} />
             </div>
           </div>
         </TabsContent>

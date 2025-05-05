@@ -8,7 +8,8 @@ import {
   Home, 
   Settings, 
   Share, 
-  Users 
+  Users,
+  CheckSquare
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -60,6 +61,12 @@ export function Sidebar({ isOpen }: SidebarProps) {
             <Link to={getTabUrl("documents")}>
               <FileText className="mr-2 h-4 w-4" />
               Documents
+            </Link>
+          </Button>
+          <Button variant="ghost" className="w-full justify-start" asChild>
+            <Link to={getTabUrl("tasks")}>
+              <CheckSquare className="mr-2 h-4 w-4" />
+              Tasks
             </Link>
           </Button>
           <Button variant="ghost" className="w-full justify-start" asChild>
