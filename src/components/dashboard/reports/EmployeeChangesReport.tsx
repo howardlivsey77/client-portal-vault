@@ -22,6 +22,9 @@ interface EmployeeChange {
   date: string;
   type: ChangeType;
   details: string;
+  oldValue?: string;
+  newValue?: string;
+  field?: string;
 }
 
 export function EmployeeChangesReport() {
@@ -37,15 +40,76 @@ export function EmployeeChangesReport() {
   
   // This would ideally come from an API that tracks employee changes
   // For now, we'll simulate changes based on hire dates and randomly generated modifications
-  const employeeChanges: EmployeeChange[] = employees.map(employee => {
-    return {
-      id: employee.id,
-      employeeName: `${employee.first_name} ${employee.last_name}`,
-      date: employee.hire_date,
-      type: 'hire',
-      details: `Hired into ${employee.department} department`
-    };
-  });
+  const generateEmployeeChanges = (): EmployeeChange[] => {
+    const changes: EmployeeChange[] = [];
+    
+    // Add hire changes
+    employees.forEach(employee => {
+      changes.push({
+        id: `${employee.id}-hire`,
+        employeeName: `${employee.first_name} ${employee.last_name}`,
+        date: employee.hire_date,
+        type: 'hire',
+        details: `Hired into ${employee.department} department`,
+        field: 'Status',
+        oldValue: 'Not Employed',
+        newValue: 'Active Employee'
+      });
+      
+      // Simulate some department changes (for demonstration purposes)
+      if (Math.random() > 0.7) {
+        const departments = ['HR', 'Engineering', 'Marketing', 'Sales', 'Finance'];
+        const oldDept = employee.department;
+        const newDept = departments[Math.floor(Math.random() * departments.length)];
+        
+        // Only add if the departments are different
+        if (oldDept !== newDept) {
+          // Generate a random date between hire date and now
+          const hireDate = new Date(employee.hire_date);
+          const now = new Date();
+          const changeDateTimestamp = hireDate.getTime() + Math.random() * (now.getTime() - hireDate.getTime());
+          const changeDate = new Date(changeDateTimestamp);
+          
+          changes.push({
+            id: `${employee.id}-dept-${changeDate.getTime()}`,
+            employeeName: `${employee.first_name} ${employee.last_name}`,
+            date: changeDate.toISOString().split('T')[0],
+            type: 'modification',
+            details: 'Department changed',
+            field: 'Department',
+            oldValue: oldDept,
+            newValue: newDept
+          });
+        }
+      }
+      
+      // Simulate some address changes
+      if (Math.random() > 0.6 && employee.address1) {
+        const oldAddress = employee.address1;
+        const newAddress = oldAddress + " (Updated)";
+        
+        const hireDate = new Date(employee.hire_date);
+        const now = new Date();
+        const changeDateTimestamp = hireDate.getTime() + Math.random() * (now.getTime() - hireDate.getTime());
+        const changeDate = new Date(changeDateTimestamp);
+        
+        changes.push({
+          id: `${employee.id}-address-${changeDate.getTime()}`,
+          employeeName: `${employee.first_name} ${employee.last_name}`,
+          date: changeDate.toISOString().split('T')[0],
+          type: 'modification',
+          details: 'Address updated',
+          field: 'Address',
+          oldValue: oldAddress,
+          newValue: newAddress
+        });
+      }
+    });
+    
+    return changes;
+  };
+  
+  const employeeChanges = generateEmployeeChanges();
   
   // Filter changes by date range
   const filteredChanges = employeeChanges.filter(change => {
@@ -204,14 +268,16 @@ export function EmployeeChangesReport() {
               <TableRow>
                 <TableHead>Date</TableHead>
                 <TableHead>Employee</TableHead>
-                <TableHead>Change Type</TableHead>
-                <TableHead>Details</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Field</TableHead>
+                <TableHead>Old Value</TableHead>
+                <TableHead>New Value</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sortedChanges.length > 0 ? (
                 sortedChanges.map((change) => (
-                  <TableRow key={`${change.id}-${change.type}`}>
+                  <TableRow key={`${change.id}`}>
                     <TableCell className="font-medium">{formatDate(change.date)}</TableCell>
                     <TableCell>{change.employeeName}</TableCell>
                     <TableCell>
@@ -220,12 +286,18 @@ export function EmployeeChangesReport() {
                         {getChangeBadge(change.type)}
                       </div>
                     </TableCell>
-                    <TableCell>{change.details}</TableCell>
+                    <TableCell>{change.field || '-'}</TableCell>
+                    <TableCell>
+                      <span className="text-red-600">{change.oldValue || '-'}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-green-600">{change.newValue || '-'}</span>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-4 text-monday-gray">
+                  <TableCell colSpan={6} className="text-center py-4 text-monday-gray">
                     No employee changes found in the selected date range
                   </TableCell>
                 </TableRow>
