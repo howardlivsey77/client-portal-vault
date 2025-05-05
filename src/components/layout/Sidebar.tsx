@@ -77,30 +77,6 @@ export function Sidebar({ isOpen }: SidebarProps) {
           </Button>
         </div>
         
-        <div className="mt-6 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Categories
-        </div>
-        <div className="mt-2 space-y-1 px-2">
-          <Button variant="ghost" className="w-full justify-start" asChild>
-            <Link to="/">
-              <FolderOpen className="mr-2 h-4 w-4" />
-              Contracts
-            </Link>
-          </Button>
-          <Button variant="ghost" className="w-full justify-start" asChild>
-            <Link to="/">
-              <FolderOpen className="mr-2 h-4 w-4" />
-              Reports
-            </Link>
-          </Button>
-          <Button variant="ghost" className="w-full justify-start" asChild>
-            <Link to="/">
-              <FolderOpen className="mr-2 h-4 w-4" />
-              Invoices
-            </Link>
-          </Button>
-        </div>
-        
         <div className="mt-auto px-2 space-y-1">
           <Button variant="ghost" className="w-full justify-start" asChild>
             <Link to="/">
