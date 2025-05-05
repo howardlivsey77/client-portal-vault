@@ -17,11 +17,13 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "react-router-dom";
 import { TaskList } from "@/components/dashboard/tasks/TaskList";
 import { EmployeeChangesReport } from "@/components/dashboard/reports/employee-changes/EmployeeChangesReport";
+import { PayrollInputWizard } from "@/components/payroll/PayrollInputWizard";
 
 const Index = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const [payrollWizardOpen, setPayrollWizardOpen] = useState(false);
   const { user } = useAuth();
   const location = useLocation();
   
@@ -108,11 +110,19 @@ const Index = () => {
         
         <TabsContent value="payroll" className="mt-6 animate-fade-in">
           <div className="flex flex-col items-center justify-center py-12">
-            <Receipt className="h-16 w-16 text-muted-foreground/50" />
-            <h3 className="mt-4 text-xl font-medium">Payroll Input</h3>
-            <p className="mt-2 text-center text-sm text-muted-foreground">
-              Manage payroll input data and process employee pay information.
+            <Receipt className="h-16 w-16 text-monday-blue mb-4" />
+            <h3 className="text-2xl font-medium mb-2">Payroll Input</h3>
+            <p className="text-center text-muted-foreground max-w-md mb-6">
+              Begin the payroll input process by uploading your extra hours data and other payroll information.
             </p>
+            <Button 
+              size="lg" 
+              onClick={() => setPayrollWizardOpen(true)}
+              className="bg-monday-green hover:bg-monday-green/90"
+            >
+              <Receipt className="mr-2 h-5 w-5" />
+              Start Payroll Input
+            </Button>
           </div>
         </TabsContent>
         
@@ -131,6 +141,11 @@ const Index = () => {
         open={uploadModalOpen} 
         onOpenChange={setUploadModalOpen}
         selectedFolderId={selectedFolderId}
+      />
+
+      <PayrollInputWizard
+        open={payrollWizardOpen}
+        onOpenChange={setPayrollWizardOpen}
       />
     </PageContainer>
   );
