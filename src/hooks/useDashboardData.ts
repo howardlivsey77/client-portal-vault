@@ -9,6 +9,12 @@ interface DepartmentData {
   color: string;
 }
 
+interface GenderData {
+  name: string;
+  value: number;
+  color: string;
+}
+
 interface DashboardStats {
   totalEmployees: number;
   averageHireDate: string;
@@ -22,6 +28,7 @@ export function useDashboardData(departmentColors: string[]) {
     departmentCount: 0
   });
   const [departmentData, setDepartmentData] = useState<DepartmentData[]>([]);
+  const [genderData, setGenderData] = useState<GenderData[]>([]);
   const [recentHires, setRecentHires] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -44,6 +51,13 @@ export function useDashboardData(departmentColors: string[]) {
           .select("department");
           
         if (deptError) throw deptError;
+        
+        // Get gender distribution
+        const { data: genderDistributionData, error: genderError } = await supabase
+          .from("employees")
+          .select("gender");
+          
+        if (genderError) throw genderError;
         
         // Get recent hires
         const { data: recentData, error: recentError } = await supabase
@@ -68,7 +82,25 @@ export function useDashboardData(departmentColors: string[]) {
             color: departmentColors[index % departmentColors.length]
           }));
           
+        // Process gender data
+        const genderMap = new Map<string, number>();
+        genderDistributionData?.forEach(emp => {
+          // Handle nulls and standardize gender values
+          const gender = emp.gender || "Not Specified";
+          genderMap.set(gender, (genderMap.get(gender) || 0) + 1);
+        });
+        
+        const genderChartData: GenderData[] = [...genderMap.entries()]
+          .map(([name, value], index) => ({
+            name,
+            value,
+            color: name === "Male" ? "#3b82f6" : // blue for male
+                  name === "Female" ? "#ec4899" : // pink for female
+                  "#9ca3af" // gray for other/not specified
+          }));
+          
         setDepartmentData(deptChartData);
+        setGenderData(genderChartData);
         setRecentHires(recentData || []);
         setStats({
           totalEmployees: count || 0,
@@ -92,6 +124,7 @@ export function useDashboardData(departmentColors: string[]) {
   return {
     stats,
     departmentData,
+    genderData,
     recentHires,
     loading
   };
