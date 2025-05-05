@@ -1,77 +1,27 @@
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Folder, FolderOpen, FolderPlus } from "lucide-react";
+import { FolderItem } from "./folder/FolderItem";
+import { AddFolderDialog } from "./folder/AddFolderDialog";
+import { EditFolderDialog } from "./folder/EditFolderDialog";
 import { 
-  FolderOpen, 
-  FolderPlus,
-  ChevronRight,
-  ChevronDown,
-  Folder,
-  MoreVertical,
-  Pencil
-} from "lucide-react";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogClose
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle
-} from "@/components/ui/alert-dialog";
-import { toast } from "@/hooks/use-toast";
+  loadFolderStructure, 
+  saveFolderStructure, 
+  getFolderPathById,
+  addSubFolder,
+  updateFolderName,
+  findFolderById
+} from "./folder/folderService";
+import { FolderItem as FolderItemType, FolderExplorerProps } from "./types/folder.types";
 
-export interface FolderItem {
-  id: string;
-  name: string;
-  parentId: string | null;
-  children: FolderItem[];
-}
-
-interface FolderExplorerProps {
-  onFolderSelect: (folderId: string | null) => void;
-  selectedFolderId: string | null;
-}
+export { type FolderItem } from "./types/folder.types";
 
 export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplorerProps) {
-  const [folderStructure, setFolderStructure] = useState<FolderItem[]>(() => {
-    // Try to load folder structure from localStorage
-    const savedFolders = localStorage.getItem('documentFolders');
-    if (savedFolders) {
-      try {
-        return JSON.parse(savedFolders);
-      } catch (e) {
-        console.error('Error parsing saved folders', e);
-      }
-    }
-    
-    // Default folder structure if nothing is saved
-    return [
-      { id: 'contracts', name: 'Contracts', parentId: null, children: [] },
-      { id: 'reports', name: 'Reports', parentId: null, children: [] },
-      { id: 'invoices', name: 'Invoices', parentId: null, children: [] }
-    ];
-  });
-  
+  const [folderStructure, setFolderStructure] = useState<FolderItemType[]>(loadFolderStructure);
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
-  const [newFolderName, setNewFolderName] = useState("");
+  
+  // States for folder creation
   const [isAddingFolder, setIsAddingFolder] = useState(false);
   const [currentParentId, setCurrentParentId] = useState<string | null>(null);
   
@@ -81,10 +31,9 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
   const [editingFolderName, setEditingFolderName] = useState("");
   
   // Save folder structure to localStorage whenever it changes
-  const updateFolderStructure = (newStructure: FolderItem[]) => {
-    setFolderStructure(newStructure);
-    localStorage.setItem('documentFolders', JSON.stringify(newStructure));
-  };
+  useEffect(() => {
+    saveFolderStructure(folderStructure);
+  }, [folderStructure]);
   
   // Toggle folder expansion
   const toggleFolder = (folderId: string) => {
@@ -94,58 +43,46 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
     }));
   };
   
-  // Add a new folder to the structure
-  const addFolder = () => {
-    if (!newFolderName.trim()) return;
-    
-    const newFolder: FolderItem = {
+  // Add a new folder
+  const addFolder = (newFolderName: string, parentId: string | null) => {
+    const newFolder: FolderItemType = {
       id: `folder-${Date.now()}`,
-      name: newFolderName.trim(),
-      parentId: currentParentId,
+      name: newFolderName,
+      parentId: parentId,
       children: []
     };
     
     // If it's a root level folder
-    if (!currentParentId) {
-      updateFolderStructure([...folderStructure, newFolder]);
+    if (!parentId) {
+      setFolderStructure([...folderStructure, newFolder]);
     } else {
-      // If it's a subfolder, we need to traverse the structure to find the parent
-      const updatedStructure = addSubFolder(folderStructure, currentParentId, newFolder);
-      updateFolderStructure(updatedStructure);
+      // If it's a subfolder
+      const updatedStructure = addSubFolder(folderStructure, parentId, newFolder);
+      setFolderStructure(updatedStructure);
       
       // Ensure the parent folder is expanded
       setExpandedFolders(prev => ({
         ...prev,
-        [currentParentId]: true
+        [parentId]: true
       }));
     }
-    
-    toast({
-      title: "Folder created",
-      description: `Folder "${newFolderName.trim()}" has been created successfully.`
-    });
-    
-    setNewFolderName("");
-    setIsAddingFolder(false);
+  };
+  
+  // Edit folder name
+  const editFolder = (folderId: string, newName: string) => {
+    const updatedStructure = updateFolderName(folderStructure, folderId, newName);
+    setFolderStructure(updatedStructure);
+  };
+  
+  // Open dialog to add a new folder
+  const openAddFolderDialog = (parentId: string | null = null) => {
+    setCurrentParentId(parentId);
+    setIsAddingFolder(true);
   };
   
   // Open dialog to edit a folder
   const openEditFolderDialog = (folderId: string) => {
-    // Find the folder to edit
-    const findFolder = (folders: FolderItem[], id: string): FolderItem | null => {
-      for (const folder of folders) {
-        if (folder.id === id) {
-          return folder;
-        }
-        if (folder.children.length > 0) {
-          const childResult = findFolder(folder.children, id);
-          if (childResult) return childResult;
-        }
-      }
-      return null;
-    };
-    
-    const folderToEdit = findFolder(folderStructure, folderId);
+    const folderToEdit = findFolderById(folderStructure, folderId);
     if (folderToEdit) {
       setEditingFolderId(folderId);
       setEditingFolderName(folderToEdit.name);
@@ -153,161 +90,9 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
     }
   };
   
-  // Save edited folder name
-  const saveEditedFolder = () => {
-    if (!editingFolderId || !editingFolderName.trim()) return;
-    
-    const updateFolderName = (folders: FolderItem[], id: string, newName: string): FolderItem[] => {
-      return folders.map(folder => {
-        if (folder.id === id) {
-          return { ...folder, name: newName.trim() };
-        }
-        if (folder.children.length > 0) {
-          return {
-            ...folder,
-            children: updateFolderName(folder.children, id, newName)
-          };
-        }
-        return folder;
-      });
-    };
-    
-    const updatedStructure = updateFolderName(folderStructure, editingFolderId, editingFolderName);
-    updateFolderStructure(updatedStructure);
-    
-    toast({
-      title: "Folder renamed",
-      description: `Folder has been renamed to "${editingFolderName.trim()}".`
-    });
-    
-    setIsEditingFolder(false);
-    setEditingFolderId(null);
-    setEditingFolderName("");
-  };
-  
-  // Helper function to add a subfolder
-  const addSubFolder = (folders: FolderItem[], parentId: string, newFolder: FolderItem): FolderItem[] => {
-    return folders.map(folder => {
-      if (folder.id === parentId) {
-        return {
-          ...folder,
-          children: [...folder.children, newFolder]
-        };
-      } else if (folder.children.length > 0) {
-        return {
-          ...folder,
-          children: addSubFolder(folder.children, parentId, newFolder)
-        };
-      }
-      return folder;
-    });
-  };
-  
-  // Open dialog to add a new folder
-  const openAddFolderDialog = (parentId: string | null = null) => {
-    setCurrentParentId(parentId);
-    setNewFolderName("");
-    setIsAddingFolder(true);
-  };
-  
-  // Get folder name by ID for breadcrumb display
+  // Get folder path for display
   const getFolderPath = (folderId: string | null): string[] => {
-    if (!folderId) return ["All Documents"];
-    
-    const findPath = (folders: FolderItem[], id: string, path: string[] = []): string[] | null => {
-      for (const folder of folders) {
-        if (folder.id === id) {
-          return [...path, folder.name];
-        }
-        
-        if (folder.children.length > 0) {
-          const childPath = findPath(folder.children, id, [...path, folder.name]);
-          if (childPath) return childPath;
-        }
-      }
-      return null;
-    };
-    
-    let path: string[] = [];
-    for (const rootFolder of folderStructure) {
-      if (rootFolder.id === folderId) {
-        path = [rootFolder.name];
-        break;
-      }
-      
-      const childPath = findPath(rootFolder.children, folderId, [rootFolder.name]);
-      if (childPath) {
-        path = childPath;
-        break;
-      }
-    }
-    
-    return path.length > 0 ? path : ["Unknown Folder"];
-  };
-  
-  // Render folder items recursively
-  const renderFolderItems = (folders: FolderItem[], level = 0) => {
-    return (
-      <>
-        {folders.map(folder => (
-          <div key={folder.id} className="pl-2">
-            <div 
-              className={`flex items-center py-1 px-1 rounded-md ${selectedFolderId === folder.id ? 'bg-muted' : 'hover:bg-muted/50'}`}
-            >
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-5 w-5 p-0 mr-1" 
-                onClick={() => toggleFolder(folder.id)}
-              >
-                {folder.children.length > 0 ? (
-                  expandedFolders[folder.id] ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
-                ) : (
-                  <div className="w-4" />
-                )}
-              </Button>
-              
-              <div 
-                className="flex flex-1 items-center space-x-2 cursor-pointer" 
-                onClick={() => onFolderSelect(folder.id)}
-                style={{ paddingLeft: `${level * 4}px` }}
-              >
-                {selectedFolderId === folder.id ? 
-                  <FolderOpen className="h-4 w-4 text-blue-500" /> : 
-                  <Folder className="h-4 w-4" />
-                }
-                <span className="text-sm">{folder.name}</span>
-              </div>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <MoreVertical className="h-3 w-3" />
-                    <span className="sr-only">Actions</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => openEditFolderDialog(folder.id)}>
-                    <Pencil className="h-3 w-3 mr-2" />
-                    Rename Folder
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => openAddFolderDialog(folder.id)}>
-                    <FolderPlus className="h-3 w-3 mr-2" />
-                    Add Subfolder
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            
-            {expandedFolders[folder.id] && folder.children.length > 0 && (
-              <div className="ml-4">
-                {renderFolderItems(folder.children, level + 1)}
-              </div>
-            )}
-          </div>
-        ))}
-      </>
-    );
+    return getFolderPathById(folderStructure, folderId);
   };
   
   return (
@@ -334,7 +119,19 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
           <span className="text-sm">All Documents</span>
         </div>
         
-        {renderFolderItems(folderStructure)}
+        {folderStructure.map(folder => (
+          <FolderItem
+            key={folder.id}
+            folder={folder}
+            level={0}
+            selectedFolderId={selectedFolderId}
+            expandedFolders={expandedFolders}
+            onFolderSelect={onFolderSelect}
+            onToggleFolder={toggleFolder}
+            onEditFolder={openEditFolderDialog}
+            onAddSubfolder={openAddFolderDialog}
+          />
+        ))}
       </div>
       
       {/* Folder breadcrumb */}
@@ -351,66 +148,22 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
       )}
       
       {/* Add folder dialog */}
-      <Dialog open={isAddingFolder} onOpenChange={setIsAddingFolder}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Create New Folder</DialogTitle>
-            <DialogDescription>
-              {currentParentId 
-                ? `Create a subfolder in ${getFolderPath(currentParentId).join(' / ')}` 
-                : 'Create a new top-level folder'}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4">
-            <Input 
-              value={newFolderName} 
-              onChange={(e) => setNewFolderName(e.target.value)}
-              placeholder="Folder name"
-              autoFocus
-            />
-          </div>
-          
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button onClick={addFolder} disabled={!newFolderName.trim()}>
-              Create
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AddFolderDialog
+        open={isAddingFolder}
+        onOpenChange={setIsAddingFolder}
+        parentId={currentParentId}
+        onAddFolder={addFolder}
+        getFolderPath={getFolderPath}
+      />
       
       {/* Edit folder dialog */}
-      <Dialog open={isEditingFolder} onOpenChange={setIsEditingFolder}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Rename Folder</DialogTitle>
-            <DialogDescription>
-              Enter a new name for this folder
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4">
-            <Input 
-              value={editingFolderName} 
-              onChange={(e) => setEditingFolderName(e.target.value)}
-              placeholder="Folder name"
-              autoFocus
-            />
-          </div>
-          
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button onClick={saveEditedFolder} disabled={!editingFolderName.trim()}>
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EditFolderDialog
+        open={isEditingFolder}
+        onOpenChange={setIsEditingFolder}
+        folderId={editingFolderId}
+        folderName={editingFolderName}
+        onEditFolder={editFolder}
+      />
     </div>
   );
 }

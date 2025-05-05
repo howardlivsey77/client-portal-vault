@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { DocumentGrid } from "@/components/dashboard/DocumentGrid";
@@ -12,7 +11,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { FileText, Share, Users } from "lucide-react";
+import { FileText, Share } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "react-router-dom";
 
