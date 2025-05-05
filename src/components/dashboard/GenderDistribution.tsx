@@ -57,7 +57,7 @@ export function GenderDistribution({
                   label
                 >
                   {genderData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill="currentColor" />
+                    <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -67,7 +67,7 @@ export function GenderDistribution({
           <ChartLegend>
             <ChartLegendContent payload={genderData.map((item) => ({
               value: `${item.name} (${item.value})`,
-              color: "currentColor",
+              color: item.color,
               dataKey: item.name
             }))} />
           </ChartLegend>
