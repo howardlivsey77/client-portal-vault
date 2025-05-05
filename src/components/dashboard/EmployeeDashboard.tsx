@@ -26,6 +26,7 @@ export function EmployeeDashboard() {
       <EmployeeDemographics 
         totalEmployees={stats.totalEmployees}
         genderData={genderData}
+        averageAge={stats.averageAge}
       />
       <RecentHires recentHires={recentHires} />
     </div>

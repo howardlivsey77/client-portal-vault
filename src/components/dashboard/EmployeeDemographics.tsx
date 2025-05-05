@@ -2,6 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { CalendarClock } from "lucide-react";
 
 interface GenderData {
   gender: string;
@@ -11,9 +12,10 @@ interface GenderData {
 interface EmployeeDemographicsProps {
   totalEmployees: number;
   genderData: GenderData[];
+  averageAge: number | null;
 }
 
-export function EmployeeDemographics({ totalEmployees, genderData }: EmployeeDemographicsProps) {
+export function EmployeeDemographics({ totalEmployees, genderData, averageAge }: EmployeeDemographicsProps) {
   // Sort gender data by count in descending order
   const sortedGenderData = [...genderData].sort((a, b) => b.count - a.count);
 
@@ -33,18 +35,32 @@ export function EmployeeDemographics({ totalEmployees, genderData }: EmployeeDem
           </div>
           
           {genderData.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2">
-              {sortedGenderData.map((item) => (
-                <div key={item.gender} className="flex flex-col items-center text-center p-2">
-                  <div className="font-medium uppercase text-xs mb-1">{item.gender}</div>
-                  <div className="font-bold text-lg">{item.count}</div>
+            <>
+              <div>
+                <h3 className="text-sm font-medium mb-2">Gender Distribution</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {sortedGenderData.map((item) => (
+                    <div key={item.gender} className="flex flex-col items-center text-center p-2">
+                      <div className="font-medium uppercase text-xs mb-1">{item.gender}</div>
+                      <div className="font-bold text-lg">{item.count}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="flex flex-col items-center justify-center p-2">
+                <div className="font-medium text-sm mb-1">Average Age</div>
+                <div className="font-bold text-xl">
+                  {averageAge !== null ? `${averageAge} years` : 'No data'}
+                </div>
+              </div>
+            </>
           ) : (
             <div className="flex items-center justify-center h-40">
               <p className="text-muted-foreground text-center">
-                No gender data available
+                No demographic data available
               </p>
             </div>
           )}

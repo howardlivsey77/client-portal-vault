@@ -18,13 +18,15 @@ interface DashboardStats {
   totalEmployees: number;
   averageHireDate: string;
   departmentCount: number;
+  averageAge: number | null;
 }
 
 export function useDashboardData(departmentColors: string[]) {
   const [stats, setStats] = useState<DashboardStats>({
     totalEmployees: 0,
     averageHireDate: "-",
-    departmentCount: 0
+    departmentCount: 0,
+    averageAge: null
   });
   const [departmentData, setDepartmentData] = useState<DepartmentData[]>([]);
   const [genderData, setGenderData] = useState<GenderData[]>([]);
@@ -57,6 +59,13 @@ export function useDashboardData(departmentColors: string[]) {
           .select("gender");
           
         if (genderError) throw genderError;
+        
+        // Get date of birth data for age calculation
+        const { data: dobData, error: dobError } = await supabase
+          .from("employees")
+          .select("date_of_birth");
+          
+        if (dobError) throw dobError;
         
         // Get recent hires
         const { data: recentData, error: recentError } = await supabase
@@ -99,13 +108,38 @@ export function useDashboardData(departmentColors: string[]) {
             count
           }));
           
+        // Calculate average age from date of birth
+        let totalAge = 0;
+        let validDobCount = 0;
+        
+        dobData?.forEach(emp => {
+          if (emp.date_of_birth) {
+            const birthDate = new Date(emp.date_of_birth);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            
+            // Adjust age if birthday hasn't occurred yet this year
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+              age--;
+            }
+            
+            totalAge += age;
+            validDobCount++;
+          }
+        });
+        
+        // Calculate average age (null if no valid DOBs)
+        const averageAge = validDobCount > 0 ? Math.round(totalAge / validDobCount) : null;
+          
         setDepartmentData(deptChartData);
         setGenderData(genderChartData);
         setRecentHires(recentData || []);
         setStats({
           totalEmployees: count || 0,
           averageHireDate: "-", // Could calculate average if needed
-          departmentCount: deptMap.size
+          departmentCount: deptMap.size,
+          averageAge
         });
       } catch (error: any) {
         toast({
