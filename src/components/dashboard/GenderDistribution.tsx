@@ -25,7 +25,7 @@ export function GenderDistribution({
         <CardTitle>Gender Distribution</CardTitle>
         <CardDescription className="py-0 my-0">Employees by gender</CardDescription>
       </CardHeader>
-      <CardContent className="flex justify-center py-[14px]">
+      <CardContent className="flex justify-center px-0 py-[38px]">
         <div className="flex flex-col items-center w-full">
           <ChartContainer className="h-[200px] w-full max-w-md" config={{
           gender: {
