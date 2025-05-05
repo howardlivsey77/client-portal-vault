@@ -145,24 +145,26 @@ export function EmployeeDashboard() {
           <ChartContainer className="h-[200px] w-full max-w-md" config={{
             departments: { label: "Departments" }
           }}>
-            <PieChart>
-              <Pie 
-                data={departmentData} 
-                dataKey="value"
-                nameKey="name" 
-                cx="50%" 
-                cy="50%" 
-                innerRadius={30}
-                outerRadius={80} 
-                paddingAngle={2}
-                label
-              >
-                {departmentData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
+            <ResponsiveContainer>
+              <PieChart>
+                <Pie 
+                  data={departmentData} 
+                  dataKey="value"
+                  nameKey="name" 
+                  cx="50%" 
+                  cy="50%" 
+                  innerRadius={30}
+                  outerRadius={80} 
+                  paddingAngle={2}
+                  label
+                >
+                  {departmentData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
             <ChartLegend>
               <ChartLegendContent payload={departmentData.map((item) => ({
                 value: item.name,
