@@ -2,6 +2,7 @@
 import { EmployeeOverview } from "./EmployeeOverview";
 import { RecentHires } from "./RecentHires";
 import { EmployeeDemographics } from "./EmployeeDemographics";
+import { TaskOverview } from "./TaskOverview";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
 const DEPARTMENT_COLORS = [
@@ -28,6 +29,7 @@ export function EmployeeDashboard() {
         genderData={genderData}
         averageAge={stats.averageAge}
       />
+      <TaskOverview />
       <RecentHires recentHires={recentHires} />
     </div>
   );

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
@@ -121,7 +120,6 @@ export function TaskList() {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         task={selectedTask}
-        folderId={null}
         onTaskSaved={handleTaskSaved}
       />
     </div>
