@@ -1,6 +1,6 @@
 
 import { EmployeeOverview } from "./EmployeeOverview";
-import { DepartmentDistribution } from "./DepartmentDistribution";
+import { GenderDistribution } from "./GenderDistribution";
 import { RecentHires } from "./RecentHires";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
@@ -24,7 +24,7 @@ export function EmployeeDashboard() {
         departmentData={departmentData}
         genderData={genderData}
       />
-      <DepartmentDistribution departmentData={departmentData} />
+      <GenderDistribution genderData={genderData} />
       <RecentHires recentHires={recentHires} />
     </div>
   );
