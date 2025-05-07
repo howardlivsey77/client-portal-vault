@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Folder, FolderPlus } from "lucide-react";
+import { FolderPlus } from "lucide-react";
 import { AddFolderDialog } from "./folder/AddFolderDialog";
 import { EditFolderDialog } from "./folder/EditFolderDialog";
 import { DeleteFolderDialog } from "./folder/DeleteFolderDialog";
@@ -162,7 +161,6 @@ export function FolderExplorer({
       {folderStructure.length === 0 && (
         <Card className="p-12 text-center">
           <div className="flex flex-col items-center justify-center gap-4">
-            <Folder className="h-16 w-16 text-gray-400" />
             <h3 className="text-xl font-medium">No folders yet</h3>
             <p className="text-muted-foreground">
               Create a folder to organize your documents

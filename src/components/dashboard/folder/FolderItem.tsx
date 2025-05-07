@@ -9,7 +9,6 @@ import {
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { 
-  Folder,
   Pencil,
   FolderPlus,
   MoreVertical,
@@ -39,8 +38,7 @@ export function FolderTile({
       className={`relative group cursor-pointer aspect-square flex flex-col items-center justify-center transition-all ${isSelected ? 'bg-muted' : 'hover:bg-muted/50'}`}
       onClick={() => onFolderSelect(folder.id)}
     >
-      <Folder className={`h-48 w-48 ${isSelected ? 'text-blue-500' : 'text-gray-500'}`} />
-      <span className="text-xl font-medium text-center mt-4">{folder.name}</span>
+      <span className="text-xl font-medium text-center">{folder.name}</span>
       
       {/* Dropdown for folder actions - visible on hover */}
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
