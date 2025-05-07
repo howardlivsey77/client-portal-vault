@@ -95,14 +95,6 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
-    background-image: url('/lovable-uploads/a73bac19-47ea-4ae9-abde-537ef6e08c39.png');
-    background-repeat: repeat;
-    background-size: contain;
-  }
-  
-  /* Create a slightly transparent overlay for content */
-  .content-overlay {
-    @apply bg-white/90 dark:bg-background/90 rounded-lg shadow-sm;
   }
 }
 
@@ -126,7 +118,7 @@
 /* Monday-style additions */
 @layer components {
   .monday-card {
-    @apply bg-white rounded-lg shadow-sm border-transparent hover:shadow-md transition-shadow content-overlay;
+    @apply bg-white rounded-lg shadow-sm border-transparent hover:shadow-md transition-shadow;
   }
   
   .monday-button {
