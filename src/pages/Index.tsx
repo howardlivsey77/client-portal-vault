@@ -94,6 +94,75 @@ const Index = () => {
     return null;
   };
   
+  // Render the appropriate content based on the active tab
+  const renderContent = () => {
+    switch(activeTab) {
+      case "overview":
+        return <EmployeeDashboard />;
+      case "documents":
+        return isFullscreenFolderView ? (
+          <div className="w-full">
+            <DocumentGrid 
+              onAddDocument={() => setUploadModalOpen(true)} 
+              selectedFolderId={selectedFolderId}
+              onNavigateBack={handleNavigateBack}
+              folderPath={getFolderPath()}
+              onFolderSelect={handleFolderSelect}
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <div className="lg:col-span-2">
+              <FolderExplorer 
+                onFolderSelect={handleFolderSelect}
+                selectedFolderId={selectedFolderId}
+              />
+            </div>
+            <div className="lg:col-span-3">
+              <DocumentGrid 
+                onAddDocument={() => setUploadModalOpen(true)} 
+                selectedFolderId={selectedFolderId}
+              />
+            </div>
+          </div>
+        );
+      case "tasks":
+        return <TaskList />;
+      case "reports":
+        return <EmployeeChangesReport />;
+      case "payroll":
+        return (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Receipt className="h-16 w-16 text-monday-blue mb-4" />
+            <h3 className="text-2xl font-medium mb-2">Payroll Input</h3>
+            <p className="text-center text-muted-foreground max-w-md mb-6">
+              Begin the payroll input process by uploading your extra hours data and other payroll information.
+            </p>
+            <Button 
+              size="lg" 
+              onClick={() => setPayrollWizardOpen(true)}
+              className="bg-monday-green hover:bg-monday-green/90"
+            >
+              <Receipt className="mr-2 h-5 w-5" />
+              Start Payroll Input
+            </Button>
+          </div>
+        );
+      case "shared":
+        return (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Share className="h-16 w-16 text-muted-foreground/50" />
+            <h3 className="mt-4 text-xl font-medium">No shared documents</h3>
+            <p className="mt-2 text-center text-sm text-muted-foreground">
+              Documents shared with you will appear here.
+            </p>
+          </div>
+        );
+      default:
+        return <EmployeeDashboard />;
+    }
+  };
+  
   return (
     <PageContainer>
       <div className="flex items-center justify-between mb-6">
@@ -113,90 +182,9 @@ const Index = () => {
         </div>
       </div>
       
-      <Tabs 
-        defaultValue="overview" 
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="mb-8"
-      >
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-          <TabsTrigger value="payroll">Payroll Input</TabsTrigger>
-          <TabsTrigger value="shared">Shared with Me</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="mt-6 animate-fade-in">
-          <EmployeeDashboard />
-        </TabsContent>
-        
-        <TabsContent value="documents" className="mt-6 animate-fade-in">
-          {isFullscreenFolderView ? (
-            <div className="w-full">
-              <DocumentGrid 
-                onAddDocument={() => setUploadModalOpen(true)} 
-                selectedFolderId={selectedFolderId}
-                onNavigateBack={handleNavigateBack}
-                folderPath={getFolderPath()}
-                onFolderSelect={handleFolderSelect}
-              />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-              <div className="lg:col-span-2">
-                <FolderExplorer 
-                  onFolderSelect={handleFolderSelect}
-                  selectedFolderId={selectedFolderId}
-                />
-              </div>
-              <div className="lg:col-span-3">
-                <DocumentGrid 
-                  onAddDocument={() => setUploadModalOpen(true)} 
-                  selectedFolderId={selectedFolderId}
-                />
-              </div>
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="tasks" className="mt-6 animate-fade-in">
-          <TaskList />
-        </TabsContent>
-        
-        <TabsContent value="reports" className="mt-6 animate-fade-in">
-          <EmployeeChangesReport />
-        </TabsContent>
-        
-        <TabsContent value="payroll" className="mt-6 animate-fade-in">
-          <div className="flex flex-col items-center justify-center py-12">
-            <Receipt className="h-16 w-16 text-monday-blue mb-4" />
-            <h3 className="text-2xl font-medium mb-2">Payroll Input</h3>
-            <p className="text-center text-muted-foreground max-w-md mb-6">
-              Begin the payroll input process by uploading your extra hours data and other payroll information.
-            </p>
-            <Button 
-              size="lg" 
-              onClick={() => setPayrollWizardOpen(true)}
-              className="bg-monday-green hover:bg-monday-green/90"
-            >
-              <Receipt className="mr-2 h-5 w-5" />
-              Start Payroll Input
-            </Button>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="shared" className="mt-6 animate-fade-in">
-          <div className="flex flex-col items-center justify-center py-12">
-            <Share className="h-16 w-16 text-muted-foreground/50" />
-            <h3 className="mt-4 text-xl font-medium">No shared documents</h3>
-            <p className="mt-2 text-center text-sm text-muted-foreground">
-              Documents shared with you will appear here.
-            </p>
-          </div>
-        </TabsContent>
-      </Tabs>
+      <div className="animate-fade-in">
+        {renderContent()}
+      </div>
       
       <DocumentUploadModal 
         open={uploadModalOpen} 
