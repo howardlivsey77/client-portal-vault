@@ -5,7 +5,6 @@ import { roundToTwoDecimals } from '@/lib/formatters';
 
 /**
  * Parse an Excel or CSV file containing extra hours data
- * This is a starter implementation that you can customize based on your file format
  */
 export const parseExtraHoursFile = async (file: File): Promise<ExtraHoursSummary> => {
   return new Promise((resolve, reject) => {
@@ -26,13 +25,11 @@ export const parseExtraHoursFile = async (file: File): Promise<ExtraHoursSummary
         console.log('Parsed file data:', jsonData);
         
         // Extract employee hours data from the parsed file
-        // You'll need to adjust this based on your actual file structure
         const employeeDetails: EmployeeHoursData[] = [];
         let earliestDate: Date | null = null;
         let latestDate: Date | null = null;
         
         // Process each row of data
-        // This is where you'd map your actual file columns to the expected format
         jsonData.forEach((row: any) => {
           // Example mappings - adjust these based on your actual file structure
           const employeeName = row.Employee || row.EmployeeName || row['Employee Name'] || '';
@@ -45,7 +42,23 @@ export const parseExtraHoursFile = async (file: File): Promise<ExtraHoursSummary
           // Process date if available
           const dateValue = row.Date || row.WorkDate;
           if (dateValue) {
-            const date = new Date(dateValue);
+            let date: Date;
+            
+            // Handle Excel numeric dates
+            if (typeof dateValue === 'number') {
+              // Excel dates are stored as days since 1900-01-01
+              const excelEpoch = new Date(1899, 11, 30); // Dec 30, 1899
+              date = new Date(excelEpoch.getTime() + dateValue * 24 * 60 * 60 * 1000);
+              
+              // Adjust for Excel's leap year bug (1900 wasn't a leap year)
+              if (dateValue >= 60) {
+                date = new Date(date.getTime() - 24 * 60 * 60 * 1000);
+              }
+            } else {
+              // Handle string dates
+              date = new Date(dateValue);
+            }
+            
             if (!isNaN(date.getTime())) {
               if (!earliestDate || date < earliestDate) earliestDate = date;
               if (!latestDate || date > latestDate) latestDate = date;

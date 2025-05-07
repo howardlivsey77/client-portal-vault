@@ -2,6 +2,7 @@
 import { parseExtraHoursFile } from '@/utils/fileParsingUtils';
 import { ExtraHoursSummary } from '@/components/payroll/PayrollInputWizard';
 import { supabase } from "@/integrations/supabase/client";
+import { roundToTwoDecimals } from '@/lib/formatters';
 
 /**
  * Process an extra hours file and return summary data
@@ -78,14 +79,16 @@ const enrichWithEmployeeData = async (data: ExtraHoursSummary): Promise<void> =>
         if (!empHours.rateValue || empHours.rateValue === 0) {
           // Based on the rate type, get the appropriate rate
           if (empHours.rateType === 'Standard') {
-            empHours.rateValue = dbEmployee.hourly_rate || 0;
+            empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
           } else if (empHours.rateType === 'Rate 2') {
-            empHours.rateValue = dbEmployee.rate_2 || 0;
+            empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_2) || 0;
           } else if (empHours.rateType === 'Rate 3') {
-            empHours.rateValue = dbEmployee.rate_3 || 0;
+            empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_3) || 0;
           } else if (empHours.rateType === 'Rate 4') {
-            empHours.rateValue = dbEmployee.rate_4 || 0;
+            empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_4) || 0;
           }
+        } else if (empHours.rateValue) {
+          empHours.rateValue = roundToTwoDecimals(empHours.rateValue);
         }
       }
     });

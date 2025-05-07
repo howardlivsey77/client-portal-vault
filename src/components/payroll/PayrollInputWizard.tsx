@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Dialog,
@@ -11,6 +11,7 @@ import { FileUploader } from "./FileUploader";
 import { UploadSummary } from "./UploadSummary";
 import { toast } from "@/hooks/use-toast";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { processExtraHoursFile } from "@/services/payrollService";
 
 type Step = {
   title: string;
@@ -52,6 +53,7 @@ export function PayrollInputWizard({
   
   // Keep track of processed data
   const [processedData, setProcessedData] = useState<ExtraHoursSummary | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleFileUpload = (stepId: string, file: File | null) => {
     setUploadedFiles(prev => ({
@@ -65,51 +67,31 @@ export function PayrollInputWizard({
     }
   };
 
-  // Function to parse the uploaded file and extract employee hours data
-  // This is a mock function for now - in a real implementation, you would parse the actual file
-  const getExtraHoursSummary = (file: File): ExtraHoursSummary => {
+  // Process the extra hours file and get summary data
+  const getExtraHoursSummary = useCallback(async (file: File): Promise<ExtraHoursSummary> => {
     console.log("Processing file:", file.name);
     
-    // If we already have processed data, return it
     if (processedData) {
       return processedData;
     }
     
-    // Otherwise, use mock data for demonstration
-    // In a real implementation, you would parse the file contents here
-    const mockEmployees = [
-      { employeeId: "EMP001", employeeName: "John Smith", extraHours: 8.5, entries: 3, rateType: "Standard", rateValue: 12.50 },
-      { employeeId: "EMP001", employeeName: "John Smith", extraHours: 4.0, entries: 2, rateType: "Rate 2", rateValue: 15.75 },
-      { employeeId: "EMP002", employeeName: "Sarah Johnson", extraHours: 8.0, entries: 3, rateType: "Standard", rateValue: 14.00 },
-      { employeeId: "EMP003", employeeName: "Michael Brown", extraHours: 12.75, entries: 5, rateType: "Standard", rateValue: 11.25 },
-      { employeeId: "EMP003", employeeName: "Michael Brown", extraHours: 4.0, entries: 2, rateType: "Rate 3", rateValue: 18.50 },
-      { employeeId: "EMP004", employeeName: "Emma Davis", extraHours: 4.0, entries: 2, rateType: "Standard", rateValue: 10.50 },
-      { employeeId: "EMP005", employeeName: "Robert Wilson", extraHours: 6.5, entries: 3, rateType: "Standard", rateValue: 13.25 },
-      { employeeId: "EMP005", employeeName: "Robert Wilson", extraHours: 3.0, entries: 1, rateType: "Rate 2", rateValue: 16.00 }
-    ];
-    
-    // Calculate totals from the mock data
-    const totalExtraHours = Number(mockEmployees.reduce((sum, emp) => sum + emp.extraHours, 0).toFixed(2));
-    const totalEntries = mockEmployees.reduce((sum, emp) => sum + emp.entries, 0);
-    
-    // Count unique employees
-    const uniqueEmployeeIds = new Set(mockEmployees.map(emp => emp.employeeId));
-    
-    const result = {
-      totalEntries: totalEntries,
-      totalExtraHours: totalExtraHours,
-      dateRange: {
-        from: new Date(2023, 4, 1).toLocaleDateString(),
-        to: new Date(2023, 4, 30).toLocaleDateString()
-      },
-      employeeCount: uniqueEmployeeIds.size,
-      employeeDetails: mockEmployees
-    };
-    
-    // Store the processed data
-    setProcessedData(result);
-    return result;
-  };
+    try {
+      setIsProcessing(true);
+      const result = await processExtraHoursFile(file);
+      setProcessedData(result);
+      return result;
+    } catch (error) {
+      console.error("Error processing file:", error);
+      toast({
+        title: "Error processing file",
+        description: "There was a problem processing your file. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [processedData]);
 
   const steps: Step[] = [
     {
@@ -130,6 +112,7 @@ export function PayrollInputWizard({
           file={uploadedFiles.extraHours}
           type="extraHours"
           getSummary={getExtraHoursSummary}
+          isProcessing={isProcessing}
         />
       ),
     },
@@ -175,7 +158,7 @@ export function PayrollInputWizard({
     if (currentStep === 0) {
       return uploadedFiles.extraHours !== null;
     } else if (currentStep === 1) {
-      // Always allow proceeding from the summary step
+      // Allow proceeding from the summary step if data is processed or processing
       return true;
     } else if (currentStep === 2) {
       return uploadedFiles.absences !== null;
@@ -205,7 +188,7 @@ export function PayrollInputWizard({
                 Back
               </Button>
             )}
-            <Button onClick={handleNext} disabled={!canProceed()}>
+            <Button onClick={handleNext} disabled={!canProceed() || isProcessing}>
               {isLastStep ? "Finish" : "Next"}
               {!isLastStep && <ChevronRight className="ml-1 h-4 w-4" />}
             </Button>

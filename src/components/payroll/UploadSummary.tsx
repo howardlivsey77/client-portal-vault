@@ -1,5 +1,6 @@
 
-import { FileText, Clock, Calendar, Users } from "lucide-react";
+import { useState, useEffect } from "react";
+import { FileText, Clock, Calendar, Users, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate, formatCurrency, roundToTwoDecimals } from "@/lib/formatters";
 import {
@@ -15,16 +16,64 @@ import { ExtraHoursSummary, EmployeeHoursData } from "./PayrollInputWizard";
 interface UploadSummaryProps {
   file: File | null;
   type: "extraHours" | "absences";
-  getSummary: (file: File) => ExtraHoursSummary;
+  getSummary: (file: File) => Promise<ExtraHoursSummary>;
+  isProcessing: boolean;
 }
 
-export function UploadSummary({ file, type, getSummary }: UploadSummaryProps) {
+export function UploadSummary({ file, type, getSummary, isProcessing }: UploadSummaryProps) {
+  const [summary, setSummary] = useState<ExtraHoursSummary | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    async function processFile() {
+      if (!file) return;
+      
+      try {
+        setError(null);
+        const data = await getSummary(file);
+        setSummary(data);
+      } catch (err) {
+        console.error("Error in UploadSummary:", err);
+        setError("Failed to process file. Please check the format and try again.");
+      }
+    }
+    
+    if (file && !summary) {
+      processFile();
+    }
+  }, [file, getSummary, summary]);
+
   if (!file) {
     return <div>No file uploaded</div>;
   }
-
-  // Get summary data based on file type
-  const summary = getSummary(file);
+  
+  if (isProcessing) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-monday-blue mb-4" />
+        <p className="text-lg font-medium">Processing your file...</p>
+        <p className="text-sm text-muted-foreground mt-2">This may take a moment</p>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="border border-red-200 bg-red-50 p-4 rounded-md">
+        <p className="text-red-800 font-medium">{error}</p>
+        <p className="text-sm text-red-600 mt-2">Please check your file format and try again</p>
+      </div>
+    );
+  }
+  
+  if (!summary) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-monday-blue mb-4" />
+        <p className="text-lg font-medium">Loading summary...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -95,36 +144,38 @@ export function UploadSummary({ file, type, getSummary }: UploadSummaryProps) {
       </div>
 
       {/* Employee breakdown table */}
-      <div className="border rounded-md mt-4">
-        <div className="p-3 border-b bg-muted/40">
-          <h3 className="text-sm font-medium">Employee Hours Breakdown</h3>
-        </div>
-        <div className="p-0 overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Employee</TableHead>
-                <TableHead className="text-right">Hourly Rate</TableHead>
-                <TableHead className="text-right">Extra Hours</TableHead>
-                <TableHead className="text-right">Entries</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {summary.employeeDetails.map((employee, index) => (
-                <TableRow key={`${employee.employeeId}-${employee.rateType || 'standard'}-${index}`}>
-                  <TableCell className="font-medium">{employee.employeeName}</TableCell>
-                  <TableCell className="text-right">
-                    {employee.rateValue ? formatCurrency(roundToTwoDecimals(employee.rateValue) || 0) : 'N/A'}
-                    <span className="text-xs text-muted-foreground ml-1">({employee.rateType || 'Standard'})</span>
-                  </TableCell>
-                  <TableCell className="text-right">{employee.extraHours}</TableCell>
-                  <TableCell className="text-right">{employee.entries}</TableCell>
+      {summary.employeeDetails.length > 0 && (
+        <div className="border rounded-md mt-4">
+          <div className="p-3 border-b bg-muted/40">
+            <h3 className="text-sm font-medium">Employee Hours Breakdown</h3>
+          </div>
+          <div className="p-0 overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Employee</TableHead>
+                  <TableHead className="text-right">Hourly Rate</TableHead>
+                  <TableHead className="text-right">Extra Hours</TableHead>
+                  <TableHead className="text-right">Entries</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {summary.employeeDetails.map((employee, index) => (
+                  <TableRow key={`${employee.employeeId || index}-${employee.rateType || 'standard'}-${index}`}>
+                    <TableCell className="font-medium">{employee.employeeName}</TableCell>
+                    <TableCell className="text-right">
+                      {employee.rateValue ? formatCurrency(roundToTwoDecimals(employee.rateValue) || 0) : 'N/A'}
+                      <span className="text-xs text-muted-foreground ml-1">({employee.rateType || 'Standard'})</span>
+                    </TableCell>
+                    <TableCell className="text-right">{employee.extraHours}</TableCell>
+                    <TableCell className="text-right">{employee.entries}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="p-3 bg-green-50 rounded-md text-center text-sm text-green-800">
         File validation complete. Click "Next" to continue with absences upload.
