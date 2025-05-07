@@ -127,39 +127,5 @@ export function FolderExplorer({
     }));
   };
   const flatFolders = getFlattenedFolders(folderStructure);
-  return <div className="border rounded-md p-4 space-y-4 px-[17px] my-[5px] mx-0">
-      <div className="flex items-center justify-between mb-4">
-        
-        <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => openAddFolderDialog()}>
-          <FolderPlus className="h-3 w-3 mr-1" />
-          New Folder
-        </Button>
-      </div>
-      
-      {/* All Documents "Tile" */}
-      
-      
-      {/* Grid of folder tiles */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
-        {flatFolders.map(folder => <FolderTile key={folder.id} folder={folder} isSelected={selectedFolderId === folder.id} onFolderSelect={onFolderSelect} onEditFolder={openEditFolderDialog} onAddSubfolder={openAddFolderDialog} onDeleteFolder={openDeleteFolderDialog} />)}
-      </div>
-      
-      {/* Folder breadcrumb */}
-      {selectedFolderId && <div className="flex items-center space-x-1 text-xs text-muted-foreground mt-4">
-          <span>Path:</span>
-          {getFolderPath(selectedFolderId).map((name, i, arr) => <span key={i}>
-              {name}
-              {i < arr.length - 1 && <span className="mx-1">/</span>}
-            </span>)}
-        </div>}
-      
-      {/* Add folder dialog */}
-      <AddFolderDialog open={isAddingFolder} onOpenChange={setIsAddingFolder} parentId={currentParentId} onAddFolder={addFolder} getFolderPath={getFolderPath} />
-      
-      {/* Edit folder dialog */}
-      <EditFolderDialog open={isEditingFolder} onOpenChange={setIsEditingFolder} folderId={editingFolderId} folderName={editingFolderName} onEditFolder={editFolder} />
-      
-      {/* Delete folder dialog */}
-      <DeleteFolderDialog open={isDeletingFolder} onOpenChange={setIsDeletingFolder} folderId={deletingFolderId} folderName={deletingFolderName} onDeleteFolder={handleDeleteFolder} />
-    </div>;
+  return;
 }
