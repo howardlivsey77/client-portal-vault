@@ -104,6 +104,10 @@ export const createNewEmployees = async (
       hire_date: emp.hire_date || null,
       payroll_id: emp.payroll_id || null,
       user_id: userId,
+      // Include rate fields directly in the employee record
+      rate_2: emp.rate_2 || null,
+      rate_3: emp.rate_3 || null,
+      rate_4: emp.rate_4 || null
     };
     
     const { data: employeeInsertData, error: insertError } = await supabase
@@ -165,8 +169,14 @@ export const updateExistingEmployees = async (
       }
     });
     
+    // Always include rate fields in updates if they exist in the imported data
+    if (imported.rate_2) updates.rate_2 = imported.rate_2;
+    if (imported.rate_3) updates.rate_3 = imported.rate_3;
+    if (imported.rate_4) updates.rate_4 = imported.rate_4;
+    
     // Update employee if there are changes
     if (Object.keys(updates).length > 0) {
+      console.log("Updating employee with data:", updates);
       const { error: updateError } = await supabase
         .from("employees")
         .update(updates)

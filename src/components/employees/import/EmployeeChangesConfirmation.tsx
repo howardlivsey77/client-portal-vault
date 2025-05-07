@@ -124,7 +124,7 @@ export const EmployeeChangesConfirmation = ({
                                            key === 'rate_3' ? 'Rate 3' : 'Rate 4';
                           changes.push({
                             field: fieldName,
-                            oldValue: "-",
+                            oldValue: empPair.existing[key] || "-",
                             newValue: `£${value}`
                           });
                         }

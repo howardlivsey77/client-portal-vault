@@ -37,13 +37,12 @@ export const compareEmployees = (
               importedEmp[key] !== existingEmp[key];
       });
 
-      // Check for changes in rate fields
+      // Check for changes in rate fields - consider any imported rates as changes
+      // since we want to always update them if present
       const hasRateChanges = ['rate_2', 'rate_3', 'rate_4'].some(rateKey => 
         importedEmp[rateKey] !== undefined && 
         importedEmp[rateKey] !== null && 
-        importedEmp[rateKey] !== '' && 
-        // Consider any imported rate as a change since we can't easily compare with existing rates
-        !!importedEmp[rateKey]
+        importedEmp[rateKey] !== ''
       );
       
       if (hasStandardChanges || hasRateChanges) {
