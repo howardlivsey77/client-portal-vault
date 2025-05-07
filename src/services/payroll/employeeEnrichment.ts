@@ -76,6 +76,8 @@ const matchEmployeesWithRates = (
       console.log(`Found match for ${empHours.employeeName}: ${dbEmployee.first_name} ${dbEmployee.last_name}`);
       // If found, update the employee ID
       empHours.employeeId = dbEmployee.id;
+      // Add the payroll ID
+      empHours.payrollId = dbEmployee.payroll_id;
       
       // Get the appropriate rate based on the rate type
       if (empHours.rateType) {

@@ -48,7 +48,8 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
         
         // Add entry for this employee and rate combination
         employeeDetails.push({
-          employeeId: payrollId,
+          employeeId: '',  // Will be enriched later with DB lookup
+          payrollId: payrollId, // Add the payroll ID from the imported file
           employeeName: employeeName || 'Unknown Employee',
           extraHours: roundToTwoDecimals(hours) || 0,
           entries: 1,
@@ -64,7 +65,8 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
     // Add standard hours entry if found and greater than 0
     if (standardHoursFound && standardHours > 0) {
       employeeDetails.push({
-        employeeId: payrollId,
+        employeeId: '',  // Will be enriched later with DB lookup
+        payrollId: payrollId, // Add the payroll ID from the imported file
         employeeName: employeeName || 'Unknown Employee',
         extraHours: roundToTwoDecimals(standardHours) || 0,
         entries: 1,

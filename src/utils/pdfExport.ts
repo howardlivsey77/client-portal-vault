@@ -46,7 +46,7 @@ export const generateExtraHoursPDF = (summary: ExtraHoursSummary, filename = 'ex
   
   // Create employee details table
   const tableData = summary.employeeDetails.map(employee => [
-    employee.employeeId || 'N/A',
+    employee.payrollId || 'N/A',
     employee.employeeName || 'Unknown',
     employee.rateType || 'Standard',
     employee.rateValue ? formatCurrency(employee.rateValue) : 'N/A',
