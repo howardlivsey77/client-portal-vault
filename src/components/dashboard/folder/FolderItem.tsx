@@ -36,11 +36,11 @@ export function FolderTile({
 }: FolderTileProps) {
   return (
     <Card
-      className={`relative group cursor-pointer p-6 flex flex-col items-center justify-center transition-all ${isSelected ? 'bg-muted' : 'hover:bg-muted/50'}`}
+      className={`relative group cursor-pointer aspect-square flex flex-col items-center justify-center transition-all ${isSelected ? 'bg-muted' : 'hover:bg-muted/50'}`}
       onClick={() => onFolderSelect(folder.id)}
     >
-      <Folder className={`h-24 w-24 mb-3 ${isSelected ? 'text-blue-500' : 'text-gray-500'}`} />
-      <span className="text-base font-medium text-center">{folder.name}</span>
+      <Folder className={`h-48 w-48 ${isSelected ? 'text-blue-500' : 'text-gray-500'}`} />
+      <span className="text-xl font-medium text-center mt-4">{folder.name}</span>
       
       {/* Dropdown for folder actions - visible on hover */}
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">

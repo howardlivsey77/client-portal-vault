@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Folder, FolderPlus } from "lucide-react";
@@ -8,7 +9,9 @@ import { loadFolderStructure, saveFolderStructure, getFolderPathById, addSubFold
 import { FolderItem as FolderItemType, FolderExplorerProps } from "./types/folder.types";
 import { FolderTile } from "./folder/FolderItem";
 import { Card } from "@/components/ui/card";
+
 export { type FolderItem } from "./types/folder.types";
+
 export function FolderExplorer({
   onFolderSelect,
   selectedFolderId
@@ -126,6 +129,70 @@ export function FolderExplorer({
       path: parentPath ? `${parentPath} / ${folder.name}` : folder.name
     }));
   };
+  
   const flatFolders = getFlattenedFolders(folderStructure);
-  return;
+  
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Folders</h2>
+        <Button 
+          onClick={() => openAddFolderDialog(null)} 
+          className="flex items-center gap-2"
+        >
+          <FolderPlus className="h-4 w-4" />
+          New Folder
+        </Button>
+      </div>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {folderStructure.map(folder => (
+          <FolderTile
+            key={folder.id}
+            folder={folder}
+            isSelected={selectedFolderId === folder.id}
+            onFolderSelect={onFolderSelect}
+            onEditFolder={openEditFolderDialog}
+            onAddSubfolder={openAddFolderDialog}
+            onDeleteFolder={openDeleteFolderDialog}
+          />
+        ))}
+      </div>
+      
+      {folderStructure.length === 0 && (
+        <Card className="p-12 text-center">
+          <div className="flex flex-col items-center justify-center gap-4">
+            <Folder className="h-16 w-16 text-gray-400" />
+            <h3 className="text-xl font-medium">No folders yet</h3>
+            <p className="text-muted-foreground">
+              Create a folder to organize your documents
+            </p>
+          </div>
+        </Card>
+      )}
+      
+      <AddFolderDialog
+        open={isAddingFolder}
+        onOpenChange={setIsAddingFolder}
+        parentId={currentParentId}
+        onAddFolder={addFolder}
+      />
+      
+      <EditFolderDialog
+        open={isEditingFolder}
+        onOpenChange={setIsEditingFolder}
+        folderId={editingFolderId}
+        initialName={editingFolderName}
+        onEditFolder={editFolder}
+      />
+      
+      <DeleteFolderDialog
+        open={isDeletingFolder}
+        onOpenChange={setIsDeletingFolder}
+        folderId={deletingFolderId}
+        folderName={deletingFolderName}
+        onDeleteFolder={handleDeleteFolder}
+      />
+    </div>
+  );
 }
