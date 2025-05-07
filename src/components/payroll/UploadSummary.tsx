@@ -2,6 +2,21 @@
 import { FileText, Clock, Calendar, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/lib/formatters";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+type EmployeeHoursData = {
+  employeeId: string;
+  employeeName: string;
+  extraHours: number;
+  entries: number;
+};
 
 type ExtraHoursSummary = {
   totalEntries: number;
@@ -11,6 +26,7 @@ type ExtraHoursSummary = {
     to: string;
   };
   employeeCount: number;
+  employeeDetails: EmployeeHoursData[];
 };
 
 interface UploadSummaryProps {
@@ -93,6 +109,33 @@ export function UploadSummary({ file, type, getSummary }: UploadSummaryProps) {
             <p className="text-xs text-muted-foreground">Staff members</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Employee breakdown table */}
+      <div className="border rounded-md mt-4">
+        <div className="p-3 border-b bg-muted/40">
+          <h3 className="text-sm font-medium">Employee Hours Breakdown</h3>
+        </div>
+        <div className="p-0 overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Employee</TableHead>
+                <TableHead className="text-right">Extra Hours</TableHead>
+                <TableHead className="text-right">Entries</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {summary.employeeDetails.map((employee) => (
+                <TableRow key={employee.employeeId}>
+                  <TableCell className="font-medium">{employee.employeeName}</TableCell>
+                  <TableCell className="text-right">{employee.extraHours}</TableCell>
+                  <TableCell className="text-right">{employee.entries}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <div className="p-3 bg-green-50 rounded-md text-center text-sm text-green-800">

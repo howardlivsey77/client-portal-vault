@@ -18,6 +18,13 @@ type Step = {
   component: React.ReactNode;
 };
 
+type EmployeeHoursData = {
+  employeeId: string;
+  employeeName: string;
+  extraHours: number;
+  entries: number;
+};
+
 export function PayrollInputWizard({ 
   open, 
   onOpenChange 
@@ -40,14 +47,28 @@ export function PayrollInputWizard({
 
   // Mock function to simulate file parsing for summary display
   const getExtraHoursSummary = (file: File) => {
+    // Generate mock employee data for demonstration
+    const mockEmployees = [
+      { employeeId: "EMP001", employeeName: "John Smith", extraHours: 12.5, entries: 5 },
+      { employeeId: "EMP002", employeeName: "Sarah Johnson", extraHours: 8.0, entries: 3 },
+      { employeeId: "EMP003", employeeName: "Michael Brown", extraHours: 16.75, entries: 7 },
+      { employeeId: "EMP004", employeeName: "Emma Davis", extraHours: 4.0, entries: 2 },
+      { employeeId: "EMP005", employeeName: "Robert Wilson", extraHours: 9.5, entries: 4 }
+    ];
+    
+    // Calculate totals from the mock data
+    const totalExtraHours = Number(mockEmployees.reduce((sum, emp) => sum + emp.extraHours, 0).toFixed(2));
+    const totalEntries = mockEmployees.reduce((sum, emp) => sum + emp.entries, 0);
+    
     return {
-      totalEntries: Math.floor(Math.random() * 30) + 10,
-      totalExtraHours: Math.floor(Math.random() * 200) + 50,
+      totalEntries: totalEntries,
+      totalExtraHours: totalExtraHours,
       dateRange: {
         from: new Date(2023, 4, 1).toLocaleDateString(),
         to: new Date(2023, 4, 30).toLocaleDateString()
       },
-      employeeCount: Math.floor(Math.random() * 15) + 5
+      employeeCount: mockEmployees.length,
+      employeeDetails: mockEmployees
     };
   };
 
