@@ -13,6 +13,7 @@ export interface EmployeeImportState {
   showConfirmDialog: boolean;
   newEmployees: EmployeeData[];
   updatedEmployees: {existing: EmployeeData; imported: EmployeeData}[];
+  importError: string | null;
 }
 
 // Initial state
@@ -27,6 +28,7 @@ export const initialState: EmployeeImportState = {
   showConfirmDialog: false,
   newEmployees: [],
   updatedEmployees: [],
+  importError: null
 };
 
 // Action types
@@ -45,6 +47,7 @@ export type EmployeeImportAction =
   | { type: 'SET_SHOW_MAPPING_UI'; payload: boolean }
   | { type: 'PREPARE_IMPORT'; payload: { newEmployees: EmployeeData[]; updatedEmployees: {existing: EmployeeData; imported: EmployeeData}[] } }
   | { type: 'SET_SHOW_CONFIRM_DIALOG'; payload: boolean }
+  | { type: 'SET_IMPORT_ERROR'; payload: string | null }
   | { type: 'RESET' };
 
 // Reducer function
@@ -92,6 +95,9 @@ export const employeeImportReducer = (
     
     case 'SET_SHOW_CONFIRM_DIALOG':
       return { ...state, showConfirmDialog: action.payload };
+    
+    case 'SET_IMPORT_ERROR':
+      return { ...state, importError: action.payload };
     
     case 'RESET':
       return initialState;

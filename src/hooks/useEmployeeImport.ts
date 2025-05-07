@@ -41,6 +41,12 @@ export const useEmployeeImport = (onSuccess: () => void) => {
         showMappingUI: !allRequiredMapped || preview.length === 0
       }
     });
+
+    // Clear any previous errors
+    dispatch({ 
+      type: 'SET_IMPORT_ERROR',
+      payload: null 
+    });
   };
   
   // Update column mapping when user changes it in UI
@@ -108,6 +114,7 @@ export const useEmployeeImport = (onSuccess: () => void) => {
   // Execute the import operation
   const handleImport = async () => {
     dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_IMPORT_ERROR', payload: null });
     
     const result = await executeImport(state.newEmployees, state.updatedEmployees);
     
@@ -123,6 +130,11 @@ export const useEmployeeImport = (onSuccess: () => void) => {
         title: "Error importing employees",
         description: result.message,
         variant: "destructive"
+      });
+      
+      dispatch({ 
+        type: 'SET_IMPORT_ERROR',
+        payload: result.message
       });
     }
     

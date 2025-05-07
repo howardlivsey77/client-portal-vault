@@ -7,6 +7,9 @@ import { EmployeePreview } from "./import/EmployeePreview";
 import { EmployeeChangesConfirmation } from "./import/EmployeeChangesConfirmation";
 import { transformData, saveMappings } from "./import/ImportUtils";
 import { useEmployeeImport } from "@/hooks/useEmployeeImport";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { useState } from "react";
 
 interface EmployeeImportProps {
   onSuccess: () => void;
@@ -22,6 +25,7 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
     showConfirmDialog,
     newEmployees,
     updatedEmployees,
+    importError,
     handleFileProcessed,
     updateColumnMapping,
     applyMappings: applyMappingsBase,
@@ -37,6 +41,14 @@ export const EmployeeImport = ({ onSuccess, onCancel }: EmployeeImportProps) => 
   
   return (
     <div className="space-y-6">
+      {importError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error importing employees</AlertTitle>
+          <AlertDescription>{importError}</AlertDescription>
+        </Alert>
+      )}
+
       <FileUploader 
         onFileProcessed={handleFileProcessed} 
         disabled={loading} 

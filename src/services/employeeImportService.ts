@@ -46,11 +46,36 @@ export const createAdditionalRates = async (employeeId: string, rates: { rate_2?
   }
 };
 
+// Check for duplicate payroll IDs
+export const checkDuplicatePayrollIds = async (payrollIds: string[]) => {
+  if (!payrollIds || payrollIds.length === 0) return [];
+  
+  const { data } = await supabase
+    .from("employees")
+    .select("payroll_id")
+    .in("payroll_id", payrollIds);
+    
+  return data ? data.map(emp => emp.payroll_id) : [];
+};
+
 // Process new employees
 export const createNewEmployees = async (
   newEmployees: EmployeeData[], 
   userId: string
 ) => {
+  // Extract all payroll IDs that are not empty
+  const payrollIds = newEmployees
+    .filter(emp => emp.payroll_id && emp.payroll_id.trim() !== '')
+    .map(emp => emp.payroll_id);
+  
+  // Check for duplicates in the database
+  const existingPayrollIds = await checkDuplicatePayrollIds(payrollIds);
+  
+  // If we have duplicate payroll IDs, throw an error
+  if (existingPayrollIds.length > 0) {
+    throw new Error(`duplicate key value violates unique constraint "unique_payroll_id" for IDs: ${existingPayrollIds.join(', ')}`);
+  }
+  
   for (const emp of newEmployees) {
     // Extract additional rates
     const additionalRates = {
@@ -100,6 +125,24 @@ export const createNewEmployees = async (
 export const updateExistingEmployees = async (
   updatedEmployees: {existing: EmployeeData; imported: EmployeeData}[]
 ) => {
+  // Extract all new payroll IDs from updates where they differ from existing
+  const newPayrollIds = updatedEmployees
+    .filter(({ existing, imported }) => 
+      imported.payroll_id && 
+      imported.payroll_id !== existing.payroll_id &&
+      imported.payroll_id.trim() !== '')
+    .map(({ imported }) => imported.payroll_id);
+  
+  // Check for duplicates in the database if we have any new payroll IDs
+  if (newPayrollIds.length > 0) {
+    const existingPayrollIds = await checkDuplicatePayrollIds(newPayrollIds);
+    
+    // If we have duplicate payroll IDs, throw an error
+    if (existingPayrollIds.length > 0) {
+      throw new Error(`duplicate key value violates unique constraint "unique_payroll_id" for IDs: ${existingPayrollIds.join(', ')}`);
+    }
+  }
+  
   for (const { existing, imported } of updatedEmployees) {
     // Extract additional rates
     const additionalRates = {

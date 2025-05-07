@@ -33,6 +33,15 @@ export const executeImport = async (
       message: `${newEmployees.length} employees added and ${updatedEmployees.length} employees updated.`
     };
   } catch (error: any) {
+    // Check for specific database constraint violations
+    if (error.message && error.message.includes("unique_payroll_id")) {
+      return {
+        success: false,
+        message: "Import failed: One or more employees have duplicate payroll IDs. Each employee must have a unique payroll ID.",
+        error
+      };
+    }
+    
     return {
       success: false,
       message: error.message || "Error importing employees",
@@ -44,23 +53,47 @@ export const executeImport = async (
 // Check for existing employees
 export const findExistingEmployees = async (importData: EmployeeData[]): Promise<EmployeeData[]> => {
   try {
-    // Extract emails and names from import data
+    // Extract emails and payroll_ids from import data
     const emails = importData
       .filter(emp => emp.email)
       .map(emp => emp.email);
     
-    console.log("Checking for existing employees with emails:", emails);
+    const payrollIds = importData
+      .filter(emp => emp.payroll_id)
+      .map(emp => emp.payroll_id);
     
-    // Query database for existing employees with matching emails
-    const { data: existingEmployees, error } = await supabase
+    console.log("Checking for existing employees with emails:", emails);
+    console.log("Checking for existing employees with payroll IDs:", payrollIds);
+    
+    // First check for existing employees with matching emails
+    const { data: emailMatches, error: emailError } = await supabase
       .from("employees")
       .select("*")
       .in("email", emails.length > 0 ? emails : ['no-emails-found']);
     
-    if (error) throw error;
+    if (emailError) throw emailError;
     
-    console.log("Found existing employees:", existingEmployees);
-    return existingEmployees || [];
+    // Then check for existing employees with matching payroll IDs
+    const { data: payrollMatches, error: payrollError } = await supabase
+      .from("employees")
+      .select("*")
+      .in("payroll_id", payrollIds.length > 0 ? payrollIds : ['no-payroll-ids-found']);
+    
+    if (payrollError) throw payrollError;
+    
+    // Combine the results, removing duplicates
+    const allMatches = [...(emailMatches || [])];
+    
+    if (payrollMatches) {
+      payrollMatches.forEach(employee => {
+        if (!allMatches.some(e => e.id === employee.id)) {
+          allMatches.push(employee);
+        }
+      });
+    }
+    
+    console.log("Found existing employees:", allMatches);
+    return allMatches || [];
   } catch (error) {
     console.error("Error checking for existing employees:", error);
     return [];
