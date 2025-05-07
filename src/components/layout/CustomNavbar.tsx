@@ -21,6 +21,14 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
         <span className="sr-only">Toggle sidebar</span>
       </Button>
       
+      <div className="flex items-center">
+        <img 
+          src="/lovable-uploads/d6be80d0-3603-437d-a7e2-8e698a5a3633.png" 
+          alt="Dootsons Logo" 
+          className="h-8 mr-2" 
+        />
+      </div>
+      
       <div className="flex-1" />
       
       <div className="flex items-center gap-2">
