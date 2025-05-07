@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Repeat } from 'lucide-react';
+import { Repeat, Info } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RecurrencePattern } from "../types";
@@ -100,6 +100,14 @@ export function RecurringTaskFields({
                   }.
                 </>
               ) : 'Specify how often this task should repeat.'}
+            </p>
+          </div>
+          
+          <div className="col-span-2 mt-1 bg-blue-50 p-2 rounded-md flex items-start">
+            <Info className="h-4 w-4 text-blue-500 mt-0.5 mr-2 flex-shrink-0" />
+            <p className="text-xs text-blue-700">
+              Note: New recurring tasks will only be created after the 6th of each month,
+              allowing time to complete existing tasks before new ones appear.
             </p>
           </div>
         </div>

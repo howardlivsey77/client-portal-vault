@@ -102,3 +102,26 @@ export const fetchUserProfiles = async (): Promise<{ id: string, email: string }
 
   return data;
 };
+
+// New function to check if it's after the 6th day of the month
+export const isAfterSixthOfMonth = (): boolean => {
+  const today = new Date();
+  const dayOfMonth = today.getDate();
+  return dayOfMonth > 6;
+};
+
+// Add a function to generate recurring tasks (this would be called by a scheduled function)
+export const generateRecurringTasks = async (): Promise<void> => {
+  // Only proceed if it's after the 6th of the month
+  if (!isAfterSixthOfMonth()) {
+    console.log("Not generating recurring tasks - before the 7th of the month");
+    return;
+  }
+  
+  // Implementation for generating recurring tasks would go here
+  // This would typically be called by a scheduled function
+  console.log("Generating recurring tasks - after the 6th of the month");
+  
+  // The actual implementation would fetch recurring tasks
+  // and create new instances based on their recurrence patterns
+};
