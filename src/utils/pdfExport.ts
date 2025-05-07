@@ -46,6 +46,7 @@ export const generateExtraHoursPDF = (summary: ExtraHoursSummary, filename = 'ex
   
   // Create employee details table
   const tableData = summary.employeeDetails.map(employee => [
+    employee.employeeId || 'N/A',
     employee.employeeName || 'Unknown',
     employee.rateType || 'Standard',
     employee.rateValue ? formatCurrency(employee.rateValue) : 'N/A',
@@ -58,7 +59,7 @@ export const generateExtraHoursPDF = (summary: ExtraHoursSummary, filename = 'ex
   // Add the employee details table
   autoTable(doc, {
     startY: summaryTableEndY + 20,
-    head: [['Employee', 'Rate Type', 'Hourly Rate', 'Extra Hours', 'Total']],
+    head: [['Payroll ID', 'Employee', 'Rate Type', 'Hourly Rate', 'Extra Hours', 'Total']],
     body: tableData
   });
   

@@ -28,6 +28,7 @@ export function EmployeeHoursTable({ employeeDetails }: EmployeeHoursTableProps)
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Payroll ID</TableHead>
               <TableHead>Employee</TableHead>
               <TableHead className="text-right">Rate Type</TableHead>
               <TableHead className="text-right">Hourly Rate</TableHead>
@@ -40,6 +41,7 @@ export function EmployeeHoursTable({ employeeDetails }: EmployeeHoursTableProps)
               const total = roundToTwoDecimals((employee.rateValue || 0) * employee.extraHours) || 0;
               return (
                 <TableRow key={`${employee.employeeId || employee.employeeName}-${employee.rateType || 'standard'}-${index}`}>
+                  <TableCell>{employee.employeeId || 'N/A'}</TableCell>
                   <TableCell className="font-medium">{employee.employeeName}</TableCell>
                   <TableCell className="text-right">{employee.rateType || 'Standard'}</TableCell>
                   <TableCell className="text-right">
