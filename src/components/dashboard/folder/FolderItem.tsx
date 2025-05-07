@@ -5,13 +5,15 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { 
   Folder,
   Pencil,
   FolderPlus,
   MoreVertical,
+  Trash
 } from "lucide-react";
 import { FolderItem as FolderItemType } from "../types/folder.types";
 
@@ -21,6 +23,7 @@ interface FolderTileProps {
   onFolderSelect: (folderId: string) => void;
   onEditFolder: (folderId: string) => void;
   onAddSubfolder: (parentId: string) => void;
+  onDeleteFolder: (folderId: string) => void;
 }
 
 export function FolderTile({
@@ -28,7 +31,8 @@ export function FolderTile({
   isSelected,
   onFolderSelect,
   onEditFolder,
-  onAddSubfolder
+  onAddSubfolder,
+  onDeleteFolder
 }: FolderTileProps) {
   return (
     <Card
@@ -61,6 +65,17 @@ export function FolderTile({
             }}>
               <FolderPlus className="h-3 w-3 mr-2" />
               Add Subfolder
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteFolder(folder.id);
+              }}
+              className="text-red-600 hover:text-red-700"
+            >
+              <Trash className="h-3 w-3 mr-2" />
+              Delete Folder
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

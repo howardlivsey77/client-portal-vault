@@ -4,13 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Folder, FolderPlus } from "lucide-react";
 import { AddFolderDialog } from "./folder/AddFolderDialog";
 import { EditFolderDialog } from "./folder/EditFolderDialog";
+import { DeleteFolderDialog } from "./folder/DeleteFolderDialog";
 import { 
   loadFolderStructure, 
   saveFolderStructure, 
   getFolderPathById,
   addSubFolder,
   updateFolderName,
-  findFolderById
+  findFolderById,
+  deleteFolder,
+  updateDocumentsAfterFolderDeletion
 } from "./folder/folderService";
 import { FolderItem as FolderItemType, FolderExplorerProps } from "./types/folder.types";
 import { FolderTile } from "./folder/FolderItem";
@@ -30,6 +33,11 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
   const [isEditingFolder, setIsEditingFolder] = useState(false);
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editingFolderName, setEditingFolderName] = useState("");
+  
+  // States for folder deletion
+  const [isDeletingFolder, setIsDeletingFolder] = useState(false);
+  const [deletingFolderId, setDeletingFolderId] = useState<string | null>(null);
+  const [deletingFolderName, setDeletingFolderName] = useState("");
   
   // Save folder structure to localStorage whenever it changes
   useEffect(() => {
@@ -75,6 +83,20 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
     setFolderStructure(updatedStructure);
   };
   
+  // Delete folder
+  const handleDeleteFolder = (folderId: string) => {
+    const updatedStructure = deleteFolder(folderStructure, folderId);
+    setFolderStructure(updatedStructure);
+    
+    // Update documents to remove references to deleted folder
+    updateDocumentsAfterFolderDeletion(folderId);
+    
+    // If the currently selected folder is being deleted, select "All Documents"
+    if (selectedFolderId === folderId) {
+      onFolderSelect(null);
+    }
+  };
+  
   // Open dialog to add a new folder
   const openAddFolderDialog = (parentId: string | null = null) => {
     setCurrentParentId(parentId);
@@ -88,6 +110,16 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
       setEditingFolderId(folderId);
       setEditingFolderName(folderToEdit.name);
       setIsEditingFolder(true);
+    }
+  };
+  
+  // Open dialog to delete a folder
+  const openDeleteFolderDialog = (folderId: string) => {
+    const folderToDelete = findFolderById(folderStructure, folderId);
+    if (folderToDelete) {
+      setDeletingFolderId(folderId);
+      setDeletingFolderName(folderToDelete.name);
+      setIsDeletingFolder(true);
     }
   };
   
@@ -140,6 +172,7 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
             onFolderSelect={onFolderSelect}
             onEditFolder={openEditFolderDialog}
             onAddSubfolder={openAddFolderDialog}
+            onDeleteFolder={openDeleteFolderDialog}
           />
         ))}
       </div>
@@ -173,6 +206,15 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
         folderId={editingFolderId}
         folderName={editingFolderName}
         onEditFolder={editFolder}
+      />
+      
+      {/* Delete folder dialog */}
+      <DeleteFolderDialog
+        open={isDeletingFolder}
+        onOpenChange={setIsDeletingFolder}
+        folderId={deletingFolderId}
+        folderName={deletingFolderName}
+        onDeleteFolder={handleDeleteFolder}
       />
     </div>
   );

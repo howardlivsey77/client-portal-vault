@@ -121,3 +121,42 @@ export const findFolderById = (
   }
   return null;
 };
+
+// Delete folder by ID
+export const deleteFolder = (
+  folders: FolderItem[],
+  id: string
+): FolderItem[] => {
+  // First, handle root level folders
+  const filteredFolders = folders.filter(folder => folder.id !== id);
+  
+  // If the length is the same, the folder was not at the root level
+  if (filteredFolders.length === folders.length) {
+    // Look in each folder's children
+    return folders.map(folder => ({
+      ...folder,
+      children: deleteFolder(folder.children, id)
+    }));
+  }
+  
+  return filteredFolders;
+};
+
+// Update documents to remove folderId reference when a folder is deleted
+export const updateDocumentsAfterFolderDeletion = (folderId: string): void => {
+  try {
+    const savedDocs = localStorage.getItem('documents');
+    if (savedDocs) {
+      const documents = JSON.parse(savedDocs);
+      const updatedDocs = documents.map((doc: any) => {
+        if (doc.folderId === folderId) {
+          return { ...doc, folderId: null };
+        }
+        return doc;
+      });
+      localStorage.setItem('documents', JSON.stringify(updatedDocs));
+    }
+  } catch (e) {
+    console.error('Error updating documents after folder deletion', e);
+  }
+};
