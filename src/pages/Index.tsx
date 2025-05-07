@@ -1,23 +1,17 @@
+
 import { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { DocumentGrid } from "@/components/dashboard/DocumentGrid";
 import { DocumentUploadModal } from "@/components/dashboard/DocumentUploadModal";
-import { FolderExplorer } from "@/components/dashboard/FolderExplorer";
-import { EmployeeDashboard } from "@/components/dashboard/EmployeeDashboard";
-import { Button } from "@/components/ui/button";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { FileText, Share, CheckSquare, ChartBar, Receipt, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "react-router-dom";
 import { TaskList } from "@/components/dashboard/tasks/TaskList";
 import { EmployeeChangesReport } from "@/components/dashboard/reports/employee-changes/EmployeeChangesReport";
 import { PayrollInputWizard } from "@/components/payroll/PayrollInputWizard";
-import { findFolderById, getFolderPathById, loadFolderStructure } from "@/components/dashboard/folder/folderService";
+import { EmployeeDashboard } from "@/components/dashboard/EmployeeDashboard";
+import { DocumentsTab } from "@/components/dashboard/tabs/DocumentsTab";
+import { PayrollTab } from "@/components/dashboard/tabs/PayrollTab";
+import { SharedTab } from "@/components/dashboard/tabs/SharedTab";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 
 const Index = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -50,114 +44,29 @@ const Index = () => {
     }
   };
   
-  // Get the folder path for the current folder
-  const getFolderPath = () => {
-    const folderStructure = loadFolderStructure();
-    return getFolderPathById(folderStructure, selectedFolderId);
-  };
-  
-  // Navigate back from fullscreen view to folder explorer
-  const handleNavigateBack = () => {
-    const folderStructure = loadFolderStructure();
-    
-    // If inside a subfolder, navigate to parent folder
-    if (selectedFolderId) {
-      const parentId = getParentFolderId(folderStructure, selectedFolderId);
-      if (parentId) {
-        setSelectedFolderId(parentId);
-        return;
-      }
-    }
-    
-    // Otherwise, go back to the folder explorer view
-    setIsFullscreenFolderView(false);
-    setSelectedFolderId(null);
-  };
-
-  // Helper function to get parent folder ID
-  const getParentFolderId = (folders: any[], folderId: string | null): string | null => {
-    if (!folderId) return null;
-    
-    for (const folder of folders) {
-      // Check if any of this folder's children is the one we're looking for
-      for (const child of folder.children) {
-        if (child.id === folderId) {
-          return folder.id;
-        }
-      }
-      
-      // Check in deeper levels
-      const foundInChildren = getParentFolderId(folder.children, folderId);
-      if (foundInChildren) return foundInChildren;
-    }
-    
-    return null;
-  };
-  
   // Render the appropriate content based on the active tab
   const renderContent = () => {
     switch(activeTab) {
       case "overview":
         return <EmployeeDashboard />;
       case "documents":
-        return isFullscreenFolderView ? (
-          <div className="w-full">
-            <DocumentGrid 
-              onAddDocument={() => setUploadModalOpen(true)} 
-              selectedFolderId={selectedFolderId}
-              onNavigateBack={handleNavigateBack}
-              folderPath={getFolderPath()}
-              onFolderSelect={handleFolderSelect}
-            />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            <div className="lg:col-span-2">
-              <FolderExplorer 
-                onFolderSelect={handleFolderSelect}
-                selectedFolderId={selectedFolderId}
-              />
-            </div>
-            <div className="lg:col-span-3">
-              <DocumentGrid 
-                onAddDocument={() => setUploadModalOpen(true)} 
-                selectedFolderId={selectedFolderId}
-              />
-            </div>
-          </div>
+        return (
+          <DocumentsTab
+            onAddDocument={() => setUploadModalOpen(true)}
+            selectedFolderId={selectedFolderId}
+            onFolderSelect={handleFolderSelect}
+            isFullscreenFolderView={isFullscreenFolderView}
+            onSetFullscreenView={setIsFullscreenFolderView}
+          />
         );
       case "tasks":
         return <TaskList />;
       case "reports":
         return <EmployeeChangesReport />;
       case "payroll":
-        return (
-          <div className="flex flex-col items-center justify-center py-12">
-            <Receipt className="h-16 w-16 text-monday-blue mb-4" />
-            <h3 className="text-2xl font-medium mb-2">Payroll Input</h3>
-            <p className="text-center text-muted-foreground max-w-md mb-6">
-              Begin the payroll input process by uploading your extra hours data and other payroll information.
-            </p>
-            <Button 
-              size="lg" 
-              onClick={() => setPayrollWizardOpen(true)}
-              className="bg-monday-green hover:bg-monday-green/90"
-            >
-              <Receipt className="mr-2 h-5 w-5" />
-              Start Payroll Input
-            </Button>
-          </div>
-        );
+        return <PayrollTab onOpenPayrollWizard={() => setPayrollWizardOpen(true)} />;
       case "shared":
-        return (
-          <div className="flex flex-col items-center justify-center py-12">
-            <Share className="h-16 w-16 text-muted-foreground/50" />
-            <h3 className="mt-4 text-xl font-medium">No shared documents</h3>
-            <p className="mt-2 text-center text-sm text-muted-foreground">
-              Documents shared with you will appear here.
-            </p>
-          </div>
-        );
+        return <SharedTab />;
       default:
         return <EmployeeDashboard />;
     }
@@ -169,24 +78,7 @@ const Index = () => {
   return (
     <PageContainer>
       {showHeader && (
-        <>
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-            
-            <div className="flex items-center gap-2">
-              <Button onClick={() => setUploadModalOpen(true)}>
-                <FileText className="mr-2 h-4 w-4" />
-                Upload Document
-              </Button>
-            </div>
-          </div>
-          
-          <div className="mb-6">
-            <div className="text-sm text-muted-foreground">
-              Welcome {user?.email}! Here's an overview of your company's data.
-            </div>
-          </div>
-        </>
+        <DashboardHeader onOpenUploadModal={() => setUploadModalOpen(true)} />
       )}
       
       <div className="animate-fade-in">
