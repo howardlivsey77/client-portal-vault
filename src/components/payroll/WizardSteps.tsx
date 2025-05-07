@@ -1,6 +1,6 @@
 
 import { FileUploader } from "./FileUploader";
-import { UploadSummary } from "./UploadSummary";
+import { UploadSummary } from "./upload-summary";
 import { PayrollFiles, WizardStep } from "./types";
 
 interface WizardStepsProps {
