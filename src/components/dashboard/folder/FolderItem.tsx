@@ -37,6 +37,7 @@ export function FolderTile({
     <Card
       className={`relative group cursor-pointer aspect-square flex flex-col items-center justify-center transition-all ${isSelected ? 'bg-muted' : 'hover:bg-muted/50'}`}
       onClick={() => onFolderSelect(folder.id)}
+      style={{ minHeight: "225px" }}
     >
       <span className="text-xl font-medium text-center">{folder.name}</span>
       

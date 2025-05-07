@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
+import { DocumentCard } from "@/components/dashboard/DocumentCard";
 
 export interface Document {
   id: string;
@@ -125,9 +126,12 @@ export function DocumentGrid({
         <div className="mt-8">
           <h3 className="text-xl font-medium mb-4">Folder Contents</h3>
           {filteredDocuments.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4">
-              {/* Document list content would go here */}
-              <p>This folder contains {filteredDocuments.length} documents</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+              {filteredDocuments.map(doc => (
+                <div key={doc.id} className="aspect-square" style={{ minHeight: "225px" }}>
+                  <DocumentCard {...doc} className="h-full" />
+                </div>
+              ))}
             </div>
           ) : (
             <div className="text-center py-12">
