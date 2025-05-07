@@ -1,5 +1,15 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FileText, ArrowLeft, FolderOpen } from "lucide-react";
+import { 
+  Breadcrumb, 
+  BreadcrumbItem, 
+  BreadcrumbLink, 
+  BreadcrumbList, 
+  BreadcrumbSeparator 
+} from "@/components/ui/breadcrumb";
 
 export interface Document {
   id: string;
@@ -13,11 +23,15 @@ export interface Document {
 interface DocumentGridProps {
   onAddDocument: () => void;
   selectedFolderId: string | null;
+  onNavigateBack?: () => void;
+  folderPath?: string[];
 }
 
 export function DocumentGrid({
   onAddDocument,
-  selectedFolderId
+  selectedFolderId,
+  onNavigateBack,
+  folderPath = []
 }: DocumentGridProps) {
   // Initial documents list
   const initialDocuments = [
@@ -116,24 +130,103 @@ export function DocumentGrid({
   window.moveDocument = moveDocument;
 
   return (
-    <div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {/* Default folder cards removed */}
-      </div>
-      
+    <div className="space-y-6">
+      {/* Breadcrumb navigation and back button */}
       {selectedFolderId && (
-        <div className="mt-8">
-          <h3 className="text-xl font-medium mb-4">Folder Contents</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            {onNavigateBack && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onNavigateBack} 
+                className="mr-2"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back
+              </Button>
+            )}
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink onClick={() => onNavigateBack && onNavigateBack()}>
+                    Documents
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                
+                {folderPath.map((folder, index) => (
+                  <React.Fragment key={index}>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      <span className="font-medium">{folder}</span>
+                    </BreadcrumbItem>
+                  </React.Fragment>
+                ))}
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+          
+          <Button variant="outline" onClick={onAddDocument} size="sm">
+            <FileText className="h-4 w-4 mr-2" />
+            Add Document
+          </Button>
+        </div>
+      )}
+      
+      {/* Document list */}
+      {selectedFolderId && (
+        <>
           {filteredDocuments.length > 0 ? (
             <div className="grid grid-cols-1 gap-4">
-              {/* Document list content would go here */}
-              <p>This folder contains {filteredDocuments.length} documents</p>
+              {filteredDocuments.map((doc) => (
+                <Card key={doc.id} className="p-4 flex justify-between items-center">
+                  <div className="flex items-center">
+                    <div className={`p-2 rounded-md mr-3 ${
+                      doc.type === 'PDF' ? 'bg-red-100' : 
+                      doc.type === 'DOCX' ? 'bg-blue-100' : 
+                      doc.type === 'XLSX' ? 'bg-green-100' : 'bg-gray-100'
+                    }`}>
+                      <FileText className={`h-6 w-6 ${
+                        doc.type === 'PDF' ? 'text-red-500' : 
+                        doc.type === 'DOCX' ? 'text-blue-500' : 
+                        doc.type === 'XLSX' ? 'text-green-500' : 'text-gray-500'
+                      }`} />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{doc.title}</h3>
+                      <div className="text-sm text-muted-foreground">
+                        {doc.type} • {doc.size} • Updated {doc.updatedAt}
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    {/* Document actions could go here */}
+                  </div>
+                </Card>
+              ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">This folder is empty</p>
+            <div className="text-center py-12 border border-dashed rounded-lg">
+              <FolderOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="font-medium text-lg mb-2">This folder is empty</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Upload a document to get started.
+              </p>
+              <Button onClick={onAddDocument}>
+                <FileText className="h-4 w-4 mr-2" />
+                Upload Document
+              </Button>
             </div>
           )}
+        </>
+      )}
+      
+      {!selectedFolderId && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {/* This area would show root level documents */}
+          <p className="col-span-full text-muted-foreground">
+            Select a folder to view its contents
+          </p>
         </div>
       )}
     </div>

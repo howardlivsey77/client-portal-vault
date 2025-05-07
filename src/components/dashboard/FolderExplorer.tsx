@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { FolderPlus } from "lucide-react";
+import { FolderPlus, ArrowLeft } from "lucide-react";
 import { AddFolderDialog } from "./folder/AddFolderDialog";
 import { EditFolderDialog } from "./folder/EditFolderDialog";
 import { DeleteFolderDialog } from "./folder/DeleteFolderDialog";
@@ -17,6 +18,8 @@ export function FolderExplorer({
 }: FolderExplorerProps) {
   const [folderStructure, setFolderStructure] = useState<FolderItemType[]>(loadFolderStructure);
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [navigationStack, setNavigationStack] = useState<string[]>([]);
 
   // States for folder creation
   const [isAddingFolder, setIsAddingFolder] = useState(false);
@@ -37,12 +40,66 @@ export function FolderExplorer({
     saveFolderStructure(folderStructure);
   }, [folderStructure]);
 
-  // Toggle folder expansion
-  const toggleFolder = (folderId: string) => {
-    setExpandedFolders(prev => ({
-      ...prev,
-      [folderId]: !prev[folderId]
-    }));
+  // Get current folder's contents
+  const getCurrentFolderContents = (): FolderItemType[] => {
+    if (!currentFolderId) {
+      return folderStructure;
+    }
+    
+    const findChildrenById = (folders: FolderItemType[], id: string): FolderItemType[] => {
+      for (const folder of folders) {
+        if (folder.id === id) {
+          return folder.children;
+        }
+        if (folder.children.length > 0) {
+          const nestedResult = findChildrenById(folder.children, id);
+          if (nestedResult.length > 0) {
+            return nestedResult;
+          }
+        }
+      }
+      return [];
+    };
+    
+    return findChildrenById(folderStructure, currentFolderId);
+  };
+
+  // Get current folder path for breadcrumb
+  const getCurrentFolderPath = (): string[] => {
+    return getFolderPathById(folderStructure, currentFolderId);
+  };
+
+  // Navigate to a specific folder
+  const navigateToFolder = (folderId: string | null) => {
+    if (folderId) {
+      setNavigationStack(prev => [...prev, folderId]);
+      setCurrentFolderId(folderId);
+      onFolderSelect(folderId);
+    } else {
+      // Root level
+      setNavigationStack([]);
+      setCurrentFolderId(null);
+      onFolderSelect(null);
+    }
+  };
+
+  // Navigate back to parent folder
+  const navigateBack = () => {
+    if (navigationStack.length <= 1) {
+      // Go back to root
+      setNavigationStack([]);
+      setCurrentFolderId(null);
+      onFolderSelect(null);
+      return;
+    }
+    
+    // Remove current folder from stack and set previous as current
+    const newStack = navigationStack.slice(0, -1);
+    const parentFolderId = newStack.length > 0 ? newStack[newStack.length - 1] : null;
+    
+    setNavigationStack(newStack);
+    setCurrentFolderId(parentFolderId);
+    onFolderSelect(parentFolderId);
   };
 
   // Add a new folder
@@ -84,15 +141,15 @@ export function FolderExplorer({
     // Update documents to remove references to deleted folder
     updateDocumentsAfterFolderDeletion(folderId);
 
-    // If the currently selected folder is being deleted, select "All Documents"
-    if (selectedFolderId === folderId) {
-      onFolderSelect(null);
+    // If deleting current folder, go back
+    if (currentFolderId === folderId) {
+      navigateBack();
     }
   };
 
   // Open dialog to add a new folder
   const openAddFolderDialog = (parentId: string | null = null) => {
-    setCurrentParentId(parentId);
+    setCurrentParentId(parentId || currentFolderId);
     setIsAddingFolder(true);
   };
 
@@ -121,36 +178,43 @@ export function FolderExplorer({
     return getFolderPathById(folderStructure, folderId);
   };
 
-  // Flatten folder structure to display as tiles
-  const getFlattenedFolders = (folders: FolderItemType[], parentPath = ""): FolderItemType[] => {
-    return folders.map(folder => ({
-      ...folder,
-      path: parentPath ? `${parentPath} / ${folder.name}` : folder.name
-    }));
-  };
-  
-  const flatFolders = getFlattenedFolders(folderStructure);
+  const currentFolders = getCurrentFolderContents();
+  const folderPath = getCurrentFolderPath();
   
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Folders</h2>
-        <Button 
-          onClick={() => openAddFolderDialog(null)} 
-          className="flex items-center gap-2"
-        >
-          <FolderPlus className="h-4 w-4" />
-          New Folder
-        </Button>
+        <h2 className="text-2xl font-bold">
+          {currentFolderId ? folderPath[folderPath.length - 1] : "Folders"}
+        </h2>
+        <div className="flex gap-2">
+          {currentFolderId && (
+            <Button 
+              variant="outline" 
+              onClick={navigateBack} 
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+          )}
+          <Button 
+            onClick={() => openAddFolderDialog(currentFolderId)} 
+            className="flex items-center gap-2"
+          >
+            <FolderPlus className="h-4 w-4" />
+            {currentFolderId ? "New Subfolder" : "New Folder"}
+          </Button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {folderStructure.map(folder => (
+        {currentFolders.map(folder => (
           <FolderTile
             key={folder.id}
             folder={folder}
             isSelected={selectedFolderId === folder.id}
-            onFolderSelect={onFolderSelect}
+            onFolderSelect={() => navigateToFolder(folder.id)}
             onEditFolder={openEditFolderDialog}
             onAddSubfolder={openAddFolderDialog}
             onDeleteFolder={openDeleteFolderDialog}
@@ -158,13 +222,19 @@ export function FolderExplorer({
         ))}
       </div>
       
-      {folderStructure.length === 0 && (
+      {currentFolders.length === 0 && (
         <Card className="p-12 text-center">
           <div className="flex flex-col items-center justify-center gap-4">
-            <h3 className="text-xl font-medium">No folders yet</h3>
+            <h3 className="text-xl font-medium">
+              {currentFolderId ? "This folder is empty" : "No folders yet"}
+            </h3>
             <p className="text-muted-foreground">
-              Create a folder to organize your documents
+              {currentFolderId ? "Create a subfolder to organize your documents" : "Create a folder to organize your documents"}
             </p>
+            <Button onClick={() => openAddFolderDialog(currentFolderId)}>
+              <FolderPlus className="h-4 w-4 mr-2" />
+              {currentFolderId ? "New Subfolder" : "New Folder"}
+            </Button>
           </div>
         </Card>
       )}

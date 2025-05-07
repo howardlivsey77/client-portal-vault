@@ -12,18 +12,20 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { FileText, Share, CheckSquare, ChartBar, Receipt } from "lucide-react";
+import { FileText, Share, CheckSquare, ChartBar, Receipt, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "react-router-dom";
 import { TaskList } from "@/components/dashboard/tasks/TaskList";
 import { EmployeeChangesReport } from "@/components/dashboard/reports/employee-changes/EmployeeChangesReport";
 import { PayrollInputWizard } from "@/components/payroll/PayrollInputWizard";
+import { findFolderById, getFolderPathById, loadFolderStructure } from "@/components/dashboard/folder/folderService";
 
 const Index = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [payrollWizardOpen, setPayrollWizardOpen] = useState(false);
+  const [isFullscreenFolderView, setIsFullscreenFolderView] = useState(false);
   const { user } = useAuth();
   const location = useLocation();
   
@@ -39,10 +41,26 @@ const Index = () => {
   // Handle folder selection
   const handleFolderSelect = (folderId: string | null) => {
     setSelectedFolderId(folderId);
+    
+    // Switch to fullscreen view if a folder is selected, otherwise back to split view
+    setIsFullscreenFolderView(!!folderId);
+    
     // If not already on documents tab, switch to it
     if (activeTab !== "documents") {
       setActiveTab("documents");
     }
+  };
+  
+  // Get the folder path for the current folder
+  const getFolderPath = () => {
+    const folderStructure = loadFolderStructure();
+    return getFolderPathById(folderStructure, selectedFolderId);
+  };
+  
+  // Navigate back from fullscreen view to folder explorer
+  const handleNavigateBack = () => {
+    setIsFullscreenFolderView(false);
+    setSelectedFolderId(null);
   };
   
   return (
@@ -84,20 +102,31 @@ const Index = () => {
         </TabsContent>
         
         <TabsContent value="documents" className="mt-6 animate-fade-in">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            <div className="lg:col-span-2">
-              <FolderExplorer 
-                onFolderSelect={handleFolderSelect}
-                selectedFolderId={selectedFolderId}
-              />
-            </div>
-            <div className="lg:col-span-3">
+          {isFullscreenFolderView ? (
+            <div className="w-full">
               <DocumentGrid 
                 onAddDocument={() => setUploadModalOpen(true)} 
                 selectedFolderId={selectedFolderId}
+                onNavigateBack={handleNavigateBack}
+                folderPath={getFolderPath()}
               />
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+              <div className="lg:col-span-2">
+                <FolderExplorer 
+                  onFolderSelect={handleFolderSelect}
+                  selectedFolderId={selectedFolderId}
+                />
+              </div>
+              <div className="lg:col-span-3">
+                <DocumentGrid 
+                  onAddDocument={() => setUploadModalOpen(true)} 
+                  selectedFolderId={selectedFolderId}
+                />
+              </div>
+            </div>
+          )}
         </TabsContent>
         
         <TabsContent value="tasks" className="mt-6 animate-fade-in">

@@ -12,7 +12,8 @@ import {
   Pencil,
   FolderPlus,
   MoreVertical,
-  Trash
+  Trash,
+  Folder
 } from "lucide-react";
 import { FolderItem as FolderItemType } from "../types/folder.types";
 
@@ -38,6 +39,7 @@ export function FolderTile({
       className={`relative group cursor-pointer aspect-square flex flex-col items-center justify-center transition-all ${isSelected ? 'bg-muted' : 'hover:bg-muted/50'}`}
       onClick={() => onFolderSelect(folder.id)}
     >
+      <Folder className="h-16 w-16 text-blue-500 mb-4" />
       <span className="text-xl font-medium text-center">{folder.name}</span>
       
       {/* Dropdown for folder actions - visible on hover */}
@@ -79,7 +81,7 @@ export function FolderTile({
         </DropdownMenu>
       </div>
       
-      {/* Display a badge showing number of subfolders if any */}
+      {/* Display a badge showing number of subfolders/files if any */}
       {folder.children && folder.children.length > 0 && (
         <div className="absolute bottom-2 right-2 bg-blue-100 text-blue-800 text-xs font-medium rounded-full px-2 py-0.5">
           {folder.children.length}
