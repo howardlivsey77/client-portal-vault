@@ -78,7 +78,10 @@ const Index = () => {
   return (
     <PageContainer>
       {showHeader && (
-        <DashboardHeader onOpenUploadModal={() => setUploadModalOpen(true)} />
+        <DashboardHeader 
+          onOpenUploadModal={() => setUploadModalOpen(true)} 
+          activeTab={activeTab}
+        />
       )}
       
       <div className="animate-fade-in">
