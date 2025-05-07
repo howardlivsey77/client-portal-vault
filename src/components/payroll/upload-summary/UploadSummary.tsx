@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ExtraHoursSummary } from "../types";
 import { FileSummary } from "./FileSummary";
@@ -8,6 +7,7 @@ import { ProcessingState } from "./ProcessingState";
 import { ErrorState } from "./ErrorState";
 import { NoDataState } from "./NoDataState";
 import { SuccessState } from "./SuccessState";
+import { ExportPDFButton } from "./ExportPDFButton";
 
 interface UploadSummaryProps {
   file: File | null;
@@ -62,7 +62,10 @@ export function UploadSummary({ file, type, getSummary, isProcessing }: UploadSu
 
   return (
     <div className="space-y-4">
-      <FileSummary file={file} />
+      <div className="flex justify-between items-center">
+        <FileSummary file={file} />
+        <ExportPDFButton summary={summary} />
+      </div>
       <SummaryCards summary={summary} />
       <EmployeeHoursTable employeeDetails={summary.employeeDetails} />
       <SuccessState />
