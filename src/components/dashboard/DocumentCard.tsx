@@ -1,3 +1,4 @@
+
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,12 +17,32 @@ import {
   FileText, 
   MoreVertical, 
   Share,
-  Trash,
-  FolderOpen
+  Trash2,
+  FolderOpen,
+  Edit
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { FolderItem } from "./types/folder.types";
 import { Document } from "./documents/types";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle 
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
 
 export interface DocumentCardProps extends Document {
   icon?: React.ReactNode;
@@ -40,6 +61,9 @@ export function DocumentCard({
   ...props
 }: DocumentCardProps) {
   const [folders, setFolders] = useState<FolderItem[]>([]);
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState(title);
 
   // Load folder structure from localStorage
   useEffect(() => {
@@ -74,6 +98,29 @@ export function DocumentCard({
     }
   };
 
+  const handleRename = () => {
+    setRenameDialogOpen(true);
+    setNewTitle(title);
+  };
+
+  const handleDelete = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmRename = () => {
+    if (typeof window.renameDocument === 'function') {
+      window.renameDocument(id, newTitle);
+    }
+    setRenameDialogOpen(false);
+  };
+
+  const confirmDelete = () => {
+    if (typeof window.deleteDocument === 'function') {
+      window.deleteDocument(id);
+    }
+    setDeleteDialogOpen(false);
+  };
+
   // Recursive function to render folder items in the dropdown menu
   const renderFolderItems = (folderList: FolderItem[]) => {
     return folderList.map(folder => (
@@ -97,75 +144,138 @@ export function DocumentCard({
   };
 
   return (
-    <Card
-      className={cn(
-        "group flex flex-col overflow-hidden transition-all hover:shadow-md",
-        className
-      )}
-      {...props}
-    >
-      <div className="flex items-center justify-between p-4">
-        <div className="flex items-center space-x-4">
-          {icon || getFileIcon()}
-          <div>
-            <div className="font-medium line-clamp-1">{title}</div>
-            <div className="text-sm text-muted-foreground">{updatedAt} • {size}</div>
+    <>
+      <Card
+        className={cn(
+          "group flex flex-col overflow-hidden transition-all hover:shadow-md",
+          className
+        )}
+        {...props}
+      >
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center space-x-4">
+            {icon || getFileIcon()}
+            <div>
+              <div className="font-medium line-clamp-1">{title}</div>
+              <div className="text-sm text-muted-foreground">{updatedAt} • {size}</div>
+            </div>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-4 w-4" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[160px]">
+              <DropdownMenuItem>
+                <Eye className="mr-2 h-4 w-4" />
+                <span>View</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Download className="mr-2 h-4 w-4" />
+                <span>Download</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Share className="mr-2 h-4 w-4" />
+                <span>Share</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleRename}>
+                <Edit className="mr-2 h-4 w-4" />
+                <span>Rename</span>
+              </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <FolderOpen className="mr-2 h-4 w-4" />
+                  <span>Move to folder</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem onClick={() => moveToFolder(null)}>
+                    All Documents
+                  </DropdownMenuItem>
+                  {renderFolderItems(folders)}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuItem className="text-destructive" onClick={handleDelete}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                <span>Delete</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <div className="mt-auto flex items-center justify-between border-t px-4 py-2 text-sm">
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs uppercase tracking-wide">
+            {type}
+          </span>
+          <div className="flex items-center space-x-2 text-muted-foreground">
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Share className="h-4 w-4" />
+              <span className="sr-only">Share</span>
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Download className="h-4 w-4" />
+              <span className="sr-only">Download</span>
+            </Button>
           </div>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreVertical className="h-4 w-4" />
-              <span className="sr-only">Open menu</span>
+      </Card>
+
+      {/* Rename Dialog */}
+      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rename Document</DialogTitle>
+            <DialogDescription>
+              Enter a new name for this document.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              placeholder="Document name"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameDialogOpen(false)}>
+              Cancel
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[160px]">
-            <DropdownMenuItem>
-              <Eye className="mr-2 h-4 w-4" />
-              <span>View</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Download className="mr-2 h-4 w-4" />
-              <span>Download</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Share className="mr-2 h-4 w-4" />
-              <span>Share</span>
-            </DropdownMenuItem>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <FolderOpen className="mr-2 h-4 w-4" />
-                <span>Move to folder</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem onClick={() => moveToFolder(null)}>
-                  All Documents
-                </DropdownMenuItem>
-                {renderFolderItems(folders)}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-            <DropdownMenuItem className="text-destructive">
-              <Trash className="mr-2 h-4 w-4" />
-              <span>Delete</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      <div className="mt-auto flex items-center justify-between border-t px-4 py-2 text-sm">
-        <span className="rounded-full bg-muted px-2 py-0.5 text-xs uppercase tracking-wide">
-          {type}
-        </span>
-        <div className="flex items-center space-x-2 text-muted-foreground">
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Share className="h-4 w-4" />
-            <span className="sr-only">Share</span>
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Download className="h-4 w-4" />
-            <span className="sr-only">Download</span>
-          </Button>
-        </div>
-      </div>
-    </Card>
+            <Button onClick={confirmRename}>Save changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the document "{title}". This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={confirmDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
+}
+
+// Extend Window interface to include our functions
+declare global {
+  interface Window {
+    addDocument: (doc: Document) => void;
+    moveDocument: (docId: string, targetFolderId: string | null) => void;
+    deleteDocument: (docId: string) => void;
+    renameDocument: (docId: string, newTitle: string) => void;
+  }
 }

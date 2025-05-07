@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Document } from "./types";
+import { toast } from "@/hooks/use-toast";
 
 export function useDocuments(selectedFolderId: string | null) {
   // Initial documents list
@@ -95,15 +96,51 @@ export function useDocuments(selectedFolderId: string | null) {
     } : doc));
   };
 
+  // Method to delete a document
+  const deleteDocument = (docId: string) => {
+    setDocuments(prevDocs => prevDocs.filter(doc => doc.id !== docId));
+    toast({
+      title: "Document deleted",
+      description: "The document has been successfully deleted.",
+    });
+  };
+
+  // Method to rename a document
+  const renameDocument = (docId: string, newTitle: string) => {
+    if (!newTitle.trim()) {
+      toast({
+        title: "Invalid name",
+        description: "Document name cannot be empty.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setDocuments(prevDocs => prevDocs.map(doc => doc.id === docId ? {
+      ...doc,
+      title: newTitle,
+      updatedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    } : doc));
+
+    toast({
+      title: "Document renamed",
+      description: "The document has been successfully renamed.",
+    });
+  };
+
   // Add the methods to window for access from other components
   useEffect(() => {
     window.addDocument = addDocument;
     window.moveDocument = moveDocument;
+    window.deleteDocument = deleteDocument;
+    window.renameDocument = renameDocument;
   }, [selectedFolderId]);
 
   return {
     documents: filteredDocuments,
     addDocument,
-    moveDocument
+    moveDocument,
+    deleteDocument,
+    renameDocument
   };
 }
