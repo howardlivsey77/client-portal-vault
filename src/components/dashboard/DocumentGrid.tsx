@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
-import { DocumentCard } from "./DocumentCard";
 import { AddDocumentButton } from "./AddDocumentButton";
+import { Folder } from "lucide-react";
 
 export interface Document {
   id: string;
@@ -127,26 +126,14 @@ export function DocumentGrid({ onAddDocument, selectedFolderId }: DocumentGridPr
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <AddDocumentButton onClick={onAddDocument} />
       
-      {filteredDocuments.map((doc) => (
-        <DocumentCard
-          key={doc.id}
-          id={doc.id}
-          title={doc.title}
-          type={doc.type}
-          updatedAt={doc.updatedAt}
-          size={doc.size}
-          folderId={doc.folderId}
-        />
-      ))}
-      
-      {filteredDocuments.length === 0 && (
+      {selectedFolderId && (
         <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
           <div className="rounded-full bg-muted p-3">
             <Folder className="h-6 w-6 text-muted-foreground" />
           </div>
-          <h3 className="mt-4 text-lg font-semibold">No documents in this folder</h3>
+          <h3 className="mt-4 text-lg font-semibold">Folder Selected</h3>
           <p className="mt-2 text-sm text-muted-foreground">
-            Upload a document or move existing documents to this folder.
+            This folder is currently empty. Upload a document to add content.
           </p>
         </div>
       )}
@@ -161,5 +148,3 @@ declare global {
     moveDocument: (docId: string, targetFolderId: string | null) => void;
   }
 }
-
-import { Folder } from "lucide-react";
