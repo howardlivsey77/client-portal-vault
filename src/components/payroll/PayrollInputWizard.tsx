@@ -23,6 +23,7 @@ type EmployeeHoursData = {
   extraHours: number;
   entries: number;
   rateType?: string;
+  rateValue?: number; // Added the rate value field
 };
 
 export function PayrollInputWizard({ 
@@ -49,14 +50,14 @@ export function PayrollInputWizard({
   const getExtraHoursSummary = (file: File) => {
     // Generate mock employee data for demonstration with multiple rates
     const mockEmployees = [
-      { employeeId: "EMP001", employeeName: "John Smith", extraHours: 8.5, entries: 3, rateType: "Standard" },
-      { employeeId: "EMP001", employeeName: "John Smith", extraHours: 4.0, entries: 2, rateType: "Rate 2" },
-      { employeeId: "EMP002", employeeName: "Sarah Johnson", extraHours: 8.0, entries: 3, rateType: "Standard" },
-      { employeeId: "EMP003", employeeName: "Michael Brown", extraHours: 12.75, entries: 5, rateType: "Standard" },
-      { employeeId: "EMP003", employeeName: "Michael Brown", extraHours: 4.0, entries: 2, rateType: "Rate 3" },
-      { employeeId: "EMP004", employeeName: "Emma Davis", extraHours: 4.0, entries: 2, rateType: "Standard" },
-      { employeeId: "EMP005", employeeName: "Robert Wilson", extraHours: 6.5, entries: 3, rateType: "Standard" },
-      { employeeId: "EMP005", employeeName: "Robert Wilson", extraHours: 3.0, entries: 1, rateType: "Rate 2" }
+      { employeeId: "EMP001", employeeName: "John Smith", extraHours: 8.5, entries: 3, rateType: "Standard", rateValue: 12.50 },
+      { employeeId: "EMP001", employeeName: "John Smith", extraHours: 4.0, entries: 2, rateType: "Rate 2", rateValue: 15.75 },
+      { employeeId: "EMP002", employeeName: "Sarah Johnson", extraHours: 8.0, entries: 3, rateType: "Standard", rateValue: 14.00 },
+      { employeeId: "EMP003", employeeName: "Michael Brown", extraHours: 12.75, entries: 5, rateType: "Standard", rateValue: 11.25 },
+      { employeeId: "EMP003", employeeName: "Michael Brown", extraHours: 4.0, entries: 2, rateType: "Rate 3", rateValue: 18.50 },
+      { employeeId: "EMP004", employeeName: "Emma Davis", extraHours: 4.0, entries: 2, rateType: "Standard", rateValue: 10.50 },
+      { employeeId: "EMP005", employeeName: "Robert Wilson", extraHours: 6.5, entries: 3, rateType: "Standard", rateValue: 13.25 },
+      { employeeId: "EMP005", employeeName: "Robert Wilson", extraHours: 3.0, entries: 1, rateType: "Rate 2", rateValue: 16.00 }
     ];
     
     // Calculate totals from the mock data

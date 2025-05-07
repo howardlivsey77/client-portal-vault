@@ -1,7 +1,7 @@
 
 import { FileText, Clock, Calendar, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDate } from "@/lib/formatters";
+import { formatDate, formatCurrency } from "@/lib/formatters";
 import {
   Table,
   TableBody,
@@ -17,6 +17,7 @@ type EmployeeHoursData = {
   extraHours: number;
   entries: number;
   rateType?: string;
+  rateValue?: number;
 };
 
 type ExtraHoursSummary = {
@@ -122,7 +123,7 @@ export function UploadSummary({ file, type, getSummary }: UploadSummaryProps) {
             <TableHeader>
               <TableRow>
                 <TableHead>Employee</TableHead>
-                <TableHead className="text-right">Rate Type</TableHead>
+                <TableHead className="text-right">Hourly Rate</TableHead>
                 <TableHead className="text-right">Extra Hours</TableHead>
                 <TableHead className="text-right">Entries</TableHead>
               </TableRow>
@@ -131,7 +132,10 @@ export function UploadSummary({ file, type, getSummary }: UploadSummaryProps) {
               {summary.employeeDetails.map((employee, index) => (
                 <TableRow key={`${employee.employeeId}-${employee.rateType || 'standard'}-${index}`}>
                   <TableCell className="font-medium">{employee.employeeName}</TableCell>
-                  <TableCell className="text-right">{employee.rateType || 'Standard'}</TableCell>
+                  <TableCell className="text-right">
+                    {employee.rateValue ? formatCurrency(employee.rateValue) : 'N/A'}
+                    <span className="text-xs text-muted-foreground ml-1">({employee.rateType || 'Standard'})</span>
+                  </TableCell>
                   <TableCell className="text-right">{employee.extraHours}</TableCell>
                   <TableCell className="text-right">{employee.entries}</TableCell>
                 </TableRow>
