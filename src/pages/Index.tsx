@@ -163,24 +163,31 @@ const Index = () => {
     }
   };
   
+  // Should we show the dashboard header?
+  const showHeader = activeTab !== "tasks";
+  
   return (
     <PageContainer>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        
-        <div className="flex items-center gap-2">
-          <Button onClick={() => setUploadModalOpen(true)}>
-            <FileText className="mr-2 h-4 w-4" />
-            Upload Document
-          </Button>
-        </div>
-      </div>
-      
-      <div className="mb-6">
-        <div className="text-sm text-muted-foreground">
-          Welcome {user?.email}! Here's an overview of your company's data.
-        </div>
-      </div>
+      {showHeader && (
+        <>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            
+            <div className="flex items-center gap-2">
+              <Button onClick={() => setUploadModalOpen(true)}>
+                <FileText className="mr-2 h-4 w-4" />
+                Upload Document
+              </Button>
+            </div>
+          </div>
+          
+          <div className="mb-6">
+            <div className="text-sm text-muted-foreground">
+              Welcome {user?.email}! Here's an overview of your company's data.
+            </div>
+          </div>
+        </>
+      )}
       
       <div className="animate-fade-in">
         {renderContent()}

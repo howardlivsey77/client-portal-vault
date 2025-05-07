@@ -90,7 +90,7 @@ export function TaskList() {
   return (
     <div className="animate-fade-in">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="monday-section-title">Tasks</h2>
+        <h2 className="text-3xl font-bold">Tasks</h2>
         <Button onClick={handleAddTask}>
           <Plus className="mr-1 h-4 w-4" /> Add Task
         </Button>
