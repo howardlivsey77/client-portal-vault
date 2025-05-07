@@ -3,32 +3,16 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from "@/components/ui/card";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription,
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from "@/components/ui/dialog";
-import { Loader2, Plus, RefreshCw } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2 } from "lucide-react";
 
 // Import custom hooks
 import { useInvites } from "@/hooks/useInvites";
 import { useUsers, UserProfile } from "@/hooks/useUsers";
 
 // Import components
-import { InviteUserForm } from "@/components/invites/InviteUserForm";
-import { InvitationsTable } from "@/components/invites/InvitationsTable";
-import { UsersTable } from "@/components/invites/UsersTable";
+import { InviteManagementHeader } from "@/components/invites/InviteManagementHeader";
+import { InviteManagementTabs } from "@/components/invites/InviteManagementTabs";
 import { UserRoleDialog } from "@/components/invites/UserRoleDialog";
 
 const InviteManagement = () => {
@@ -122,6 +106,14 @@ const InviteManagement = () => {
       setRoleDialogOpen(false);
     }
   };
+
+  const refreshData = () => {
+    if (activeTab === "invitations") {
+      fetchInvitations();
+    } else {
+      fetchUsers();
+    }
+  };
   
   if (!isAdmin) {
     return (
@@ -135,71 +127,31 @@ const InviteManagement = () => {
   
   return (
     <PageContainer>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Team Access Management</h1>
-        
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={activeTab === "invitations" ? fetchInvitations : fetchUsers} disabled={loading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          
-          <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Invite User
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Invite New User</DialogTitle>
-                <DialogDescription>
-                  Send an invitation for a new user to join the platform.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <InviteUserForm
-                email={email}
-                setEmail={setEmail}
-                selectedRole={selectedRole}
-                setSelectedRole={setSelectedRole}
-                loading={invitationsLoading}
-                onSubmit={handleCreateInvitation}
-              />
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+      <InviteManagementHeader
+        title="Team Access Management"
+        loading={activeTab === "invitations" ? invitationsLoading : usersLoading}
+        refreshData={refreshData}
+        inviteDialogOpen={inviteDialogOpen}
+        setInviteDialogOpen={setInviteDialogOpen}
+        email={email}
+        setEmail={setEmail}
+        selectedRole={selectedRole}
+        setSelectedRole={setSelectedRole}
+        invitationsLoading={invitationsLoading}
+        handleCreateInvitation={handleCreateInvitation}
+      />
       
-      <Card>
-        <CardHeader>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger value="invitations">Pending Invitations</TabsTrigger>
-              <TabsTrigger value="users">Active Users</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </CardHeader>
-        <CardContent>
-          <TabsContent value="invitations" className="mt-0">
-            <InvitationsTable 
-              invitations={invitations} 
-              loading={invitationsLoading} 
-              onDelete={deleteInvitation} 
-            />
-          </TabsContent>
-          
-          <TabsContent value="users" className="mt-0">
-            <UsersTable 
-              users={users} 
-              loading={usersLoading} 
-              currentUserId={userId}
-              onChangeRole={openRoleDialog}
-            />
-          </TabsContent>
-        </CardContent>
-      </Card>
+      <InviteManagementTabs
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        invitations={invitations}
+        users={users}
+        invitationsLoading={invitationsLoading}
+        usersLoading={usersLoading}
+        userId={userId}
+        onDeleteInvitation={deleteInvitation}
+        onChangeRole={openRoleDialog}
+      />
       
       <UserRoleDialog
         open={roleDialogOpen}
