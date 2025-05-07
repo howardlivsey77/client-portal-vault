@@ -80,8 +80,8 @@ export function UploadSummary({ file, type, getSummary, isProcessing }: UploadSu
             <p className="text-amber-800 font-medium">No employee hours data found in file</p>
             <p className="text-sm text-amber-600 mt-2">
               Your file was processed successfully, but no hours were detected. 
-              The file should contain hours data in columns named "Rate1Hours", "Rate2Hours", 
-              "Rate3Hours", "Rate4Hours" or similar rate-based hour columns.
+              The file should contain hours in columns named "Rate1", "Rate2", 
+              "Rate3", "Rate4", "Rate1Hours", etc., or other general hours columns like "Hours" or "ExtraHours".
             </p>
           </div>
         </div>

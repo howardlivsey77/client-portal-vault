@@ -37,118 +37,73 @@ export const parseExtraHoursFile = async (file: File): Promise<ExtraHoursSummary
           const lastName = row.surname || row.LastName || row['Last Name'] || '';
           const employeeName = firstName + (lastName ? ' ' + lastName : '');
           
-          // Look specifically for hours in Rate columns
-          const rate1Hours = parseFloat(row['Rate1Hours'] || row['Rate 1 Hours'] || row['Hours Rate 1'] || row['Rate1_Hours'] || '0');
-          const rate2Hours = parseFloat(row['Rate2Hours'] || row['Rate 2 Hours'] || row['Hours Rate 2'] || row['Rate2_Hours'] || '0');
-          const rate3Hours = parseFloat(row['Rate3Hours'] || row['Rate 3 Hours'] || row['Hours Rate 3'] || row['Rate3_Hours'] || '0');
-          const rate4Hours = parseFloat(row['Rate4Hours'] || row['Rate 4 Hours'] || row['Hours Rate 4'] || row['Rate4_Hours'] || '0');
+          // Check for rate columns using multiple naming patterns
+          const rateColumns = findRateColumns(row);
+          console.log("Found rate columns:", rateColumns);
           
-          // Also check standard hour columns as a fallback
+          // Extract rates (regardless of whether they have hours)
+          const rate1Value = parseFloat(row['Rate 1'] || row['Rate1'] || '0');
+          const rate2Value = parseFloat(row['Rate 2'] || row['Rate2'] || '0');
+          const rate3Value = parseFloat(row['Rate 3'] || row['Rate3'] || '0');
+          const rate4Value = parseFloat(row['Rate 4'] || row['Rate4'] || '0');
+          
+          // Process each rate type that has hours
+          for (const rateCol of rateColumns) {
+            const hours = parseFloat(row[rateCol.columnName]);
+            let rateValue = 0;
+            
+            // Only process if hours value is greater than 0
+            if (hours > 0) {
+              // Determine which rate to use based on the column name
+              if (rateCol.rateNumber === 1) {
+                rateValue = rate1Value;
+              } else if (rateCol.rateNumber === 2) {
+                rateValue = rate2Value;
+              } else if (rateCol.rateNumber === 3) {
+                rateValue = rate3Value;
+              } else if (rateCol.rateNumber === 4) {
+                rateValue = rate4Value;
+              }
+              
+              // Add entry for this employee and rate combination
+              employeeDetails.push({
+                employeeId: payrollId,
+                employeeName: employeeName || 'Unknown Employee',
+                extraHours: roundToTwoDecimals(hours) || 0,
+                entries: 1,
+                rateType: `Rate ${rateCol.rateNumber}`,
+                rateValue: roundToTwoDecimals(rateValue) || 0
+              });
+            }
+          }
+          
+          // Check for standard hours columns as a fallback
           const standardHourColumns = [
             'Hours', 'ExtraHours', 'Extra Hours', 'OvertimeHours', 
-            'Overtime', 'hours', 'extra hours'
+            'Overtime', 'hours', 'extra hours', 'TotalHours', 'Total Hours'
           ];
           
           let standardHours = 0;
+          let standardHoursFound = false;
+          
           for (const column of standardHourColumns) {
             if (row[column] !== undefined && !isNaN(parseFloat(row[column]))) {
               standardHours = parseFloat(row[column]);
+              standardHoursFound = true;
               break;
             }
           }
           
-          // Calculate total hours from all sources
-          const totalHours = rate1Hours + rate2Hours + rate3Hours + rate4Hours + standardHours;
-          
-          // Only proceed if there are actual hours
-          if (totalHours > 0) {
-            // Extract rates
-            const rate1 = parseFloat(row['Rate 1'] || row['Rate1'] || '0');
-            const rate2 = parseFloat(row['Rate 2'] || row['Rate2'] || '0');
-            const rate3 = parseFloat(row['Rate 3'] || row['Rate3'] || '0');
-            const rate4 = parseFloat(row['Rate 4'] || row['Rate4'] || '0');
-            
-            // Determine rate to use based on which hours column has values
-            let rateValue = 0;
-            let rateType = '';
-            let specificHours = 0;
-            
-            if (rate1Hours > 0) {
-              rateValue = rate1;
-              rateType = 'Rate 1';
-              specificHours = rate1Hours;
-            } else if (rate2Hours > 0) {
-              rateValue = rate2;
-              rateType = 'Rate 2';
-              specificHours = rate2Hours;
-            } else if (rate3Hours > 0) {
-              rateValue = rate3;
-              rateType = 'Rate 3';
-              specificHours = rate3Hours;
-            } else if (rate4Hours > 0) {
-              rateValue = rate4;
-              rateType = 'Rate 4';
-              specificHours = rate4Hours;
-            } else {
-              rateValue = rate1;
-              rateType = 'Standard';
-              specificHours = standardHours;
-            }
-            
-            // Add entry for this employee and rate combination
+          // Add standard hours entry if found and greater than 0
+          if (standardHoursFound && standardHours > 0) {
             employeeDetails.push({
               employeeId: payrollId,
               employeeName: employeeName || 'Unknown Employee',
-              extraHours: roundToTwoDecimals(specificHours) || 0,
+              extraHours: roundToTwoDecimals(standardHours) || 0,
               entries: 1,
-              rateType: rateType,
-              rateValue: roundToTwoDecimals(rateValue) || 0
+              rateType: 'Standard',
+              rateValue: roundToTwoDecimals(rate1Value) || 0
             });
-            
-            // Handle multiple rate entries for the same employee
-            if (rate1Hours > 0 && rateType !== 'Rate 1') {
-              employeeDetails.push({
-                employeeId: payrollId,
-                employeeName: employeeName || 'Unknown Employee',
-                extraHours: roundToTwoDecimals(rate1Hours) || 0,
-                entries: 1,
-                rateType: 'Rate 1',
-                rateValue: roundToTwoDecimals(rate1) || 0
-              });
-            }
-            
-            if (rate2Hours > 0 && rateType !== 'Rate 2') {
-              employeeDetails.push({
-                employeeId: payrollId,
-                employeeName: employeeName || 'Unknown Employee',
-                extraHours: roundToTwoDecimals(rate2Hours) || 0,
-                entries: 1,
-                rateType: 'Rate 2',
-                rateValue: roundToTwoDecimals(rate2) || 0
-              });
-            }
-            
-            if (rate3Hours > 0 && rateType !== 'Rate 3') {
-              employeeDetails.push({
-                employeeId: payrollId,
-                employeeName: employeeName || 'Unknown Employee',
-                extraHours: roundToTwoDecimals(rate3Hours) || 0,
-                entries: 1,
-                rateType: 'Rate 3',
-                rateValue: roundToTwoDecimals(rate3) || 0
-              });
-            }
-            
-            if (rate4Hours > 0 && rateType !== 'Rate 4') {
-              employeeDetails.push({
-                employeeId: payrollId,
-                employeeName: employeeName || 'Unknown Employee',
-                extraHours: roundToTwoDecimals(rate4Hours) || 0,
-                entries: 1,
-                rateType: 'Rate 4',
-                rateValue: roundToTwoDecimals(rate4) || 0
-              });
-            }
           }
           
           // Try to extract date information if available
@@ -232,3 +187,36 @@ export const parseExtraHoursFile = async (file: File): Promise<ExtraHoursSummary
     reader.readAsArrayBuffer(file);
   });
 };
+
+/**
+ * Helper function to find columns that contain rate hours data
+ */
+function findRateColumns(row: any): { columnName: string; rateNumber: number }[] {
+  const rateColumns: { columnName: string; rateNumber: number }[] = [];
+  const possibleRateColumns = Object.keys(row);
+  
+  for (const column of possibleRateColumns) {
+    // First check for columns with "Hours" in the name (more explicit)
+    if (/Rate[_\s]?1[_\s]?Hours/i.test(column) || /Hours[_\s]?Rate[_\s]?1/i.test(column)) {
+      rateColumns.push({ columnName: column, rateNumber: 1 });
+    } else if (/Rate[_\s]?2[_\s]?Hours/i.test(column) || /Hours[_\s]?Rate[_\s]?2/i.test(column)) {
+      rateColumns.push({ columnName: column, rateNumber: 2 });
+    } else if (/Rate[_\s]?3[_\s]?Hours/i.test(column) || /Hours[_\s]?Rate[_\s]?3/i.test(column)) {
+      rateColumns.push({ columnName: column, rateNumber: 3 });
+    } else if (/Rate[_\s]?4[_\s]?Hours/i.test(column) || /Hours[_\s]?Rate[_\s]?4/i.test(column)) {
+      rateColumns.push({ columnName: column, rateNumber: 4 });
+    } 
+    // Then check for plain "Rate1", "Rate2", etc. columns (what the user wants)
+    else if (/^Rate[_\s]?1$/i.test(column) || /^R1$/i.test(column)) {
+      rateColumns.push({ columnName: column, rateNumber: 1 });
+    } else if (/^Rate[_\s]?2$/i.test(column) || /^R2$/i.test(column)) {
+      rateColumns.push({ columnName: column, rateNumber: 2 });
+    } else if (/^Rate[_\s]?3$/i.test(column) || /^R3$/i.test(column)) {
+      rateColumns.push({ columnName: column, rateNumber: 3 });
+    } else if (/^Rate[_\s]?4$/i.test(column) || /^R4$/i.test(column)) {
+      rateColumns.push({ columnName: column, rateNumber: 4 });
+    }
+  }
+  
+  return rateColumns;
+}
