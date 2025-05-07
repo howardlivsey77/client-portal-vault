@@ -10,13 +10,11 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, FolderOpen } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Document } from "./DocumentGrid";
 import { FolderItem } from "./FolderExplorer";
+import { FileUploadArea } from "./upload/FileUploadArea";
+import { DocumentMetadataForm } from "./upload/DocumentMetadataForm";
 
 interface DocumentUploadModalProps {
   open: boolean;
@@ -78,13 +76,11 @@ export function DocumentUploadModal({ open, onOpenChange, selectedFolderId }: Do
     return "Unknown Folder";
   };
   
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-      // Use file name as default title if title is empty
-      if (!title) {
-        setTitle(e.target.files[0].name.split('.')[0]);
-      }
+  const handleFileChange = (newFile: File | null) => {
+    setFile(newFile);
+    // Use file name as default title if title is empty
+    if (newFile && !title) {
+      setTitle(newFile.name.split('.')[0]);
     }
   };
   
@@ -137,25 +133,6 @@ export function DocumentUploadModal({ open, onOpenChange, selectedFolderId }: Do
     }, 1500);
   };
   
-  // Recursively render folder options
-  const renderFolderOptions = (folders: FolderItem[], level = 0) => {
-    const options: JSX.Element[] = [];
-    
-    folders.forEach(folder => {
-      options.push(
-        <SelectItem key={folder.id} value={folder.id}>
-          {"\u00A0".repeat(level * 2) + folder.name}
-        </SelectItem>
-      );
-      
-      if (folder.children.length > 0) {
-        options.push(...renderFolderOptions(folder.children, level + 1));
-      }
-    });
-    
-    return options;
-  };
-  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -167,88 +144,20 @@ export function DocumentUploadModal({ open, onOpenChange, selectedFolderId }: Do
         </DialogHeader>
         
         <div className="space-y-4 py-4">
-          <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 p-10 rounded-md">
-            {file ? (
-              <div className="text-center">
-                <p className="font-medium">{file.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {(file.size / (1024 * 1024)).toFixed(2)} MB
-                </p>
-                <Button 
-                  variant="secondary" 
-                  className="mt-2" 
-                  onClick={() => setFile(null)}
-                >
-                  Choose Different File
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center">
-                <Upload className="mb-4 h-10 w-10 text-muted-foreground/70" />
-                <label
-                  htmlFor="document-upload"
-                  className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                  Choose File
-                </label>
-                <input
-                  id="document-upload"
-                  type="file"
-                  className="sr-only"
-                  onChange={handleFileChange}
-                />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Max file size: 25MB
-                </p>
-              </div>
-            )}
-          </div>
+          <FileUploadArea 
+            file={file} 
+            onFileChange={handleFileChange} 
+          />
           
-          <div className="space-y-2">
-            <Label htmlFor="document-title">Title</Label>
-            <Input 
-              id="document-title" 
-              placeholder="Enter document title" 
-              value={title}
-              onChange={handleTitleChange}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="folder">Folder</Label>
-            <Select 
-              value={selectedFolder || "none"} 
-              onValueChange={handleFolderChange}
-            >
-              <SelectTrigger id="folder" className="w-full">
-                <SelectValue placeholder="Select folder" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">
-                  <div className="flex items-center">
-                    <FolderOpen className="mr-2 h-4 w-4" />
-                    All Documents
-                  </div>
-                </SelectItem>
-                {renderFolderOptions(folderStructure)}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
-            <Select value={category} onValueChange={handleCategoryChange}>
-              <SelectTrigger id="category" className="w-full">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="contracts">Contracts</SelectItem>
-                <SelectItem value="reports">Reports</SelectItem>
-                <SelectItem value="invoices">Invoices</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <DocumentMetadataForm
+            title={title}
+            onTitleChange={handleTitleChange}
+            selectedFolder={selectedFolder}
+            folderStructure={folderStructure}
+            onFolderChange={handleFolderChange}
+            category={category}
+            onCategoryChange={handleCategoryChange}
+          />
         </div>
         
         <DialogFooter>
