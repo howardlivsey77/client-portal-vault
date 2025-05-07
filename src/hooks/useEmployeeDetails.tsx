@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +12,9 @@ export interface Employee {
   hire_date: string;
   hours_per_week: number | null;
   hourly_rate: number | null;
+  rate_2: number | null;
+  rate_3: number | null;
+  rate_4: number | null;
   email: string | null;
   address1: string | null;
   address2: string | null;
