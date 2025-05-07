@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -23,6 +22,7 @@ type EmployeeHoursData = {
   employeeName: string;
   extraHours: number;
   entries: number;
+  rateType?: string;
 };
 
 export function PayrollInputWizard({ 
@@ -47,18 +47,24 @@ export function PayrollInputWizard({
 
   // Mock function to simulate file parsing for summary display
   const getExtraHoursSummary = (file: File) => {
-    // Generate mock employee data for demonstration
+    // Generate mock employee data for demonstration with multiple rates
     const mockEmployees = [
-      { employeeId: "EMP001", employeeName: "John Smith", extraHours: 12.5, entries: 5 },
-      { employeeId: "EMP002", employeeName: "Sarah Johnson", extraHours: 8.0, entries: 3 },
-      { employeeId: "EMP003", employeeName: "Michael Brown", extraHours: 16.75, entries: 7 },
-      { employeeId: "EMP004", employeeName: "Emma Davis", extraHours: 4.0, entries: 2 },
-      { employeeId: "EMP005", employeeName: "Robert Wilson", extraHours: 9.5, entries: 4 }
+      { employeeId: "EMP001", employeeName: "John Smith", extraHours: 8.5, entries: 3, rateType: "Standard" },
+      { employeeId: "EMP001", employeeName: "John Smith", extraHours: 4.0, entries: 2, rateType: "Rate 2" },
+      { employeeId: "EMP002", employeeName: "Sarah Johnson", extraHours: 8.0, entries: 3, rateType: "Standard" },
+      { employeeId: "EMP003", employeeName: "Michael Brown", extraHours: 12.75, entries: 5, rateType: "Standard" },
+      { employeeId: "EMP003", employeeName: "Michael Brown", extraHours: 4.0, entries: 2, rateType: "Rate 3" },
+      { employeeId: "EMP004", employeeName: "Emma Davis", extraHours: 4.0, entries: 2, rateType: "Standard" },
+      { employeeId: "EMP005", employeeName: "Robert Wilson", extraHours: 6.5, entries: 3, rateType: "Standard" },
+      { employeeId: "EMP005", employeeName: "Robert Wilson", extraHours: 3.0, entries: 1, rateType: "Rate 2" }
     ];
     
     // Calculate totals from the mock data
     const totalExtraHours = Number(mockEmployees.reduce((sum, emp) => sum + emp.extraHours, 0).toFixed(2));
     const totalEntries = mockEmployees.reduce((sum, emp) => sum + emp.entries, 0);
+    
+    // Count unique employees
+    const uniqueEmployeeIds = new Set(mockEmployees.map(emp => emp.employeeId));
     
     return {
       totalEntries: totalEntries,
@@ -67,7 +73,7 @@ export function PayrollInputWizard({
         from: new Date(2023, 4, 1).toLocaleDateString(),
         to: new Date(2023, 4, 30).toLocaleDateString()
       },
-      employeeCount: mockEmployees.length,
+      employeeCount: uniqueEmployeeIds.size,
       employeeDetails: mockEmployees
     };
   };

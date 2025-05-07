@@ -16,6 +16,7 @@ type EmployeeHoursData = {
   employeeName: string;
   extraHours: number;
   entries: number;
+  rateType?: string;
 };
 
 type ExtraHoursSummary = {
@@ -121,14 +122,16 @@ export function UploadSummary({ file, type, getSummary }: UploadSummaryProps) {
             <TableHeader>
               <TableRow>
                 <TableHead>Employee</TableHead>
+                <TableHead className="text-right">Rate Type</TableHead>
                 <TableHead className="text-right">Extra Hours</TableHead>
                 <TableHead className="text-right">Entries</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {summary.employeeDetails.map((employee) => (
-                <TableRow key={employee.employeeId}>
+              {summary.employeeDetails.map((employee, index) => (
+                <TableRow key={`${employee.employeeId}-${employee.rateType || 'standard'}-${index}`}>
                   <TableCell className="font-medium">{employee.employeeName}</TableCell>
+                  <TableCell className="text-right">{employee.rateType || 'Standard'}</TableCell>
                   <TableCell className="text-right">{employee.extraHours}</TableCell>
                   <TableCell className="text-right">{employee.entries}</TableCell>
                 </TableRow>
