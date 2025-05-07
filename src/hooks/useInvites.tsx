@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export interface Invitation {
   id: string;
@@ -18,17 +18,21 @@ export interface Invitation {
 export const useInvites = () => {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   
   const fetchInvitations = async () => {
     try {
       setLoading(true);
+      setError(null);
       const { data, error } = await supabase
         .from("invitations")
         .select("*")
         .order("issued_at", { ascending: false });
         
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
       // Ensure all invitations have a role property (use default 'user' if none exists)
       const invitationsWithRole = data?.map(invitation => ({
@@ -38,11 +42,27 @@ export const useInvites = () => {
       
       setInvitations(invitationsWithRole);
     } catch (error: any) {
-      toast({
-        title: "Error fetching invitations",
-        description: error.message,
-        variant: "destructive"
-      });
+      console.error("Error fetching invitations:", error);
+      
+      // Handle permission errors gracefully
+      if (error.message && error.message.includes("permission denied")) {
+        setError("Permission denied: You don't have access to view invitations.");
+        toast({
+          title: "Error fetching invitations",
+          description: "Permission denied: You don't have access to view invitations.",
+          variant: "destructive"
+        });
+      } else {
+        setError(error.message || "An error occurred while fetching invitations.");
+        toast({
+          title: "Error fetching invitations",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+      
+      // Set empty invitations array in case of error
+      setInvitations([]);
     } finally {
       setLoading(false);
     }
@@ -150,6 +170,7 @@ export const useInvites = () => {
   return {
     invitations,
     loading,
+    error,
     fetchInvitations,
     createInvitation,
     deleteInvitation

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +32,7 @@ const InviteManagement = () => {
   const { 
     invitations, 
     loading: invitationsLoading, 
+    error: invitationsError,
     fetchInvitations,
     createInvitation,
     deleteInvitation 
@@ -41,6 +41,7 @@ const InviteManagement = () => {
   const {
     users,
     loading: usersLoading,
+    error: usersError,
     fetchUsers,
     updateUserRole
   } = useUsers();
@@ -151,6 +152,8 @@ const InviteManagement = () => {
         userId={userId}
         onDeleteInvitation={deleteInvitation}
         onChangeRole={openRoleDialog}
+        invitationsError={invitationsError}
+        usersError={usersError}
       />
       
       <UserRoleDialog

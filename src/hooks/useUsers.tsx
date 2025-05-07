@@ -14,11 +14,13 @@ export interface UserProfile {
 export const useUsers = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      setError(null);
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -28,11 +30,27 @@ export const useUsers = () => {
       
       setUsers(data || []);
     } catch (error: any) {
-      toast({
-        title: "Error fetching users",
-        description: error.message,
-        variant: "destructive"
-      });
+      console.error("Error fetching users:", error);
+      
+      // Handle permission errors gracefully
+      if (error.message && error.message.includes("permission denied")) {
+        setError("Permission denied: You don't have access to view users.");
+        toast({
+          title: "Error fetching users",
+          description: "Permission denied: You don't have access to view users.",
+          variant: "destructive"
+        });
+      } else {
+        setError(error.message || "An error occurred while fetching users.");
+        toast({
+          title: "Error fetching users",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+      
+      // Set empty users array in case of error
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -41,6 +59,7 @@ export const useUsers = () => {
   const updateUserRole = async (userId: string, isAdmin: boolean) => {
     setLoading(true);
     try {
+      setError(null);
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -58,11 +77,25 @@ export const useUsers = () => {
       await fetchUsers();
       return true;
     } catch (error: any) {
-      toast({
-        title: "Error updating role",
-        description: error.message,
-        variant: "destructive"
-      });
+      console.error("Error updating role:", error);
+      
+      // Handle permission errors
+      if (error.message && error.message.includes("permission denied")) {
+        setError("Permission denied: You don't have access to update user roles.");
+        toast({
+          title: "Error updating role",
+          description: "Permission denied: You don't have access to update user roles.",
+          variant: "destructive"
+        });
+      } else {
+        setError(error.message || "An error occurred while updating user role.");
+        toast({
+          title: "Error updating role",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+      
       return false;
     } finally {
       setLoading(false);
@@ -76,6 +109,7 @@ export const useUsers = () => {
   return {
     users,
     loading,
+    error,
     fetchUsers,
     updateUserRole
   };

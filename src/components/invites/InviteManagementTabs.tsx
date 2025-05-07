@@ -10,6 +10,8 @@ import { InvitationsTable } from "@/components/invites/InvitationsTable";
 import { UsersTable } from "@/components/invites/UsersTable";
 import { UserProfile } from "@/hooks/useUsers";
 import { Invitation } from "@/hooks/useInvites";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 interface InviteManagementTabsProps {
   activeTab: string;
@@ -21,6 +23,8 @@ interface InviteManagementTabsProps {
   userId: string | null;
   onDeleteInvitation: (id: string) => void;
   onChangeRole: (user: UserProfile) => void;
+  invitationsError?: string | null;
+  usersError?: string | null;
 }
 
 export const InviteManagementTabs = ({
@@ -32,7 +36,9 @@ export const InviteManagementTabs = ({
   usersLoading,
   userId,
   onDeleteInvitation,
-  onChangeRole
+  onChangeRole,
+  invitationsError,
+  usersError
 }: InviteManagementTabsProps) => {
   return (
     <Card>
@@ -44,20 +50,36 @@ export const InviteManagementTabs = ({
           </TabsList>
         
           <TabsContent value="invitations" className="mt-4">
-            <InvitationsTable 
-              invitations={invitations} 
-              loading={invitationsLoading} 
-              onDelete={onDeleteInvitation} 
-            />
+            {invitationsError ? (
+              <Alert variant="destructive" className="mb-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{invitationsError}</AlertDescription>
+              </Alert>
+            ) : (
+              <InvitationsTable 
+                invitations={invitations} 
+                loading={invitationsLoading} 
+                onDelete={onDeleteInvitation} 
+              />
+            )}
           </TabsContent>
           
           <TabsContent value="users" className="mt-4">
-            <UsersTable 
-              users={users} 
-              loading={usersLoading} 
-              currentUserId={userId}
-              onChangeRole={onChangeRole}
-            />
+            {usersError ? (
+              <Alert variant="destructive" className="mb-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{usersError}</AlertDescription>
+              </Alert>
+            ) : (
+              <UsersTable 
+                users={users} 
+                loading={usersLoading} 
+                currentUserId={userId}
+                onChangeRole={onChangeRole}
+              />
+            )}
           </TabsContent>
         </Tabs>
       </CardHeader>
