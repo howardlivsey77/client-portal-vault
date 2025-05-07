@@ -1,4 +1,3 @@
-
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { 
@@ -67,7 +66,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
           >
             <Link to={getTabUrl("overview")}>
               <Home className="h-4 w-4" />
-              Overview
+              Dashboard
             </Link>
           </Button>
           <Button 
