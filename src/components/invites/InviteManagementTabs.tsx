@@ -42,26 +42,25 @@ export const InviteManagementTabs = ({
             <TabsTrigger value="invitations">Pending Invitations</TabsTrigger>
             <TabsTrigger value="users">Active Users</TabsTrigger>
           </TabsList>
+        
+          <TabsContent value="invitations" className="mt-4">
+            <InvitationsTable 
+              invitations={invitations} 
+              loading={invitationsLoading} 
+              onDelete={onDeleteInvitation} 
+            />
+          </TabsContent>
+          
+          <TabsContent value="users" className="mt-4">
+            <UsersTable 
+              users={users} 
+              loading={usersLoading} 
+              currentUserId={userId}
+              onChangeRole={onChangeRole}
+            />
+          </TabsContent>
         </Tabs>
       </CardHeader>
-      <CardContent>
-        <TabsContent value="invitations" className="mt-0">
-          <InvitationsTable 
-            invitations={invitations} 
-            loading={invitationsLoading} 
-            onDelete={onDeleteInvitation} 
-          />
-        </TabsContent>
-        
-        <TabsContent value="users" className="mt-0">
-          <UsersTable 
-            users={users} 
-            loading={usersLoading} 
-            currentUserId={userId}
-            onChangeRole={onChangeRole}
-          />
-        </TabsContent>
-      </CardContent>
     </Card>
   );
 };
