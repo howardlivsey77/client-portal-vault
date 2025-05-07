@@ -34,6 +34,7 @@ export function UploadSummary({ file, type, getSummary, isProcessing }: UploadSu
         setLoading(true);
         const data = await getSummary(file);
         setSummary(data);
+        console.log("Processed summary data:", data);
       } catch (err) {
         console.error("Error in UploadSummary:", err);
         setError("Failed to process file. Please check the format and try again.");
