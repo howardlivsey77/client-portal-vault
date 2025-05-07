@@ -176,13 +176,14 @@ export function FolderExplorer({
         onOpenChange={setIsAddingFolder}
         parentId={currentParentId}
         onAddFolder={addFolder}
+        getFolderPath={getFolderPath}
       />
       
       <EditFolderDialog
         open={isEditingFolder}
         onOpenChange={setIsEditingFolder}
         folderId={editingFolderId}
-        initialName={editingFolderName}
+        folderName={editingFolderName}
         onEditFolder={editFolder}
       />
       

@@ -18,7 +18,7 @@ interface AddFolderDialogProps {
   onOpenChange: (open: boolean) => void;
   parentId: string | null;
   onAddFolder: (name: string, parentId: string | null) => void;
-  getFolderPath: (folderId: string | null) => string[];
+  getFolderPath?: (folderId: string | null) => string[];
 }
 
 export function AddFolderDialog({ 
@@ -26,7 +26,7 @@ export function AddFolderDialog({
   onOpenChange, 
   parentId, 
   onAddFolder, 
-  getFolderPath 
+  getFolderPath = () => [] 
 }: AddFolderDialogProps) {
   const [newFolderName, setNewFolderName] = useState("");
   
