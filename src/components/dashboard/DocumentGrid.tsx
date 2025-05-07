@@ -117,10 +117,6 @@ export function DocumentGrid({
 
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold">Documents</h2>
-      </div>
-      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {/* Default folder cards removed */}
       </div>
