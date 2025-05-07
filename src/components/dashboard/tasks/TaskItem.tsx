@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Calendar, Clock, Edit, Trash2 } from "lucide-react";
+import { Calendar, Clock, Edit, Trash2, Repeat } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
@@ -93,12 +93,39 @@ export function TaskItem({ task, onEdit, onDelete, userEmails }: TaskItemProps) 
     return format(new Date(dateString), 'PPP');
   };
   
+  const getRecurrenceText = () => {
+    if (!task.is_recurring || !task.recurrence_pattern || !task.recurrence_interval) {
+      return null;
+    }
+    
+    const interval = task.recurrence_interval;
+    const pattern = task.recurrence_pattern;
+    
+    return `Repeats every ${interval} ${
+      interval === 1 
+        ? pattern === 'daily' ? 'day' 
+        : pattern === 'weekly' ? 'week' 
+        : 'month'
+        : pattern === 'daily' ? 'days' 
+        : pattern === 'weekly' ? 'weeks' 
+        : 'months'
+    }`;
+  };
+  
   return (
     <Card className="monday-card mb-4 overflow-hidden">
       <CardHeader className="monday-card-header pb-2">
         <div className="flex justify-between items-start w-full">
           <div>
-            <CardTitle className="text-lg text-monday-darkblue">{task.title}</CardTitle>
+            <CardTitle className="text-lg text-monday-darkblue">
+              {task.title}
+              {task.is_recurring && (
+                <Badge variant="outline" className="ml-2 bg-gray-50">
+                  <Repeat className="h-3 w-3 mr-1" />
+                  Recurring
+                </Badge>
+              )}
+            </CardTitle>
             {task.assigned_to && (
               <CardDescription className="mt-1">
                 Assigned to: {userEmails[task.assigned_to] || 'Unknown user'}
@@ -121,13 +148,21 @@ export function TaskItem({ task, onEdit, onDelete, userEmails }: TaskItemProps) 
           {task.description || 'No description provided'}
         </p>
         
-        <div className="flex items-center mt-4 text-sm text-monday-gray">
+        <div className="flex flex-wrap items-center mt-4 text-sm text-monday-gray gap-4">
           {task.due_date && (
-            <div className="flex items-center mr-4">
+            <div className="flex items-center">
               <Calendar className="w-4 h-4 mr-1" />
               <span>{formatDate(task.due_date)}</span>
             </div>
           )}
+          
+          {task.is_recurring && getRecurrenceText() && (
+            <div className="flex items-center">
+              <Repeat className="w-4 h-4 mr-1" />
+              <span>{getRecurrenceText()}</span>
+            </div>
+          )}
+          
           <div className="flex items-center">
             <Clock className="w-4 h-4 mr-1" />
             <span>Created {format(new Date(task.created_at), 'PPP')}</span>

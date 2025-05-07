@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckSquare, Clock, AlertCircle } from "lucide-react";
+import { CheckSquare, Clock, AlertCircle, Repeat } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchTasks } from "./tasks/taskService";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +12,7 @@ interface TaskSummary {
   completed: number;
   inProgress: number;
   overdue: number;
+  recurring: number;
 }
 
 export function TaskOverview() {
@@ -57,9 +58,14 @@ export function TaskOverview() {
       }
     }
     
+    // Count recurring tasks
+    if (task.is_recurring) {
+      acc.recurring++;
+    }
+    
     return acc;
-  }, { total: 0, completed: 0, inProgress: 0, overdue: 0 }) : 
-  { total: 0, completed: 0, inProgress: 0, overdue: 0 };
+  }, { total: 0, completed: 0, inProgress: 0, overdue: 0, recurring: 0 }) : 
+  { total: 0, completed: 0, inProgress: 0, overdue: 0, recurring: 0 };
 
   const handleViewAllTasks = () => {
     navigate("/?tab=tasks");
@@ -96,12 +102,20 @@ export function TaskOverview() {
             <div className="font-bold text-monday-blue">{summary.inProgress}</div>
           </div>
           
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between border-b pb-2">
             <div className="flex items-center">
               <AlertCircle className="mr-2 h-4 w-4 text-monday-yellow" />
               <div className="text-sm font-medium">Overdue</div>
             </div>
             <div className="font-bold text-monday-yellow">{summary.overdue}</div>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Repeat className="mr-2 h-4 w-4 text-monday-purple" />
+              <div className="text-sm font-medium">Recurring</div>
+            </div>
+            <div className="font-bold text-monday-purple">{summary.recurring}</div>
           </div>
           
           <Button onClick={handleViewAllTasks} variant="default" className="mt-2 w-full">

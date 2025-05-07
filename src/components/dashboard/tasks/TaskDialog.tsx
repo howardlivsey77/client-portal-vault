@@ -26,11 +26,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
-import { Task, TaskFormData, TaskPriority, TaskStatus } from "./types";
+import { Task, TaskFormData, TaskPriority, TaskStatus, RecurrencePattern } from "./types";
 import { createTask, updateTask, fetchUserProfiles } from "./taskService";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
 
 interface TaskDialogProps {
   open: boolean;
@@ -54,7 +56,10 @@ export function TaskDialog({
     status: "todo",
     due_date: null,
     assigned_to: null,
-    folder_id: null
+    folder_id: null,
+    is_recurring: false,
+    recurrence_pattern: null,
+    recurrence_interval: null
   });
   
   const [users, setUsers] = useState<{id: string, email: string}[]>([]);
@@ -71,7 +76,10 @@ export function TaskDialog({
           status: task.status as TaskStatus,
           due_date: task.due_date ? new Date(task.due_date) : null,
           assigned_to: task.assigned_to,
-          folder_id: task.folder_id
+          folder_id: task.folder_id,
+          is_recurring: task.is_recurring || false,
+          recurrence_pattern: task.recurrence_pattern as RecurrencePattern | null,
+          recurrence_interval: task.recurrence_interval || null
         });
       } else {
         // Create mode - reset form
@@ -82,7 +90,10 @@ export function TaskDialog({
           status: "todo",
           due_date: null,
           assigned_to: null,
-          folder_id: null
+          folder_id: null,
+          is_recurring: false,
+          recurrence_pattern: null,
+          recurrence_interval: null
         });
       }
       
@@ -98,6 +109,15 @@ export function TaskDialog({
       ...prev,
       [field]: value
     }));
+
+    // If turning off recurring, reset the recurrence fields
+    if (field === 'is_recurring' && value === false) {
+      setFormData(prev => ({
+        ...prev,
+        recurrence_pattern: null,
+        recurrence_interval: null
+      }));
+    }
   };
   
   const handleSave = async () => {
@@ -108,6 +128,27 @@ export function TaskDialog({
         variant: "destructive"
       });
       return;
+    }
+    
+    // Validate recurring task fields
+    if (formData.is_recurring) {
+      if (!formData.recurrence_pattern) {
+        toast({
+          title: "Error",
+          description: "Please select how often the task should repeat",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (!formData.recurrence_interval || formData.recurrence_interval < 1) {
+        toast({
+          title: "Error",
+          description: "Please enter a valid recurrence interval",
+          variant: "destructive"
+        });
+        return;
+      }
     }
     
     try {
@@ -261,6 +302,83 @@ export function TaskDialog({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          
+          {/* Recurring Task Section */}
+          <div className="border-t pt-3 mt-2">
+            <div className="flex items-center space-x-2 mb-3">
+              <Checkbox 
+                id="is_recurring"
+                checked={formData.is_recurring}
+                onCheckedChange={(checked) => handleChange("is_recurring", !!checked)}
+              />
+              <label 
+                htmlFor="is_recurring" 
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center"
+              >
+                <Repeat className="h-4 w-4 mr-1" /> 
+                Recurring Task
+              </label>
+            </div>
+            
+            {formData.is_recurring && (
+              <div className="grid grid-cols-2 gap-4 pl-6 mt-2">
+                <div>
+                  <label htmlFor="recurrence_pattern" className="block text-sm font-medium mb-1">Repeats</label>
+                  <Select
+                    value={formData.recurrence_pattern || ""}
+                    onValueChange={(value) => handleChange("recurrence_pattern", value as RecurrencePattern)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select frequency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label htmlFor="recurrence_interval" className="block text-sm font-medium mb-1">Every</label>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      id="recurrence_interval"
+                      type="number"
+                      min="1"
+                      value={formData.recurrence_interval || ""}
+                      onChange={(e) => handleChange("recurrence_interval", Number(e.target.value))}
+                      className="w-full"
+                      placeholder="1"
+                    />
+                    <span className="text-sm text-muted-foreground w-24">
+                      {formData.recurrence_pattern === "daily" ? "day(s)" : 
+                       formData.recurrence_pattern === "weekly" ? "week(s)" : 
+                       formData.recurrence_pattern === "monthly" ? "month(s)" : ""}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="col-span-2 mt-1">
+                  <FormDescription className="text-xs">
+                    {formData.recurrence_pattern && formData.recurrence_interval ? (
+                      <>
+                        This task will repeat every {formData.recurrence_interval} {' '}
+                        {formData.recurrence_interval === 1 
+                          ? formData.recurrence_pattern === 'daily' ? 'day' 
+                            : formData.recurrence_pattern === 'weekly' ? 'week' 
+                            : 'month'
+                          : formData.recurrence_pattern === 'daily' ? 'days' 
+                            : formData.recurrence_pattern === 'weekly' ? 'weeks' 
+                            : 'months'
+                        }.
+                      </>
+                    ) : 'Specify how often this task should repeat.'}
+                  </FormDescription>
+                </div>
+              </div>
+            )}
           </div>
         </div>
         

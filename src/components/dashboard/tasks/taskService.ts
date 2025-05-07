@@ -20,20 +20,24 @@ export const fetchTasks = async (folderId: string | null = null): Promise<Task[]
 };
 
 export const createTask = async (taskData: TaskFormData): Promise<Task> => {
+  // Only include recurring task fields if the task is recurring
+  const taskToCreate = {
+    title: taskData.title,
+    description: taskData.description,
+    priority: taskData.priority,
+    status: taskData.status,
+    due_date: taskData.due_date ? taskData.due_date.toISOString() : null,
+    assigned_to: taskData.assigned_to,
+    folder_id: taskData.folder_id,
+    created_by: (await supabase.auth.getUser()).data.user?.id,
+    is_recurring: taskData.is_recurring,
+    recurrence_pattern: taskData.is_recurring ? taskData.recurrence_pattern : null,
+    recurrence_interval: taskData.is_recurring ? taskData.recurrence_interval : null,
+  };
+
   const { data, error } = await supabase
     .from('tasks')
-    .insert([
-      {
-        title: taskData.title,
-        description: taskData.description,
-        priority: taskData.priority,
-        status: taskData.status,
-        due_date: taskData.due_date ? taskData.due_date.toISOString() : null,
-        assigned_to: taskData.assigned_to,
-        folder_id: taskData.folder_id,
-        created_by: (await supabase.auth.getUser()).data.user?.id,
-      }
-    ])
+    .insert([taskToCreate])
     .select()
     .single();
 
@@ -47,10 +51,17 @@ export const createTask = async (taskData: TaskFormData): Promise<Task> => {
 
 export const updateTask = async (taskId: string, taskData: Partial<TaskFormData>): Promise<Task> => {
   // Convert Date objects to ISO strings for the database
-  const dataToUpdate = {
-    ...taskData,
-    due_date: taskData.due_date ? taskData.due_date.toISOString() : undefined
-  };
+  const dataToUpdate: Record<string, any> = { ...taskData };
+  
+  if (taskData.due_date !== undefined) {
+    dataToUpdate.due_date = taskData.due_date ? taskData.due_date.toISOString() : null;
+  }
+  
+  // If is_recurring is set to false, clear the recurrence fields
+  if (taskData.is_recurring === false) {
+    dataToUpdate.recurrence_pattern = null;
+    dataToUpdate.recurrence_interval = null;
+  }
 
   const { data, error } = await supabase
     .from('tasks')

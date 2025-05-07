@@ -1,6 +1,8 @@
 
+
 export type TaskPriority = 'low' | 'medium' | 'high';
 export type TaskStatus = 'todo' | 'in_progress' | 'done';
+export type RecurrencePattern = 'daily' | 'weekly' | 'monthly';
 
 export interface Task {
   id: string;
@@ -14,6 +16,10 @@ export interface Task {
   created_at: string;
   updated_at: string;
   folder_id: string | null;
+  is_recurring: boolean | null;
+  recurrence_pattern: RecurrencePattern | null;
+  recurrence_interval: number | null;
+  last_generated_date: string | null;
 }
 
 export interface TaskFormData {
@@ -24,4 +30,8 @@ export interface TaskFormData {
   due_date: Date | null;
   assigned_to: string | null;
   folder_id: string | null;
+  is_recurring: boolean;
+  recurrence_pattern: RecurrencePattern | null;
+  recurrence_interval: number | null;
 }
+

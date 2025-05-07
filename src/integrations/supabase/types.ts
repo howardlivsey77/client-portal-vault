@@ -182,7 +182,11 @@ export type Database = {
           due_date: string | null
           folder_id: string | null
           id: string
+          is_recurring: boolean | null
+          last_generated_date: string | null
           priority: string
+          recurrence_interval: number | null
+          recurrence_pattern: string | null
           status: string
           title: string
           updated_at: string
@@ -195,7 +199,11 @@ export type Database = {
           due_date?: string | null
           folder_id?: string | null
           id?: string
+          is_recurring?: boolean | null
+          last_generated_date?: string | null
           priority?: string
+          recurrence_interval?: number | null
+          recurrence_pattern?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -208,7 +216,11 @@ export type Database = {
           due_date?: string | null
           folder_id?: string | null
           id?: string
+          is_recurring?: boolean | null
+          last_generated_date?: string | null
           priority?: string
+          recurrence_interval?: number | null
+          recurrence_pattern?: string | null
           status?: string
           title?: string
           updated_at?: string
