@@ -1,4 +1,3 @@
-
 import { createContext, useState, useEffect, useContext, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
@@ -35,14 +34,11 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   const [authInitialized, setAuthInitialized] = useState<boolean>(false);
   const [loadingTimeout, setLoadingTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // Check admin status directly from profiles table
+  // Check admin status using the security definer function
   const checkAdminStatus = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', userId)
-        .single();
+        .rpc('is_admin', { user_id: userId });
       
       if (error) {
         console.error("Error checking admin status:", error);
@@ -50,7 +46,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       }
       
       console.log("Admin check result:", data);
-      return !!data?.is_admin; // Convert to boolean
+      return !!data; // Convert to boolean
     } catch (error) {
       console.error("Exception in admin check:", error);
       return false;

@@ -30,15 +30,22 @@ export const useEmployees = () => {
   const fetchEmployees = async () => {
     try {
       setLoading(true);
+      console.log("Fetching employees...");
+      
       const { data, error } = await supabase
         .from("employees")
         .select("*")
         .order("last_name", { ascending: true });
         
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching employees:", error);
+        throw error;
+      }
       
+      console.log("Employees data retrieved:", data?.length || 0, "records");
       setEmployees(data || []);
     } catch (error: any) {
+      console.error("Error in fetchEmployees:", error);
       toast({
         title: "Error fetching employees",
         description: error.message,
