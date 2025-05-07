@@ -17,13 +17,24 @@ type Step = {
   component: React.ReactNode;
 };
 
-type EmployeeHoursData = {
+export type EmployeeHoursData = {
   employeeId: string;
   employeeName: string;
   extraHours: number;
   entries: number;
   rateType?: string;
-  rateValue?: number; // Added the rate value field
+  rateValue?: number;
+};
+
+export type ExtraHoursSummary = {
+  totalEntries: number;
+  totalExtraHours: number;
+  dateRange: {
+    from: string;
+    to: string;
+  };
+  employeeCount: number;
+  employeeDetails: EmployeeHoursData[];
 };
 
 export function PayrollInputWizard({ 
@@ -38,17 +49,34 @@ export function PayrollInputWizard({
     extraHours: null,
     absences: null,
   });
+  
+  // Keep track of processed data
+  const [processedData, setProcessedData] = useState<ExtraHoursSummary | null>(null);
 
   const handleFileUpload = (stepId: string, file: File | null) => {
     setUploadedFiles(prev => ({
       ...prev,
       [stepId]: file
     }));
+    
+    // Reset processed data when a new file is uploaded
+    if (stepId === 'extraHours') {
+      setProcessedData(null);
+    }
   };
 
-  // Mock function to simulate file parsing for summary display
-  const getExtraHoursSummary = (file: File) => {
-    // Generate mock employee data for demonstration with multiple rates
+  // Function to parse the uploaded file and extract employee hours data
+  // This is a mock function for now - in a real implementation, you would parse the actual file
+  const getExtraHoursSummary = (file: File): ExtraHoursSummary => {
+    console.log("Processing file:", file.name);
+    
+    // If we already have processed data, return it
+    if (processedData) {
+      return processedData;
+    }
+    
+    // Otherwise, use mock data for demonstration
+    // In a real implementation, you would parse the file contents here
     const mockEmployees = [
       { employeeId: "EMP001", employeeName: "John Smith", extraHours: 8.5, entries: 3, rateType: "Standard", rateValue: 12.50 },
       { employeeId: "EMP001", employeeName: "John Smith", extraHours: 4.0, entries: 2, rateType: "Rate 2", rateValue: 15.75 },
@@ -67,7 +95,7 @@ export function PayrollInputWizard({
     // Count unique employees
     const uniqueEmployeeIds = new Set(mockEmployees.map(emp => emp.employeeId));
     
-    return {
+    const result = {
       totalEntries: totalEntries,
       totalExtraHours: totalExtraHours,
       dateRange: {
@@ -77,6 +105,10 @@ export function PayrollInputWizard({
       employeeCount: uniqueEmployeeIds.size,
       employeeDetails: mockEmployees
     };
+    
+    // Store the processed data
+    setProcessedData(result);
+    return result;
   };
 
   const steps: Step[] = [

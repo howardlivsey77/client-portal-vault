@@ -1,7 +1,7 @@
 
 import { FileText, Clock, Calendar, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDate, formatCurrency } from "@/lib/formatters";
+import { formatDate, formatCurrency, roundToTwoDecimals } from "@/lib/formatters";
 import {
   Table,
   TableBody,
@@ -10,26 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-type EmployeeHoursData = {
-  employeeId: string;
-  employeeName: string;
-  extraHours: number;
-  entries: number;
-  rateType?: string;
-  rateValue?: number;
-};
-
-type ExtraHoursSummary = {
-  totalEntries: number;
-  totalExtraHours: number;
-  dateRange: {
-    from: string;
-    to: string;
-  };
-  employeeCount: number;
-  employeeDetails: EmployeeHoursData[];
-};
+import { ExtraHoursSummary, EmployeeHoursData } from "./PayrollInputWizard";
 
 interface UploadSummaryProps {
   file: File | null;
@@ -133,7 +114,7 @@ export function UploadSummary({ file, type, getSummary }: UploadSummaryProps) {
                 <TableRow key={`${employee.employeeId}-${employee.rateType || 'standard'}-${index}`}>
                   <TableCell className="font-medium">{employee.employeeName}</TableCell>
                   <TableCell className="text-right">
-                    {employee.rateValue ? formatCurrency(employee.rateValue) : 'N/A'}
+                    {employee.rateValue ? formatCurrency(roundToTwoDecimals(employee.rateValue) || 0) : 'N/A'}
                     <span className="text-xs text-muted-foreground ml-1">({employee.rateType || 'Standard'})</span>
                   </TableCell>
                   <TableCell className="text-right">{employee.extraHours}</TableCell>

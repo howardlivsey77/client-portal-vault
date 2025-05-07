@@ -29,3 +29,12 @@ export function roundToTwoDecimals(value: number | null | undefined): number | n
   if (value === null || value === undefined) return null;
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
+
+/**
+ * Formats a number as pounds (without the £ symbol)
+ */
+export function formatPounds(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '0.00';
+  const rounded = roundToTwoDecimals(value);
+  return rounded.toFixed(2);
+}
