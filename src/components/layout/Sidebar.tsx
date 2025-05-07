@@ -138,8 +138,15 @@ export function Sidebar({ isOpen }: SidebarProps) {
         </div>
         
         <div className="mt-auto px-2 space-y-1">
-          <Button variant="ghost" className="monday-sidebar-item w-full justify-start" asChild>
-            <Link to="/">
+          <Button 
+            variant="ghost" 
+            className={cn(
+              "monday-sidebar-item w-full justify-start", 
+              location.pathname.includes("/invites") && "bg-accent text-accent-foreground"
+            )} 
+            asChild
+          >
+            <Link to="/invites">
               <Users className="h-4 w-4" />
               Team Access
             </Link>
