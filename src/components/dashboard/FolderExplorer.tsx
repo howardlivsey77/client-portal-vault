@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { FolderPlus } from "lucide-react";
@@ -145,7 +144,7 @@ export function FolderExplorer({
         </Button>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {folderStructure.map(folder => (
           <FolderTile
             key={folder.id}
