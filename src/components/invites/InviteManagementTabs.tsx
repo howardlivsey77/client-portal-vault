@@ -43,44 +43,50 @@ export const InviteManagementTabs = ({
   return (
     <Card>
       <CardHeader>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="invitations">Pending Invitations</TabsTrigger>
             <TabsTrigger value="users">Active Users</TabsTrigger>
           </TabsList>
-        
-          <TabsContent value="invitations" className="mt-4">
-            {invitationsError ? (
-              <Alert variant="destructive" className="mb-4">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{invitationsError}</AlertDescription>
-              </Alert>
-            ) : (
-              <InvitationsTable 
-                invitations={invitations} 
-                loading={invitationsLoading} 
-                onDelete={onDeleteInvitation} 
-              />
-            )}
-          </TabsContent>
           
-          <TabsContent value="users" className="mt-4">
-            {usersError ? (
-              <Alert variant="destructive" className="mb-4">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{usersError}</AlertDescription>
-              </Alert>
-            ) : (
-              <UsersTable 
-                users={users} 
-                loading={usersLoading} 
-                currentUserId={userId}
-                onChangeRole={onChangeRole}
-              />
+          <div className="mt-4">
+            {activeTab === "invitations" && (
+              <>
+                {invitationsError ? (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{invitationsError}</AlertDescription>
+                  </Alert>
+                ) : (
+                  <InvitationsTable 
+                    invitations={invitations} 
+                    loading={invitationsLoading} 
+                    onDelete={onDeleteInvitation} 
+                  />
+                )}
+              </>
             )}
-          </TabsContent>
+            
+            {activeTab === "users" && (
+              <>
+                {usersError ? (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{usersError}</AlertDescription>
+                  </Alert>
+                ) : (
+                  <UsersTable 
+                    users={users} 
+                    loading={usersLoading} 
+                    currentUserId={userId}
+                    onChangeRole={onChangeRole}
+                  />
+                )}
+              </>
+            )}
+          </div>
         </Tabs>
       </CardHeader>
     </Card>
