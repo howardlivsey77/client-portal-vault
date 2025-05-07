@@ -41,6 +41,7 @@ const enrichWithEmployeeData = async (data: ExtraHoursSummary): Promise<void> =>
     
     // Create an array from the Set
     const namesList = Array.from(employeeNames);
+    console.log('Looking up employees by names:', namesList);
     
     // Create a lookup object for first name + last name
     const employeeLookup = new Map<string, any>();
@@ -55,6 +56,8 @@ const enrichWithEmployeeData = async (data: ExtraHoursSummary): Promise<void> =>
       return;
     }
     
+    console.log('Found employees in database:', employees?.length);
+    
     // Create lookup by full name and by individual names
     if (employees) {
       employees.forEach(emp => {
@@ -63,33 +66,62 @@ const enrichWithEmployeeData = async (data: ExtraHoursSummary): Promise<void> =>
         
         // Also try just the first name
         employeeLookup.set(emp.first_name.toLowerCase(), emp);
+        
+        // Also try just the last name
+        employeeLookup.set(emp.last_name.toLowerCase(), emp);
       });
     }
     
     // Try to match employees from the file to the database
     data.employeeDetails.forEach(empHours => {
+      if (!empHours.employeeName) return;
+      
       const lookupName = empHours.employeeName.toLowerCase();
       const dbEmployee = employeeLookup.get(lookupName);
       
       if (dbEmployee) {
+        console.log(`Found match for ${empHours.employeeName}: ${dbEmployee.first_name} ${dbEmployee.last_name}`);
         // If found, update the employee ID
         empHours.employeeId = dbEmployee.id;
         
-        // If we don't have rate information yet, try to get it from the DB
-        if (!empHours.rateValue || empHours.rateValue === 0) {
-          // Based on the rate type, get the appropriate rate
-          if (empHours.rateType === 'Standard') {
+        // Get the appropriate rate based on the rate type
+        if (empHours.rateType) {
+          // Extract rate number if present (e.g. "Rate 1" -> 1)
+          const rateNumber = empHours.rateType.match(/\d+/)?.[0];
+          
+          if (rateNumber) {
+            // Convert to number and get appropriate rate
+            const rateNum = parseInt(rateNumber, 10);
+            
+            switch (rateNum) {
+              case 1:
+                empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
+                console.log(`Applied Rate 1 for ${empHours.employeeName}: ${empHours.rateValue}`);
+                break;
+              case 2:
+                empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_2) || 0;
+                console.log(`Applied Rate 2 for ${empHours.employeeName}: ${empHours.rateValue}`);
+                break;
+              case 3:
+                empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_3) || 0;
+                console.log(`Applied Rate 3 for ${empHours.employeeName}: ${empHours.rateValue}`);
+                break;
+              case 4:
+                empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_4) || 0;
+                console.log(`Applied Rate 4 for ${empHours.employeeName}: ${empHours.rateValue}`);
+                break;
+              default:
+                empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
+            }
+          } else if (empHours.rateType.toLowerCase() === 'standard') {
             empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
-          } else if (empHours.rateType === 'Rate 2') {
-            empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_2) || 0;
-          } else if (empHours.rateType === 'Rate 3') {
-            empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_3) || 0;
-          } else if (empHours.rateType === 'Rate 4') {
-            empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_4) || 0;
           }
-        } else if (empHours.rateValue) {
-          empHours.rateValue = roundToTwoDecimals(empHours.rateValue);
+        } else {
+          // Use standard hourly rate if no rate type specified
+          empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
         }
+      } else {
+        console.log(`No employee match found for: ${empHours.employeeName}`);
       }
     });
     
