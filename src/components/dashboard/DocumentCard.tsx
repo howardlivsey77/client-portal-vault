@@ -1,4 +1,3 @@
-
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,15 +20,10 @@ import {
   FolderOpen
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { FolderItem } from "./FolderExplorer";
+import { FolderItem } from "./types/folder.types";
+import { Document } from "./documents/types";
 
-export interface DocumentCardProps {
-  id: string;
-  title: string;
-  type: string;
-  updatedAt: string;
-  size: string;
-  folderId: string | null;
+export interface DocumentCardProps extends Document {
   icon?: React.ReactNode;
   className?: string;
 }
