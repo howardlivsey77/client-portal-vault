@@ -1,6 +1,6 @@
 
 import { parseExtraHoursFile } from '@/utils/fileParsingUtils';
-import { ExtraHoursSummary } from '@/components/payroll/PayrollInputWizard';
+import { ExtraHoursSummary } from '@/components/payroll/types';
 import { supabase } from "@/integrations/supabase/client";
 import { roundToTwoDecimals } from '@/lib/formatters';
 

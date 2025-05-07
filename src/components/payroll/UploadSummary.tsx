@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ExtraHoursSummary, EmployeeHoursData } from "./PayrollInputWizard";
+import { ExtraHoursSummary, EmployeeHoursData } from "./types";
 
 interface UploadSummaryProps {
   file: File | null;

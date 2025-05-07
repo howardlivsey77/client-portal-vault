@@ -1,6 +1,6 @@
 
 import * as XLSX from 'xlsx';
-import { ExtraHoursSummary, EmployeeHoursData } from '@/components/payroll/PayrollInputWizard';
+import { ExtraHoursSummary, EmployeeHoursData } from '@/components/payroll/types';
 import { roundToTwoDecimals } from '@/lib/formatters';
 
 /**
