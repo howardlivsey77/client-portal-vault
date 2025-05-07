@@ -1,10 +1,10 @@
 
 import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Loader2, Plus } from "lucide-react";
 import { HourlyRateTable } from "./hourly-rates/HourlyRateTable";
 import { EmptyRateState } from "./hourly-rates/EmptyRateState";
 import { HourlyRateDialog } from "./hourly-rates/HourlyRateDialog";
+import { HourlyRatesHeader } from "./hourly-rates/HourlyRatesHeader";
+import { HourlyRatesLoading } from "./hourly-rates/HourlyRatesLoading";
 import { useHourlyRates } from "@/hooks/useHourlyRates";
 
 interface HourlyRatesManagerProps {
@@ -57,24 +57,13 @@ export const HourlyRatesManager = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Hourly Rates</h3>
-        {!readOnly && (
-          <Button 
-            onClick={() => handleOpenDialog()}
-            size="sm"
-            variant="outline"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add Rate
-          </Button>
-        )}
-      </div>
+      <HourlyRatesHeader 
+        readOnly={readOnly} 
+        onAddRate={() => handleOpenDialog()} 
+      />
 
       {loading && rates.length === 0 ? (
-        <div className="py-4 flex justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
+        <HourlyRatesLoading />
       ) : rates.length > 0 ? (
         <HourlyRateTable 
           rates={rates}

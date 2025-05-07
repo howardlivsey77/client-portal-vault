@@ -1,9 +1,9 @@
 
 import { useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
 import { useHourlyRates } from "@/hooks/useHourlyRates";
+import { HourlyRatesLoading } from "./hourly-rates/HourlyRatesLoading";
 
 interface HourlyRatesListProps {
   employeeId: string;
@@ -26,11 +26,7 @@ export const HourlyRatesList = ({ employeeId }: HourlyRatesListProps) => {
   }, [employeeId, fetchRates]);
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-2">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <HourlyRatesLoading />;
   }
 
   if (rates.length === 0) {
