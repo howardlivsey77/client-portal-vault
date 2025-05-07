@@ -1,6 +1,4 @@
-
 import { useState, useEffect } from "react";
-import { AddDocumentButton } from "./AddDocumentButton";
 import { Card } from "@/components/ui/card";
 
 export interface Document {
@@ -119,9 +117,8 @@ export function DocumentGrid({
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-6">
         <h2 className="text-2xl font-bold">Documents</h2>
-        <AddDocumentButton onClick={onAddDocument} />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
