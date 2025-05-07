@@ -9,6 +9,7 @@ import {
   DialogTitle 
 } from "@/components/ui/dialog";
 import { FileUploader } from "./FileUploader";
+import { UploadSummary } from "./UploadSummary";
 import { toast } from "@/hooks/use-toast";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -27,6 +28,7 @@ export function PayrollInputWizard({
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File | null>>({
     extraHours: null,
+    absences: null,
   });
 
   const handleFileUpload = (stepId: string, file: File | null) => {
@@ -34,6 +36,19 @@ export function PayrollInputWizard({
       ...prev,
       [stepId]: file
     }));
+  };
+
+  // Mock function to simulate file parsing for summary display
+  const getExtraHoursSummary = (file: File) => {
+    return {
+      totalEntries: Math.floor(Math.random() * 30) + 10,
+      totalExtraHours: Math.floor(Math.random() * 200) + 50,
+      dateRange: {
+        from: new Date(2023, 4, 1).toLocaleDateString(),
+        to: new Date(2023, 4, 30).toLocaleDateString()
+      },
+      employeeCount: Math.floor(Math.random() * 15) + 5
+    };
   };
 
   const steps: Step[] = [
@@ -45,6 +60,27 @@ export function PayrollInputWizard({
           acceptedFileTypes=".xlsx,.xls,.csv"
           uploadedFile={uploadedFiles.extraHours}
           description="Upload your extra hours file to begin the payroll process"
+        />
+      ),
+    },
+    {
+      title: "Extra Hours Summary",
+      component: (
+        <UploadSummary
+          file={uploadedFiles.extraHours}
+          type="extraHours"
+          getSummary={getExtraHoursSummary}
+        />
+      ),
+    },
+    {
+      title: "Absences Upload",
+      component: (
+        <FileUploader 
+          onFileChange={(file) => handleFileUpload("absences", file)} 
+          acceptedFileTypes=".xlsx,.xls,.csv"
+          uploadedFile={uploadedFiles.absences}
+          description="Upload your employee absences file (sick leave, holidays, etc.)"
         />
       ),
     },
@@ -73,7 +109,19 @@ export function PayrollInputWizard({
   const isLastStep = currentStep === steps.length - 1;
   const isFirstStep = currentStep === 0;
   const currentStepData = steps[currentStep];
-  const canProceed = uploadedFiles.extraHours !== null || currentStep > 0;
+  
+  // Determine if the user can proceed based on the current step
+  const canProceed = () => {
+    if (currentStep === 0) {
+      return uploadedFiles.extraHours !== null;
+    } else if (currentStep === 1) {
+      // Always allow proceeding from the summary step
+      return true;
+    } else if (currentStep === 2) {
+      return uploadedFiles.absences !== null;
+    }
+    return true;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -97,7 +145,7 @@ export function PayrollInputWizard({
                 Back
               </Button>
             )}
-            <Button onClick={handleNext} disabled={!canProceed}>
+            <Button onClick={handleNext} disabled={!canProceed()}>
               {isLastStep ? "Finish" : "Next"}
               {!isLastStep && <ChevronRight className="ml-1 h-4 w-4" />}
             </Button>
