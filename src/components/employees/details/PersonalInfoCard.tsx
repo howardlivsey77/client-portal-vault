@@ -1,5 +1,5 @@
 
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatCurrency, formatDate, roundToTwoDecimals } from "@/lib/formatters";
 import { Employee } from "@/hooks/useEmployeeDetails";
 import {
   Card,
@@ -58,10 +58,10 @@ export const PersonalInfoCard = ({ employee }: PersonalInfoCardProps) => {
           
           <div className="mt-2">
             <p className="text-sm font-medium text-muted-foreground">Hourly Rates</p>
-            <p>Default Rate: {formatCurrency(employee.hourly_rate || 0)}</p>
-            {employee.rate_2 && <p>Rate 2: {formatCurrency(employee.rate_2)}</p>}
-            {employee.rate_3 && <p>Rate 3: {formatCurrency(employee.rate_3)}</p>}
-            {employee.rate_4 && <p>Rate 4: {formatCurrency(employee.rate_4)}</p>}
+            <p>Default Rate: {formatCurrency(roundToTwoDecimals(employee.hourly_rate || 0) || 0)}</p>
+            {employee.rate_2 && <p>Rate 2: {formatCurrency(roundToTwoDecimals(employee.rate_2) || 0)}</p>}
+            {employee.rate_3 && <p>Rate 3: {formatCurrency(roundToTwoDecimals(employee.rate_3) || 0)}</p>}
+            {employee.rate_4 && <p>Rate 4: {formatCurrency(roundToTwoDecimals(employee.rate_4) || 0)}</p>}
           </div>
         </div>
       </CardContent>

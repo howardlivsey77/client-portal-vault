@@ -21,3 +21,11 @@ export function formatDate(date: string | Date): string {
     day: '2-digit'
   }).format(new Date(date));
 }
+
+/**
+ * Rounds a number to 2 decimal places
+ */
+export function roundToTwoDecimals(value: number | null | undefined): number | null {
+  if (value === null || value === undefined) return null;
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}

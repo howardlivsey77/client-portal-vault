@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeFormValues } from "@/types/employee";
+import { roundToTwoDecimals } from "@/lib/formatters";
 
 export const fetchEmployeeById = async (id: string) => {
   const { data, error } = await supabase
@@ -23,10 +24,10 @@ export const createEmployee = async (employeeData: EmployeeFormValues, userId: s
       last_name: employeeData.last_name,
       department: employeeData.department,
       hours_per_week: employeeData.hours_per_week,
-      hourly_rate: employeeData.hourly_rate,
-      rate_2: employeeData.rate_2 || null,
-      rate_3: employeeData.rate_3 || null,
-      rate_4: employeeData.rate_4 || null,
+      hourly_rate: roundToTwoDecimals(employeeData.hourly_rate),
+      rate_2: roundToTwoDecimals(employeeData.rate_2),
+      rate_3: roundToTwoDecimals(employeeData.rate_3),
+      rate_4: roundToTwoDecimals(employeeData.rate_4),
       date_of_birth: employeeData.date_of_birth ? employeeData.date_of_birth.toISOString() : null,
       hire_date: employeeData.hire_date ? employeeData.hire_date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       email: employeeData.email || null,
@@ -50,10 +51,10 @@ export const updateEmployee = async (id: string, employeeData: EmployeeFormValue
       last_name: employeeData.last_name,
       department: employeeData.department,
       hours_per_week: employeeData.hours_per_week,
-      hourly_rate: employeeData.hourly_rate,
-      rate_2: employeeData.rate_2 || null,
-      rate_3: employeeData.rate_3 || null,
-      rate_4: employeeData.rate_4 || null,
+      hourly_rate: roundToTwoDecimals(employeeData.hourly_rate),
+      rate_2: roundToTwoDecimals(employeeData.rate_2),
+      rate_3: roundToTwoDecimals(employeeData.rate_3),
+      rate_4: roundToTwoDecimals(employeeData.rate_4),
       date_of_birth: employeeData.date_of_birth ? employeeData.date_of_birth.toISOString() : null,
       hire_date: employeeData.hire_date ? employeeData.hire_date.toISOString().split('T')[0] : null,
       email: employeeData.email || null,

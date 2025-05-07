@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeData } from "@/components/employees/import/ImportConstants";
+import { roundToTwoDecimals } from "@/lib/formatters";
 
 // Check for duplicate payroll IDs
 export const checkDuplicatePayrollIds = async (payrollIds: string[]) => {
@@ -41,7 +42,7 @@ export const createNewEmployees = async (
       last_name: emp.last_name,
       department: emp.department,
       hours_per_week: emp.hours_per_week || 40,
-      hourly_rate: emp.hourly_rate || 0,
+      hourly_rate: roundToTwoDecimals(emp.hourly_rate) || 0,
       email: emp.email || null,
       address1: emp.address1 || null,
       address2: emp.address2 || null,
@@ -53,9 +54,9 @@ export const createNewEmployees = async (
       payroll_id: emp.payroll_id || null,
       user_id: userId,
       // Include rate fields directly in the employee record
-      rate_2: emp.rate_2 || null,
-      rate_3: emp.rate_3 || null,
-      rate_4: emp.rate_4 || null
+      rate_2: roundToTwoDecimals(emp.rate_2),
+      rate_3: roundToTwoDecimals(emp.rate_3),
+      rate_4: roundToTwoDecimals(emp.rate_4)
     };
     
     const { error: insertError } = await supabase
@@ -102,10 +103,15 @@ export const updateExistingEmployees = async (
       }
     });
     
-    // Always include rate fields in updates if they exist in the imported data
-    if (imported.rate_2) updates.rate_2 = imported.rate_2;
-    if (imported.rate_3) updates.rate_3 = imported.rate_3;
-    if (imported.rate_4) updates.rate_4 = imported.rate_4;
+    // Always include rounded rate fields in updates if they exist in the imported data
+    if (imported.rate_2 !== undefined) updates.rate_2 = roundToTwoDecimals(imported.rate_2);
+    if (imported.rate_3 !== undefined) updates.rate_3 = roundToTwoDecimals(imported.rate_3);
+    if (imported.rate_4 !== undefined) updates.rate_4 = roundToTwoDecimals(imported.rate_4);
+    
+    // Update hourly_rate with rounding
+    if (imported.hourly_rate !== undefined) {
+      updates.hourly_rate = roundToTwoDecimals(imported.hourly_rate);
+    }
     
     // Update employee if there are changes
     if (Object.keys(updates).length > 0) {
