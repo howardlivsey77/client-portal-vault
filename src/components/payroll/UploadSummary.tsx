@@ -23,6 +23,7 @@ interface UploadSummaryProps {
 export function UploadSummary({ file, type, getSummary, isProcessing }: UploadSummaryProps) {
   const [summary, setSummary] = useState<ExtraHoursSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   
   useEffect(() => {
     async function processFile() {
@@ -30,24 +31,27 @@ export function UploadSummary({ file, type, getSummary, isProcessing }: UploadSu
       
       try {
         setError(null);
+        setLoading(true);
         const data = await getSummary(file);
         setSummary(data);
       } catch (err) {
         console.error("Error in UploadSummary:", err);
         setError("Failed to process file. Please check the format and try again.");
+      } finally {
+        setLoading(false);
       }
     }
     
-    if (file && !summary) {
+    if (file) {
       processFile();
     }
-  }, [file, getSummary, summary]);
+  }, [file, getSummary]);
 
   if (!file) {
     return <div>No file uploaded</div>;
   }
   
-  if (isProcessing) {
+  if (isProcessing || loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-monday-blue mb-4" />
@@ -66,11 +70,11 @@ export function UploadSummary({ file, type, getSummary, isProcessing }: UploadSu
     );
   }
   
-  if (!summary) {
+  if (!summary || !summary.employeeDetails || summary.employeeDetails.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-monday-blue mb-4" />
-        <p className="text-lg font-medium">Loading summary...</p>
+      <div className="border border-amber-200 bg-amber-50 p-4 rounded-md">
+        <p className="text-amber-800 font-medium">No employee data found in file</p>
+        <p className="text-sm text-amber-600 mt-2">Please check your file format and try again</p>
       </div>
     );
   }
