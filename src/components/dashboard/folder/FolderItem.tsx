@@ -60,8 +60,6 @@ export function FolderTile({
       </div>
       
       {/* Display a badge showing number of subfolders/files if any */}
-      {folder.children && folder.children.length > 0 && <div className="absolute bottom-2 right-2 bg-blue-100 text-blue-800 text-xs font-medium rounded-full px-2 py-0.5">
-          {folder.children.length}
-        </div>}
+      {folder.children && folder.children.length > 0}
     </Card>;
 }
