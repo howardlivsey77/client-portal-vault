@@ -1,41 +1,29 @@
 
-import { useState, useEffect } from "react";
-import { HourlyRate, fetchEmployeeHourlyRates } from "@/services/hourlyRateService";
+import { useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
+import { useHourlyRates } from "@/hooks/useHourlyRates";
 
 interface HourlyRatesListProps {
   employeeId: string;
 }
 
 export const HourlyRatesList = ({ employeeId }: HourlyRatesListProps) => {
-  const [rates, setRates] = useState<HourlyRate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const {
+    rates,
+    loading,
+    fetchRates
+  } = useHourlyRates({
+    employeeId,
+    isNew: false
+  });
 
   useEffect(() => {
     if (employeeId) {
       fetchRates();
     }
-  }, [employeeId]);
-
-  const fetchRates = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchEmployeeHourlyRates(employeeId);
-      setRates(data);
-    } catch (error: any) {
-      toast({
-        title: "Error fetching hourly rates",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [employeeId, fetchRates]);
 
   if (loading) {
     return (

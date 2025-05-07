@@ -1,12 +1,11 @@
 
-import { useState, useEffect } from "react";
-import { HourlyRate, fetchEmployeeHourlyRates, createHourlyRate, updateHourlyRate, deleteHourlyRate, setDefaultHourlyRate } from "@/services/hourlyRateService";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus } from "lucide-react";
 import { HourlyRateTable } from "./hourly-rates/HourlyRateTable";
 import { EmptyRateState } from "./hourly-rates/EmptyRateState";
 import { HourlyRateDialog } from "./hourly-rates/HourlyRateDialog";
+import { useHourlyRates } from "@/hooks/useHourlyRates";
 
 interface HourlyRatesManagerProps {
   employeeId?: string;
@@ -23,142 +22,30 @@ export const HourlyRatesManager = ({
   currentHourlyRate = 0,
   onDefaultRateChange 
 }: HourlyRatesManagerProps) => {
-  const [rates, setRates] = useState<HourlyRate[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingRate, setEditingRate] = useState<HourlyRate | null>(null);
-  const { toast } = useToast();
+  const {
+    rates,
+    loading,
+    dialogOpen,
+    editingRate,
+    fetchRates,
+    handleOpenDialog,
+    handleSubmit,
+    handleDelete,
+    handleSetDefault,
+    setDialogOpen
+  } = useHourlyRates({
+    employeeId,
+    isNew,
+    currentHourlyRate,
+    onDefaultRateChange
+  });
 
   // Fetch rates when employee ID changes or when rates are updated
   useEffect(() => {
     if (employeeId && !isNew) {
       fetchRates();
     }
-  }, [employeeId, isNew]);
-
-  const fetchRates = async () => {
-    if (!employeeId) return;
-    
-    setLoading(true);
-    try {
-      const data = await fetchEmployeeHourlyRates(employeeId);
-      setRates(data);
-    } catch (error: any) {
-      toast({
-        title: "Error fetching hourly rates",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOpenDialog = (rate: HourlyRate | null = null) => {
-    setEditingRate(rate);
-    setDialogOpen(true);
-  };
-
-  const handleSubmit = async (rateName: string, rateValue: number) => {
-    if (!employeeId) return;
-    
-    setLoading(true);
-    try {
-      if (editingRate) {
-        // Update existing rate
-        await updateHourlyRate(editingRate.id, {
-          rate_name: rateName,
-          hourly_rate: rateValue
-        });
-        toast({
-          title: "Rate updated",
-          description: `The "${rateName}" hourly rate has been updated.`
-        });
-      } else {
-        // Create new rate
-        const newRate = await createHourlyRate({
-          employee_id: employeeId,
-          rate_name: rateName,
-          hourly_rate: rateValue,
-          is_default: rates.length === 0 // First rate is default
-        });
-        
-        // If this is the first rate, update the form with its value
-        if (rates.length === 0) {
-          onDefaultRateChange(rateValue);
-        }
-        
-        toast({
-          title: "Rate added",
-          description: `The "${rateName}" hourly rate has been added.`
-        });
-      }
-      
-      // Refresh rates list and close dialog
-      await fetchRates();
-      setDialogOpen(false);
-      setEditingRate(null);
-    } catch (error: any) {
-      toast({
-        title: "Error saving hourly rate",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: string, rateName: string) => {
-    if (!confirm(`Are you sure you want to delete the "${rateName}" hourly rate?`)) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await deleteHourlyRate(id);
-      toast({
-        title: "Rate deleted",
-        description: `The "${rateName}" hourly rate has been deleted.`
-      });
-      
-      // Refresh rates list
-      await fetchRates();
-    } catch (error: any) {
-      toast({
-        title: "Error deleting hourly rate",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSetDefault = async (rate: HourlyRate) => {
-    if (!employeeId) return;
-    
-    setLoading(true);
-    try {
-      await setDefaultHourlyRate(employeeId, rate.id);
-      onDefaultRateChange(rate.hourly_rate);
-      toast({
-        title: "Default rate updated",
-        description: `"${rate.rate_name}" is now the default hourly rate.`
-      });
-      
-      // Refresh rates list
-      await fetchRates();
-    } catch (error: any) {
-      toast({
-        title: "Error updating default rate",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [employeeId, isNew, fetchRates]);
 
   if (isNew) {
     return (
