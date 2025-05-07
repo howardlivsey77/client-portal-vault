@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { DocumentGrid } from "@/components/dashboard/DocumentGrid";
@@ -59,8 +58,40 @@ const Index = () => {
   
   // Navigate back from fullscreen view to folder explorer
   const handleNavigateBack = () => {
+    const folderStructure = loadFolderStructure();
+    
+    // If inside a subfolder, navigate to parent folder
+    if (selectedFolderId) {
+      const parentId = getParentFolderId(folderStructure, selectedFolderId);
+      if (parentId) {
+        setSelectedFolderId(parentId);
+        return;
+      }
+    }
+    
+    // Otherwise, go back to the folder explorer view
     setIsFullscreenFolderView(false);
     setSelectedFolderId(null);
+  };
+
+  // Helper function to get parent folder ID
+  const getParentFolderId = (folders: any[], folderId: string | null): string | null => {
+    if (!folderId) return null;
+    
+    for (const folder of folders) {
+      // Check if any of this folder's children is the one we're looking for
+      for (const child of folder.children) {
+        if (child.id === folderId) {
+          return folder.id;
+        }
+      }
+      
+      // Check in deeper levels
+      const foundInChildren = getParentFolderId(folder.children, folderId);
+      if (foundInChildren) return foundInChildren;
+    }
+    
+    return null;
   };
   
   return (
@@ -109,6 +140,7 @@ const Index = () => {
                 selectedFolderId={selectedFolderId}
                 onNavigateBack={handleNavigateBack}
                 folderPath={getFolderPath()}
+                onFolderSelect={handleFolderSelect}
               />
             </div>
           ) : (

@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, ArrowLeft, FolderOpen } from "lucide-react";
+import { FileText, ArrowLeft, FolderOpen, Folder } from "lucide-react";
 import { 
   Breadcrumb, 
   BreadcrumbItem, 
@@ -9,6 +10,8 @@ import {
   BreadcrumbList, 
   BreadcrumbSeparator 
 } from "@/components/ui/breadcrumb";
+import { findFolderById, loadFolderStructure } from "./folder/folderService";
+import { FolderTile } from "./folder/FolderItem";
 
 export interface Document {
   id: string;
@@ -24,13 +27,15 @@ interface DocumentGridProps {
   selectedFolderId: string | null;
   onNavigateBack?: () => void;
   folderPath?: string[];
+  onFolderSelect?: (folderId: string) => void;
 }
 
 export function DocumentGrid({
   onAddDocument,
   selectedFolderId,
   onNavigateBack,
-  folderPath = []
+  folderPath = [],
+  onFolderSelect
 }: DocumentGridProps) {
   // Initial documents list
   const initialDocuments = [
@@ -100,6 +105,24 @@ export function DocumentGrid({
     return initialDocuments;
   });
 
+  // Get subfolders for the current folder
+  const [subfolders, setSubfolders] = useState<any[]>([]);
+
+  // Load subfolders when the selected folder changes
+  useEffect(() => {
+    if (selectedFolderId) {
+      const folderStructure = loadFolderStructure();
+      const currentFolder = findFolderById(folderStructure, selectedFolderId);
+      if (currentFolder && currentFolder.children) {
+        setSubfolders(currentFolder.children);
+      } else {
+        setSubfolders([]);
+      }
+    } else {
+      setSubfolders([]);
+    }
+  }, [selectedFolderId]);
+
   // Save documents to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('documents', JSON.stringify(documents));
@@ -127,6 +150,12 @@ export function DocumentGrid({
   // Add the methods to window for access from other components
   window.addDocument = addDocument;
   window.moveDocument = moveDocument;
+
+  const handleFolderSelect = (folderId: string) => {
+    if (onFolderSelect) {
+      onFolderSelect(folderId);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -172,9 +201,30 @@ export function DocumentGrid({
         </div>
       )}
       
+      {/* Subfolders section */}
+      {selectedFolderId && subfolders.length > 0 && (
+        <div>
+          <h3 className="text-lg font-medium mb-3">Folders</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+            {subfolders.map(folder => (
+              <FolderTile
+                key={folder.id}
+                folder={folder}
+                isSelected={false}
+                onFolderSelect={handleFolderSelect}
+                onEditFolder={() => {}}
+                onAddSubfolder={() => {}}
+                onDeleteFolder={() => {}}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+      
       {/* Document list */}
       {selectedFolderId && (
         <>
+          <h3 className="text-lg font-medium mb-3">Documents</h3>
           {filteredDocuments.length > 0 ? (
             <div className="grid grid-cols-1 gap-4">
               {filteredDocuments.map((doc) => (
@@ -207,7 +257,7 @@ export function DocumentGrid({
           ) : (
             <div className="text-center py-12 border border-dashed rounded-lg">
               <FolderOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-medium text-lg mb-2">This folder is empty</h3>
+              <h3 className="font-medium text-lg mb-2">No documents in this folder</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Upload a document to get started.
               </p>
