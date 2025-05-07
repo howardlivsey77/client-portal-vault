@@ -26,33 +26,8 @@ export const useInvites = () => {
       setLoading(true);
       setError(null);
       
-      console.log("Fetching user ID...");
-      const userResponse = await supabase.auth.getUser();
-      const userId = userResponse.data.user?.id;
-      
-      console.log("Checking if user is admin...", userId);
-      
-      // First check if the user exists in the profiles table
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("is_admin")
-        .eq("id", userId)
-        .single();
-      
-      if (profileError) {
-        console.error("Profile check error:", profileError);
-        throw new Error("Error checking admin status. Your profile might not exist.");
-      }
-      
-      console.log("Profile data:", profileData);
-      
-      if (!profileData || !profileData.is_admin) {
-        console.error("User is not admin:", profileData);
-        throw new Error("Permission denied: You don't have administrator privileges.");
-      }
-
-      console.log("User is admin, fetching invitations...");
-      // If we reach here, user is admin, proceed to fetch invitations
+      console.log("Fetching invitations...");
+      // The RLS policy will automatically filter based on admin status
       const { data, error } = await supabase
         .from("invitations")
         .select("*")
@@ -62,6 +37,8 @@ export const useInvites = () => {
         console.error("Invitations fetch error:", error);
         throw error;
       }
+      
+      console.log("Invitations data:", data);
       
       // Ensure all invitations have a role property (use default 'user' if none exists)
       const invitationsWithRole = data?.map(invitation => ({

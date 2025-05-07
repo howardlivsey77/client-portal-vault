@@ -35,11 +35,14 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   const [authInitialized, setAuthInitialized] = useState<boolean>(false);
   const [loadingTimeout, setLoadingTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // Check admin status using the new security definer function
+  // Check admin status directly from profiles table
   const checkAdminStatus = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .rpc('is_user_admin', { user_id: userId });
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', userId)
+        .single();
       
       if (error) {
         console.error("Error checking admin status:", error);
@@ -47,7 +50,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       }
       
       console.log("Admin check result:", data);
-      return !!data; // Convert to boolean
+      return !!data?.is_admin; // Convert to boolean
     } catch (error) {
       console.error("Exception in admin check:", error);
       return false;
