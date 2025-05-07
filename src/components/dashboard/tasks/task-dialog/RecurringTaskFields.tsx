@@ -3,7 +3,6 @@ import React from 'react';
 import { Repeat } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FormDescription } from "@/components/ui/form";
 import { RecurrencePattern } from "../types";
 import {
   Select,
@@ -87,7 +86,7 @@ export function RecurringTaskFields({
           </div>
           
           <div className="col-span-2 mt-1">
-            <FormDescription className="text-xs">
+            <p className="text-xs text-muted-foreground">
               {recurrencePattern && recurrenceInterval ? (
                 <>
                   This task will repeat every {recurrenceInterval} {' '}
@@ -101,7 +100,7 @@ export function RecurringTaskFields({
                   }.
                 </>
               ) : 'Specify how often this task should repeat.'}
-            </FormDescription>
+            </p>
           </div>
         </div>
       )}
