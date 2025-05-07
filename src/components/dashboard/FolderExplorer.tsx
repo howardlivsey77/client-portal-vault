@@ -8,9 +8,7 @@ import { loadFolderStructure, saveFolderStructure, getFolderPathById, addSubFold
 import { FolderItem as FolderItemType, FolderExplorerProps } from "./types/folder.types";
 import { FolderTile } from "./folder/FolderItem";
 import { Card } from "@/components/ui/card";
-
 export { type FolderItem } from "./types/folder.types";
-
 export function FolderExplorer({
   onFolderSelect,
   selectedFolderId
@@ -44,7 +42,6 @@ export function FolderExplorer({
     if (!currentFolderId) {
       return folderStructure;
     }
-    
     const findChildrenById = (folders: FolderItemType[], id: string): FolderItemType[] => {
       for (const folder of folders) {
         if (folder.id === id) {
@@ -59,7 +56,6 @@ export function FolderExplorer({
       }
       return [];
     };
-    
     return findChildrenById(folderStructure, currentFolderId);
   };
 
@@ -91,11 +87,10 @@ export function FolderExplorer({
       onFolderSelect(null);
       return;
     }
-    
+
     // Remove current folder from stack and set previous as current
     const newStack = navigationStack.slice(0, -1);
     const parentFolderId = newStack.length > 0 ? newStack[newStack.length - 1] : null;
-    
     setNavigationStack(newStack);
     setCurrentFolderId(parentFolderId);
     onFolderSelect(parentFolderId);
@@ -176,31 +171,17 @@ export function FolderExplorer({
   const getFolderPath = (folderId: string | null): string[] => {
     return getFolderPathById(folderStructure, folderId);
   };
-
   const currentFolders = getCurrentFolderContents();
   const folderPath = getCurrentFolderPath();
-  
-  return (
-    <div>
+  return <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">
-          {currentFolderId ? folderPath[folderPath.length - 1] : "Folders"}
-        </h2>
+        
         <div className="flex gap-2">
-          {currentFolderId && (
-            <Button 
-              variant="outline" 
-              onClick={navigateBack} 
-              className="flex items-center gap-2"
-            >
+          {currentFolderId && <Button variant="outline" onClick={navigateBack} className="flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" />
               Back
-            </Button>
-          )}
-          <Button 
-            onClick={() => openAddFolderDialog(currentFolderId)} 
-            className="flex items-center gap-2"
-          >
+            </Button>}
+          <Button onClick={() => openAddFolderDialog(currentFolderId)} className="flex items-center gap-2">
             <FolderPlus className="h-4 w-4" />
             {currentFolderId ? "New Subfolder" : "New Folder"}
           </Button>
@@ -208,21 +189,10 @@ export function FolderExplorer({
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {currentFolders.map(folder => (
-          <FolderTile
-            key={folder.id}
-            folder={folder}
-            isSelected={selectedFolderId === folder.id}
-            onFolderSelect={() => navigateToFolder(folder.id)}
-            onEditFolder={openEditFolderDialog}
-            onAddSubfolder={openAddFolderDialog}
-            onDeleteFolder={openDeleteFolderDialog}
-          />
-        ))}
+        {currentFolders.map(folder => <FolderTile key={folder.id} folder={folder} isSelected={selectedFolderId === folder.id} onFolderSelect={() => navigateToFolder(folder.id)} onEditFolder={openEditFolderDialog} onAddSubfolder={openAddFolderDialog} onDeleteFolder={openDeleteFolderDialog} />)}
       </div>
       
-      {currentFolders.length === 0 && (
-        <Card className="p-12 text-center">
+      {currentFolders.length === 0 && <Card className="p-12 text-center">
           <div className="flex flex-col items-center justify-center gap-4">
             <h3 className="text-xl font-medium">
               {currentFolderId ? "This folder is empty" : "No folders yet"}
@@ -235,32 +205,12 @@ export function FolderExplorer({
               {currentFolderId ? "New Subfolder" : "New Folder"}
             </Button>
           </div>
-        </Card>
-      )}
+        </Card>}
       
-      <AddFolderDialog
-        open={isAddingFolder}
-        onOpenChange={setIsAddingFolder}
-        parentId={currentParentId}
-        onAddFolder={addFolder}
-        getFolderPath={getFolderPath}
-      />
+      <AddFolderDialog open={isAddingFolder} onOpenChange={setIsAddingFolder} parentId={currentParentId} onAddFolder={addFolder} getFolderPath={getFolderPath} />
       
-      <EditFolderDialog
-        open={isEditingFolder}
-        onOpenChange={setIsEditingFolder}
-        folderId={editingFolderId}
-        folderName={editingFolderName}
-        onEditFolder={editFolder}
-      />
+      <EditFolderDialog open={isEditingFolder} onOpenChange={setIsEditingFolder} folderId={editingFolderId} folderName={editingFolderName} onEditFolder={editFolder} />
       
-      <DeleteFolderDialog
-        open={isDeletingFolder}
-        onOpenChange={setIsDeletingFolder}
-        folderId={deletingFolderId}
-        folderName={deletingFolderName}
-        onDeleteFolder={handleDeleteFolder}
-      />
-    </div>
-  );
+      <DeleteFolderDialog open={isDeletingFolder} onOpenChange={setIsDeletingFolder} folderId={deletingFolderId} folderName={deletingFolderName} onDeleteFolder={handleDeleteFolder} />
+    </div>;
 }
