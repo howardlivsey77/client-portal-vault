@@ -54,10 +54,9 @@ export const parseExtraHoursFile = async (file: File): Promise<ExtraHoursSummary
             extraHours = totalRateHours;
           }
           
-          // If we still don't have hours, default to 0
+          // Skip rows with no hours
           if (isNaN(extraHours) || extraHours === 0) {
-            // For demonstration purposes, use 8 hours as a default value
-            extraHours = 8;
+            return; // Skip this row
           }
           
           // Extract rates

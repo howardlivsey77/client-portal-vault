@@ -74,8 +74,11 @@ export function UploadSummary({ file, type, getSummary, isProcessing }: UploadSu
   if (!summary || !summary.employeeDetails || summary.employeeDetails.length === 0) {
     return (
       <div className="border border-amber-200 bg-amber-50 p-4 rounded-md">
-        <p className="text-amber-800 font-medium">No employee data found in file</p>
-        <p className="text-sm text-amber-600 mt-2">Please check your file format and try again</p>
+        <p className="text-amber-800 font-medium">No employee extra hours found in file</p>
+        <p className="text-sm text-amber-600 mt-2">
+          Your file was processed successfully, but no extra hours were detected. 
+          Please check that your file contains hours data in the expected format.
+        </p>
       </div>
     );
   }
