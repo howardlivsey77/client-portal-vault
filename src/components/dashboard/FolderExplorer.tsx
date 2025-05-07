@@ -20,7 +20,6 @@ export { type FolderItem } from "./types/folder.types";
 export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplorerProps) {
   const [folderStructure, setFolderStructure] = useState<FolderItemType[]>(loadFolderStructure);
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
-  const [displayMode, setDisplayMode] = useState<'list' | 'tiles'>('tiles');
   
   // States for folder creation
   const [isAddingFolder, setIsAddingFolder] = useState(false);
@@ -95,42 +94,22 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
   const getFolderPath = (folderId: string | null): string[] => {
     return getFolderPathById(folderStructure, folderId);
   };
-
-  // Render folder tiles
-  const renderFolderTiles = () => {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-        <Card
-          className={`group cursor-pointer transition-all hover:shadow-md ${!selectedFolderId ? 'ring-2 ring-primary' : ''}`}
-          onClick={() => onFolderSelect(null)}
+  
+  return (
+    <div className="border rounded-md p-2 space-y-2">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-medium">Folders</h3>
+        <Button 
+          size="sm" 
+          variant="outline" 
+          className="h-7 px-2 text-xs"
+          onClick={() => openAddFolderDialog()}
         >
-          <div className="p-4 flex flex-col items-center text-center">
-            <FolderOpen className="h-16 w-16 text-blue-500 mb-2" />
-            <p className="font-medium">All Documents</p>
-          </div>
-        </Card>
-        
-        {folderStructure.map(folder => (
-          <FolderItem
-            key={folder.id}
-            folder={folder}
-            level={0}
-            selectedFolderId={selectedFolderId}
-            expandedFolders={expandedFolders}
-            onFolderSelect={onFolderSelect}
-            onToggleFolder={toggleFolder}
-            onEditFolder={openEditFolderDialog}
-            onAddSubfolder={openAddFolderDialog}
-            displayAsTiles={true}
-          />
-        ))}
+          <FolderPlus className="h-3 w-3 mr-1" />
+          New Folder
+        </Button>
       </div>
-    );
-  };
-
-  // Render folder list (original view)
-  const renderFolderList = () => {
-    return (
+      
       <div className="space-y-1">
         <div 
           className={`flex items-center py-1 px-2 rounded-md ${!selectedFolderId ? 'bg-muted' : 'hover:bg-muted/50'}`}
@@ -154,27 +133,6 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
           />
         ))}
       </div>
-    );
-  };
-  
-  return (
-    <div className="border rounded-md p-2 space-y-2">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-medium">Folders</h3>
-        <div className="flex space-x-2">
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="h-7 px-2 text-xs"
-            onClick={() => openAddFolderDialog()}
-          >
-            <FolderPlus className="h-3 w-3 mr-1" />
-            New Folder
-          </Button>
-        </div>
-      </div>
-      
-      {displayMode === 'tiles' ? renderFolderTiles() : renderFolderList()}
       
       {/* Folder breadcrumb */}
       {selectedFolderId && (
@@ -209,5 +167,3 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
     </div>
   );
 }
-
-import { Card } from "@/components/ui/card";
