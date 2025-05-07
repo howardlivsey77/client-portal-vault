@@ -33,74 +33,122 @@ export const parseExtraHoursFile = async (file: File): Promise<ExtraHoursSummary
         jsonData.forEach((row: any) => {
           // Extract employee identification info
           const payrollId = row['payroll ID'] || row.EmployeeID || row.ID || '';
-          const firstName = row['employee name'] || row.FirstName || '';
-          const lastName = row.surname || row.LastName || '';
+          const firstName = row['employee name'] || row.FirstName || row['First Name'] || '';
+          const lastName = row.surname || row.LastName || row['Last Name'] || '';
           const employeeName = firstName + (lastName ? ' ' + lastName : '');
           
-          // Extract hours data - look for common column names
-          // Try to find hours in various formats
-          const hourColumns = [
+          // Look specifically for hours in Rate columns
+          const rate1Hours = parseFloat(row['Rate1Hours'] || row['Rate 1 Hours'] || row['Hours Rate 1'] || row['Rate1_Hours'] || '0');
+          const rate2Hours = parseFloat(row['Rate2Hours'] || row['Rate 2 Hours'] || row['Hours Rate 2'] || row['Rate2_Hours'] || '0');
+          const rate3Hours = parseFloat(row['Rate3Hours'] || row['Rate 3 Hours'] || row['Hours Rate 3'] || row['Rate3_Hours'] || '0');
+          const rate4Hours = parseFloat(row['Rate4Hours'] || row['Rate 4 Hours'] || row['Hours Rate 4'] || row['Rate4_Hours'] || '0');
+          
+          // Also check standard hour columns as a fallback
+          const standardHourColumns = [
             'Hours', 'ExtraHours', 'Extra Hours', 'OvertimeHours', 
             'Overtime', 'hours', 'extra hours'
           ];
           
-          // Default to 0, but we'll check various columns
-          let extraHours = 0;
-          
-          // Look for hours in any of the expected column names
-          for (const column of hourColumns) {
+          let standardHours = 0;
+          for (const column of standardHourColumns) {
             if (row[column] !== undefined && !isNaN(parseFloat(row[column]))) {
-              extraHours = parseFloat(row[column]);
+              standardHours = parseFloat(row[column]);
               break;
             }
           }
           
-          // If no direct hours found, check for rate-specific hours
-          if (extraHours === 0) {
-            const rate1Hours = parseFloat(row['Rate1Hours'] || row['Hours Rate 1'] || '0');
-            const rate2Hours = parseFloat(row['Rate2Hours'] || row['Hours Rate 2'] || '0');
-            const rate3Hours = parseFloat(row['Rate3Hours'] || row['Hours Rate 3'] || '0');
-            const rate4Hours = parseFloat(row['Rate4Hours'] || row['Hours Rate 4'] || '0');
+          // Calculate total hours from all sources
+          const totalHours = rate1Hours + rate2Hours + rate3Hours + rate4Hours + standardHours;
+          
+          // Only proceed if there are actual hours
+          if (totalHours > 0) {
+            // Extract rates
+            const rate1 = parseFloat(row['Rate 1'] || row['Rate1'] || '0');
+            const rate2 = parseFloat(row['Rate 2'] || row['Rate2'] || '0');
+            const rate3 = parseFloat(row['Rate 3'] || row['Rate3'] || '0');
+            const rate4 = parseFloat(row['Rate 4'] || row['Rate4'] || '0');
             
-            const totalRateHours = rate1Hours + rate2Hours + rate3Hours + rate4Hours;
-            if (totalRateHours > 0) {
-              extraHours = totalRateHours;
+            // Determine rate to use based on which hours column has values
+            let rateValue = 0;
+            let rateType = '';
+            let specificHours = 0;
+            
+            if (rate1Hours > 0) {
+              rateValue = rate1;
+              rateType = 'Rate 1';
+              specificHours = rate1Hours;
+            } else if (rate2Hours > 0) {
+              rateValue = rate2;
+              rateType = 'Rate 2';
+              specificHours = rate2Hours;
+            } else if (rate3Hours > 0) {
+              rateValue = rate3;
+              rateType = 'Rate 3';
+              specificHours = rate3Hours;
+            } else if (rate4Hours > 0) {
+              rateValue = rate4;
+              rateType = 'Rate 4';
+              specificHours = rate4Hours;
+            } else {
+              rateValue = rate1;
+              rateType = 'Standard';
+              specificHours = standardHours;
             }
-          }
-          
-          // If the file only contains employee info without hours, assign a default for display
-          // But we'll mark that the file doesn't have hours data
-          if (isNaN(extraHours) || extraHours === 0) {
-            // For employee list files, we'll still include the employee but with 0 hours
-            extraHours = 0;
-          }
-          
-          // Extract rates
-          const rate1 = parseFloat(row['Rate 1'] || row['Rate1'] || '0');
-          const rate2 = parseFloat(row['Rate 2'] || row['Rate2'] || '0');
-          const rate3 = parseFloat(row['Rate 3'] || row['Rate3'] || '0');
-          const rate4 = parseFloat(row['Rate 4'] || row['Rate4'] || '0');
-          
-          // Determine which rate to use
-          let rateValue = rate1;
-          let rateType = 'Standard';
-          
-          // If Rate 2 exists and is greater than 0, use that instead (assuming it's an overtime rate)
-          if (rate2 > 0) {
-            rateValue = rate2;
-            rateType = 'Rate 2';
-          }
-          
-          // Only add employees who have either hours or a rate
-          if (extraHours > 0 || rate1 > 0 || rate2 > 0) {
+            
+            // Add entry for this employee and rate combination
             employeeDetails.push({
               employeeId: payrollId,
-              employeeName: employeeName,
-              extraHours: roundToTwoDecimals(extraHours) || 0,
-              entries: extraHours > 0 ? 1 : 0, // Only count as entry if hours exist
+              employeeName: employeeName || 'Unknown Employee',
+              extraHours: roundToTwoDecimals(specificHours) || 0,
+              entries: 1,
               rateType: rateType,
               rateValue: roundToTwoDecimals(rateValue) || 0
             });
+            
+            // Handle multiple rate entries for the same employee
+            if (rate1Hours > 0 && rateType !== 'Rate 1') {
+              employeeDetails.push({
+                employeeId: payrollId,
+                employeeName: employeeName || 'Unknown Employee',
+                extraHours: roundToTwoDecimals(rate1Hours) || 0,
+                entries: 1,
+                rateType: 'Rate 1',
+                rateValue: roundToTwoDecimals(rate1) || 0
+              });
+            }
+            
+            if (rate2Hours > 0 && rateType !== 'Rate 2') {
+              employeeDetails.push({
+                employeeId: payrollId,
+                employeeName: employeeName || 'Unknown Employee',
+                extraHours: roundToTwoDecimals(rate2Hours) || 0,
+                entries: 1,
+                rateType: 'Rate 2',
+                rateValue: roundToTwoDecimals(rate2) || 0
+              });
+            }
+            
+            if (rate3Hours > 0 && rateType !== 'Rate 3') {
+              employeeDetails.push({
+                employeeId: payrollId,
+                employeeName: employeeName || 'Unknown Employee',
+                extraHours: roundToTwoDecimals(rate3Hours) || 0,
+                entries: 1,
+                rateType: 'Rate 3',
+                rateValue: roundToTwoDecimals(rate3) || 0
+              });
+            }
+            
+            if (rate4Hours > 0 && rateType !== 'Rate 4') {
+              employeeDetails.push({
+                employeeId: payrollId,
+                employeeName: employeeName || 'Unknown Employee',
+                extraHours: roundToTwoDecimals(rate4Hours) || 0,
+                entries: 1,
+                rateType: 'Rate 4',
+                rateValue: roundToTwoDecimals(rate4) || 0
+              });
+            }
           }
           
           // Try to extract date information if available
@@ -126,27 +174,23 @@ export const parseExtraHoursFile = async (file: File): Promise<ExtraHoursSummary
         if (!earliestDate) earliestDate = oneMonthAgo;
         if (!latestDate) latestDate = today;
         
-        // Calculate totals - only count actual hours, not zero entries
+        // Calculate totals
         const totalExtraHours = roundToTwoDecimals(
           employeeDetails.reduce((sum, emp) => sum + emp.extraHours, 0)
         ) || 0;
         
-        // Only count entries with actual hours
-        const totalEntries = employeeDetails.reduce((sum, emp) => {
-          return emp.extraHours > 0 ? sum + 1 : sum;
-        }, 0);
+        // Count total entries
+        const totalEntries = employeeDetails.length;
         
-        // Count unique employees with actual hours
+        // Count unique employees
         const uniqueEmployeeIds = new Set();
         const uniqueEmployeeNames = new Set();
         
         employeeDetails.forEach(emp => {
-          if (emp.extraHours > 0) {
-            if (emp.employeeId) {
-              uniqueEmployeeIds.add(emp.employeeId);
-            } else if (emp.employeeName) {
-              uniqueEmployeeNames.add(emp.employeeName);
-            }
+          if (emp.employeeId) {
+            uniqueEmployeeIds.add(emp.employeeId);
+          } else if (emp.employeeName) {
+            uniqueEmployeeNames.add(emp.employeeName);
           }
         });
         
@@ -163,10 +207,6 @@ export const parseExtraHoursFile = async (file: File): Promise<ExtraHoursSummary
         const toDate = latestDate ? 
           latestDate.toLocaleDateString(undefined, formatDateOption as any) : 
           today.toLocaleDateString(undefined, formatDateOption as any);
-
-        // Filter out employees with zero hours for the final result
-        // This ensures we only return employees with actual hours
-        const employeesWithHours = employeeDetails.filter(emp => emp.extraHours > 0);
         
         resolve({
           totalEntries,
@@ -176,7 +216,7 @@ export const parseExtraHoursFile = async (file: File): Promise<ExtraHoursSummary
             to: toDate
           },
           employeeCount: uniqueCount,
-          employeeDetails: employeesWithHours
+          employeeDetails: employeeDetails
         });
         
       } catch (error) {

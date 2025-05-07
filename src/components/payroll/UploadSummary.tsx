@@ -77,11 +77,11 @@ export function UploadSummary({ file, type, getSummary, isProcessing }: UploadSu
         <div className="flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
           <div>
-            <p className="text-amber-800 font-medium">No employee extra hours found in file</p>
+            <p className="text-amber-800 font-medium">No employee hours data found in file</p>
             <p className="text-sm text-amber-600 mt-2">
-              Your file was processed successfully, but no extra hours were detected. 
-              Your file needs to contain hours data in columns named "Hours", "Extra Hours", 
-              "ExtraHours" or similar.
+              Your file was processed successfully, but no hours were detected. 
+              The file should contain hours data in columns named "Rate1Hours", "Rate2Hours", 
+              "Rate3Hours", "Rate4Hours" or similar rate-based hour columns.
             </p>
           </div>
         </div>
@@ -168,23 +168,27 @@ export function UploadSummary({ file, type, getSummary, isProcessing }: UploadSu
               <TableHeader>
                 <TableRow>
                   <TableHead>Employee</TableHead>
+                  <TableHead className="text-right">Rate Type</TableHead>
                   <TableHead className="text-right">Hourly Rate</TableHead>
                   <TableHead className="text-right">Extra Hours</TableHead>
-                  <TableHead className="text-right">Entries</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {summary.employeeDetails.map((employee, index) => (
-                  <TableRow key={`${employee.employeeId || index}-${employee.rateType || 'standard'}-${index}`}>
-                    <TableCell className="font-medium">{employee.employeeName}</TableCell>
-                    <TableCell className="text-right">
-                      {employee.rateValue ? formatCurrency(roundToTwoDecimals(employee.rateValue) || 0) : 'N/A'}
-                      <span className="text-xs text-muted-foreground ml-1">({employee.rateType || 'Standard'})</span>
-                    </TableCell>
-                    <TableCell className="text-right">{employee.extraHours}</TableCell>
-                    <TableCell className="text-right">{employee.entries}</TableCell>
-                  </TableRow>
-                ))}
+                {summary.employeeDetails.map((employee, index) => {
+                  const total = roundToTwoDecimals((employee.rateValue || 0) * employee.extraHours) || 0;
+                  return (
+                    <TableRow key={`${employee.employeeId || employee.employeeName}-${employee.rateType || 'standard'}-${index}`}>
+                      <TableCell className="font-medium">{employee.employeeName}</TableCell>
+                      <TableCell className="text-right">{employee.rateType || 'Standard'}</TableCell>
+                      <TableCell className="text-right">
+                        {employee.rateValue ? formatCurrency(roundToTwoDecimals(employee.rateValue) || 0) : 'N/A'}
+                      </TableCell>
+                      <TableCell className="text-right">{employee.extraHours}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(total)}</TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
