@@ -2,27 +2,11 @@
 import { useState, useEffect } from "react";
 import { HourlyRate, fetchEmployeeHourlyRates, createHourlyRate, updateHourlyRate, deleteHourlyRate, setDefaultHourlyRate } from "@/services/hourlyRateService";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { 
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Pencil, Trash2, Check } from "lucide-react";
-import { formatCurrency } from "@/lib/formatters";
+import { Loader2, Plus } from "lucide-react";
+import { HourlyRateTable } from "./hourly-rates/HourlyRateTable";
+import { EmptyRateState } from "./hourly-rates/EmptyRateState";
+import { HourlyRateDialog } from "./hourly-rates/HourlyRateDialog";
 
 interface HourlyRatesManagerProps {
   employeeId?: string;
@@ -43,8 +27,6 @@ export const HourlyRatesManager = ({
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRate, setEditingRate] = useState<HourlyRate | null>(null);
-  const [rateName, setRateName] = useState("");
-  const [hourlyRate, setHourlyRate] = useState("0");
   const { toast } = useToast();
 
   // Fetch rates when employee ID changes or when rates are updated
@@ -74,43 +56,12 @@ export const HourlyRatesManager = ({
 
   const handleOpenDialog = (rate: HourlyRate | null = null) => {
     setEditingRate(rate);
-    if (rate) {
-      setRateName(rate.rate_name);
-      setHourlyRate(rate.hourly_rate.toString());
-    } else {
-      setRateName("");
-      setHourlyRate("0");
-    }
     setDialogOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setEditingRate(null);
-    setRateName("");
-    setHourlyRate("0");
-  };
-
-  const handleSubmit = async () => {
-    if (!rateName.trim()) {
-      toast({
-        title: "Rate name required",
-        description: "Please enter a name for this hourly rate",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const rateValue = parseFloat(hourlyRate);
-    if (isNaN(rateValue) || rateValue < 0) {
-      toast({
-        title: "Invalid rate",
-        description: "Please enter a valid hourly rate (must be a positive number)",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleSubmit = async (rateName: string, rateValue: number) => {
+    if (!employeeId) return;
+    
     setLoading(true);
     try {
       if (editingRate) {
@@ -123,7 +74,7 @@ export const HourlyRatesManager = ({
           title: "Rate updated",
           description: `The "${rateName}" hourly rate has been updated.`
         });
-      } else if (employeeId) {
+      } else {
         // Create new rate
         const newRate = await createHourlyRate({
           employee_id: employeeId,
@@ -143,13 +94,10 @@ export const HourlyRatesManager = ({
         });
       }
       
-      // Refresh rates list
-      if (employeeId) {
-        await fetchRates();
-      }
-      
-      // Close dialog
-      handleCloseDialog();
+      // Refresh rates list and close dialog
+      await fetchRates();
+      setDialogOpen(false);
+      setEditingRate(null);
     } catch (error: any) {
       toast({
         title: "Error saving hourly rate",
@@ -175,9 +123,7 @@ export const HourlyRatesManager = ({
       });
       
       // Refresh rates list
-      if (employeeId) {
-        await fetchRates();
-      }
+      await fetchRates();
     } catch (error: any) {
       toast({
         title: "Error deleting hourly rate",
@@ -243,124 +189,27 @@ export const HourlyRatesManager = ({
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : rates.length > 0 ? (
-        <div className="border rounded-md">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead className="text-right">Rate</TableHead>
-                <TableHead>Default</TableHead>
-                {!readOnly && <TableHead className="text-right">Actions</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rates.map(rate => (
-                <TableRow key={rate.id}>
-                  <TableCell>{rate.rate_name}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(rate.hourly_rate)}</TableCell>
-                  <TableCell>
-                    {rate.is_default ? (
-                      <Badge variant="default">Default</Badge>
-                    ) : !readOnly ? (
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleSetDefault(rate)}
-                      >
-                        Set as default
-                      </Button>
-                    ) : null}
-                  </TableCell>
-                  {!readOnly && (
-                    <TableCell className="text-right space-x-1">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleOpenDialog(rate)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleDelete(rate.id, rate.rate_name)}
-                        disabled={rate.is_default} // Prevent deleting default rate
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <HourlyRateTable 
+          rates={rates}
+          readOnly={readOnly}
+          onEdit={handleOpenDialog}
+          onDelete={handleDelete}
+          onSetDefault={handleSetDefault}
+        />
       ) : (
-        <div className="py-4 text-center text-muted-foreground border rounded-md">
-          No hourly rates defined yet.
-          {!readOnly && (
-            <div className="mt-2">
-              <Button 
-                variant="link" 
-                onClick={() => handleOpenDialog()}
-              >
-                Add your first hourly rate
-              </Button>
-            </div>
-          )}
-        </div>
+        <EmptyRateState 
+          readOnly={readOnly} 
+          onAddRate={() => handleOpenDialog()} 
+        />
       )}
 
-      {/* Dialog for adding/editing rates */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editingRate ? "Edit Hourly Rate" : "Add Hourly Rate"}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="rate-name" className="text-right font-medium">
-                Name
-              </label>
-              <Input
-                id="rate-name"
-                value={rateName}
-                onChange={(e) => setRateName(e.target.value)}
-                placeholder="e.g., Standard Rate, Overtime Rate"
-                className="col-span-3"
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="hourly-rate" className="text-right font-medium">
-                Rate (GBP)
-              </label>
-              <Input
-                id="hourly-rate"
-                type="number"
-                value={hourlyRate}
-                onChange={(e) => setHourlyRate(e.target.value)}
-                step="0.01"
-                min="0"
-                className="col-span-3"
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialog}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {editingRate ? "Update" : "Add"} Rate
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <HourlyRateDialog 
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        editingRate={editingRate}
+        onSubmit={handleSubmit}
+        loading={loading}
+      />
     </div>
   );
 };
