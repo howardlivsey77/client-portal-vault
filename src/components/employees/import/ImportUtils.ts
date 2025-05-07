@@ -1,7 +1,7 @@
 
 // Re-export from smaller utility files
 export { readFileData } from './fileParsingUtils';
-export { autoMapColumns, saveMappings, loadSavedMappings, clearSavedMappings, areRequiredFieldsMapped } from './columnMappingUtils';
+export { autoMapColumns, saveMappings, loadSavedMappings, clearSavedMappings } from './columnMappingUtils';
 export { transformData, excelDateToISO } from './dataTransformUtils';
 
 // Legacy export to maintain backward compatibility with the original functionality
