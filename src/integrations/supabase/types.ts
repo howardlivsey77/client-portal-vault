@@ -66,6 +66,9 @@ export type Database = {
           last_name: string
           payroll_id: string | null
           postcode: string | null
+          rate_2: number | null
+          rate_3: number | null
+          rate_4: number | null
           updated_at: string
           user_id: string
         }
@@ -87,6 +90,9 @@ export type Database = {
           last_name: string
           payroll_id?: string | null
           postcode?: string | null
+          rate_2?: number | null
+          rate_3?: number | null
+          rate_4?: number | null
           updated_at?: string
           user_id: string
         }
@@ -108,6 +114,9 @@ export type Database = {
           last_name?: string
           payroll_id?: string | null
           postcode?: string | null
+          rate_2?: number | null
+          rate_3?: number | null
+          rate_4?: number | null
           updated_at?: string
           user_id?: string
         }
