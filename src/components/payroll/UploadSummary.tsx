@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { FileText, Clock, Calendar, Users, Loader2 } from "lucide-react";
+import { FileText, Clock, Calendar, Users, Loader2, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate, formatCurrency, roundToTwoDecimals } from "@/lib/formatters";
 import {
@@ -74,11 +74,17 @@ export function UploadSummary({ file, type, getSummary, isProcessing }: UploadSu
   if (!summary || !summary.employeeDetails || summary.employeeDetails.length === 0) {
     return (
       <div className="border border-amber-200 bg-amber-50 p-4 rounded-md">
-        <p className="text-amber-800 font-medium">No employee extra hours found in file</p>
-        <p className="text-sm text-amber-600 mt-2">
-          Your file was processed successfully, but no extra hours were detected. 
-          Please check that your file contains hours data in the expected format.
-        </p>
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+          <div>
+            <p className="text-amber-800 font-medium">No employee extra hours found in file</p>
+            <p className="text-sm text-amber-600 mt-2">
+              Your file was processed successfully, but no extra hours were detected. 
+              Your file needs to contain hours data in columns named "Hours", "Extra Hours", 
+              "ExtraHours" or similar.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }

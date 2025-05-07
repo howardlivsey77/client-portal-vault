@@ -38,25 +38,41 @@ export const parseExtraHoursFile = async (file: File): Promise<ExtraHoursSummary
           const employeeName = firstName + (lastName ? ' ' + lastName : '');
           
           // Extract hours data - look for common column names
-          let extraHours = parseFloat(row['Hours'] || row['ExtraHours'] || row['Extra Hours'] || '0');
+          // Try to find hours in various formats
+          const hourColumns = [
+            'Hours', 'ExtraHours', 'Extra Hours', 'OvertimeHours', 
+            'Overtime', 'hours', 'extra hours'
+          ];
           
-          // If no hours column found, look for specific hours columns by rate type
-          const rate1Hours = parseFloat(row['Rate1Hours'] || row['Hours Rate 1'] || '0');
-          const rate2Hours = parseFloat(row['Rate2Hours'] || row['Hours Rate 2'] || '0');
-          const rate3Hours = parseFloat(row['Rate3Hours'] || row['Hours Rate 3'] || '0');
-          const rate4Hours = parseFloat(row['Rate4Hours'] || row['Hours Rate 4'] || '0');
+          // Default to 0, but we'll check various columns
+          let extraHours = 0;
           
-          // Sum up all rate-specific hours if found
-          const totalRateHours = rate1Hours + rate2Hours + rate3Hours + rate4Hours;
-          
-          // If we found rate-specific hours but no general hours, use the total
-          if (totalRateHours > 0 && extraHours === 0) {
-            extraHours = totalRateHours;
+          // Look for hours in any of the expected column names
+          for (const column of hourColumns) {
+            if (row[column] !== undefined && !isNaN(parseFloat(row[column]))) {
+              extraHours = parseFloat(row[column]);
+              break;
+            }
           }
           
-          // Skip rows with no hours
+          // If no direct hours found, check for rate-specific hours
+          if (extraHours === 0) {
+            const rate1Hours = parseFloat(row['Rate1Hours'] || row['Hours Rate 1'] || '0');
+            const rate2Hours = parseFloat(row['Rate2Hours'] || row['Hours Rate 2'] || '0');
+            const rate3Hours = parseFloat(row['Rate3Hours'] || row['Hours Rate 3'] || '0');
+            const rate4Hours = parseFloat(row['Rate4Hours'] || row['Hours Rate 4'] || '0');
+            
+            const totalRateHours = rate1Hours + rate2Hours + rate3Hours + rate4Hours;
+            if (totalRateHours > 0) {
+              extraHours = totalRateHours;
+            }
+          }
+          
+          // If the file only contains employee info without hours, assign a default for display
+          // But we'll mark that the file doesn't have hours data
           if (isNaN(extraHours) || extraHours === 0) {
-            return; // Skip this row
+            // For employee list files, we'll still include the employee but with 0 hours
+            extraHours = 0;
           }
           
           // Extract rates
@@ -75,14 +91,17 @@ export const parseExtraHoursFile = async (file: File): Promise<ExtraHoursSummary
             rateType = 'Rate 2';
           }
           
-          employeeDetails.push({
-            employeeId: payrollId,
-            employeeName: employeeName,
-            extraHours: roundToTwoDecimals(extraHours) || 0,
-            entries: 1, // Each row counts as one entry
-            rateType: rateType,
-            rateValue: roundToTwoDecimals(rateValue) || 0
-          });
+          // Only add employees who have either hours or a rate
+          if (extraHours > 0 || rate1 > 0 || rate2 > 0) {
+            employeeDetails.push({
+              employeeId: payrollId,
+              employeeName: employeeName,
+              extraHours: roundToTwoDecimals(extraHours) || 0,
+              entries: extraHours > 0 ? 1 : 0, // Only count as entry if hours exist
+              rateType: rateType,
+              rateValue: roundToTwoDecimals(rateValue) || 0
+            });
+          }
           
           // Try to extract date information if available
           const dateField = row['Date'] || row['WorkDate'] || row['Work Date'] || null;
@@ -107,22 +126,27 @@ export const parseExtraHoursFile = async (file: File): Promise<ExtraHoursSummary
         if (!earliestDate) earliestDate = oneMonthAgo;
         if (!latestDate) latestDate = today;
         
-        // Calculate totals
+        // Calculate totals - only count actual hours, not zero entries
         const totalExtraHours = roundToTwoDecimals(
           employeeDetails.reduce((sum, emp) => sum + emp.extraHours, 0)
         ) || 0;
         
-        const totalEntries = employeeDetails.reduce((sum, emp) => sum + emp.entries, 0);
+        // Only count entries with actual hours
+        const totalEntries = employeeDetails.reduce((sum, emp) => {
+          return emp.extraHours > 0 ? sum + 1 : sum;
+        }, 0);
         
-        // Count unique employees
+        // Count unique employees with actual hours
         const uniqueEmployeeIds = new Set();
         const uniqueEmployeeNames = new Set();
         
         employeeDetails.forEach(emp => {
-          if (emp.employeeId) {
-            uniqueEmployeeIds.add(emp.employeeId);
-          } else if (emp.employeeName) {
-            uniqueEmployeeNames.add(emp.employeeName);
+          if (emp.extraHours > 0) {
+            if (emp.employeeId) {
+              uniqueEmployeeIds.add(emp.employeeId);
+            } else if (emp.employeeName) {
+              uniqueEmployeeNames.add(emp.employeeName);
+            }
           }
         });
         
@@ -139,6 +163,10 @@ export const parseExtraHoursFile = async (file: File): Promise<ExtraHoursSummary
         const toDate = latestDate ? 
           latestDate.toLocaleDateString(undefined, formatDateOption as any) : 
           today.toLocaleDateString(undefined, formatDateOption as any);
+
+        // Filter out employees with zero hours for the final result
+        // This ensures we only return employees with actual hours
+        const employeesWithHours = employeeDetails.filter(emp => emp.extraHours > 0);
         
         resolve({
           totalEntries,
@@ -148,7 +176,7 @@ export const parseExtraHoursFile = async (file: File): Promise<ExtraHoursSummary
             to: toDate
           },
           employeeCount: uniqueCount,
-          employeeDetails
+          employeeDetails: employeesWithHours
         });
         
       } catch (error) {
