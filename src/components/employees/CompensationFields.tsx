@@ -3,9 +3,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessa
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { EmployeeFormValues } from "@/types/employee";
-import { HourlyRatesManager } from "./HourlyRatesManager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState } from "react";
 
 interface CompensationFieldsProps {
   form: UseFormReturn<EmployeeFormValues>;
@@ -14,11 +12,7 @@ interface CompensationFieldsProps {
   isNew: boolean;
 }
 
-export const CompensationFields = ({ form, readOnly, employeeId, isNew }: CompensationFieldsProps) => {
-  const handleDefaultRateChange = (rate: number) => {
-    form.setValue("hourly_rate", rate);
-  };
-
+export const CompensationFields = ({ form, readOnly }: CompensationFieldsProps) => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">      
@@ -69,16 +63,79 @@ export const CompensationFields = ({ form, readOnly, employeeId, isNew }: Compen
       
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-md">Multiple Hourly Rates</CardTitle>
+          <CardTitle className="text-md">Additional Hourly Rates</CardTitle>
         </CardHeader>
         <CardContent>
-          <HourlyRatesManager 
-            employeeId={employeeId} 
-            readOnly={readOnly} 
-            isNew={isNew}
-            currentHourlyRate={form.getValues("hourly_rate") || 0}
-            onDefaultRateChange={handleDefaultRateChange} 
-          />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <FormField
+              control={form.control}
+              name="rate_2"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Rate 2 (GBP)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      placeholder="0.00"
+                      min={0}
+                      step="0.01"
+                      {...field} 
+                      value={field.value || ""}
+                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                      disabled={readOnly}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="rate_3"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Rate 3 (GBP)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      placeholder="0.00"
+                      min={0}
+                      step="0.01"
+                      {...field} 
+                      value={field.value || ""}
+                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                      disabled={readOnly}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="rate_4"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Rate 4 (GBP)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      placeholder="0.00"
+                      min={0}
+                      step="0.01"
+                      {...field} 
+                      value={field.value || ""}
+                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                      disabled={readOnly}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </CardContent>
       </Card>
     </div>

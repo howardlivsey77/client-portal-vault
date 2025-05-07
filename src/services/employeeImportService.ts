@@ -1,50 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeData } from "@/components/employees/import/ImportConstants";
-import { createHourlyRate } from "./hourlyRateService";
-
-// Create additional hourly rates for an employee
-export const createAdditionalRates = async (employeeId: string, rates: { rate_2?: any, rate_3?: any, rate_4?: any }) => {
-  try {
-    console.log("Creating additional rates for employee", employeeId, "with rates:", rates);
-    
-    // Create Rate 2 if provided and valid
-    if (rates.rate_2 && !isNaN(Number(rates.rate_2)) && Number(rates.rate_2) > 0) {
-      console.log("Creating Rate 2:", rates.rate_2);
-      await createHourlyRate({
-        employee_id: employeeId,
-        rate_name: "Rate 2",
-        hourly_rate: Number(rates.rate_2),
-        is_default: false
-      });
-    }
-    
-    // Create Rate 3 if provided and valid
-    if (rates.rate_3 && !isNaN(Number(rates.rate_3)) && Number(rates.rate_3) > 0) {
-      console.log("Creating Rate 3:", rates.rate_3);
-      await createHourlyRate({
-        employee_id: employeeId,
-        rate_name: "Rate 3",
-        hourly_rate: Number(rates.rate_3),
-        is_default: false
-      });
-    }
-    
-    // Create Rate 4 if provided and valid
-    if (rates.rate_4 && !isNaN(Number(rates.rate_4)) && Number(rates.rate_4) > 0) {
-      console.log("Creating Rate 4:", rates.rate_4);
-      await createHourlyRate({
-        employee_id: employeeId,
-        rate_name: "Rate 4",
-        hourly_rate: Number(rates.rate_4),
-        is_default: false
-      });
-    }
-  } catch (error) {
-    console.error("Error creating additional hourly rates:", error);
-    // Continue with the import even if rate creation fails
-  }
-};
 
 // Check for duplicate payroll IDs
 export const checkDuplicatePayrollIds = async (payrollIds: string[]) => {
@@ -77,17 +33,9 @@ export const createNewEmployees = async (
   }
   
   for (const emp of newEmployees) {
-    // Extract additional rates
-    const additionalRates = {
-      rate_2: emp.rate_2,
-      rate_3: emp.rate_3,
-      rate_4: emp.rate_4
-    };
-    
     console.log("Creating new employee with data:", emp);
-    console.log("Additional rates:", additionalRates);
     
-    // Insert the employee
+    // Insert the employee with all rate fields
     const newEmployeeData = {
       first_name: emp.first_name,
       last_name: emp.last_name,
@@ -110,18 +58,11 @@ export const createNewEmployees = async (
       rate_4: emp.rate_4 || null
     };
     
-    const { data: employeeInsertData, error: insertError } = await supabase
+    const { error: insertError } = await supabase
       .from("employees")
-      .insert(newEmployeeData)
-      .select()
-      .single();
+      .insert(newEmployeeData);
     
     if (insertError) throw insertError;
-    
-    // Create additional hourly rates if provided
-    if (employeeInsertData) {
-      await createAdditionalRates(employeeInsertData.id, additionalRates);
-    }
   }
 };
 
@@ -148,21 +89,13 @@ export const updateExistingEmployees = async (
   }
   
   for (const { existing, imported } of updatedEmployees) {
-    // Extract additional rates
-    const additionalRates = {
-      rate_2: imported.rate_2,
-      rate_3: imported.rate_3,
-      rate_4: imported.rate_4
-    };
-    
     console.log("Updating employee:", existing.id);
-    console.log("Additional rates:", additionalRates);
     
     const updates: any = {};
     
-    // Only include fields that have changed and are not rate fields
+    // Only include fields that have changed
     Object.keys(imported).forEach(key => {
-      if (key !== 'id' && !key.startsWith('rate_') && 
+      if (key !== 'id' && 
           imported[key] !== undefined && imported[key] !== null && 
           imported[key] !== '' && imported[key] !== existing[key]) {
         updates[key] = imported[key];
@@ -184,9 +117,5 @@ export const updateExistingEmployees = async (
       
       if (updateError) throw updateError;
     }
-    
-    // Create additional hourly rates if provided, regardless of whether they exist already
-    // This will create new rate entries each time an import is done with rates
-    await createAdditionalRates(existing.id, additionalRates);
   }
 };

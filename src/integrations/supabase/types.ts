@@ -9,44 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      employee_hourly_rates: {
-        Row: {
-          created_at: string
-          employee_id: string
-          hourly_rate: number
-          id: string
-          is_default: boolean | null
-          rate_name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          employee_id: string
-          hourly_rate?: number
-          id?: string
-          is_default?: boolean | null
-          rate_name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          employee_id?: string
-          hourly_rate?: number
-          id?: string
-          is_default?: boolean | null
-          rate_name?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "employee_hourly_rates_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       employees: {
         Row: {
           address1: string | null
