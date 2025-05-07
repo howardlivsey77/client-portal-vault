@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { readFileData, autoMapColumns, transformData } from "./ImportUtils";
 import { EmployeeData, ColumnMapping } from "./ImportConstants";
-import { supabase } from "@/integrations/supabase/client";
+import { findExistingEmployees } from "@/hooks/import/employeeImportService";
 
 interface FileUploaderProps {
   onFileProcessed: (
@@ -56,11 +56,7 @@ export const FileUploader = ({
       console.log("Transformed data:", transformedData);
       
       // Check for existing employees based on email or first name + last name
-      const existingEmployees = await checkForExistingEmployees(transformedData);
-      
-      // Also fetch employee rates to help with rate comparison
-      console.log("Fetching existing employee hourly rates");
-      const existingEmployeeIds = existingEmployees.map(emp => emp.id);
+      const existingEmployees = await findExistingEmployees(transformedData);
       
       // Pass the data back to parent component including existing employee data
       onFileProcessed(data, transformedData, mappings, headers, existingEmployees);
@@ -71,31 +67,6 @@ export const FileUploader = ({
         description: error.message || "Please make sure your file is a valid Excel or CSV file.",
         variant: "destructive"
       });
-    }
-  };
-  
-  const checkForExistingEmployees = async (importData: EmployeeData[]): Promise<EmployeeData[]> => {
-    try {
-      // Extract emails and names from import data
-      const emails = importData
-        .filter(emp => emp.email)
-        .map(emp => emp.email);
-      
-      console.log("Checking for existing employees with emails:", emails);
-      
-      // Query database for existing employees with matching emails
-      const { data: existingEmployees, error } = await supabase
-        .from("employees")
-        .select("*")
-        .in("email", emails.length > 0 ? emails : ['no-emails-found']);
-      
-      if (error) throw error;
-      
-      console.log("Found existing employees:", existingEmployees);
-      return existingEmployees || [];
-    } catch (error) {
-      console.error("Error checking for existing employees:", error);
-      return [];
     }
   };
 

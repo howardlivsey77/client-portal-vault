@@ -1,23 +1,24 @@
 
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useReducer } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { EmployeeData, ColumnMapping } from "@/components/employees/import/ImportConstants";
-import { createNewEmployees, updateExistingEmployees } from "@/services/employeeImportService";
+import { 
+  employeeImportReducer, 
+  initialState 
+} from "./import/employeeImportReducer";
+import { 
+  areRequiredFieldsMapped, 
+  compareEmployees 
+} from "./import/employeeImportUtils";
+import { 
+  executeImport,
+  findExistingEmployees
+} from "./import/employeeImportService";
 
 export const useEmployeeImport = (onSuccess: () => void) => {
-  const [loading, setLoading] = useState(false);
-  const [rawData, setRawData] = useState<EmployeeData[]>([]);
-  const [preview, setPreview] = useState<EmployeeData[]>([]);
-  const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
-  const [showMappingUI, setShowMappingUI] = useState(false);
-  const [originalHeaders, setOriginalHeaders] = useState<string[]>([]);
-  const [existingEmployees, setExistingEmployees] = useState<EmployeeData[]>([]);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [newEmployees, setNewEmployees] = useState<EmployeeData[]>([]);
-  const [updatedEmployees, setUpdatedEmployees] = useState<{existing: EmployeeData; imported: EmployeeData}[]>([]);
+  const [state, dispatch] = useReducer(employeeImportReducer, initialState);
   const { toast } = useToast();
-
+  
   // Handle files processed from the FileUploader component
   const handleFileProcessed = (
     rawData: EmployeeData[],
@@ -26,45 +27,40 @@ export const useEmployeeImport = (onSuccess: () => void) => {
     headers: string[],
     existingEmps: EmployeeData[]
   ) => {
-    setRawData(rawData);
-    setPreview(preview);
-    setColumnMappings(columnMappings);
-    setOriginalHeaders(headers);
-    setExistingEmployees(existingEmps);
-    
     // Check if we need to show mapping UI based on required fields
     const allRequiredMapped = areRequiredFieldsMapped(columnMappings);
-    setShowMappingUI(!allRequiredMapped || preview.length === 0);
+    
+    dispatch({ 
+      type: 'FILE_PROCESSED', 
+      payload: { 
+        rawData, 
+        preview, 
+        columnMappings, 
+        headers, 
+        existingEmployees: existingEmps,
+        showMappingUI: !allRequiredMapped || preview.length === 0
+      }
+    });
   };
   
   // Update column mapping when user changes it in UI
   const updateColumnMapping = (sourceColumn: string, targetField: string | null) => {
-    setColumnMappings(prevMappings => 
-      prevMappings.map(mapping => 
-        mapping.sourceColumn === sourceColumn 
-          ? { ...mapping, targetField } 
-          : mapping
-      )
-    );
-  };
-
-  // Helper function to check if required fields are mapped
-  const areRequiredFieldsMapped = (mappings: ColumnMapping[]): boolean => {
-    // Defined locally to avoid circular imports
-    const requiredFields = ["first_name", "last_name", "department"];
-    return requiredFields.every(requiredField => 
-      mappings.some(mapping => mapping.targetField === requiredField)
-    );
+    dispatch({ 
+      type: 'UPDATE_COLUMN_MAPPING', 
+      payload: { sourceColumn, targetField } 
+    });
   };
   
   // Apply mappings and generate preview data
-  const applyMappings = (transformData: (data: EmployeeData[], mappings: ColumnMapping[]) => EmployeeData[], 
-                         saveMappings: (mappings: ColumnMapping[]) => void) => {
-    const transformedData = transformData(rawData, columnMappings);
-    setPreview(transformedData);
-    setShowMappingUI(false);
+  const applyMappings = (
+    transformData: (data: EmployeeData[], mappings: ColumnMapping[]) => EmployeeData[], 
+    saveMappings: (mappings: ColumnMapping[]) => void
+  ) => {
+    const transformedData = transformData(state.rawData, state.columnMappings);
+    dispatch({ type: 'SET_PREVIEW', payload: transformedData });
+    dispatch({ type: 'SET_SHOW_MAPPING_UI', payload: false });
     
-    saveMappings(columnMappings);
+    saveMappings(state.columnMappings);
     
     if (transformedData.length === 0) {
       toast({
@@ -72,7 +68,7 @@ export const useEmployeeImport = (onSuccess: () => void) => {
         description: "Please check your column mappings to ensure required fields are mapped correctly.",
         variant: "destructive"
       });
-      setShowMappingUI(true);
+      dispatch({ type: 'SET_SHOW_MAPPING_UI', payload: true });
     } else {
       toast({
         title: "Mappings applied successfully",
@@ -83,7 +79,7 @@ export const useEmployeeImport = (onSuccess: () => void) => {
   
   // Prepare data for import and show confirmation dialog
   const prepareImport = () => {
-    if (!preview.length) {
+    if (!state.preview.length) {
       toast({
         title: "No valid data found",
         description: "Please upload a file with valid employee data.",
@@ -92,51 +88,15 @@ export const useEmployeeImport = (onSuccess: () => void) => {
       return;
     }
     
-    const newEmps: EmployeeData[] = [];
-    const updatedEmps: {existing: EmployeeData; imported: EmployeeData}[] = [];
+    const { newEmployees, updatedEmployees } = compareEmployees(state.preview, state.existingEmployees);
     
-    preview.forEach(importedEmp => {
-      const existingEmp = existingEmployees.find(existing => 
-        existing.email && importedEmp.email && 
-        existing.email.toLowerCase() === importedEmp.email.toLowerCase()
-      );
-      
-      if (existingEmp) {
-        // Check for changes in standard fields
-        const hasStandardChanges = Object.keys(importedEmp).some(key => {
-          if (key === 'id' || key.startsWith('rate_')) return false;
-          
-          return importedEmp[key] !== undefined && 
-                importedEmp[key] !== null && 
-                importedEmp[key] !== '' && 
-                importedEmp[key] !== existingEmp[key];
-        });
-
-        // Check for changes in rate fields
-        const hasRateChanges = ['rate_2', 'rate_3', 'rate_4'].some(rateKey => 
-          importedEmp[rateKey] !== undefined && 
-          importedEmp[rateKey] !== null && 
-          importedEmp[rateKey] !== '' && 
-          // Consider any imported rate as a change since we can't easily compare with existing rates
-          !!importedEmp[rateKey]
-        );
-        
-        if (hasStandardChanges || hasRateChanges) {
-          updatedEmps.push({
-            existing: existingEmp,
-            imported: importedEmp
-          });
-        }
-      } else {
-        newEmps.push(importedEmp);
-      }
+    dispatch({ 
+      type: 'PREPARE_IMPORT', 
+      payload: { newEmployees, updatedEmployees } 
     });
     
-    setNewEmployees(newEmps);
-    setUpdatedEmployees(updatedEmps);
-    
-    if (newEmps.length > 0 || updatedEmps.length > 0) {
-      setShowConfirmDialog(true);
+    if (newEmployees.length > 0 || updatedEmployees.length > 0) {
+      dispatch({ type: 'SET_SHOW_CONFIRM_DIALOG', payload: true });
     } else {
       toast({
         title: "No changes detected",
@@ -147,48 +107,36 @@ export const useEmployeeImport = (onSuccess: () => void) => {
   
   // Execute the import operation
   const handleImport = async () => {
-    setLoading(true);
+    dispatch({ type: 'SET_LOADING', payload: true });
     
-    try {
-      // Get the current user's ID
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-      
-      // Process new employees
-      await createNewEmployees(newEmployees, user.id);
-      
-      // Process updated employees
-      await updateExistingEmployees(updatedEmployees);
-      
+    const result = await executeImport(state.newEmployees, state.updatedEmployees);
+    
+    if (result.success) {
       toast({
         title: "Import successful",
-        description: `${newEmployees.length} employees added and ${updatedEmployees.length} employees updated.`,
+        description: result.message,
       });
       
       onSuccess();
-    } catch (error: any) {
+    } else {
       toast({
         title: "Error importing employees",
-        description: error.message,
+        description: result.message,
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
-      setShowConfirmDialog(false);
     }
+    
+    dispatch({ type: 'SET_LOADING', payload: false });
+    dispatch({ type: 'SET_SHOW_CONFIRM_DIALOG', payload: false });
+  };
+  
+  // Set show confirm dialog
+  const setShowConfirmDialog = (show: boolean) => {
+    dispatch({ type: 'SET_SHOW_CONFIRM_DIALOG', payload: show });
   };
   
   return {
-    loading,
-    preview,
-    columnMappings,
-    showMappingUI,
-    showConfirmDialog,
-    newEmployees,
-    updatedEmployees,
+    ...state,
     handleFileProcessed,
     updateColumnMapping,
     applyMappings,
