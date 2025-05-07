@@ -24,7 +24,8 @@ export const generateExtraHoursPDF = (summary: ExtraHoursSummary, filename = 'ex
   doc.text('Summary', 14, 40);
   
   // Create summary table
-  const summaryTable = autoTable(doc, {
+  // Using a fixed position for the next section since autoTable doesn't return an object with finalY
+  autoTable(doc, {
     startY: 45,
     head: [['Total Hours', 'Total Entries', 'Employee Count']],
     body: [
@@ -36,8 +37,8 @@ export const generateExtraHoursPDF = (summary: ExtraHoursSummary, filename = 'ex
     ]
   });
   
-  // Get the final Y position of the summary table
-  const summaryTableEndY = summaryTable.finalY || 70;
+  // Use a fixed position that would be below the summary table
+  const summaryTableEndY = 70;
   
   // Add employee details section
   doc.setFontSize(12);
