@@ -39,8 +39,8 @@ export function FolderTile({
       className={`relative group cursor-pointer aspect-square flex flex-col items-center justify-center transition-all ${isSelected ? 'bg-muted' : 'hover:bg-muted/50'}`}
       onClick={() => onFolderSelect(folder.id)}
     >
-      <Folder className="h-16 w-16 text-blue-500 mb-4" />
-      <span className="text-xl font-medium text-center">{folder.name}</span>
+      <Folder className="h-12 w-12 text-blue-500 mb-3" />
+      <span className="text-lg font-medium text-center">{folder.name}</span>
       
       {/* Dropdown for folder actions - visible on hover */}
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
