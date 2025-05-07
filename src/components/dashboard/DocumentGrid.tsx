@@ -1,6 +1,6 @@
+
 import { useState, useEffect } from "react";
 import { AddDocumentButton } from "./AddDocumentButton";
-import { Folder } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 export interface Document {
@@ -117,13 +117,6 @@ export function DocumentGrid({
   window.addDocument = addDocument;
   window.moveDocument = moveDocument;
 
-  // Create three default folders
-  const defaultFolders = [
-    { id: "folder-1", name: "Documents" },
-    { id: "folder-2", name: "Projects" },
-    { id: "folder-3", name: "Archives" }
-  ];
-
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -132,18 +125,7 @@ export function DocumentGrid({
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {defaultFolders.map(folder => (
-          <Card 
-            key={folder.id} 
-            className="aspect-square flex items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
-            onClick={() => console.log(`Folder ${folder.name} clicked`)}
-          >
-            <div className="flex flex-col items-center">
-              <Folder className="h-48 w-48 text-gray-500 mb-4" />
-              <span className="text-xl font-medium">{folder.name}</span>
-            </div>
-          </Card>
-        ))}
+        {/* Default folder cards removed */}
       </div>
       
       {selectedFolderId && (
