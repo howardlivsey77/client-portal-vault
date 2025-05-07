@@ -26,14 +26,32 @@ export const useInvites = () => {
       setLoading(true);
       setError(null);
       
-      // Use a Supabase function to check if user is admin first
-      const { data: isAdmin, error: adminCheckError } = await supabase
-        .rpc('is_user_admin', { user_id: (await supabase.auth.getUser()).data.user?.id });
-        
-      if (adminCheckError || !isAdmin) {
-        throw new Error("Permission denied: You don't have access to view invitations.");
+      console.log("Fetching user ID...");
+      const userResponse = await supabase.auth.getUser();
+      const userId = userResponse.data.user?.id;
+      
+      console.log("Checking if user is admin...", userId);
+      
+      // First check if the user exists in the profiles table
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", userId)
+        .single();
+      
+      if (profileError) {
+        console.error("Profile check error:", profileError);
+        throw new Error("Error checking admin status. Your profile might not exist.");
+      }
+      
+      console.log("Profile data:", profileData);
+      
+      if (!profileData || !profileData.is_admin) {
+        console.error("User is not admin:", profileData);
+        throw new Error("Permission denied: You don't have administrator privileges.");
       }
 
+      console.log("User is admin, fetching invitations...");
       // If we reach here, user is admin, proceed to fetch invitations
       const { data, error } = await supabase
         .from("invitations")
@@ -41,6 +59,7 @@ export const useInvites = () => {
         .order("issued_at", { ascending: false });
         
       if (error) {
+        console.error("Invitations fetch error:", error);
         throw error;
       }
       

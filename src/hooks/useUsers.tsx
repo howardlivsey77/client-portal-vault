@@ -22,21 +22,42 @@ export const useUsers = () => {
       setLoading(true);
       setError(null);
 
-      // Use a Supabase function to check if user is admin first
-      const { data: isAdmin, error: adminCheckError } = await supabase
-        .rpc('is_user_admin', { user_id: (await supabase.auth.getUser()).data.user?.id });
-        
-      if (adminCheckError || !isAdmin) {
-        throw new Error("Permission denied: You don't have access to view users.");
+      console.log("Fetching user ID for admin check...");
+      const userResponse = await supabase.auth.getUser();
+      const userId = userResponse.data.user?.id;
+      
+      console.log("Checking if user is admin...", userId);
+      
+      // First check if the user exists in the profiles table
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", userId)
+        .single();
+      
+      if (profileError) {
+        console.error("Profile check error:", profileError);
+        throw new Error("Error checking admin status. Your profile might not exist.");
+      }
+      
+      console.log("Profile data:", profileData);
+      
+      if (!profileData || !profileData.is_admin) {
+        console.error("User is not admin:", profileData);
+        throw new Error("Permission denied: You don't have administrator privileges.");
       }
 
+      console.log("User is admin, fetching profiles...");
       // If we reach here, user is admin, proceed to fetch profiles
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .order("created_at", { ascending: false });
         
-      if (error) throw error;
+      if (error) {
+        console.error("Profiles fetch error:", error);
+        throw error;
+      }
       
       setUsers(data || []);
     } catch (error: any) {
