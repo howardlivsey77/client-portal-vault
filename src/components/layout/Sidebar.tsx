@@ -1,3 +1,4 @@
+
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { 
@@ -5,7 +6,6 @@ import {
   FileText, 
   Home, 
   Settings, 
-  Share, 
   Users,
   CheckSquare,
   ChartBar,
@@ -134,19 +134,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
               Reports
             </Link>
           </Button>
-          <Button 
-            variant="ghost" 
-            className={cn(
-              "monday-sidebar-item w-full justify-start", 
-              isTabActive("shared") && "bg-accent text-accent-foreground"
-            )} 
-            asChild
-          >
-            <Link to={getTabUrl("shared")}>
-              <Share className="h-4 w-4" />
-              Shared with me
-            </Link>
-          </Button>
+          {/* Removed "Shared with me" menu item */}
         </div>
         
         <div className="mt-auto px-2 space-y-1">

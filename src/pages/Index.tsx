@@ -10,7 +10,6 @@ import { PayrollInputWizard } from "@/components/payroll/PayrollInputWizard";
 import { EmployeeDashboard } from "@/components/dashboard/EmployeeDashboard";
 import { DocumentsTab } from "@/components/dashboard/tabs/DocumentsTab";
 import { PayrollTab } from "@/components/dashboard/tabs/PayrollTab";
-import { SharedTab } from "@/components/dashboard/tabs/SharedTab";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 
 const Index = () => {
@@ -26,7 +25,7 @@ const Index = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get("tab");
-    if (tabParam && ["overview", "documents", "shared", "tasks", "reports", "payroll"].includes(tabParam)) {
+    if (tabParam && ["overview", "documents", "tasks", "reports", "payroll"].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [location.search]);
@@ -65,8 +64,6 @@ const Index = () => {
         return <EmployeeChangesReport />;
       case "payroll":
         return <PayrollTab onOpenPayrollWizard={() => setPayrollWizardOpen(true)} />;
-      case "shared":
-        return <SharedTab />;
       default:
         return <EmployeeDashboard />;
     }
