@@ -1,7 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export interface Invitation {
   id: string;
@@ -25,6 +25,16 @@ export const useInvites = () => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Use a Supabase function to check if user is admin first
+      const { data: isAdmin, error: adminCheckError } = await supabase
+        .rpc('is_user_admin', { user_id: (await supabase.auth.getUser()).data.user?.id });
+        
+      if (adminCheckError || !isAdmin) {
+        throw new Error("Permission denied: You don't have access to view invitations.");
+      }
+
+      // If we reach here, user is admin, proceed to fetch invitations
       const { data, error } = await supabase
         .from("invitations")
         .select("*")
