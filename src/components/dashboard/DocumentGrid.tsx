@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Folder } from "lucide-react";
@@ -8,6 +9,7 @@ import { SubfolderList } from "./documents/SubfolderList";
 import { DocumentList } from "./documents/DocumentList";
 import { EmptyFolder } from "./documents/EmptyFolder";
 import { DocumentGridProps } from "./documents/types";
+
 export interface Document {
   id: string;
   title: string;
@@ -16,6 +18,7 @@ export interface Document {
   size: string;
   folderId: string | null;
 }
+
 export function DocumentGrid({
   onAddDocument,
   selectedFolderId,
@@ -55,10 +58,4 @@ export function DocumentGrid({
     </div>;
 }
 
-// Extend Window interface to include our functions
-declare global {
-  interface Window {
-    addDocument: (doc: Document) => void;
-    moveDocument: (docId: string, targetFolderId: string | null) => void;
-  }
-}
+// Removing duplicate declaration here since we now have it in global.d.ts

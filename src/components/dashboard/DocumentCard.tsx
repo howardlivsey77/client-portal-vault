@@ -1,4 +1,3 @@
-
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -268,14 +267,4 @@ export function DocumentCard({
       </AlertDialog>
     </>
   );
-}
-
-// Extend Window interface to include our functions
-declare global {
-  interface Window {
-    addDocument: (doc: Document) => void;
-    moveDocument: (docId: string, targetFolderId: string | null) => void;
-    deleteDocument: (docId: string) => void;
-    renameDocument: (docId: string, newTitle: string) => void;
-  }
 }
