@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
+import { CustomNavbar } from './CustomNavbar';
 
 interface PageContainerProps {
   children: React.ReactNode;
@@ -17,7 +17,7 @@ export function PageContainer({ children, title }: PageContainerProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-monday-lightgray">
-      <Navbar toggleSidebar={toggleSidebar} />
+      <CustomNavbar toggleSidebar={toggleSidebar} />
       
       <div className="flex flex-1">
         <Sidebar isOpen={sidebarOpen} />
