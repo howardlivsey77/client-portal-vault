@@ -123,6 +123,7 @@ export type Database = {
           is_accepted: boolean | null
           issued_at: string
           issued_by: string
+          role: string | null
         }
         Insert: {
           accepted_at?: string | null
@@ -133,6 +134,7 @@ export type Database = {
           is_accepted?: boolean | null
           issued_at?: string
           issued_by: string
+          role?: string | null
         }
         Update: {
           accepted_at?: string | null
@@ -143,6 +145,7 @@ export type Database = {
           is_accepted?: boolean | null
           issued_at?: string
           issued_by?: string
+          role?: string | null
         }
         Relationships: []
       }

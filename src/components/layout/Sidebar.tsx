@@ -134,7 +134,6 @@ export function Sidebar({ isOpen }: SidebarProps) {
               Reports
             </Link>
           </Button>
-          {/* Removed "Shared with me" menu item */}
         </div>
         
         <div className="mt-auto px-2 space-y-1">

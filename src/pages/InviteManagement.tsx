@@ -45,6 +45,7 @@ interface Invitation {
   is_accepted: boolean;
   accepted_at: string | null;
   role: string;
+  issued_by: string;
 }
 
 interface UserProfile {
@@ -118,7 +119,13 @@ const InviteManagement = () => {
         
       if (error) throw error;
       
-      setInvitations(data || []);
+      // Ensure all invitations have a role property (use default 'user' if none exists)
+      const invitationsWithRole = data?.map(invitation => ({
+        ...invitation,
+        role: invitation.role || 'user'
+      })) || [];
+      
+      setInvitations(invitationsWithRole);
     } catch (error: any) {
       toast({
         title: "Error fetching invitations",
@@ -590,3 +597,4 @@ const InviteManagement = () => {
 };
 
 export default InviteManagement;
+
