@@ -24,7 +24,7 @@ export const generateExtraHoursPDF = (summary: ExtraHoursSummary, filename = 'ex
   doc.text('Summary', 14, 40);
   
   // Create summary table
-  autoTable(doc, {
+  const summaryTable = autoTable(doc, {
     startY: 45,
     head: [['Total Hours', 'Total Entries', 'Employee Count']],
     body: [
@@ -36,9 +36,12 @@ export const generateExtraHoursPDF = (summary: ExtraHoursSummary, filename = 'ex
     ]
   });
   
+  // Get the final Y position of the summary table
+  const summaryTableEndY = summaryTable.finalY || 70;
+  
   // Add employee details section
   doc.setFontSize(12);
-  doc.text('Employee Details', 14, doc.lastAutoTable.finalY + 15);
+  doc.text('Employee Details', 14, summaryTableEndY + 15);
   
   // Create employee details table
   const tableData = summary.employeeDetails.map(employee => [
@@ -53,7 +56,7 @@ export const generateExtraHoursPDF = (summary: ExtraHoursSummary, filename = 'ex
   
   // Add the employee details table
   autoTable(doc, {
-    startY: doc.lastAutoTable.finalY + 20,
+    startY: summaryTableEndY + 20,
     head: [['Employee', 'Rate Type', 'Hourly Rate', 'Extra Hours', 'Total']],
     body: tableData
   });
