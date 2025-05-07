@@ -1,4 +1,3 @@
-
 import { FolderItem } from "../types/folder.types";
 
 // Load folders from localStorage
@@ -160,3 +159,22 @@ export const updateDocumentsAfterFolderDeletion = (folderId: string): void => {
     console.error('Error updating documents after folder deletion', e);
   }
 };
+
+// Edit folder name globally (exposed to window)
+export const editFolderName = (folderId: string, newName: string): void => {
+  try {
+    const savedFolders = localStorage.getItem('documentFolders');
+    if (savedFolders) {
+      const folders = JSON.parse(savedFolders);
+      const updatedFolders = updateFolderName(folders, folderId, newName);
+      localStorage.setItem('documentFolders', JSON.stringify(updatedFolders));
+    }
+  } catch (e) {
+    console.error('Error updating folder name', e);
+  }
+};
+
+// Attach to window for global access
+if (typeof window !== 'undefined') {
+  window.editFolderName = editFolderName;
+}
