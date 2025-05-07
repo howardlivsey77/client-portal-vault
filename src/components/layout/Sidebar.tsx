@@ -20,7 +20,18 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen }: SidebarProps) {
   const location = useLocation();
-  const isHome = location.pathname === '/';
+  
+  // Function to check if a tab is active based on URL query parameters
+  const isTabActive = (tab: string) => {
+    const params = new URLSearchParams(location.search);
+    const currentTab = params.get("tab");
+    
+    if (!currentTab && tab === "overview") {
+      return true; // Default tab is overview
+    }
+    
+    return currentTab === tab;
+  };
   
   // Function to create a URL that navigates to the home page with a specific tab
   const getTabUrl = (tab: string) => {
@@ -50,7 +61,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
             variant="ghost" 
             className={cn(
               "monday-sidebar-item w-full justify-start", 
-              location.search.includes("overview") && "active"
+              isTabActive("overview") && "bg-accent text-accent-foreground"
             )} 
             asChild
           >
@@ -63,7 +74,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
             variant="ghost" 
             className={cn(
               "monday-sidebar-item w-full justify-start", 
-              location.search.includes("tasks") && "active"
+              isTabActive("tasks") && "bg-accent text-accent-foreground"
             )} 
             asChild
           >
@@ -76,7 +87,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
             variant="ghost" 
             className={cn(
               "monday-sidebar-item w-full justify-start", 
-              location.pathname.includes("/employees") && "active"
+              location.pathname.includes("/employees") && "bg-accent text-accent-foreground"
             )} 
             asChild
           >
@@ -89,7 +100,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
             variant="ghost" 
             className={cn(
               "monday-sidebar-item w-full justify-start", 
-              location.search.includes("payroll") && "active"
+              isTabActive("payroll") && "bg-accent text-accent-foreground"
             )} 
             asChild
           >
@@ -102,7 +113,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
             variant="ghost" 
             className={cn(
               "monday-sidebar-item w-full justify-start", 
-              location.search.includes("documents") && "active"
+              isTabActive("documents") && "bg-accent text-accent-foreground"
             )} 
             asChild
           >
@@ -115,7 +126,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
             variant="ghost" 
             className={cn(
               "monday-sidebar-item w-full justify-start", 
-              location.search.includes("reports") && "active"
+              isTabActive("reports") && "bg-accent text-accent-foreground"
             )} 
             asChild
           >
@@ -128,7 +139,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
             variant="ghost" 
             className={cn(
               "monday-sidebar-item w-full justify-start", 
-              location.search.includes("shared") && "active"
+              isTabActive("shared") && "bg-accent text-accent-foreground"
             )} 
             asChild
           >

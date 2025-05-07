@@ -37,15 +37,11 @@ export function Navbar({ toggleSidebar }: NavbarProps) {
           </Link>
           
           <nav className="hidden md:flex gap-6">
-            <Link to="/" className="text-sm font-medium transition-colors hover:text-primary">
-              Documents
-            </Link>
             {isAdmin === true && (
               <Link to="/invites" className="text-sm font-medium transition-colors hover:text-primary">
                 Invitations
               </Link>
             )}
-            {/* Removed Employees link from here as it's now in the sidebar */}
           </nav>
         </div>
 
