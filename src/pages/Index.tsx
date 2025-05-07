@@ -84,14 +84,14 @@ const Index = () => {
         </TabsContent>
         
         <TabsContent value="documents" className="mt-6 animate-fade-in">
-          <div className="flex flex-col md:flex-row gap-6">
-            <div className="w-full md:w-64">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <div className="lg:col-span-2">
               <FolderExplorer 
                 onFolderSelect={handleFolderSelect}
                 selectedFolderId={selectedFolderId}
               />
             </div>
-            <div className="flex-1">
+            <div className="lg:col-span-3">
               <DocumentGrid 
                 onAddDocument={() => setUploadModalOpen(true)} 
                 selectedFolderId={selectedFolderId}

@@ -1,5 +1,6 @@
 
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -7,87 +8,38 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { 
-  ChevronDown, 
-  ChevronRight, 
-  Folder, 
-  FolderOpen, 
-  MoreVertical, 
+  Folder,
   Pencil,
-  FolderPlus
+  FolderPlus,
+  MoreVertical,
 } from "lucide-react";
 import { FolderItem as FolderItemType } from "../types/folder.types";
 
-interface FolderItemProps {
+interface FolderTileProps {
   folder: FolderItemType;
-  level: number;
-  selectedFolderId: string | null;
-  expandedFolders: Record<string, boolean>;
+  isSelected: boolean;
   onFolderSelect: (folderId: string) => void;
-  onToggleFolder: (folderId: string) => void;
   onEditFolder: (folderId: string) => void;
   onAddSubfolder: (parentId: string) => void;
 }
 
-export function FolderItem({
+export function FolderTile({
   folder,
-  level,
-  selectedFolderId,
-  expandedFolders,
+  isSelected,
   onFolderSelect,
-  onToggleFolder,
   onEditFolder,
   onAddSubfolder
-}: FolderItemProps) {
-  const renderFolderItems = (folders: FolderItemType[], currentLevel: number) => {
-    return (
-      <>
-        {folders.map(subFolder => (
-          <FolderItem
-            key={subFolder.id}
-            folder={subFolder}
-            level={currentLevel}
-            selectedFolderId={selectedFolderId}
-            expandedFolders={expandedFolders}
-            onFolderSelect={onFolderSelect}
-            onToggleFolder={onToggleFolder}
-            onEditFolder={onEditFolder}
-            onAddSubfolder={onAddSubfolder}
-          />
-        ))}
-      </>
-    );
-  };
-
+}: FolderTileProps) {
   return (
-    <div key={folder.id} className="pl-2">
-      <div 
-        className={`flex items-center py-1 px-1 rounded-md ${selectedFolderId === folder.id ? 'bg-muted' : 'hover:bg-muted/50'}`}
-      >
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-5 w-5 p-0 mr-1" 
-          onClick={() => onToggleFolder(folder.id)}
-        >
-          {folder.children.length > 0 ? (
-            expandedFolders[folder.id] ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
-          ) : (
-            <div className="w-4" />
-          )}
-        </Button>
-        
-        <div 
-          className="flex flex-1 items-center space-x-2 cursor-pointer" 
-          onClick={() => onFolderSelect(folder.id)}
-          style={{ paddingLeft: `${level * 4}px` }}
-        >
-          {selectedFolderId === folder.id ? 
-            <FolderOpen className="h-4 w-4 text-blue-500" /> : 
-            <Folder className="h-4 w-4" />
-          }
-          <span className="text-sm">{folder.name}</span>
-        </div>
-        
+    <Card
+      className={`relative group cursor-pointer p-4 flex flex-col items-center justify-center transition-all ${isSelected ? 'bg-muted' : 'hover:bg-muted/50'}`}
+      onClick={() => onFolderSelect(folder.id)}
+    >
+      <Folder className={`h-12 w-12 mb-2 ${isSelected ? 'text-blue-500' : 'text-gray-500'}`} />
+      <span className="text-sm font-medium text-center">{folder.name}</span>
+      
+      {/* Dropdown for folder actions - visible on hover */}
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-6 w-6">
@@ -96,11 +48,17 @@ export function FolderItem({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEditFolder(folder.id)}>
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              onEditFolder(folder.id);
+            }}>
               <Pencil className="h-3 w-3 mr-2" />
               Rename Folder
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onAddSubfolder(folder.id)}>
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              onAddSubfolder(folder.id);
+            }}>
               <FolderPlus className="h-3 w-3 mr-2" />
               Add Subfolder
             </DropdownMenuItem>
@@ -108,11 +66,12 @@ export function FolderItem({
         </DropdownMenu>
       </div>
       
-      {expandedFolders[folder.id] && folder.children.length > 0 && (
-        <div className="ml-4">
-          {renderFolderItems(folder.children, level + 1)}
+      {/* Display a badge showing number of subfolders if any */}
+      {folder.children && folder.children.length > 0 && (
+        <div className="absolute bottom-2 right-2 bg-blue-100 text-blue-800 text-xs font-medium rounded-full px-2 py-0.5">
+          {folder.children.length}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

@@ -1,8 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Folder, FolderOpen, FolderPlus } from "lucide-react";
-import { FolderItem } from "./folder/FolderItem";
+import { Folder, FolderPlus } from "lucide-react";
 import { AddFolderDialog } from "./folder/AddFolderDialog";
 import { EditFolderDialog } from "./folder/EditFolderDialog";
 import { 
@@ -14,6 +13,8 @@ import {
   findFolderById
 } from "./folder/folderService";
 import { FolderItem as FolderItemType, FolderExplorerProps } from "./types/folder.types";
+import { FolderTile } from "./folder/FolderItem";
+import { Card } from "@/components/ui/card";
 
 export { type FolderItem } from "./types/folder.types";
 
@@ -95,9 +96,19 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
     return getFolderPathById(folderStructure, folderId);
   };
   
+  // Flatten folder structure to display as tiles
+  const getFlattenedFolders = (folders: FolderItemType[], parentPath = ""): FolderItemType[] => {
+    return folders.map(folder => ({
+      ...folder,
+      path: parentPath ? `${parentPath} / ${folder.name}` : folder.name
+    }));
+  };
+
+  const flatFolders = getFlattenedFolders(folderStructure);
+  
   return (
-    <div className="border rounded-md p-2 space-y-2">
-      <div className="flex items-center justify-between mb-2">
+    <div className="border rounded-md p-4 space-y-4">
+      <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium">Folders</h3>
         <Button 
           size="sm" 
@@ -110,24 +121,23 @@ export function FolderExplorer({ onFolderSelect, selectedFolderId }: FolderExplo
         </Button>
       </div>
       
-      <div className="space-y-1">
-        <div 
-          className={`flex items-center py-1 px-2 rounded-md ${!selectedFolderId ? 'bg-muted' : 'hover:bg-muted/50'}`}
-          onClick={() => onFolderSelect(null)}
-        >
-          <FolderOpen className="h-4 w-4 mr-2" />
-          <span className="text-sm">All Documents</span>
-        </div>
-        
-        {folderStructure.map(folder => (
-          <FolderItem
+      {/* All Documents "Tile" */}
+      <Card
+        className={`cursor-pointer p-4 flex flex-col items-center justify-center transition-all ${!selectedFolderId ? 'bg-muted' : 'hover:bg-muted/50'}`}
+        onClick={() => onFolderSelect(null)}
+      >
+        <Folder className="h-12 w-12 mb-2 text-blue-500" />
+        <span className="text-sm font-medium">All Documents</span>
+      </Card>
+      
+      {/* Grid of folder tiles */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+        {flatFolders.map(folder => (
+          <FolderTile
             key={folder.id}
             folder={folder}
-            level={0}
-            selectedFolderId={selectedFolderId}
-            expandedFolders={expandedFolders}
+            isSelected={selectedFolderId === folder.id}
             onFolderSelect={onFolderSelect}
-            onToggleFolder={toggleFolder}
             onEditFolder={openEditFolderDialog}
             onAddSubfolder={openAddFolderDialog}
           />
