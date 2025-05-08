@@ -4,6 +4,8 @@ import { EmployeeData } from "@/components/employees/import/ImportConstants";
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { WorkDay } from "@/components/employees/details/work-pattern/types";
 import { checkDuplicatePayrollIds } from "./checkExistingService";
+import { parseBooleanValue } from "@/components/employees/import/utils/booleanUtils";
+import { normalizeTimeString } from "@/components/employees/import/utils/timeUtils";
 
 // Process updated employees
 export const updateExistingEmployees = async (
@@ -51,6 +53,7 @@ export const updateExistingEmployees = async (
       
       // Check if this is a work pattern field
       if (key.includes('_working') || key.includes('_start_time') || key.includes('_end_time')) {
+        console.log(`Found work pattern field: ${key} = ${imported[key]}`);
         workPatternFields[key] = imported[key];
       } else {
         // For payroll_id, ensure it's trimmed
@@ -145,49 +148,50 @@ const updateWorkPatternsFromFields = async (workPatternFields: Record<string, an
   try {
     // Group fields by day
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    const workPatterns: WorkDay[] = [];
+    const workPatterns: any[] = [];
+    
+    console.log("Work pattern fields received:", workPatternFields);
     
     for (const day of days) {
       const isWorkingField = `${day}_working`;
       const startTimeField = `${day}_start_time`;
       const endTimeField = `${day}_end_time`;
       
-      // Check if we have any data for this day
-      const hasWorkPatternData = workPatternFields[isWorkingField] !== undefined || 
-                               workPatternFields[startTimeField] !== undefined || 
-                               workPatternFields[endTimeField] !== undefined;
+      // Always include all days in the work pattern
+      // Default to working = true if not specified
+      let isWorking = true;
+      let startTime = null;
+      let endTime = null;
       
-      if (hasWorkPatternData) {
-        console.log(`Found work pattern data for ${day}:`, {
-          isWorking: workPatternFields[isWorkingField],
-          startTime: workPatternFields[startTimeField],
-          endTime: workPatternFields[endTimeField]
-        });
-        
-        // Determine if working based on the field or infer from time data
-        let isWorking = true; // Default to true
-        
-        if (workPatternFields[isWorkingField] !== undefined) {
-          // Use the explicit value if provided
-          if (typeof workPatternFields[isWorkingField] === 'string') {
-            isWorking = workPatternFields[isWorkingField].toLowerCase() === 'true' || 
-                      workPatternFields[isWorkingField] === '1' || 
-                      workPatternFields[isWorkingField].toLowerCase() === 'yes';
-          } else {
-            isWorking = !!workPatternFields[isWorkingField];
-          }
-        } else if (!workPatternFields[startTimeField] && !workPatternFields[endTimeField]) {
-          // If no times provided, assume not working
-          isWorking = false;
-        }
-        
-        workPatterns.push({
-          day: day.charAt(0).toUpperCase() + day.slice(1),
-          isWorking,
-          startTime: workPatternFields[startTimeField] || null,
-          endTime: workPatternFields[endTimeField] || null
-        });
+      // Check if we have work pattern data for this day
+      if (workPatternFields[isWorkingField] !== undefined) {
+        // Parse the working status
+        isWorking = parseBooleanValue(workPatternFields[isWorkingField]);
       }
+      
+      // Get start and end times if they exist
+      if (workPatternFields[startTimeField] !== undefined) {
+        startTime = normalizeTimeString(workPatternFields[startTimeField]);
+      }
+      
+      if (workPatternFields[endTimeField] !== undefined) {
+        endTime = normalizeTimeString(workPatternFields[endTimeField]);
+      }
+      
+      // If no explicit working status, but both times are empty, assume not working
+      if (workPatternFields[isWorkingField] === undefined && !startTime && !endTime) {
+        isWorking = false;
+      }
+      
+      console.log(`Creating work pattern for ${day}: working=${isWorking}, start=${startTime}, end=${endTime}`);
+      
+      // Add to work patterns
+      workPatterns.push({
+        day: day.charAt(0).toUpperCase() + day.slice(1),
+        isWorking,
+        startTime,
+        endTime
+      });
     }
     
     // Only proceed if we found any work patterns

@@ -22,12 +22,10 @@ export const extractWorkPattern = (row: EmployeeData): WorkDay[] => {
                               row[startTimeField] !== undefined || 
                               row[endTimeField] !== undefined;
     
-    // Skip if no data for this day
-    if (!hasWorkPatternData) {
-      continue;
-    }
+    // Always include all days, regardless of whether data is present
+    // This ensures we have a complete work pattern for all days of the week
     
-    // Default to true for isWorking if the field is not present or if there's start/end time data
+    // Default to true for isWorking if the field is not present
     let isWorking = true;
     
     // If the working field is explicitly set, use that value
@@ -35,7 +33,7 @@ export const extractWorkPattern = (row: EmployeeData): WorkDay[] => {
       isWorking = parseBooleanValue(row[isWorkingField]);
     } 
     // If no working field but we have time data, infer from that
-    else if (hasWorkPatternData) {
+    else if (row[startTimeField] !== undefined || row[endTimeField] !== undefined) {
       // If both start and end times are empty, they're probably not working
       if (!row[startTimeField] && !row[endTimeField]) {
         isWorking = false;
@@ -46,6 +44,8 @@ export const extractWorkPattern = (row: EmployeeData): WorkDay[] => {
     const startTime = normalizeTimeString(row[startTimeField]);
     const endTime = normalizeTimeString(row[endTimeField]);
     
+    console.log(`Adding work pattern for ${day}: working=${isWorking}, start=${startTime}, end=${endTime}`);
+    
     // Add this day to the work patterns
     workPatterns.push({
       day: day.charAt(0).toUpperCase() + day.slice(1),
@@ -55,5 +55,6 @@ export const extractWorkPattern = (row: EmployeeData): WorkDay[] => {
     });
   }
   
+  console.log(`Total work patterns extracted: ${workPatterns.length}`);
   return workPatterns;
 };
