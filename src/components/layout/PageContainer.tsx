@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { CustomNavbar } from './CustomNavbar';
+import { useLocation } from 'react-router-dom';
 
 interface PageContainerProps {
   children: React.ReactNode;
@@ -10,6 +11,10 @@ interface PageContainerProps {
 
 export function PageContainer({ children, title }: PageContainerProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
+  
+  // Check if we're on the auth page
+  const isAuthPage = location.pathname === '/auth';
   
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -17,10 +22,10 @@ export function PageContainer({ children, title }: PageContainerProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-monday-lightgray">
-      <CustomNavbar toggleSidebar={toggleSidebar} />
+      <CustomNavbar toggleSidebar={!isAuthPage ? toggleSidebar : undefined} />
       
       <div className="flex flex-1">
-        <Sidebar isOpen={sidebarOpen} />
+        {!isAuthPage && <Sidebar isOpen={sidebarOpen} />}
         
         <div className="flex flex-1 flex-col overflow-hidden">
           <main className="flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-8">

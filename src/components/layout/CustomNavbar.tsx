@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface NavbarProps {
-  toggleSidebar: () => void;
+  toggleSidebar?: () => void;
 }
 
 export function CustomNavbar({ toggleSidebar }: NavbarProps) {
@@ -22,15 +22,17 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
 
   return (
     <header className="sticky top-0 z-30 flex h-20 items-center gap-4 bg-white border-b px-4 sm:px-6 lg:px-8">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="shrink-0 md:hidden text-gray-700 hover:bg-gray-100"
-        onClick={toggleSidebar}
-      >
-        <Menu className="h-5 w-5" />
-        <span className="sr-only">Toggle sidebar</span>
-      </Button>
+      {toggleSidebar && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="shrink-0 md:hidden text-gray-700 hover:bg-gray-100"
+          onClick={toggleSidebar}
+        >
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Toggle sidebar</span>
+        </Button>
+      )}
       
       <div className="flex items-center">
         <img 
@@ -43,53 +45,57 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
       <div className="flex-1" />
       
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" asChild className="text-gray-700 hover:bg-gray-100">
-          <Link to="/notifications">
-            <Bell className="h-5 w-5" />
-            <span className="sr-only">Notifications</span>
-          </Link>
-        </Button>
+        {user && (
+          <Button variant="ghost" size="icon" asChild className="text-gray-700 hover:bg-gray-100">
+            <Link to="/notifications">
+              <Bell className="h-5 w-5" />
+              <span className="sr-only">Notifications</span>
+            </Link>
+          </Button>
+        )}
         
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-gray-700 hover:bg-gray-100">
-              <User className="h-5 w-5" />
-              <span className="sr-only">User menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-white">
-            {user && (
-              <>
-                <DropdownMenuLabel>
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.email}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      Account Settings
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-              </>
-            )}
-            <DropdownMenuItem asChild>
-              <Link to="/profile" className="w-full cursor-pointer">
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/change-password" className="w-full cursor-pointer">
-                <Lock className="mr-2 h-4 w-4" />
-                <span>Change Password</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={signOut} className="cursor-pointer">
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Log out</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {user && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-gray-700 hover:bg-gray-100">
+                <User className="h-5 w-5" />
+                <span className="sr-only">User menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-white">
+              {user && (
+                <>
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user.email}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        Account Settings
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuItem asChild>
+                <Link to="/profile" className="w-full cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/change-password" className="w-full cursor-pointer">
+                  <Lock className="mr-2 h-4 w-4" />
+                  <span>Change Password</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut} className="cursor-pointer">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
     </header>
   );
