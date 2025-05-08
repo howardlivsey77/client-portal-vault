@@ -21,11 +21,11 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
   const { user, signOut } = useAuth();
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 bg-black text-white px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 bg-white border-b px-4 sm:px-6 lg:px-8">
       <Button
         variant="ghost"
         size="icon"
-        className="shrink-0 md:hidden text-white hover:bg-black/20"
+        className="shrink-0 md:hidden text-gray-700 hover:bg-gray-100"
         onClick={toggleSidebar}
       >
         <Menu className="h-5 w-5" />
@@ -34,16 +34,16 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
       
       <div className="flex items-center">
         <img 
-          src="/lovable-uploads/88765623-01f7-44d0-8eca-60657594447c.png" 
-          alt="Rams Brown Logo" 
-          className="h-12 mr-2" 
+          src="/lovable-uploads/3e0f0f1b-006e-4094-a7af-1a0b28bab13c.png" 
+          alt="Ramsay Brown Logo" 
+          className="h-10" 
         />
       </div>
       
       <div className="flex-1" />
       
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" asChild className="text-white hover:bg-black/20">
+        <Button variant="ghost" size="icon" asChild className="text-gray-700 hover:bg-gray-100">
           <Link to="/notifications">
             <Bell className="h-5 w-5" />
             <span className="sr-only">Notifications</span>
@@ -52,7 +52,7 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-white hover:bg-black/20">
+            <Button variant="ghost" size="icon" className="text-gray-700 hover:bg-gray-100">
               <User className="h-5 w-5" />
               <span className="sr-only">User menu</span>
             </Button>
