@@ -49,8 +49,8 @@ export const WeeklyTimesheetGrid = ({ timesheet }: WeeklyTimesheetGridProps) => 
                   {day.isWorking ? 'Working' : 'Off'}
                 </Badge>
               </TableCell>
-              <TableCell>{day.scheduledStart || 'N/A'}</TableCell>
-              <TableCell>{day.scheduledEnd || 'N/A'}</TableCell>
+              <TableCell>{day.isWorking ? (day.scheduledStart || 'N/A') : '-'}</TableCell>
+              <TableCell>{day.isWorking ? (day.scheduledEnd || 'N/A') : '-'}</TableCell>
               <TableCell>
                 {day.isWorking ? (
                   <Input
@@ -60,7 +60,7 @@ export const WeeklyTimesheetGrid = ({ timesheet }: WeeklyTimesheetGridProps) => 
                     className="w-32"
                   />
                 ) : (
-                  'N/A'
+                  '-'
                 )}
               </TableCell>
               <TableCell>
@@ -72,7 +72,7 @@ export const WeeklyTimesheetGrid = ({ timesheet }: WeeklyTimesheetGridProps) => 
                     className="w-32"
                   />
                 ) : (
-                  'N/A'
+                  '-'
                 )}
               </TableCell>
             </TableRow>
