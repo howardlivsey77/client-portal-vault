@@ -2,6 +2,7 @@
 import { WorkDay } from "../types";
 import { defaultWorkPattern } from "@/types/employee";
 import { supabase } from "@/integrations/supabase/client";
+import { DAYS_OF_WEEK } from "../utils/constants";
 
 export const fetchWorkPatterns = async (employeeId: string): Promise<WorkDay[]> => {
   try {
@@ -43,9 +44,8 @@ export const fetchWorkPatterns = async (employeeId: string): Promise<WorkDay[]> 
         });
       });
 
-      // Ensure we have all 7 days of the week
-      const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-      return daysOfWeek.map(day => {
+      // Ensure we have all 7 days of the week using the constant
+      return DAYS_OF_WEEK.map(day => {
         return patternsByDay.get(day) || {
           day,
           isWorking: false,
@@ -97,9 +97,8 @@ export const fetchWorkPatternsByPayrollId = async (payrollId: string): Promise<W
         });
       });
 
-      // Ensure we have all 7 days of the week
-      const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-      return daysOfWeek.map(day => {
+      // Ensure we have all 7 days of the week using the constant
+      return DAYS_OF_WEEK.map(day => {
         return patternsByDay.get(day) || {
           day,
           isWorking: false,
