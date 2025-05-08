@@ -11,32 +11,32 @@ import { WorkDay } from "./types";
 interface WorkPatternDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  workDays: WorkDay[];
-  setWorkDays: (workDays: WorkDay[]) => void;
-  onSave: () => Promise<void>;
+  workPattern: WorkDay[];
+  setWorkPattern: (workPattern: WorkDay[]) => void;
+  saveWorkPattern: () => Promise<void>;
 }
 
 export const WorkPatternDialog = ({
   open,
   onOpenChange,
-  workDays,
-  setWorkDays,
-  onSave,
+  workPattern,
+  setWorkPattern,
+  saveWorkPattern,
 }: WorkPatternDialogProps) => {
   const [saving, setSaving] = useState(false);
   const hoursList = generateHoursList();
 
   const toggleWorkDay = (index: number) => {
-    setWorkDays(
-      workDays.map((day, i) =>
+    setWorkPattern(
+      workPattern.map((day, i) =>
         i === index ? { ...day, isWorking: !day.isWorking } : day
       )
     );
   };
 
   const updateTime = (index: number, field: "startTime" | "endTime", value: string) => {
-    setWorkDays(
-      workDays.map((day, i) =>
+    setWorkPattern(
+      workPattern.map((day, i) =>
         i === index ? { ...day, [field]: value } : day
       )
     );
@@ -44,7 +44,7 @@ export const WorkPatternDialog = ({
 
   const handleSave = async () => {
     setSaving(true);
-    await onSave();
+    await saveWorkPattern();
     setSaving(false);
     onOpenChange(false);
   };
@@ -57,7 +57,7 @@ export const WorkPatternDialog = ({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {workDays.map((day, index) => (
+          {workPattern.map((day, index) => (
             <div key={day.day} className="flex flex-col space-y-2">
               <div className="flex items-center space-x-2">
                 <Checkbox
