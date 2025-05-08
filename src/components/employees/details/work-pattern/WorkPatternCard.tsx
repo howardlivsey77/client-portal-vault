@@ -46,7 +46,13 @@ export const WorkPatternCard = ({
     
     setLoading(true);
     try {
-      const success = await saveWorkPatterns(employee.id, workPattern);
+      // Make sure payrollId is set in all work patterns
+      const patternsWithPayrollId = workPattern.map(pattern => ({
+        ...pattern,
+        payrollId: pattern.payrollId || employee.payroll_id || null
+      }));
+      
+      const success = await saveWorkPatterns(employee.id, patternsWithPayrollId);
       
       if (success) {
         toast({

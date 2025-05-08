@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { employeeSchema, EmployeeFormValues, genderOptions, defaultWorkPattern } from "@/types/employee";
 import { fetchEmployeeById, createEmployee, updateEmployee } from "@/services/employeeService";
-import { fetchWorkPatterns } from "@/components/employees/details/work-pattern/utils";
+import { fetchWorkPatterns, saveWorkPatterns } from "@/components/employees/details/work-pattern/utils";
 
 export const useEmployeeForm = (employeeId?: string) => {
   const isEditMode = employeeId !== undefined && employeeId !== "new";
@@ -37,6 +36,31 @@ export const useEmployeeForm = (employeeId?: string) => {
     },
   });
   
+  // Function to ensure work patterns have the correct payroll ID
+  const syncWorkPatternsWithPayrollId = async (employeeId: string, payrollId: string | null) => {
+    try {
+      // First fetch the current work patterns
+      const workPatterns = await fetchWorkPatterns(employeeId);
+      
+      // Check if any work patterns don't have the payroll ID
+      const needsUpdate = workPatterns.some(pattern => pattern.payrollId !== payrollId);
+      
+      if (needsUpdate) {
+        // Update all patterns with the correct payroll ID
+        const updatedPatterns = workPatterns.map(pattern => ({
+          ...pattern,
+          payrollId: payrollId
+        }));
+        
+        // Save the updated patterns
+        await saveWorkPatterns(employeeId, updatedPatterns);
+        console.log("Work patterns updated with payroll ID:", payrollId);
+      }
+    } catch (error) {
+      console.error("Error syncing work patterns with payroll ID:", error);
+    }
+  };
+  
   const fetchEmployeeData = async () => {
     try {
       if (!employeeId) return;
@@ -57,6 +81,11 @@ export const useEmployeeForm = (employeeId?: string) => {
           ["Male", "Female", "Other", "Prefer not to say"].includes(data.gender)
             ? data.gender as "Male" | "Female" | "Other" | "Prefer not to say"
             : undefined;
+        
+        // If employee has a payroll ID, ensure work patterns are synced with it
+        if (data.payroll_id) {
+          await syncWorkPatternsWithPayrollId(employeeId, data.payroll_id);
+        }
         
         form.reset({
           first_name: data.first_name,
@@ -90,6 +119,12 @@ export const useEmployeeForm = (employeeId?: string) => {
       setLoading(false);
     }
   };
+  
+  useEffect(() => {
+    if (isEditMode && employeeId) {
+      fetchEmployeeData();
+    }
+  }, [isEditMode, employeeId]);
   
   const onSubmit = async (data: EmployeeFormValues) => {
     setSubmitLoading(true);

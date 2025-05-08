@@ -5,6 +5,20 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const fetchWorkPatterns = async (employeeId: string): Promise<WorkDay[]> => {
   try {
+    // First fetch the employee to get the payroll_id
+    const { data: employeeData, error: employeeError } = await supabase
+      .from('employees')
+      .select('payroll_id')
+      .eq('id', employeeId)
+      .single();
+      
+    if (employeeError) {
+      console.error("Error fetching employee data:", employeeError);
+    }
+    
+    const payrollId = employeeData?.payroll_id || null;
+    
+    // Now fetch work patterns
     const { data, error } = await supabase
       .from('work_patterns')
       .select('*')
@@ -24,7 +38,8 @@ export const fetchWorkPatterns = async (employeeId: string): Promise<WorkDay[]> 
           day: pattern.day,
           isWorking: pattern.is_working,
           startTime: pattern.start_time,
-          endTime: pattern.end_time
+          endTime: pattern.end_time,
+          payrollId: pattern.payroll_id || payrollId // Use pattern payroll_id if available, otherwise use employee's
         });
       });
 
@@ -35,21 +50,38 @@ export const fetchWorkPatterns = async (employeeId: string): Promise<WorkDay[]> 
           day,
           isWorking: false,
           startTime: null,
-          endTime: null
+          endTime: null,
+          payrollId: payrollId
         };
       });
     }
     
-    // If no patterns found, return the default pattern
-    return defaultWorkPattern;
+    // If no patterns found, return the default pattern with payroll_id
+    return defaultWorkPattern.map(pattern => ({
+      ...pattern,
+      payrollId: payrollId
+    }));
   } catch (e) {
     console.error("Error in fetchWorkPatterns:", e);
     return defaultWorkPattern;
   }
 };
 
-export const saveWorkPatterns = async (employeeId: string, patterns: WorkDay[], payrollId?: string): Promise<boolean> => {
+export const saveWorkPatterns = async (employeeId: string, patterns: WorkDay[]): Promise<boolean> => {
   try {
+    // First, get the employee's payroll_id
+    const { data: employeeData, error: employeeError } = await supabase
+      .from('employees')
+      .select('payroll_id')
+      .eq('id', employeeId)
+      .single();
+      
+    if (employeeError) {
+      console.error("Error fetching employee data:", employeeError);
+    }
+    
+    const payrollId = patterns[0]?.payrollId || employeeData?.payroll_id || null;
+    
     // Ensure we have exactly 7 days
     const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
     const completePatterns = daysOfWeek.map(day => {
@@ -58,7 +90,8 @@ export const saveWorkPatterns = async (employeeId: string, patterns: WorkDay[], 
         day,
         isWorking: false,
         startTime: null,
-        endTime: null
+        endTime: null,
+        payrollId: payrollId
       };
     });
     
@@ -73,14 +106,14 @@ export const saveWorkPatterns = async (employeeId: string, patterns: WorkDay[], 
       throw deleteError;
     }
     
-    // Then, insert the new patterns with payroll_id if available
+    // Then, insert the new patterns with payroll_id
     const patternsToInsert = completePatterns.map(pattern => ({
       employee_id: employeeId,
       day: pattern.day,
       is_working: pattern.isWorking,
       start_time: pattern.startTime,
       end_time: pattern.endTime,
-      payroll_id: payrollId || null
+      payroll_id: pattern.payrollId || payrollId
     }));
     
     const { error: insertError } = await supabase

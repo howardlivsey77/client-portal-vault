@@ -1,65 +1,84 @@
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { 
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
-import { useAuth } from "@/providers/AuthProvider";
-import { useEmployees } from "@/hooks/useEmployees";
 import { EmployeeTable } from "@/components/employees/EmployeeTable";
-import { EmptyEmployeeState } from "@/components/employees/EmptyEmployeeState";
 import { EmployeeSearch } from "@/components/employees/EmployeeSearch";
 import { EmployeeActions } from "@/components/employees/EmployeeActions";
+import { EmptyEmployeeState } from "@/components/employees/EmptyEmployeeState";
+import { useEmployees } from "@/hooks/useEmployees";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { migratePayrollIdsToWorkPatterns } from "@/services/employeeService";
+import { useAuth } from "@/providers/AuthProvider";
 
-const Employees = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+export default function Employees() {
+  const { employees, loading, searchQuery, setSearchQuery, refetch } = useEmployees();
+  const { toast } = useToast();
   const { isAdmin } = useAuth();
-  const { employees, loading, fetchEmployees, deleteEmployee } = useEmployees();
-  
-  return (
-    <PageContainer>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Employee Management</h1>
-        <EmployeeActions 
-          isAdmin={isAdmin} 
-          loading={loading} 
-          onRefresh={fetchEmployees}
-        />
-      </div>
+  const [migrating, setMigrating] = useState(false);
+
+  const runPayrollIdMigration = async () => {
+    if (!isAdmin) {
+      toast({
+        title: "Permission denied",
+        description: "Only administrators can run this migration.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setMigrating(true);
+    try {
+      const success = await migratePayrollIdsToWorkPatterns();
       
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Employees</CardTitle>
-          <CardDescription>
-            Manage employee records and information.
-          </CardDescription>
-          <div className="mt-4">
-            <EmployeeSearch searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+      if (success) {
+        toast({
+          title: "Migration completed",
+          description: "Successfully migrated payroll IDs to work patterns.",
+        });
+      } else {
+        toast({
+          title: "Migration failed",
+          description: "There was an error migrating payroll IDs. Check the console for details.",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Migration error",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive"
+      });
+    } finally {
+      setMigrating(false);
+    }
+  };
+
+  return (
+    <PageContainer title="Employees">
+      <div className="flex flex-col space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <EmployeeSearch value={searchQuery} onChange={setSearchQuery} />
+          <div className="flex flex-col sm:flex-row gap-2">
+            {isAdmin && (
+              <Button 
+                variant="outline" 
+                onClick={runPayrollIdMigration}
+                disabled={migrating}
+              >
+                {migrating ? "Migrating..." : "Migrate Payroll IDs"}
+              </Button>
+            )}
+            <EmployeeActions />
           </div>
-        </CardHeader>
-        <CardContent>
-          {loading && employees.length === 0 ? (
-            <div className="flex justify-center py-6">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          ) : employees.length > 0 ? (
-            <EmployeeTable 
-              employees={employees} 
-              onDelete={deleteEmployee}
-              searchTerm={searchTerm}
-            />
-          ) : (
-            <EmptyEmployeeState isAdmin={isAdmin} searchTerm={searchTerm} />
-          )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {!loading && employees.length === 0 && !searchQuery ? (
+          <EmptyEmployeeState />
+        ) : (
+          <EmployeeTable employees={employees} loading={loading} />
+        )}
+      </div>
     </PageContainer>
   );
-};
-
-export default Employees;
+}

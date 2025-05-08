@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeFormValues, defaultWorkPattern } from "@/types/employee";
 import { roundToTwoDecimals } from "@/lib/formatters";
@@ -131,4 +130,42 @@ export const updateEmployee = async (id: string, employeeData: EmployeeFormValue
   
   // Note: We don't update work patterns here as it's now handled separately
   // through the WorkPatternCard component
+};
+
+// New function to migrate payroll IDs from employees to work patterns
+export const migratePayrollIdsToWorkPatterns = async () => {
+  try {
+    // Get all employees with their payroll_ids
+    const { data: employees, error: employeesError } = await supabase
+      .from("employees")
+      .select("id, payroll_id")
+      .filter("payroll_id", "not.is", null);
+    
+    if (employeesError) throw employeesError;
+    
+    console.log(`Found ${employees?.length || 0} employees with payroll IDs to migrate`);
+    
+    // For each employee with a payroll_id, update their work patterns
+    for (const employee of employees || []) {
+      if (!employee.payroll_id) continue;
+      
+      // Update work patterns for this employee
+      const { error: updateError } = await supabase
+        .from('work_patterns')
+        .update({ payroll_id: employee.payroll_id })
+        .eq('employee_id', employee.id)
+        .is('payroll_id', null);
+      
+      if (updateError) {
+        console.error(`Error updating work patterns for employee ${employee.id}:`, updateError);
+      } else {
+        console.log(`Updated work patterns for employee ${employee.id} with payroll_id ${employee.payroll_id}`);
+      }
+    }
+    
+    return true;
+  } catch (e) {
+    console.error("Error in migratePayrollIdsToWorkPatterns:", e);
+    return false;
+  }
 };
