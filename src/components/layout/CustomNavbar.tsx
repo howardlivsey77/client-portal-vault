@@ -10,11 +10,11 @@ interface NavbarProps {
 
 export function CustomNavbar({ toggleSidebar }: NavbarProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 bg-black text-white px-4 sm:px-6 lg:px-8">
       <Button
         variant="ghost"
         size="icon"
-        className="shrink-0 md:hidden"
+        className="shrink-0 md:hidden text-white hover:bg-black/20"
         onClick={toggleSidebar}
       >
         <Menu className="h-5 w-5" />
@@ -32,14 +32,14 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
       <div className="flex-1" />
       
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" asChild>
+        <Button variant="ghost" size="icon" asChild className="text-white hover:bg-black/20">
           <Link to="/notifications">
             <Bell className="h-5 w-5" />
             <span className="sr-only">Notifications</span>
           </Link>
         </Button>
         
-        <Button variant="ghost" size="icon" asChild>
+        <Button variant="ghost" size="icon" asChild className="text-white hover:bg-black/20">
           <Link to="/profile">
             <User className="h-5 w-5" />
             <span className="sr-only">Profile</span>
