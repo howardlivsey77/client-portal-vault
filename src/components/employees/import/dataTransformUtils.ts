@@ -35,6 +35,7 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): 
   
   const results = data.map(row => {
     const transformedRow: EmployeeData = {};
+    const workPatternFields: EmployeeData = {};
     
     // Check if there's an "employee name" or full name column but no separate first/last name
     const hasFirstName = mappings.some(m => m.targetField === 'first_name');
@@ -85,16 +86,16 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): 
             }
           }
         }
-        // Handle time fields
+        // Handle time fields - store these in workPatternFields object instead of transformedRow
         else if (mapping.targetField.endsWith('_start_time') || mapping.targetField.endsWith('_end_time')) {
           const normalizedTime = normalizeTimeString(sourceValue);
           if (normalizedTime) {
-            transformedRow[mapping.targetField] = normalizedTime;
+            workPatternFields[mapping.targetField] = normalizedTime;
           }
         }
-        // Handle work pattern boolean fields
+        // Handle work pattern boolean fields - store these in workPatternFields object
         else if (mapping.targetField.endsWith('_working')) {
-          transformedRow[mapping.targetField] = parseBooleanValue(sourceValue);
+          workPatternFields[mapping.targetField] = parseBooleanValue(sourceValue);
         }
         else {
           // For text fields, ensure we're not storing undefined or null
@@ -107,19 +108,15 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): 
     if (!transformedRow.hours_per_week && transformedRow.hours_per_week !== 0) transformedRow.hours_per_week = 40;
     if (!transformedRow.hourly_rate && transformedRow.hourly_rate !== 0) transformedRow.hourly_rate = 0;
     
-    // Extract work pattern data from the transformed row
-    // This looks for any work pattern field that was mapped
-    const hasWorkPatternFields = mappings.some(mapping => 
-      mapping.targetField && (
-        mapping.targetField.endsWith('_working') ||
-        mapping.targetField.endsWith('_start_time') || 
-        mapping.targetField.endsWith('_end_time')
-      ) &&
-      mapping.sourceColumn && row[mapping.sourceColumn] !== undefined
-    );
-    
-    if (hasWorkPatternFields) {
-      transformedRow.work_pattern = JSON.stringify(extractWorkPattern(transformedRow));
+    // Add work pattern fields to transformed row if any exist
+    if (Object.keys(workPatternFields).length > 0) {
+      Object.assign(transformedRow, workPatternFields);
+      
+      // Also create the work_pattern JSON string for backward compatibility
+      const workPattern = extractWorkPattern(workPatternFields);
+      if (workPattern.length > 0) {
+        transformedRow.work_pattern = JSON.stringify(workPattern);
+      }
     }
     
     return transformedRow;

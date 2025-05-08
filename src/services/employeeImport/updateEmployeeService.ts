@@ -33,7 +33,9 @@ export const updateExistingEmployees = async (
   for (const { existing, imported } of updatedEmployees) {
     console.log(`Updating employee ID ${existing.id}: ${existing.first_name} ${existing.last_name}`);
     
-    const updates: any = {};
+    // Separate employee data fields from work pattern fields
+    const employeeUpdates: any = {};
+    const workPatternFields: Record<string, any> = {};
     
     // Only include fields that have values in the imported data
     // This ensures we don't overwrite existing data with empty values
@@ -42,28 +44,33 @@ export const updateExistingEmployees = async (
           imported[key] !== undefined && imported[key] !== null && 
           imported[key] !== '') {
         
-        // For payroll_id, ensure it's trimmed
-        if (key === 'payroll_id' && imported[key]) {
-          updates[key] = imported[key].trim();
+        // Check if this is a work pattern field
+        if (key.includes('_working') || key.includes('_start_time') || key.includes('_end_time')) {
+          workPatternFields[key] = imported[key];
         } else {
-          updates[key] = imported[key];
+          // For payroll_id, ensure it's trimmed
+          if (key === 'payroll_id' && imported[key]) {
+            employeeUpdates[key] = imported[key].trim();
+          } else {
+            employeeUpdates[key] = imported[key];
+          }
         }
       }
     });
     
     // Always round numeric fields
-    if ('hourly_rate' in updates) updates.hourly_rate = roundToTwoDecimals(updates.hourly_rate);
-    if ('rate_2' in updates) updates.rate_2 = roundToTwoDecimals(updates.rate_2);
-    if ('rate_3' in updates) updates.rate_3 = roundToTwoDecimals(updates.rate_3);
-    if ('rate_4' in updates) updates.rate_4 = roundToTwoDecimals(updates.rate_4);
+    if ('hourly_rate' in employeeUpdates) employeeUpdates.hourly_rate = roundToTwoDecimals(employeeUpdates.hourly_rate);
+    if ('rate_2' in employeeUpdates) employeeUpdates.rate_2 = roundToTwoDecimals(employeeUpdates.rate_2);
+    if ('rate_3' in employeeUpdates) employeeUpdates.rate_3 = roundToTwoDecimals(employeeUpdates.rate_3);
+    if ('rate_4' in employeeUpdates) employeeUpdates.rate_4 = roundToTwoDecimals(employeeUpdates.rate_4);
     
-    console.log("Applying these updates:", updates);
+    console.log("Applying these employee updates:", employeeUpdates);
     
     // Only update if there are actual changes
-    if (Object.keys(updates).length > 0) {
+    if (Object.keys(employeeUpdates).length > 0) {
       const { error: updateError } = await supabase
         .from("employees")
-        .update(updates)
+        .update(employeeUpdates)
         .eq("id", existing.id);
       
       if (updateError) {
@@ -71,29 +78,86 @@ export const updateExistingEmployees = async (
         throw updateError;
       }
     } else {
-      console.log("No fields to update for this employee");
+      console.log("No employee fields to update for this employee");
     }
     
-    // Always check for work pattern updates
-    await updateWorkPatterns(imported, existing.id);
+    // Handle work patterns if they exist in the imported data
+    if (imported.work_pattern) {
+      await updateWorkPatterns(imported, existing.id);
+    } else if (Object.keys(workPatternFields).length > 0) {
+      // We have work pattern fields but not a pre-processed work_pattern object
+      await updateWorkPatternsFromFields(workPatternFields, existing.id);
+    }
   }
 };
 
 // Helper function to update work patterns
 const updateWorkPatterns = async (imported: EmployeeData, employeeId: string) => {
-  // Handle work patterns if they exist in the imported data
-  if (imported.work_pattern) {
-    try {
-      // Parse work patterns
-      const workPatterns: WorkDay[] = JSON.parse(imported.work_pattern);
+  try {
+    // Parse work patterns
+    const workPatterns: WorkDay[] = JSON.parse(imported.work_pattern);
+    
+    // First delete existing work patterns
+    await supabase
+      .from('work_patterns')
+      .delete()
+      .eq('employee_id', employeeId);
       
-      // First delete existing work patterns
-      await supabase
+    // Then insert new work patterns
+    const workPatternsToInsert = workPatterns.map(pattern => ({
+      employee_id: employeeId,
+      day: pattern.day,
+      is_working: pattern.isWorking,
+      start_time: pattern.startTime,
+      end_time: pattern.endTime
+    }));
+    
+    if (workPatternsToInsert.length > 0) {
+      const { error } = await supabase
         .from('work_patterns')
-        .delete()
-        .eq('employee_id', employeeId);
+        .insert(workPatternsToInsert);
         
-      // Then insert new work patterns
+      if (error) console.error("Error inserting updated work patterns:", error);
+    }
+  } catch (e) {
+    console.error("Error processing updated work pattern data:", e);
+  }
+};
+
+// Helper function to update work patterns from individual fields
+const updateWorkPatternsFromFields = async (workPatternFields: Record<string, any>, employeeId: string) => {
+  try {
+    // Group fields by day
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const workPatterns: WorkDay[] = [];
+    
+    days.forEach(day => {
+      const isWorkingField = `${day}_working`;
+      const startTimeField = `${day}_start_time`;
+      const endTimeField = `${day}_end_time`;
+      
+      // Check if we have any data for this day
+      if (workPatternFields[isWorkingField] !== undefined || 
+          workPatternFields[startTimeField] !== undefined || 
+          workPatternFields[endTimeField] !== undefined) {
+        
+        workPatterns.push({
+          day: day.charAt(0).toUpperCase() + day.slice(1),
+          isWorking: workPatternFields[isWorkingField] !== undefined ? workPatternFields[isWorkingField] : true,
+          startTime: workPatternFields[startTimeField] || null,
+          endTime: workPatternFields[endTimeField] || null
+        });
+      }
+    });
+    
+    // Delete existing work patterns
+    await supabase
+      .from('work_patterns')
+      .delete()
+      .eq('employee_id', employeeId);
+    
+    // Insert new work patterns
+    if (workPatterns.length > 0) {
       const workPatternsToInsert = workPatterns.map(pattern => ({
         employee_id: employeeId,
         day: pattern.day,
@@ -102,15 +166,13 @@ const updateWorkPatterns = async (imported: EmployeeData, employeeId: string) =>
         end_time: pattern.endTime
       }));
       
-      if (workPatternsToInsert.length > 0) {
-        const { error } = await supabase
-          .from('work_patterns')
-          .insert(workPatternsToInsert);
-          
-        if (error) console.error("Error inserting updated work patterns:", error);
-      }
-    } catch (e) {
-      console.error("Error processing updated work pattern data:", e);
+      const { error } = await supabase
+        .from('work_patterns')
+        .insert(workPatternsToInsert);
+        
+      if (error) console.error("Error inserting work patterns from fields:", error);
     }
+  } catch (e) {
+    console.error("Error processing work pattern fields:", e);
   }
 };

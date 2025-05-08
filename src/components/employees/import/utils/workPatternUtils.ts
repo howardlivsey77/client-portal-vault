@@ -33,6 +33,11 @@ export const extractWorkPattern = (row: EmployeeData): WorkDay[] => {
       }
     }
     
+    // Only include days that have some data
+    if (!hasWorkPatternData) {
+      return null;
+    }
+    
     // Normalize time strings
     const startTime = normalizeTimeString(row[startTimeField]);
     const endTime = normalizeTimeString(row[endTimeField]);
@@ -43,5 +48,5 @@ export const extractWorkPattern = (row: EmployeeData): WorkDay[] => {
       startTime,
       endTime
     };
-  });
+  }).filter(Boolean) as WorkDay[]; // Remove null entries
 };
