@@ -19,8 +19,17 @@ export const formatTime = (time: string | null): string => {
 };
 
 export const generateHoursList = (): string[] => {
-  return Array.from({ length: 24 }, (_, i) => {
-    const hour = i.toString().padStart(2, '0');
-    return `${hour}:00`;
-  });
+  const timeIntervals: string[] = [];
+  
+  for (let hour = 0; hour < 24; hour++) {
+    const hourString = hour.toString().padStart(2, '0');
+    
+    // Add each 15-minute interval
+    timeIntervals.push(`${hourString}:00`);
+    timeIntervals.push(`${hourString}:15`);
+    timeIntervals.push(`${hourString}:30`);
+    timeIntervals.push(`${hourString}:45`);
+  }
+  
+  return timeIntervals;
 };
