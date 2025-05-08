@@ -17,12 +17,27 @@ export const fetchWorkPatterns = async (employeeId: string): Promise<WorkDay[]> 
     }
     
     if (data && data.length > 0) {
-      return data.map(pattern => ({
-        day: pattern.day,
-        isWorking: pattern.is_working,
-        startTime: pattern.start_time,
-        endTime: pattern.end_time
-      }));
+      // Create a map of the fetched patterns by day
+      const patternsByDay = new Map();
+      data.forEach(pattern => {
+        patternsByDay.set(pattern.day, {
+          day: pattern.day,
+          isWorking: pattern.is_working,
+          startTime: pattern.start_time,
+          endTime: pattern.end_time
+        });
+      });
+
+      // Ensure we have all 7 days of the week
+      const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+      return daysOfWeek.map(day => {
+        return patternsByDay.get(day) || {
+          day,
+          isWorking: false,
+          startTime: null,
+          endTime: null
+        };
+      });
     }
     
     // If no patterns found, return the default pattern
@@ -35,6 +50,18 @@ export const fetchWorkPatterns = async (employeeId: string): Promise<WorkDay[]> 
 
 export const saveWorkPatterns = async (employeeId: string, patterns: WorkDay[], payrollId?: string): Promise<boolean> => {
   try {
+    // Ensure we have exactly 7 days
+    const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    const completePatterns = daysOfWeek.map(day => {
+      const existingPattern = patterns.find(p => p.day === day);
+      return existingPattern || {
+        day,
+        isWorking: false,
+        startTime: null,
+        endTime: null
+      };
+    });
+    
     // First, delete existing patterns for this employee
     const { error: deleteError } = await supabase
       .from('work_patterns')
@@ -47,7 +74,7 @@ export const saveWorkPatterns = async (employeeId: string, patterns: WorkDay[], 
     }
     
     // Then, insert the new patterns with payroll_id if available
-    const patternsToInsert = patterns.map(pattern => ({
+    const patternsToInsert = completePatterns.map(pattern => ({
       employee_id: employeeId,
       day: pattern.day,
       is_working: pattern.isWorking,
@@ -87,12 +114,27 @@ export const fetchWorkPatternsByPayrollId = async (payrollId: string): Promise<W
     }
     
     if (data && data.length > 0) {
-      return data.map(pattern => ({
-        day: pattern.day,
-        isWorking: pattern.is_working,
-        startTime: pattern.start_time,
-        endTime: pattern.end_time
-      }));
+      // Create a map of the fetched patterns by day
+      const patternsByDay = new Map();
+      data.forEach(pattern => {
+        patternsByDay.set(pattern.day, {
+          day: pattern.day,
+          isWorking: pattern.is_working,
+          startTime: pattern.start_time,
+          endTime: pattern.end_time
+        });
+      });
+
+      // Ensure we have all 7 days of the week
+      const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+      return daysOfWeek.map(day => {
+        return patternsByDay.get(day) || {
+          day,
+          isWorking: false,
+          startTime: null,
+          endTime: null
+        };
+      });
     }
     
     return defaultWorkPattern;

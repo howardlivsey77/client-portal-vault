@@ -20,7 +20,28 @@ export const extractWorkPatternWithPayrollId = (employeeData: EmployeeData) => {
   // If employee data contains a work_pattern field, use it
   if (employeeData.work_pattern) {
     try {
-      return JSON.parse(employeeData.work_pattern);
+      const parsedPattern = JSON.parse(employeeData.work_pattern);
+      
+      // Ensure all days of the week are present
+      const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+      const patternsByDay = new Map();
+      
+      // First, add all existing patterns
+      parsedPattern.forEach((pattern: any) => {
+        patternsByDay.set(pattern.day, pattern);
+      });
+      
+      // Then, ensure all days exist
+      const completePattern = daysOfWeek.map(day => {
+        return patternsByDay.get(day) || {
+          day,
+          isWorking: false,
+          startTime: null,
+          endTime: null
+        };
+      });
+      
+      return completePattern;
     } catch (e) {
       console.error("Failed to parse work pattern:", e);
     }

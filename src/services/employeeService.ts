@@ -59,8 +59,27 @@ export const createEmployee = async (employeeData: EmployeeFormValues, userId: s
       }
     }
     
+    // Ensure all days of the week are present
+    const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    const patternsByDay = new Map();
+    
+    // First, add all existing patterns
+    workPatterns.forEach(pattern => {
+      patternsByDay.set(pattern.day, pattern);
+    });
+    
+    // Then, ensure all days exist
+    const completePattern = daysOfWeek.map(day => {
+      return patternsByDay.get(day) || {
+        day,
+        isWorking: false,
+        startTime: null,
+        endTime: null
+      };
+    });
+    
     // Insert work patterns for the employee with payroll_id
-    const workPatternsToInsert = workPatterns.map(pattern => ({
+    const workPatternsToInsert = completePattern.map(pattern => ({
       employee_id: employeeId,
       day: pattern.day,
       is_working: pattern.isWorking,
