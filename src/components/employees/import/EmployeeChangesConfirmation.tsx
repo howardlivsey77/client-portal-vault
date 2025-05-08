@@ -31,6 +31,11 @@ export const EmployeeChangesConfirmation = ({
     if (emp.rate_4) rates.push(`Rate 4: £${emp.rate_4}`);
     return rates.length > 0 ? rates.join(", ") : null;
   };
+  
+  // Helper to check if work pattern data exists
+  const hasWorkPatternData = (emp: EmployeeData) => {
+    return emp.work_pattern ? true : false;
+  };
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
@@ -56,6 +61,7 @@ export const EmployeeChangesConfirmation = ({
                       <TableHead>Department</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Hourly Rates</TableHead>
+                      <TableHead>Work Pattern</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -72,6 +78,11 @@ export const EmployeeChangesConfirmation = ({
                           {formatRates(emp) && (
                             <div className="text-xs text-muted-foreground mt-1">{formatRates(emp)}</div>
                           )}
+                        </TableCell>
+                        <TableCell>
+                          {hasWorkPatternData(emp) ? (
+                            <Badge variant="secondary">Included</Badge>
+                          ) : "-"}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -100,7 +111,7 @@ export const EmployeeChangesConfirmation = ({
                       
                       // Compare all standard fields and list changes
                       Object.keys(empPair.imported).forEach(key => {
-                        if (key !== 'id' && !key.startsWith('rate_') && 
+                        if (key !== 'id' && !key.startsWith('rate_') && key !== 'work_pattern' && 
                             empPair.existing[key] !== empPair.imported[key] && 
                             empPair.imported[key]) {
                           changes.push({
@@ -129,6 +140,15 @@ export const EmployeeChangesConfirmation = ({
                           });
                         }
                       });
+                      
+                      // Add work pattern change if present
+                      if (empPair.imported.work_pattern) {
+                        changes.push({
+                          field: 'Work Pattern',
+                          oldValue: 'Current Pattern',
+                          newValue: 'Updated Pattern'
+                        });
+                      }
                       
                       return changes.map((change, j) => (
                         <TableRow key={`change-${i}-${j}`}>

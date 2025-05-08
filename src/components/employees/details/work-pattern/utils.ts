@@ -91,3 +91,26 @@ export const generateHoursList = (): string[] => {
   
   return timeIntervals;
 };
+
+// Helper function to convert a string time like "09:00" to a formatted 12-hour time
+export const formatTimeDisplay = (time: string | null): string => {
+  if (!time) return "";
+  
+  try {
+    const [hours, minutes] = time.split(':');
+    if (!hours || !minutes) return time; // Return original if format doesn't match
+    
+    const hour = parseInt(hours, 10);
+    const minute = parseInt(minutes, 10);
+    
+    if (isNaN(hour) || isNaN(minute)) return time; // Return original if not numbers
+    
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    
+    return `${hour12}:${minutes.padStart(2, '0')} ${period}`;
+  } catch (e) {
+    console.error("Error formatting time:", e);
+    return time; // Return original on error
+  }
+};

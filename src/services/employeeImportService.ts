@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeData } from "@/components/employees/import/ImportConstants";
 import { roundToTwoDecimals } from "@/lib/formatters";
+import { WorkDay } from "@/components/employees/details/work-pattern/types";
 
 // Check for duplicate payroll IDs
 export const checkDuplicatePayrollIds = async (payrollIds: string[]) => {
@@ -59,11 +60,39 @@ export const createNewEmployees = async (
       rate_4: roundToTwoDecimals(emp.rate_4)
     };
     
-    const { error: insertError } = await supabase
+    const { data, error: insertError } = await supabase
       .from("employees")
-      .insert(newEmployeeData);
+      .insert(newEmployeeData)
+      .select("id");
     
     if (insertError) throw insertError;
+    
+    // If we have work pattern data, insert it into the work_patterns table
+    if (emp.work_pattern) {
+      try {
+        const employeeId = data?.[0]?.id;
+        if (employeeId) {
+          const workPatterns: WorkDay[] = JSON.parse(emp.work_pattern);
+          
+          // Insert work patterns
+          const workPatternsToInsert = workPatterns.map(pattern => ({
+            employee_id: employeeId,
+            day: pattern.day,
+            is_working: pattern.isWorking,
+            start_time: pattern.startTime,
+            end_time: pattern.endTime
+          }));
+          
+          const { error } = await supabase
+            .from('work_patterns')
+            .insert(workPatternsToInsert);
+            
+          if (error) console.error("Error inserting work patterns:", error);
+        }
+      } catch (e) {
+        console.error("Error processing work pattern data:", e);
+      }
+    }
   }
 };
 
@@ -96,7 +125,7 @@ export const updateExistingEmployees = async (
     
     // Only include fields that have changed
     Object.keys(imported).forEach(key => {
-      if (key !== 'id' && 
+      if (key !== 'id' && key !== 'work_pattern' && 
           imported[key] !== undefined && imported[key] !== null && 
           imported[key] !== '' && imported[key] !== existing[key]) {
         updates[key] = imported[key];
@@ -122,6 +151,39 @@ export const updateExistingEmployees = async (
         .eq("id", existing.id);
       
       if (updateError) throw updateError;
+    }
+    
+    // Handle work patterns if they exist in the imported data
+    if (imported.work_pattern) {
+      try {
+        // Parse work patterns
+        const workPatterns: WorkDay[] = JSON.parse(imported.work_pattern);
+        
+        // First delete existing work patterns
+        await supabase
+          .from('work_patterns')
+          .delete()
+          .eq('employee_id', existing.id);
+          
+        // Then insert new work patterns
+        const workPatternsToInsert = workPatterns.map(pattern => ({
+          employee_id: existing.id,
+          day: pattern.day,
+          is_working: pattern.isWorking,
+          start_time: pattern.startTime,
+          end_time: pattern.endTime
+        }));
+        
+        if (workPatternsToInsert.length > 0) {
+          const { error } = await supabase
+            .from('work_patterns')
+            .insert(workPatternsToInsert);
+            
+          if (error) console.error("Error inserting updated work patterns:", error);
+        }
+      } catch (e) {
+        console.error("Error processing updated work pattern data:", e);
+      }
     }
   }
 };

@@ -1,5 +1,6 @@
 
 import { EmployeeData, ColumnMapping, requiredFields } from "./ImportConstants";
+import { WorkDay } from "@/components/employees/details/work-pattern/types";
 
 // Helper function to convert Excel numeric dates to ISO date strings
 export const excelDateToISO = (excelDate: number | string): string | null => {
@@ -29,6 +30,32 @@ export const excelDateToISO = (excelDate: number | string): string | null => {
   }
   
   return null;
+};
+
+// Extract work pattern data from an employee record
+export const extractWorkPattern = (row: EmployeeData): WorkDay[] => {
+  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  
+  return days.map(day => {
+    const isWorkingField = `${day}_working`;
+    const startTimeField = `${day}_start_time`;
+    const endTimeField = `${day}_end_time`;
+    
+    // Default to true for isWorking if the field is not present
+    // We'll interpret any value that's not explicitly "false", "no", "0" as true
+    let isWorking = true;
+    if (row[isWorkingField] !== undefined) {
+      const workingValue = String(row[isWorkingField]).toLowerCase();
+      isWorking = !(workingValue === 'false' || workingValue === 'no' || workingValue === '0' || workingValue === '');
+    }
+    
+    return {
+      day: day.charAt(0).toUpperCase() + day.slice(1),
+      isWorking,
+      startTime: row[startTimeField] || null,
+      endTime: row[endTimeField] || null
+    };
+  });
 };
 
 // Transform raw data based on column mappings
@@ -73,6 +100,15 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): 
     // Convert numeric fields
     if (transformedRow.hours_per_week) transformedRow.hours_per_week = Number(transformedRow.hours_per_week);
     if (transformedRow.hourly_rate) transformedRow.hourly_rate = Number(transformedRow.hourly_rate);
+    
+    // Extract work pattern data if any work pattern fields are present
+    const hasWorkPatternData = Object.keys(row).some(key => 
+      key.includes('_working') || key.includes('_start_time') || key.includes('_end_time')
+    );
+    
+    if (hasWorkPatternData) {
+      transformedRow.work_pattern = JSON.stringify(extractWorkPattern(row));
+    }
     
     return transformedRow;
   });
