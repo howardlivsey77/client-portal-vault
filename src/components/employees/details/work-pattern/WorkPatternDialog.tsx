@@ -13,7 +13,7 @@ interface WorkPatternDialogProps {
   onOpenChange: (open: boolean) => void;
   workPattern: WorkDay[];
   setWorkPattern: (workPattern: WorkDay[]) => void;
-  saveWorkPattern: () => Promise<void>;
+  saveWorkPattern: () => Promise<boolean>;
 }
 
 export const WorkPatternDialog = ({
@@ -44,9 +44,12 @@ export const WorkPatternDialog = ({
 
   const handleSave = async () => {
     setSaving(true);
-    await saveWorkPattern();
+    const success = await saveWorkPattern();
     setSaving(false);
-    onOpenChange(false);
+    
+    if (success) {
+      onOpenChange(false);
+    }
   };
 
   return (

@@ -293,6 +293,47 @@ export type Database = {
         }
         Relationships: []
       }
+      work_patterns: {
+        Row: {
+          created_at: string
+          day: string
+          employee_id: string
+          end_time: string | null
+          id: string
+          is_working: boolean
+          start_time: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          employee_id: string
+          end_time?: string | null
+          id?: string
+          is_working?: boolean
+          start_time?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          employee_id?: string
+          end_time?: string | null
+          id?: string
+          is_working?: boolean
+          start_time?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_patterns_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

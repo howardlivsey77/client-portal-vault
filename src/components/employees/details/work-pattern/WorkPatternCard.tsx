@@ -1,36 +1,62 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { WorkPatternCardProps, WorkDay } from "./types";
 import { WorkPatternDialog } from "./WorkPatternDialog";
 import { WorkPatternDisplay } from "./WorkPatternDisplay";
-import { parseWorkPattern } from "./utils";
+import { fetchWorkPatterns, saveWorkPatterns } from "./utils";
+import { defaultWorkPattern } from "@/types/employee";
 
 export const WorkPatternCard = ({ 
   employee, 
   isAdmin,
-  refetchEmployeeData,
-  updateEmployeeField 
+  refetchEmployeeData
 }: WorkPatternCardProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [workPattern, setWorkPattern] = useState<WorkDay[]>(defaultWorkPattern);
   const { toast } = useToast();
   
-  const [workPattern, setWorkPattern] = useState<WorkDay[]>(() => 
-    parseWorkPattern(employee.work_pattern)
-  );
+  useEffect(() => {
+    loadWorkPattern();
+  }, [employee.id]);
+  
+  const loadWorkPattern = async () => {
+    if (!employee.id) return;
+    
+    setLoading(true);
+    try {
+      const patterns = await fetchWorkPatterns(employee.id);
+      setWorkPattern(patterns);
+    } catch (error: any) {
+      toast({
+        title: "Error loading work pattern",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const saveWorkPattern = async () => {
-    if (!isAdmin) return;
+    if (!isAdmin || !employee.id) return false;
     
+    setLoading(true);
     try {
-      const success = await updateEmployeeField("work_pattern", JSON.stringify(workPattern));
+      const success = await saveWorkPatterns(employee.id, workPattern);
       
       if (success) {
+        toast({
+          title: "Work pattern saved",
+          description: "The work pattern has been updated successfully.",
+        });
         setDialogOpen(false);
-        setEditing(false);
+        return true;
+      } else {
+        throw new Error("Failed to save work pattern");
       }
     } catch (error: any) {
       toast({
@@ -38,6 +64,9 @@ export const WorkPatternCard = ({
         description: error.message,
         variant: "destructive"
       });
+      return false;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -47,7 +76,7 @@ export const WorkPatternCard = ({
         <CardTitle>Work Pattern</CardTitle>
         {isAdmin && (
           <Button variant="outline" onClick={() => setDialogOpen(true)}>
-            {editing ? "Save" : "Edit"}
+            Edit
           </Button>
         )}
       </CardHeader>

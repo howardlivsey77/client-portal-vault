@@ -12,5 +12,5 @@ export interface WorkPatternCardProps {
   employee: Employee;
   isAdmin: boolean;
   refetchEmployeeData: () => Promise<void>;
-  updateEmployeeField: (fieldName: string, value: any) => Promise<boolean>;
+  updateEmployeeField?: (fieldName: string, value: any) => Promise<boolean>;
 }

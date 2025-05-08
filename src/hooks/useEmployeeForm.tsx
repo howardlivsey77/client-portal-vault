@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { employeeSchema, EmployeeFormValues, genderOptions, defaultWorkPattern } from "@/types/employee";
 import { fetchEmployeeById, createEmployee, updateEmployee } from "@/services/employeeService";
+import { fetchWorkPatterns } from "@/components/employees/details/work-pattern/utils";
 
 export const useEmployeeForm = (employeeId?: string) => {
   const isEditMode = employeeId !== undefined && employeeId !== "new";
@@ -38,7 +40,12 @@ export const useEmployeeForm = (employeeId?: string) => {
   const fetchEmployeeData = async () => {
     try {
       if (!employeeId) return;
+      
+      // Fetch employee data
       const data = await fetchEmployeeById(employeeId);
+      
+      // Fetch work patterns for this employee
+      const workPatterns = await fetchWorkPatterns(employeeId);
       
       if (data) {
         // Convert date_of_birth string to Date object if it exists
@@ -67,7 +74,7 @@ export const useEmployeeForm = (employeeId?: string) => {
           postcode: data.postcode || "",
           payroll_id: data.payroll_id || "",
           gender: validGender,
-          work_pattern: data.work_pattern || JSON.stringify(defaultWorkPattern),
+          work_pattern: JSON.stringify(workPatterns), // Use work patterns from new table
           rate_2: data.rate_2,
           rate_3: data.rate_3,
           rate_4: data.rate_4,
