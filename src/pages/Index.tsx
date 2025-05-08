@@ -11,6 +11,7 @@ import { EmployeeDashboard } from "@/components/dashboard/EmployeeDashboard";
 import { DocumentsTab } from "@/components/dashboard/tabs/DocumentsTab";
 import { PayrollTab } from "@/components/dashboard/tabs/PayrollTab";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { TimesheetsTab } from "@/components/dashboard/tabs/TimesheetsTab";
 
 const Index = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -25,7 +26,7 @@ const Index = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get("tab");
-    if (tabParam && ["overview", "documents", "tasks", "reports", "payroll"].includes(tabParam)) {
+    if (tabParam && ["overview", "documents", "tasks", "reports", "payroll", "timesheets"].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [location.search]);
@@ -64,6 +65,8 @@ const Index = () => {
         return <ReportsNavigation />;
       case "payroll":
         return <PayrollTab onOpenPayrollWizard={() => setPayrollWizardOpen(true)} />;
+      case "timesheets":
+        return <TimesheetsTab />;
       default:
         return <EmployeeDashboard />;
     }
