@@ -8,7 +8,11 @@ import { normalizeTimeString } from "./timeUtils";
 export const extractWorkPattern = (row: EmployeeData): WorkDay[] => {
   const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   
-  return days.map(day => {
+  // Create an array to store all work patterns
+  const workPatterns: WorkDay[] = [];
+  
+  // Process each day
+  for (const day of days) {
     const isWorkingField = `${day}_working`;
     const startTimeField = `${day}_start_time`;
     const endTimeField = `${day}_end_time`;
@@ -17,6 +21,11 @@ export const extractWorkPattern = (row: EmployeeData): WorkDay[] => {
     const hasWorkPatternData = row[isWorkingField] !== undefined || 
                               row[startTimeField] !== undefined || 
                               row[endTimeField] !== undefined;
+    
+    // Skip if no data for this day
+    if (!hasWorkPatternData) {
+      continue;
+    }
     
     // Default to true for isWorking if the field is not present or if there's start/end time data
     let isWorking = true;
@@ -33,20 +42,18 @@ export const extractWorkPattern = (row: EmployeeData): WorkDay[] => {
       }
     }
     
-    // Only include days that have some data
-    if (!hasWorkPatternData) {
-      return null;
-    }
-    
     // Normalize time strings
     const startTime = normalizeTimeString(row[startTimeField]);
     const endTime = normalizeTimeString(row[endTimeField]);
     
-    return {
+    // Add this day to the work patterns
+    workPatterns.push({
       day: day.charAt(0).toUpperCase() + day.slice(1),
       isWorking,
       startTime,
       endTime
-    };
-  }).filter(Boolean) as WorkDay[]; // Remove null entries
+    });
+  }
+  
+  return workPatterns;
 };
