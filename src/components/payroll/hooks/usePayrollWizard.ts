@@ -1,8 +1,20 @@
 
 import { useState, useCallback } from "react";
 import { toast } from "@/hooks/use-toast";
-import { processExtraHoursFile } from "@/services/payroll";
+import { processExtraHoursFile, savePayrollData } from "@/services/payroll";
 import { ExtraHoursSummary, PayrollFiles } from "../types";
+
+// Create a simple store for sharing data between components
+// In a real app, you might use a more robust state management solution
+let globalProcessedData: ExtraHoursSummary | null = null;
+
+export const getProcessedPayrollData = (): ExtraHoursSummary | null => {
+  return globalProcessedData;
+};
+
+export const setProcessedPayrollData = (data: ExtraHoursSummary | null): void => {
+  globalProcessedData = data;
+};
 
 export function usePayrollWizard() {
   const [currentStep, setCurrentStep] = useState<number>(0);
@@ -24,6 +36,7 @@ export function usePayrollWizard() {
     // Reset processed data when a new file is uploaded
     if (stepId === 'extraHours') {
       setProcessedData(null);
+      setProcessedPayrollData(null);
     }
   };
 
@@ -39,6 +52,10 @@ export function usePayrollWizard() {
       setIsProcessing(true);
       const result = await processExtraHoursFile(file);
       setProcessedData(result);
+      
+      // Store in global state for sharing with reports
+      setProcessedPayrollData(result);
+      
       return result;
     } catch (error) {
       console.error("Error processing file:", error);
