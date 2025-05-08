@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +28,7 @@ export interface Employee {
   date_of_birth: string | null;
   payroll_id: string | null;
   gender: string | null;
+  work_pattern: string | null;
 }
 
 export const useEmployeeDetails = (employeeId: string | undefined) => {

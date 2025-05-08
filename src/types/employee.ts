@@ -1,6 +1,16 @@
 
 import { z } from "zod";
 
+// Define work pattern schema
+export const workDaySchema = z.object({
+  day: z.string(),
+  isWorking: z.boolean(),
+  startTime: z.string().nullable(),
+  endTime: z.string().nullable(),
+});
+
+export type WorkDay = z.infer<typeof workDaySchema>;
+
 // Define form schema using zod
 export const employeeSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
@@ -21,6 +31,7 @@ export const employeeSchema = z.object({
   postcode: z.string().optional(),
   payroll_id: z.string().optional(),
   gender: z.enum(["Male", "Female", "Other", "Prefer not to say"]).optional(),
+  work_pattern: z.string().optional(),
 });
 
 export type EmployeeFormValues = z.infer<typeof employeeSchema>;
@@ -43,4 +54,14 @@ export const genderOptions = [
   { label: "Female", value: "Female" },
   { label: "Other", value: "Other" },
   { label: "Prefer not to say", value: "Prefer not to say" }
+];
+
+export const defaultWorkPattern = [
+  { day: "Monday", isWorking: true, startTime: "09:00", endTime: "17:00" },
+  { day: "Tuesday", isWorking: true, startTime: "09:00", endTime: "17:00" },
+  { day: "Wednesday", isWorking: true, startTime: "09:00", endTime: "17:00" },
+  { day: "Thursday", isWorking: true, startTime: "09:00", endTime: "17:00" },
+  { day: "Friday", isWorking: true, startTime: "09:00", endTime: "17:00" },
+  { day: "Saturday", isWorking: false, startTime: null, endTime: null },
+  { day: "Sunday", isWorking: false, startTime: null, endTime: null },
 ];

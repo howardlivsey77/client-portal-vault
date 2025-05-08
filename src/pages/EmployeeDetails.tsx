@@ -6,6 +6,7 @@ import { EmployeeHeader } from "@/components/employees/details/EmployeeHeader";
 import { PersonalInfoCard } from "@/components/employees/details/PersonalInfoCard";
 import { ContactInfoCard } from "@/components/employees/details/ContactInfoCard";
 import { SystemInfoCard } from "@/components/employees/details/SystemInfoCard";
+import { WorkPatternCard } from "@/components/employees/details/WorkPatternCard";
 import { EmployeeNotFound } from "@/components/employees/details/EmployeeNotFound";
 import { LoadingState } from "@/components/employees/details/LoadingState";
 
@@ -16,7 +17,8 @@ const EmployeeDetails = () => {
     loading, 
     isAdmin,
     formattedAddress,
-    deleteEmployee 
+    deleteEmployee,
+    fetchEmployeeData
   } = useEmployeeDetails(id);
   
   if (loading) {
@@ -46,6 +48,11 @@ const EmployeeDetails = () => {
       <div className="grid gap-6 md:grid-cols-2">
         <PersonalInfoCard employee={employee} />
         <ContactInfoCard employee={employee} formattedAddress={formattedAddress} />
+        <WorkPatternCard 
+          employee={employee} 
+          isAdmin={isAdmin}
+          refetchEmployeeData={fetchEmployeeData}
+        />
         <SystemInfoCard employee={employee} />
       </div>
     </PageContainer>

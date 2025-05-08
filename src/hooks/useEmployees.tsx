@@ -19,6 +19,7 @@ interface Employee {
   date_of_birth: string | null;
   payroll_id: string | null;
   gender: string | null;
+  work_pattern: string | null;
 }
 
 export const useEmployees = () => {

@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { EmployeeFormValues } from "@/types/employee";
+import { EmployeeFormValues, defaultWorkPattern } from "@/types/employee";
 import { roundToTwoDecimals } from "@/lib/formatters";
 
 export const fetchEmployeeById = async (id: string) => {
@@ -16,6 +16,9 @@ export const fetchEmployeeById = async (id: string) => {
 };
 
 export const createEmployee = async (employeeData: EmployeeFormValues, userId: string) => {
+  // Set default work pattern for new employees
+  const workPattern = employeeData.work_pattern || JSON.stringify(defaultWorkPattern);
+  
   const { error } = await supabase
     .from("employees")
     .insert({
@@ -38,6 +41,7 @@ export const createEmployee = async (employeeData: EmployeeFormValues, userId: s
       postcode: employeeData.postcode || null,
       payroll_id: employeeData.payroll_id || null,
       gender: employeeData.gender || null,
+      work_pattern: workPattern,
     });
     
   if (error) throw error;
@@ -65,6 +69,7 @@ export const updateEmployee = async (id: string, employeeData: EmployeeFormValue
       postcode: employeeData.postcode || null,
       payroll_id: employeeData.payroll_id || null,
       gender: employeeData.gender || null,
+      work_pattern: employeeData.work_pattern || null,
     })
     .eq("id", id);
     

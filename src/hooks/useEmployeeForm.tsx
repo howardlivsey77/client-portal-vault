@@ -1,10 +1,11 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { employeeSchema, EmployeeFormValues, genderOptions } from "@/types/employee";
+import { employeeSchema, EmployeeFormValues, genderOptions, defaultWorkPattern } from "@/types/employee";
 import { fetchEmployeeById, createEmployee, updateEmployee } from "@/services/employeeService";
 
 export const useEmployeeForm = (employeeId?: string) => {
@@ -31,6 +32,7 @@ export const useEmployeeForm = (employeeId?: string) => {
       address3: "",
       address4: "",
       postcode: "",
+      work_pattern: JSON.stringify(defaultWorkPattern),
     },
   });
   
@@ -66,6 +68,7 @@ export const useEmployeeForm = (employeeId?: string) => {
           postcode: data.postcode || "",
           payroll_id: data.payroll_id || "",
           gender: validGender,
+          work_pattern: data.work_pattern || JSON.stringify(defaultWorkPattern),
         });
       }
     } catch (error: any) {
