@@ -1,53 +1,22 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeData } from "@/components/employees/import/ImportConstants";
-import { createNewEmployees, updateExistingEmployees } from "@/services/employeeImport";
 
-export interface ImportResult {
-  success: boolean;
-  message: string;
-  error?: any;
-}
-
-// Handle the import operation
-export const executeImport = async (
-  newEmployees: EmployeeData[],
-  updatedEmployees: { existing: EmployeeData; imported: EmployeeData }[]
-): Promise<ImportResult> => {
-  try {
-    // Get the current user's ID
-    const { data: { user } } = await supabase.auth.getUser();
+// Check for duplicate payroll IDs
+export const checkDuplicatePayrollIds = async (payrollIds: string[]) => {
+  if (!payrollIds || payrollIds.length === 0) return [];
+  
+  // Filter out empty strings or undefined values
+  const validIds = payrollIds.filter(id => id && id.trim() !== '');
+  
+  if (validIds.length === 0) return [];
+  
+  const { data } = await supabase
+    .from("employees")
+    .select("payroll_id")
+    .in("payroll_id", validIds);
     
-    if (!user) {
-      throw new Error("User not authenticated");
-    }
-    
-    // Process new employees
-    await createNewEmployees(newEmployees, user.id);
-    
-    // Process updated employees
-    await updateExistingEmployees(updatedEmployees);
-    
-    return {
-      success: true,
-      message: `${newEmployees.length} employees added and ${updatedEmployees.length} employees updated.`
-    };
-  } catch (error: any) {
-    // Check for specific database constraint violations
-    if (error.message && error.message.includes("unique_payroll_id")) {
-      return {
-        success: false,
-        message: "Import failed: One or more employees have duplicate payroll IDs. Each employee must have a unique payroll ID.",
-        error
-      };
-    }
-    
-    return {
-      success: false,
-      message: error.message || "Error importing employees",
-      error
-    };
-  }
+  return data ? data.map(emp => emp.payroll_id) : [];
 };
 
 // Check for existing employees
