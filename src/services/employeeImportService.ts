@@ -6,5 +6,7 @@ export {
   checkDuplicatePayrollIds,
   createNewEmployees, 
   updateExistingEmployees,
-  ImportResult
 } from "./employeeImport";
+
+// Use 'export type' when re-exporting types with isolatedModules enabled
+export type { ImportResult } from "./employeeImport";
