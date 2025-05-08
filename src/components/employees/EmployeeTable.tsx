@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Trash2, UserCog } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { SortButton, SortDirection } from "./SortButton";
 
 interface Employee {
   id: string;
@@ -30,12 +31,23 @@ interface EmployeeTableProps {
   employees: Employee[];
   onDelete: (id: string) => Promise<void>;
   searchTerm: string;
+  sortField: string | null;
+  sortDirection: SortDirection;
+  onSort: (field: string) => void;
 }
 
-export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTableProps) => {
+export const EmployeeTable = ({ 
+  employees, 
+  onDelete, 
+  searchTerm, 
+  sortField, 
+  sortDirection, 
+  onSort 
+}: EmployeeTableProps) => {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
 
+  // Filter employees based on search term
   const filteredEmployees = employees.filter(employee => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -48,13 +60,39 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
     );
   });
 
+  // Sort employees based on sortField and sortDirection
+  const sortedEmployees = [...filteredEmployees].sort((a, b) => {
+    if (!sortField || !sortDirection) {
+      return 0;
+    }
+    
+    // Special handling for payroll_id which may be null
+    if (sortField === "payroll_id") {
+      const aValue = a.payroll_id || "";
+      const bValue = b.payroll_id || "";
+      
+      return sortDirection === "asc" 
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
+    }
+    
+    return 0; // Default case, no sorting
+  });
+
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
-            <TableHead>Payroll ID</TableHead>
+            <TableHead>
+              <SortButton
+                label="Payroll ID"
+                active={sortField === "payroll_id"}
+                direction={sortField === "payroll_id" ? sortDirection : null}
+                onSort={() => onSort("payroll_id")}
+              />
+            </TableHead>
             <TableHead>Department</TableHead>
             <TableHead>Gender</TableHead>
             <TableHead>Email</TableHead>
@@ -62,7 +100,7 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredEmployees.map((employee) => (
+          {sortedEmployees.map((employee) => (
             <TableRow key={employee.id}>
               <TableCell className="font-medium">
                 {employee.first_name} {employee.last_name}
@@ -96,3 +134,5 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
     </div>
   );
 };
+
+export type { Employee, EmployeeTableProps };
