@@ -6,7 +6,7 @@ import { EmployeeHeader } from "@/components/employees/details/EmployeeHeader";
 import { PersonalInfoCard } from "@/components/employees/details/PersonalInfoCard";
 import { ContactInfoCard } from "@/components/employees/details/ContactInfoCard";
 import { SystemInfoCard } from "@/components/employees/details/SystemInfoCard";
-import { WorkPatternCard } from "@/components/employees/details/WorkPatternCard";
+import { WorkPatternCard } from "@/components/employees/details/work-pattern/WorkPatternCard";
 import { EmployeeNotFound } from "@/components/employees/details/EmployeeNotFound";
 import { LoadingState } from "@/components/employees/details/LoadingState";
 
@@ -64,7 +64,6 @@ const EmployeeDetails = () => {
           employee={employee} 
           isAdmin={isAdmin}
           refetchEmployeeData={fetchEmployeeData}
-          updateEmployeeField={updateEmployeeField}
         />
         
         <SystemInfoCard employee={employee} />

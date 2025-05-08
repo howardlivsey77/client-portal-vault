@@ -12,7 +12,8 @@ import { migratePayrollIdsToWorkPatterns } from "@/services/employeeService";
 import { useAuth } from "@/providers/AuthProvider";
 
 export default function Employees() {
-  const { employees, loading, searchQuery, setSearchQuery, refetch } = useEmployees();
+  const { employees, loading, fetchEmployees, deleteEmployee } = useEmployees();
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const { isAdmin } = useAuth();
   const [migrating, setMigrating] = useState(false);
@@ -58,7 +59,7 @@ export default function Employees() {
     <PageContainer title="Employees">
       <div className="flex flex-col space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <EmployeeSearch value={searchQuery} onChange={setSearchQuery} />
+          <EmployeeSearch searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
           <div className="flex flex-col sm:flex-row gap-2">
             {isAdmin && (
               <Button 
@@ -69,14 +70,25 @@ export default function Employees() {
                 {migrating ? "Migrating..." : "Migrate Payroll IDs"}
               </Button>
             )}
-            <EmployeeActions />
+            <EmployeeActions 
+              isAdmin={isAdmin}
+              loading={loading}
+              onRefresh={fetchEmployees}
+            />
           </div>
         </div>
 
-        {!loading && employees.length === 0 && !searchQuery ? (
-          <EmptyEmployeeState />
+        {!loading && employees.length === 0 && !searchTerm ? (
+          <EmptyEmployeeState 
+            isAdmin={isAdmin}
+            searchTerm={searchTerm}
+          />
         ) : (
-          <EmployeeTable employees={employees} loading={loading} />
+          <EmployeeTable 
+            employees={employees}
+            onDelete={deleteEmployee}
+            searchTerm={searchTerm}
+          />
         )}
       </div>
     </PageContainer>
