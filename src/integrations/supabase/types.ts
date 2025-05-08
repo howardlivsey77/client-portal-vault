@@ -293,6 +293,53 @@ export type Database = {
         }
         Relationships: []
       }
+      timesheet_entries: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          created_at: string
+          date: string
+          employee_id: string
+          id: string
+          payroll_id: string | null
+          scheduled_end: string | null
+          scheduled_start: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          created_at?: string
+          date: string
+          employee_id: string
+          id?: string
+          payroll_id?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          created_at?: string
+          date?: string
+          employee_id?: string
+          id?: string
+          payroll_id?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheet_entries_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_patterns: {
         Row: {
           created_at: string

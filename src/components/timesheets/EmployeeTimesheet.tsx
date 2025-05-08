@@ -8,7 +8,13 @@ import { useTimesheetContext } from './TimesheetContext';
 import { EmployeeSelector } from './EmployeeSelector';
 
 export const EmployeeTimesheet = () => {
-  const { currentEmployeeId, setCurrentEmployeeId, currentWeekStartDate } = useTimesheetContext();
+  const { 
+    currentEmployeeId, 
+    setCurrentEmployeeId, 
+    currentWeekStartDate,
+    actualTimes,
+    setActualTime
+  } = useTimesheetContext();
   
   const { 
     employee,
@@ -17,6 +23,44 @@ export const EmployeeTimesheet = () => {
     prevEmployeeId,
     nextEmployeeId
   } = useEmployeeTimesheet(currentEmployeeId, currentWeekStartDate);
+
+  // Initialize actual times from the fetched timesheet
+  useEffect(() => {
+    if (weeklyTimesheet.length > 0) {
+      const initialTimes: Record<string, { startTime: string | null; endTime: string | null }> = {};
+      
+      weeklyTimesheet.forEach(day => {
+        initialTimes[day.dayString] = {
+          startTime: day.actualStart,
+          endTime: day.actualEnd
+        };
+      });
+      
+      // Update with any existing values from context
+      Object.keys(initialTimes).forEach(day => {
+        if (actualTimes[day]) {
+          initialTimes[day] = {
+            ...initialTimes[day],
+            ...actualTimes[day]
+          };
+        }
+      });
+
+      // Only update if there are different values to avoid infinite loops
+      const hasChanges = Object.keys(initialTimes).some(day => {
+        const existing = actualTimes[day] || { startTime: null, endTime: null };
+        const updated = initialTimes[day];
+        return existing.startTime !== updated.startTime || existing.endTime !== updated.endTime;
+      });
+
+      if (hasChanges) {
+        Object.keys(initialTimes).forEach(day => {
+          setActualTime(day, 'startTime', initialTimes[day].startTime);
+          setActualTime(day, 'endTime', initialTimes[day].endTime);
+        });
+      }
+    }
+  }, [weeklyTimesheet]);
 
   const navigateToEmployeeTimesheet = (id: string | null) => {
     if (id) {
@@ -47,7 +91,7 @@ export const EmployeeTimesheet = () => {
           />
           
           <Card>
-            <CardContent className="p-0 overflow-x-auto">
+            <CardContent className="p-4 overflow-x-auto">
               <WeeklyTimesheetGrid timesheet={weeklyTimesheet} />
             </CardContent>
           </Card>

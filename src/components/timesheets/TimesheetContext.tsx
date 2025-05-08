@@ -1,7 +1,8 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Employee } from '@/hooks/useEmployees';
-import { WorkDay } from '@/components/employees/details/work-pattern/types';
+import { WeeklyTimesheetDay } from '@/hooks/useEmployeeTimesheet';
+import { saveTimesheetEntries } from '@/services/timesheetServices';
+import { useToast } from '@/hooks/use-toast';
 
 interface TimesheetContextType {
   currentEmployeeId: string | null;
@@ -10,6 +11,8 @@ interface TimesheetContextType {
   setCurrentWeekStartDate: (date: Date) => void;
   actualTimes: Record<string, { startTime: string | null; endTime: string | null }>;
   setActualTime: (day: string, type: 'startTime' | 'endTime', value: string | null) => void;
+  saveTimesheet: (timesheet: WeeklyTimesheetDay[]) => Promise<boolean>;
+  saving: boolean;
 }
 
 const TimesheetContext = createContext<TimesheetContextType>({
@@ -19,6 +22,8 @@ const TimesheetContext = createContext<TimesheetContextType>({
   setCurrentWeekStartDate: () => {},
   actualTimes: {},
   setActualTime: () => {},
+  saveTimesheet: async () => false,
+  saving: false
 });
 
 export const useTimesheetContext = () => useContext(TimesheetContext);
@@ -37,6 +42,8 @@ export const TimesheetProvider = ({ children }: TimesheetProviderProps) => {
     return new Date(today.setDate(diff));
   });
   const [actualTimes, setActualTimes] = useState<Record<string, { startTime: string | null; endTime: string | null }>>({});
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
 
   const setActualTime = (day: string, type: 'startTime' | 'endTime', value: string | null) => {
     setActualTimes(prev => ({
@@ -48,6 +55,39 @@ export const TimesheetProvider = ({ children }: TimesheetProviderProps) => {
     }));
   };
 
+  const saveTimesheet = async (timesheet: WeeklyTimesheetDay[]): Promise<boolean> => {
+    if (!currentEmployeeId) {
+      toast({
+        title: "Cannot save timesheet",
+        description: "No employee selected",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    setSaving(true);
+
+    // Prepare the entries to save
+    const entries = timesheet.map(day => ({
+      date: day.date,
+      scheduledStart: day.scheduledStart,
+      scheduledEnd: day.scheduledEnd,
+      actualStart: actualTimes[day.dayString]?.startTime || null,
+      actualEnd: actualTimes[day.dayString]?.endTime || null,
+      payrollId: day.payrollId
+    }));
+
+    try {
+      const result = await saveTimesheetEntries(currentEmployeeId, entries);
+      setSaving(false);
+      return result;
+    } catch (error) {
+      console.error("Error saving timesheet:", error);
+      setSaving(false);
+      return false;
+    }
+  };
+
   return (
     <TimesheetContext.Provider value={{
       currentEmployeeId,
@@ -55,7 +95,9 @@ export const TimesheetProvider = ({ children }: TimesheetProviderProps) => {
       currentWeekStartDate,
       setCurrentWeekStartDate,
       actualTimes,
-      setActualTime
+      setActualTime,
+      saveTimesheet,
+      saving
     }}>
       {children}
     </TimesheetContext.Provider>
