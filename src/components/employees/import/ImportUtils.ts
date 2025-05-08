@@ -12,7 +12,7 @@ export {
 
 // Legacy export to maintain backward compatibility with the original functionality
 import { EmployeeData, ColumnMapping } from "./ImportConstants";
-import { areRequiredFieldsMapped as checkRequiredFields } from "./columnMappingUtils";
+import { areRequiredFieldsMapped as checkRequiredFields } from "./utils/mappingValidation";
 
 // Original function for backward compatibility
 export const areRequiredFieldsMapped = (columnMappings: ColumnMapping[]): boolean => {
