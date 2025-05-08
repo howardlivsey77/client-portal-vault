@@ -2,6 +2,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeData } from "@/components/employees/import/ImportConstants";
 import { roundToTwoDecimals } from "@/lib/formatters";
+import { WorkDay } from "@/components/employees/details/work-pattern/types";
+import { defaultWorkPattern } from "@/types/employee";
+import { extractWorkPatternWithPayrollId } from "@/components/employees/import/ImportUtils";
 
 // Check for duplicate payroll IDs
 export const checkDuplicatePayrollIds = async (payrollIds: string[]) => {
@@ -59,11 +62,43 @@ export const createNewEmployees = async (
       rate_4: roundToTwoDecimals(emp.rate_4)
     };
     
-    const { error: insertError } = await supabase
+    const { data: employeeData, error: insertError } = await supabase
       .from("employees")
-      .insert(newEmployeeData);
+      .insert(newEmployeeData)
+      .select();
     
     if (insertError) throw insertError;
+    
+    // If we have a new employee ID and work pattern data, save the work patterns
+    if (employeeData && employeeData.length > 0) {
+      const employeeId = employeeData[0].id;
+      
+      // Get work patterns data, either from the form or use default
+      let workPatterns: WorkDay[] = defaultWorkPattern;
+      const extractedPatterns = extractWorkPatternWithPayrollId(emp);
+      if (extractedPatterns) {
+        workPatterns = extractedPatterns;
+      }
+      
+      // Insert work patterns for the employee with payroll_id
+      const workPatternsToInsert = workPatterns.map(pattern => ({
+        employee_id: employeeId,
+        day: pattern.day,
+        is_working: pattern.isWorking,
+        start_time: pattern.startTime,
+        end_time: pattern.endTime,
+        payroll_id: emp.payroll_id || null
+      }));
+      
+      const { error: patternsError } = await supabase
+        .from('work_patterns')
+        .insert(workPatternsToInsert);
+        
+      if (patternsError) {
+        console.error("Failed to insert work patterns:", patternsError);
+        // We don't throw this error as the employee was successfully created
+      }
+    }
   }
 };
 
@@ -122,6 +157,45 @@ export const updateExistingEmployees = async (
         .eq("id", existing.id);
       
       if (updateError) throw updateError;
+      
+      // Update work patterns if we have them in the imported data
+      if (existing.id) {
+        let workPatterns: WorkDay[] = defaultWorkPattern;
+        const extractedPatterns = extractWorkPatternWithPayrollId(imported);
+        
+        if (extractedPatterns) {
+          workPatterns = extractedPatterns;
+          
+          // Update work patterns with the new payroll_id
+          const workPatternsToInsert = workPatterns.map(pattern => ({
+            employee_id: existing.id,
+            day: pattern.day,
+            is_working: pattern.isWorking,
+            start_time: pattern.startTime,
+            end_time: pattern.endTime,
+            payroll_id: imported.payroll_id || null
+          }));
+          
+          // Delete existing work patterns
+          const { error: deleteError } = await supabase
+            .from('work_patterns')
+            .delete()
+            .eq('employee_id', existing.id);
+            
+          if (deleteError) {
+            console.error("Failed to delete existing work patterns during update:", deleteError);
+          } else {
+            // Insert new work patterns
+            const { error: insertError } = await supabase
+              .from('work_patterns')
+              .insert(workPatternsToInsert);
+              
+            if (insertError) {
+              console.error("Failed to insert updated work patterns:", insertError);
+            }
+          }
+        }
+      }
     }
   }
 };

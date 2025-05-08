@@ -33,7 +33,7 @@ export const fetchWorkPatterns = async (employeeId: string): Promise<WorkDay[]> 
   }
 };
 
-export const saveWorkPatterns = async (employeeId: string, patterns: WorkDay[]): Promise<boolean> => {
+export const saveWorkPatterns = async (employeeId: string, patterns: WorkDay[], payrollId?: string): Promise<boolean> => {
   try {
     // First, delete existing patterns for this employee
     const { error: deleteError } = await supabase
@@ -46,13 +46,14 @@ export const saveWorkPatterns = async (employeeId: string, patterns: WorkDay[]):
       throw deleteError;
     }
     
-    // Then, insert the new patterns
+    // Then, insert the new patterns with payroll_id if available
     const patternsToInsert = patterns.map(pattern => ({
       employee_id: employeeId,
       day: pattern.day,
       is_working: pattern.isWorking,
       start_time: pattern.startTime,
-      end_time: pattern.endTime
+      end_time: pattern.endTime,
+      payroll_id: payrollId || null
     }));
     
     const { error: insertError } = await supabase
@@ -68,6 +69,36 @@ export const saveWorkPatterns = async (employeeId: string, patterns: WorkDay[]):
   } catch (e) {
     console.error("Error in saveWorkPatterns:", e);
     return false;
+  }
+};
+
+// Fetch work patterns by payroll ID
+export const fetchWorkPatternsByPayrollId = async (payrollId: string): Promise<WorkDay[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('work_patterns')
+      .select('*')
+      .eq('payroll_id', payrollId)
+      .order('id');
+      
+    if (error) {
+      console.error("Error fetching work patterns by payroll ID:", error);
+      throw error;
+    }
+    
+    if (data && data.length > 0) {
+      return data.map(pattern => ({
+        day: pattern.day,
+        isWorking: pattern.is_working,
+        startTime: pattern.start_time,
+        endTime: pattern.end_time
+      }));
+    }
+    
+    return defaultWorkPattern;
+  } catch (e) {
+    console.error("Error in fetchWorkPatternsByPayrollId:", e);
+    return defaultWorkPattern;
   }
 };
 

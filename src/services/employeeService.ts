@@ -59,13 +59,14 @@ export const createEmployee = async (employeeData: EmployeeFormValues, userId: s
       }
     }
     
-    // Insert work patterns for the employee
+    // Insert work patterns for the employee with payroll_id
     const workPatternsToInsert = workPatterns.map(pattern => ({
       employee_id: employeeId,
       day: pattern.day,
       is_working: pattern.isWorking,
       start_time: pattern.startTime,
-      end_time: pattern.endTime
+      end_time: pattern.endTime,
+      payroll_id: employeeData.payroll_id || null
     }));
     
     const { error: patternsError } = await supabase

@@ -14,3 +14,17 @@ export const areRequiredFieldsMapped = (columnMappings: ColumnMapping[]): boolea
   const requiredFields = ["first_name", "last_name", "department"];
   return checkRequiredFields(columnMappings, requiredFields);
 };
+
+// Add utility function to extract work pattern data with payroll_id
+export const extractWorkPatternWithPayrollId = (employeeData: EmployeeData) => {
+  // If employee data contains a work_pattern field, use it
+  if (employeeData.work_pattern) {
+    try {
+      return JSON.parse(employeeData.work_pattern);
+    } catch (e) {
+      console.error("Failed to parse work pattern:", e);
+    }
+  }
+  
+  return null;
+};

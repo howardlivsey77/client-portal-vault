@@ -301,6 +301,7 @@ export type Database = {
           end_time: string | null
           id: string
           is_working: boolean
+          payroll_id: string | null
           start_time: string | null
           updated_at: string
         }
@@ -311,6 +312,7 @@ export type Database = {
           end_time?: string | null
           id?: string
           is_working?: boolean
+          payroll_id?: string | null
           start_time?: string | null
           updated_at?: string
         }
@@ -321,10 +323,18 @@ export type Database = {
           end_time?: string | null
           id?: string
           is_working?: boolean
+          payroll_id?: string | null
           start_time?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_payroll_id"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "work_patterns_employee_id_fkey"
             columns: ["employee_id"]
