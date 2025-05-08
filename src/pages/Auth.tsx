@@ -121,7 +121,7 @@ const Auth = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+                <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required className="bg-orange-100" />
               </div>
             </CardContent>
             <CardFooter>
