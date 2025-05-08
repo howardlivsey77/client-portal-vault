@@ -79,6 +79,3 @@ export {
   createNewEmployees,
   updateExistingEmployees
 };
-
-// Use 'export type' when re-exporting types with isolatedModules enabled
-export type { ImportResult };
