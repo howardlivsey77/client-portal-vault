@@ -1,5 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { TimesheetProvider } from "@/components/timesheets/TimesheetContext";
+import { EmployeeTimesheet } from "@/components/timesheets/EmployeeTimesheet";
 
 export const TimesheetsTab = () => {
   return (
@@ -12,10 +14,9 @@ export const TimesheetsTab = () => {
           <CardDescription>Track and manage employee working hours</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">
-            The timesheet functionality is coming soon. This section will allow you to track employee working hours, 
-            approve time entries, and generate reports for payroll processing.
-          </p>
+          <TimesheetProvider>
+            <EmployeeTimesheet />
+          </TimesheetProvider>
         </CardContent>
       </Card>
     </div>
