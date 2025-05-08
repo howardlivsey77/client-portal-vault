@@ -72,7 +72,7 @@ export function Sidebar({
           <Button variant="ghost" className={cn("monday-sidebar-item w-full justify-start", isTabActive("reports") && "bg-accent text-accent-foreground")} asChild>
             <Link to={getTabUrl("reports")}>
               <ChartBar className="h-4 w-4" />
-              Reports
+              Bureau Reports
             </Link>
           </Button>
         </div>
