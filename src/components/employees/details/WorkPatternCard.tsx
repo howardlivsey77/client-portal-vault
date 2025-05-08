@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { format } from "date-fns";
 import { Clock } from "lucide-react";
@@ -6,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { TimePickerDemo } from "@/components/ui/time-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Employee } from "@/hooks/useEmployeeDetails";
 import { supabase } from "@/integrations/supabase/client";
