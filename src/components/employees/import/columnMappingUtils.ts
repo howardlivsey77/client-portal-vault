@@ -1,3 +1,4 @@
+
 import { ColumnMapping } from "./ImportConstants";
 
 // Helper to map column headers to database fields
@@ -21,34 +22,34 @@ const fieldMappings: Record<string, string[]> = {
   rate_3: ['rate 3', 'rate3', 'third rate', 'weekend rate'],
   rate_4: ['rate 4', 'rate4', 'fourth rate', 'special rate'],
   
-  // Work pattern fields
-  monday_working: ['monday working', 'monday', 'mon working', 'mon works'],
-  monday_start_time: ['monday start', 'monday start time', 'mon start', 'mon start time'],
-  monday_end_time: ['monday end', 'monday end time', 'mon end', 'mon end time'],
+  // Work pattern fields - expanded with more variations
+  monday_working: ['monday working', 'monday', 'mon working', 'mon works', 'monday works', 'monday active', 'mon active', 'works monday'],
+  monday_start_time: ['monday start', 'monday start time', 'mon start', 'mon start time', 'monday in', 'mon in', 'monday from'],
+  monday_end_time: ['monday end', 'monday end time', 'mon end', 'mon end time', 'monday out', 'mon out', 'monday to', 'monday until'],
   
-  tuesday_working: ['tuesday working', 'tuesday', 'tue working', 'tue works'],
-  tuesday_start_time: ['tuesday start', 'tuesday start time', 'tue start', 'tue start time'],
-  tuesday_end_time: ['tuesday end', 'tuesday end time', 'tue end', 'tue end time'],
+  tuesday_working: ['tuesday working', 'tuesday', 'tue working', 'tue works', 'tuesday works', 'tuesday active', 'tue active', 'works tuesday'],
+  tuesday_start_time: ['tuesday start', 'tuesday start time', 'tue start', 'tue start time', 'tuesday in', 'tue in', 'tuesday from'],
+  tuesday_end_time: ['tuesday end', 'tuesday end time', 'tue end', 'tue end time', 'tuesday out', 'tue out', 'tuesday to', 'tuesday until'],
   
-  wednesday_working: ['wednesday working', 'wednesday', 'wed working', 'wed works'],
-  wednesday_start_time: ['wednesday start', 'wednesday start time', 'wed start', 'wed start time'],
-  wednesday_end_time: ['wednesday end', 'wednesday end time', 'wed end', 'wed end time'],
+  wednesday_working: ['wednesday working', 'wednesday', 'wed working', 'wed works', 'wednesday works', 'wednesday active', 'wed active', 'works wednesday'],
+  wednesday_start_time: ['wednesday start', 'wednesday start time', 'wed start', 'wed start time', 'wednesday in', 'wed in', 'wednesday from'],
+  wednesday_end_time: ['wednesday end', 'wednesday end time', 'wed end', 'wed end time', 'wednesday out', 'wed out', 'wednesday to', 'wednesday until'],
   
-  thursday_working: ['thursday working', 'thursday', 'thu working', 'thu works'],
-  thursday_start_time: ['thursday start', 'thursday start time', 'thu start', 'thu start time'],
-  thursday_end_time: ['thursday end', 'thursday end time', 'thu end', 'thu end time'],
+  thursday_working: ['thursday working', 'thursday', 'thu working', 'thu works', 'thursday works', 'thursday active', 'thu active', 'works thursday'],
+  thursday_start_time: ['thursday start', 'thursday start time', 'thu start', 'thu start time', 'thursday in', 'thu in', 'thursday from'],
+  thursday_end_time: ['thursday end', 'thursday end time', 'thu end', 'thu end time', 'thursday out', 'thu out', 'thursday to', 'thursday until'],
   
-  friday_working: ['friday working', 'friday', 'fri working', 'fri works'],
-  friday_start_time: ['friday start', 'friday start time', 'fri start', 'fri start time'],
-  friday_end_time: ['friday end', 'friday end time', 'fri end', 'fri end time'],
+  friday_working: ['friday working', 'friday', 'fri working', 'fri works', 'friday works', 'friday active', 'fri active', 'works friday'],
+  friday_start_time: ['friday start', 'friday start time', 'fri start', 'fri start time', 'friday in', 'fri in', 'friday from'],
+  friday_end_time: ['friday end', 'friday end time', 'fri end', 'fri end time', 'friday out', 'fri out', 'friday to', 'friday until'],
   
-  saturday_working: ['saturday working', 'saturday', 'sat working', 'sat works'],
-  saturday_start_time: ['saturday start', 'saturday start time', 'sat start', 'sat start time'],
-  saturday_end_time: ['saturday end', 'saturday end time', 'sat end', 'sat end time'],
+  saturday_working: ['saturday working', 'saturday', 'sat working', 'sat works', 'saturday works', 'saturday active', 'sat active', 'works saturday'],
+  saturday_start_time: ['saturday start', 'saturday start time', 'sat start', 'sat start time', 'saturday in', 'sat in', 'saturday from'],
+  saturday_end_time: ['saturday end', 'saturday end time', 'sat end', 'sat end time', 'saturday out', 'sat out', 'saturday to', 'saturday until'],
   
-  sunday_working: ['sunday working', 'sunday', 'sun working', 'sun works'],
-  sunday_start_time: ['sunday start', 'sunday start time', 'sun start', 'sun start time'],
-  sunday_end_time: ['sunday end', 'sunday end time', 'sun end', 'sun end time'],
+  sunday_working: ['sunday working', 'sunday', 'sun working', 'sun works', 'sunday works', 'sunday active', 'sun active', 'works sunday'],
+  sunday_start_time: ['sunday start', 'sunday start time', 'sun start', 'sun start time', 'sunday in', 'sun in', 'sunday from'],
+  sunday_end_time: ['sunday end', 'sunday end time', 'sun end', 'sun end time', 'sunday out', 'sun out', 'sunday to', 'sunday until'],
 };
 
 // Auto-map columns based on header names

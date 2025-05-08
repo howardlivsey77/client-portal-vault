@@ -1,4 +1,5 @@
 
+import { Badge } from "@/components/ui/badge";
 import { EmployeeData } from "./ImportConstants";
 
 interface EmployeePreviewProps {
@@ -9,6 +10,17 @@ export const EmployeePreview = ({ preview }: EmployeePreviewProps) => {
   if (preview.length === 0) {
     return null;
   }
+  
+  // Helper function to check if employee has work pattern data
+  const hasWorkPatternData = (emp: EmployeeData): boolean => {
+    if (emp.work_pattern) return true;
+    
+    return Object.keys(emp).some(key => 
+      key.includes('_working') || 
+      key.includes('_start_time') || 
+      key.includes('_end_time')
+    );
+  };
   
   return (
     <div className="border rounded-md p-4">
@@ -24,6 +36,7 @@ export const EmployeePreview = ({ preview }: EmployeePreviewProps) => {
               <th className="text-left py-2">Email</th>
               <th className="text-left py-2">Base Rate</th>
               <th className="text-left py-2">Rates</th>
+              <th className="text-left py-2">Work Pattern</th>
             </tr>
           </thead>
           <tbody>
@@ -38,11 +51,17 @@ export const EmployeePreview = ({ preview }: EmployeePreviewProps) => {
                     .filter(rate => rate !== undefined && rate !== null && rate !== '')
                     .map((rate, i) => `£${rate}`).join(", ") || "-"}
                 </td>
+                <td className="py-1">
+                  {hasWorkPatternData(emp) ? 
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                      Included
+                    </Badge> : "-"}
+                </td>
               </tr>
             ))}
             {preview.length > 5 && (
               <tr>
-                <td colSpan={5} className="py-1 text-center">
+                <td colSpan={6} className="py-1 text-center">
                   ...{preview.length - 5} more
                 </td>
               </tr>

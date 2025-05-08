@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { readFileData, autoMapColumns, transformData } from "./ImportUtils";
 import { EmployeeData, ColumnMapping } from "./ImportConstants";
 import { findExistingEmployees } from "@/hooks/import/employeeImportService";
+import { WorkPatternImportGuide } from "./WorkPatternImportGuide";
 
 interface FileUploaderProps {
   onFileProcessed: (
@@ -72,7 +73,10 @@ export const FileUploader = ({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="file">Upload Excel or CSV file</Label>
+      <div className="flex items-center justify-between">
+        <Label htmlFor="file">Upload Excel or CSV file</Label>
+        <WorkPatternImportGuide />
+      </div>
       <Input 
         id="file" 
         type="file" 
@@ -82,8 +86,8 @@ export const FileUploader = ({
         className="px-0 my-[2px] mx-0" 
       />
       <p className="text-sm text-muted-foreground">
-        File must contain columns for first name, last name, department.
-        Additional fields like email, address, hourly rates, etc. can also be imported.
+        File must contain columns for first name, last name, and department.
+        To import work patterns, include columns for each day with working status and start/end times.
       </p>
     </div>
   );

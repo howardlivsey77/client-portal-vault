@@ -32,6 +32,73 @@ export const excelDateToISO = (excelDate: number | string): string | null => {
   return null;
 };
 
+// Helper function to normalize and validate time strings
+export const normalizeTimeString = (timeString: string | null): string | null => {
+  if (!timeString) return null;
+  
+  // Already in 24-hour format like "09:30"
+  if (/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeString)) {
+    // Ensure leading zeros for hours
+    const [hours, minutes] = timeString.split(':');
+    return `${hours.padStart(2, '0')}:${minutes}`;
+  }
+  
+  // Try to parse AM/PM format
+  const amPmMatch = timeString.match(/^(\d{1,2})(?::(\d{2}))?(?:\s*)?(am|pm|a|p)?$/i);
+  if (amPmMatch) {
+    let hours = parseInt(amPmMatch[1], 10);
+    const minutes = amPmMatch[2] ? parseInt(amPmMatch[2], 10) : 0;
+    const ampm = (amPmMatch[3] || '').toLowerCase();
+    
+    // Convert to 24-hour format
+    if (ampm === 'pm' || ampm === 'p') {
+      if (hours < 12) hours += 12;
+    } else if ((ampm === 'am' || ampm === 'a') && hours === 12) {
+      hours = 0;
+    }
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  }
+  
+  // For Excel time (fraction of 24 hours)
+  if (typeof timeString === 'string' && !isNaN(Number(timeString))) {
+    const excelTime = parseFloat(timeString);
+    if (excelTime >= 0 && excelTime < 1) {
+      const totalMinutes = Math.round(excelTime * 24 * 60);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
+  }
+  
+  // If we can't normalize it, return the original string
+  return timeString;
+};
+
+// Parse boolean value from various formats
+export const parseBooleanValue = (value: any): boolean => {
+  if (value === undefined || value === null) return false;
+  
+  if (typeof value === 'boolean') return value;
+  
+  if (typeof value === 'number') return value !== 0;
+  
+  if (typeof value === 'string') {
+    const str = value.toLowerCase().trim();
+    return !(
+      str === '' || 
+      str === 'false' || 
+      str === 'no' || 
+      str === '0' || 
+      str === 'n' ||
+      str === 'off' ||
+      str === 'inactive'
+    );
+  }
+  
+  return Boolean(value);
+};
+
 // Extract work pattern data from an employee record
 export const extractWorkPattern = (row: EmployeeData): WorkDay[] => {
   const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -41,19 +108,35 @@ export const extractWorkPattern = (row: EmployeeData): WorkDay[] => {
     const startTimeField = `${day}_start_time`;
     const endTimeField = `${day}_end_time`;
     
-    // Default to true for isWorking if the field is not present
-    // We'll interpret any value that's not explicitly "false", "no", "0" as true
+    // Check if any work pattern data is present for this day
+    const hasWorkPatternData = row[isWorkingField] !== undefined || 
+                              row[startTimeField] !== undefined || 
+                              row[endTimeField] !== undefined;
+    
+    // Default to true for isWorking if the field is not present or if there's start/end time data
     let isWorking = true;
+    
+    // If the working field is explicitly set, use that value
     if (row[isWorkingField] !== undefined) {
-      const workingValue = String(row[isWorkingField]).toLowerCase();
-      isWorking = !(workingValue === 'false' || workingValue === 'no' || workingValue === '0' || workingValue === '');
+      isWorking = parseBooleanValue(row[isWorkingField]);
+    } 
+    // If no working field but we have time data, infer from that
+    else if (hasWorkPatternData) {
+      // If both start and end times are empty, they're probably not working
+      if (!row[startTimeField] && !row[endTimeField]) {
+        isWorking = false;
+      }
     }
+    
+    // Normalize time strings
+    const startTime = normalizeTimeString(row[startTimeField]);
+    const endTime = normalizeTimeString(row[endTimeField]);
     
     return {
       day: day.charAt(0).toUpperCase() + day.slice(1),
       isWorking,
-      startTime: row[startTimeField] || null,
-      endTime: row[endTimeField] || null
+      startTime,
+      endTime
     };
   });
 };
@@ -87,6 +170,14 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): 
             transformedRow[mapping.targetField] = Number(rateValue);
           }
         }
+        // Handle time fields
+        else if (mapping.targetField.endsWith('_start_time') || mapping.targetField.endsWith('_end_time')) {
+          transformedRow[mapping.targetField] = normalizeTimeString(row[mapping.sourceColumn]);
+        }
+        // Handle work pattern boolean fields
+        else if (mapping.targetField.endsWith('_working')) {
+          transformedRow[mapping.targetField] = parseBooleanValue(row[mapping.sourceColumn]);
+        }
         else {
           transformedRow[mapping.targetField] = row[mapping.sourceColumn];
         }
@@ -101,19 +192,23 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): 
     if (transformedRow.hours_per_week) transformedRow.hours_per_week = Number(transformedRow.hours_per_week);
     if (transformedRow.hourly_rate) transformedRow.hourly_rate = Number(transformedRow.hourly_rate);
     
-    // Extract work pattern data if any work pattern fields are present
-    const hasWorkPatternData = Object.keys(row).some(key => 
-      key.includes('_working') || key.includes('_start_time') || key.includes('_end_time')
+    // Extract work pattern data from the transformed row
+    // This looks for any work pattern field that was mapped
+    const hasWorkPatternFields = mappings.some(mapping => 
+      mapping.targetField && (
+        mapping.targetField.endsWith('_working') ||
+        mapping.targetField.endsWith('_start_time') || 
+        mapping.targetField.endsWith('_end_time')
+      ) &&
+      mapping.sourceColumn && row[mapping.sourceColumn] !== undefined
     );
     
-    if (hasWorkPatternData) {
-      transformedRow.work_pattern = JSON.stringify(extractWorkPattern(row));
+    if (hasWorkPatternFields) {
+      transformedRow.work_pattern = JSON.stringify(extractWorkPattern(transformedRow));
     }
     
     return transformedRow;
   });
-  
-  console.log("Transformed rows:", results);
   
   // Filter out rows without required fields
   return results.filter(row => 
