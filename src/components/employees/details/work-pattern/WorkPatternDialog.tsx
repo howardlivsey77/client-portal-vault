@@ -1,52 +1,52 @@
 
 import { useState } from "react";
-import { Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { WorkDay } from "./types";
 import { generateHoursList } from "./utils";
+import { WorkDay } from "./types";
 
 interface WorkPatternDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  workPattern: WorkDay[];
-  setWorkPattern: (pattern: WorkDay[]) => void;
-  saveWorkPattern: () => Promise<void>;
+  workDays: WorkDay[];
+  setWorkDays: (workDays: WorkDay[]) => void;
+  onSave: () => Promise<void>;
 }
 
 export const WorkPatternDialog = ({
   open,
   onOpenChange,
-  workPattern,
-  setWorkPattern,
-  saveWorkPattern,
+  workDays,
+  setWorkDays,
+  onSave,
 }: WorkPatternDialogProps) => {
-  const hours = generateHoursList();
-  
+  const [saving, setSaving] = useState(false);
+  const hoursList = generateHoursList();
+
   const toggleWorkDay = (index: number) => {
-    setWorkPattern(prev => {
-      const updated = [...prev];
-      updated[index] = {
-        ...updated[index],
-        isWorking: !updated[index].isWorking,
-        startTime: updated[index].isWorking ? null : updated[index].startTime || "09:00",
-        endTime: updated[index].isWorking ? null : updated[index].endTime || "17:00"
-      };
-      return updated;
-    });
+    setWorkDays(
+      workDays.map((day, i) =>
+        i === index ? { ...day, isWorking: !day.isWorking } : day
+      )
+    );
   };
-  
-  const updateTime = (index: number, type: "startTime" | "endTime", value: string) => {
-    setWorkPattern(prev => {
-      const updated = [...prev];
-      updated[index] = {
-        ...updated[index],
-        [type]: value
-      };
-      return updated;
-    });
+
+  const updateTime = (index: number, field: "startTime" | "endTime", value: string) => {
+    setWorkDays(
+      workDays.map((day, i) =>
+        i === index ? { ...day, [field]: value } : day
+      )
+    );
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    await onSave();
+    setSaving(false);
+    onOpenChange(false);
   };
 
   return (
@@ -55,73 +55,76 @@ export const WorkPatternDialog = ({
         <DialogHeader>
           <DialogTitle>Edit Work Pattern</DialogTitle>
         </DialogHeader>
-        
-        <div className="grid gap-6">
-          {workPattern.map((day, index) => (
-            <div key={day.day} className="grid grid-cols-[auto_1fr] gap-4 items-center">
-              <div className="flex items-center gap-2">
-                <Checkbox 
+
+        <div className="space-y-4 py-4">
+          {workDays.map((day, index) => (
+            <div key={day.day} className="flex flex-col space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id={`work-${day.day}`}
                   checked={day.isWorking}
                   onCheckedChange={() => toggleWorkDay(index)}
-                  id={`${day.day}-checkbox`}
                 />
-                <label 
-                  htmlFor={`${day.day}-checkbox`}
-                  className="font-medium cursor-pointer"
-                >
+                <Label htmlFor={`work-${day.day}`} className="font-medium">
                   {day.day}
-                </label>
+                </Label>
               </div>
-              
+
               {day.isWorking && (
-                <div className="flex items-center gap-2">
-                  <Select 
-                    value={day.startTime || ""}
-                    onValueChange={(value) => updateTime(index, "startTime", value)}
-                  >
-                    <SelectTrigger className="w-[100px]">
-                      <SelectValue placeholder="Start" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {hours.map(hour => (
-                        <SelectItem key={`start-${hour}`} value={hour}>
-                          {hour}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  
-                  <span className="mx-1">to</span>
-                  
-                  <Select 
-                    value={day.endTime || ""}
-                    onValueChange={(value) => updateTime(index, "endTime", value)}
-                  >
-                    <SelectTrigger className="w-[100px]">
-                      <SelectValue placeholder="End" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {hours.map(hour => (
-                        <SelectItem key={`end-${hour}`} value={hour}>
-                          {hour}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="ml-6 grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label htmlFor={`start-${day.day}`}>Start Time</Label>
+                    <Select
+                      value={day.startTime || ""}
+                      onValueChange={(value) => updateTime(index, "startTime", value)}
+                    >
+                      <SelectTrigger id={`start-${day.day}`}>
+                        <SelectValue placeholder="Start time" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {hoursList.map((hour) => (
+                          <SelectItem key={`start-${hour}`} value={hour}>
+                            {hour}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor={`end-${day.day}`}>End Time</Label>
+                    <Select
+                      value={day.endTime || ""}
+                      onValueChange={(value) => updateTime(index, "endTime", value)}
+                    >
+                      <SelectTrigger id={`end-${day.day}`}>
+                        <SelectValue placeholder="End time" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {hoursList.map((hour) => (
+                          <SelectItem key={`end-${hour}`} value={hour}>
+                            {hour}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               )}
             </div>
           ))}
-          
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button onClick={saveWorkPattern}>
-              <Clock className="mr-2 h-4 w-4" />
-              Save Schedule
-            </Button>
-          </div>
+        </div>
+
+        <div className="flex justify-end space-x-2">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={saving}
+          >
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? "Saving..." : "Save Changes"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
