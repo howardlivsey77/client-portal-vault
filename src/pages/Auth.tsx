@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -112,7 +111,7 @@ const Auth = () => {
             <div className="flex justify-center mb-4">
               <img src="/lovable-uploads/3e0f0f1b-006e-4094-a7af-1a0b28bab13c.png" alt="Ramsay Brown Logo" className="h-28 md:h-32" />
             </div>
-            <CardDescription className="font-normal text-slate-950 text-lg">Payroll Management Portal </CardDescription>
+            <CardDescription className="font-normal text-lg text-inherit">Payroll Management Portal </CardDescription>
           </CardHeader>
           <form onSubmit={handleSignIn}>
             <CardContent className="space-y-4 pt-4">
