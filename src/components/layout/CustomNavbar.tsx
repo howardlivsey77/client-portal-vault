@@ -21,7 +21,7 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
   const { user, signOut } = useAuth();
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 bg-white border-b px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 flex h-20 items-center gap-4 bg-white border-b px-4 sm:px-6 lg:px-8">
       <Button
         variant="ghost"
         size="icon"
@@ -36,7 +36,7 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
         <img 
           src="/lovable-uploads/3e0f0f1b-006e-4094-a7af-1a0b28bab13c.png" 
           alt="Ramsay Brown Logo" 
-          className="h-10" 
+          className="h-14" 
         />
       </div>
       
