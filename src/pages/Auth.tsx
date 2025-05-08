@@ -111,7 +111,7 @@ const Auth = () => {
             <div className="flex justify-center mb-4">
               <img src="/lovable-uploads/3e0f0f1b-006e-4094-a7af-1a0b28bab13c.png" alt="Ramsay Brown Logo" className="h-28 md:h-32" />
             </div>
-            <CardDescription className="font-normal text-lg text-inherit">Payroll Management Portal </CardDescription>
+            <CardDescription className="font-normal text-lg text-blue-900">Payroll Management Portal </CardDescription>
           </CardHeader>
           <form onSubmit={handleSignIn}>
             <CardContent className="space-y-4 pt-4">
