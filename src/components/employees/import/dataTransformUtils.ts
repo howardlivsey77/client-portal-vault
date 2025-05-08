@@ -1,26 +1,34 @@
 
 import { EmployeeData, ColumnMapping, requiredFields } from "./ImportConstants";
-import { excelDateToISO } from "./utils/dateUtils";
-import { normalizeTimeString } from "./utils/timeUtils";
-import { parseBooleanValue } from "./utils/booleanUtils";
-import { extractWorkPattern } from "./utils/workPatternUtils";
 
-// Re-export utility functions for backward compatibility
-export { excelDateToISO } from "./utils/dateUtils";
-export { normalizeTimeString } from "./utils/timeUtils";
-export { parseBooleanValue } from "./utils/booleanUtils";
-export { extractWorkPattern } from "./utils/workPatternUtils";
-
-// Handle splitting full names when only a full name field is provided
-const splitFullName = (fullName: string): { firstName: string, lastName: string } => {
-  if (!fullName) return { firstName: '', lastName: '' };
+// Helper function to convert Excel numeric dates to ISO date strings
+export const excelDateToISO = (excelDate: number | string): string | null => {
+  // If it's already a string and looks like a date string, return it
+  if (typeof excelDate === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}/.test(excelDate) || 
+        /^\d{2}\/\d{2}\/\d{4}/.test(excelDate) ||
+        /^\d{2}\.\d{2}\.\d{4}/.test(excelDate)) {
+      return new Date(excelDate).toISOString().split('T')[0];
+    }
+    return null;
+  }
   
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length === 1) return { firstName: parts[0], lastName: '' };
+  // If it's a number, treat it as an Excel date
+  if (typeof excelDate === 'number') {
+    // Excel's epoch starts on 1900-01-01, but Excel incorrectly assumes 1900 is a leap year
+    // So we need to adjust dates after February 28, 1900
+    // Excel date 60 corresponds to February 29, 1900 which doesn't exist
+    const adjustedExcelDate = excelDate > 60 ? excelDate - 1 : excelDate;
+    
+    // Convert Excel date to JavaScript date
+    // Excel epoch is December 31, 1899
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const jsDate = new Date(Date.UTC(1899, 11, 30) + (adjustedExcelDate * msPerDay));
+    
+    return jsDate.toISOString().split('T')[0];
+  }
   
-  const lastName = parts.pop() || '';
-  const firstName = parts.join(' ');
-  return { firstName, lastName };
+  return null;
 };
 
 // Transform raw data based on column mappings
@@ -29,119 +37,50 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): 
   
   // First check if we have any data to transform
   if (!data || data.length === 0) {
-    console.log("No data to transform");
     return [];
   }
   
   const results = data.map(row => {
     const transformedRow: EmployeeData = {};
-    const workPatternFields: EmployeeData = {};
     
-    // Check if there's an "employee name" or full name column but no separate first/last name
-    const hasFirstName = mappings.some(m => m.targetField === 'first_name');
-    const hasLastName = mappings.some(m => m.targetField === 'last_name');
-    const fullNameMapping = mappings.find(m => 
-      (m.sourceColumn.toLowerCase().includes('employee name') || 
-       m.sourceColumn.toLowerCase() === 'name') && 
-      row[m.sourceColumn] !== undefined
-    );
-    
-    // If there's a full name column but no separate first/last name mappings
-    if (fullNameMapping && (!hasFirstName || !hasLastName)) {
-      const fullName = String(row[fullNameMapping.sourceColumn]);
-      const { firstName, lastName } = splitFullName(fullName);
-      
-      if (!hasFirstName) transformedRow['first_name'] = firstName;
-      if (!hasLastName) transformedRow['last_name'] = lastName;
-    }
-    
-    // Process all mapped columns
     mappings.forEach(mapping => {
       if (mapping.targetField && row[mapping.sourceColumn] !== undefined) {
-        const sourceValue = row[mapping.sourceColumn];
-        
-        // Skip empty values except for boolean fields which could legitimately be false
-        if ((sourceValue === null || sourceValue === '') && !mapping.targetField.endsWith('_working')) {
-          return;
-        }
-        
         // Handle date fields specifically
         if (mapping.targetField === 'date_of_birth' || mapping.targetField === 'hire_date') {
-          const isoDate = excelDateToISO(sourceValue);
-          if (isoDate) {
-            transformedRow[mapping.targetField] = isoDate;
-          }
+          const dateValue = row[mapping.sourceColumn];
+          const isoDate = excelDateToISO(dateValue);
+          transformedRow[mapping.targetField] = isoDate;
         } 
         // Handle rate fields to ensure they're numeric
         else if (mapping.targetField === 'rate_2' || mapping.targetField === 'rate_3' || mapping.targetField === 'rate_4' || 
-                 mapping.targetField === 'hourly_rate' || mapping.targetField === 'hours_per_week') {
-          if (sourceValue !== undefined && sourceValue !== null && sourceValue !== '') {
-            // Parse rate as number, handle strings that might have currency symbols
-            const numericValue = typeof sourceValue === 'string' 
-              ? parseFloat(sourceValue.replace(/[^0-9.-]+/g, ''))
-              : Number(sourceValue);
-            
-            if (!isNaN(numericValue)) {
-              transformedRow[mapping.targetField] = numericValue;
-            }
+                 mapping.targetField === 'hourly_rate') {
+          const rateValue = row[mapping.sourceColumn];
+          if (rateValue !== undefined && rateValue !== null && rateValue !== '') {
+            // Parse rate as number
+            transformedRow[mapping.targetField] = Number(rateValue);
           }
         }
-        // Handle time fields and work pattern fields - store in workPatternFields
-        else if (mapping.targetField.endsWith('_start_time') || 
-                 mapping.targetField.endsWith('_end_time') || 
-                 mapping.targetField.endsWith('_working')) {
-          // Make sure we preserve the field name exactly as is for later processing
-          workPatternFields[mapping.targetField] = sourceValue;
-        }
         else {
-          // For text fields, ensure we're not storing undefined or null
-          transformedRow[mapping.targetField] = sourceValue !== null && sourceValue !== undefined ? String(sourceValue) : '';
+          transformedRow[mapping.targetField] = row[mapping.sourceColumn];
         }
       }
     });
     
     // Set default values for missing fields
-    if (!transformedRow.hours_per_week && transformedRow.hours_per_week !== 0) transformedRow.hours_per_week = 40;
-    if (!transformedRow.hourly_rate && transformedRow.hourly_rate !== 0) transformedRow.hourly_rate = 0;
+    if (!transformedRow.hours_per_week) transformedRow.hours_per_week = 40;
+    if (!transformedRow.hourly_rate) transformedRow.hourly_rate = 0;
     
-    // Add work pattern fields to transformed row if any exist
-    if (Object.keys(workPatternFields).length > 0) {
-      // Store all original work pattern fields in the transformed row
-      Object.keys(workPatternFields).forEach(key => {
-        transformedRow[key] = workPatternFields[key];
-      });
-      
-      // Process and structure the work pattern
-      const workPattern = extractWorkPattern(workPatternFields);
-      
-      // Only include work_pattern JSON if we actually have work pattern data
-      if (workPattern.length > 0) {
-        transformedRow.work_pattern = JSON.stringify(workPattern);
-      }
-    }
+    // Convert numeric fields
+    if (transformedRow.hours_per_week) transformedRow.hours_per_week = Number(transformedRow.hours_per_week);
+    if (transformedRow.hourly_rate) transformedRow.hourly_rate = Number(transformedRow.hourly_rate);
     
     return transformedRow;
   });
   
-  // Log data before and after validation for debugging
-  console.log("Before validation - sample row:", results[0]);
+  console.log("Transformed rows:", results);
   
-  // Filter out rows without required fields and log helpful info
-  const validRows = results.filter(row => 
-    requiredFields.every(field => {
-      const hasField = row[field] !== undefined && row[field] !== null && row[field] !== '';
-      if (!hasField) {
-        console.log(`Missing required field ${field} in row:`, row);
-      }
-      return hasField;
-    })
+  // Filter out rows without required fields
+  return results.filter(row => 
+    requiredFields.every(field => row[field] !== undefined && row[field] !== null && row[field] !== '')
   );
-  
-  console.log(`Data transformation complete: ${validRows.length} valid rows out of ${results.length} total`);
-  if (validRows.length === 0) {
-    console.log("No valid rows found. Sample row from raw data:", data[0]);
-    console.log("Sample transformed row before filtering:", results[0]);
-  }
-  
-  return validRows;
 };

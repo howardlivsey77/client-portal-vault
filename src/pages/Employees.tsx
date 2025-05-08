@@ -15,32 +15,11 @@ import { EmployeeTable } from "@/components/employees/EmployeeTable";
 import { EmptyEmployeeState } from "@/components/employees/EmptyEmployeeState";
 import { EmployeeSearch } from "@/components/employees/EmployeeSearch";
 import { EmployeeActions } from "@/components/employees/EmployeeActions";
-import { SortDirection } from "@/components/employees/SortButton";
 
 const Employees = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortField, setSortField] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const { isAdmin } = useAuth();
   const { employees, loading, fetchEmployees, deleteEmployee } = useEmployees();
-  
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      // Toggle direction if clicking the same field
-      if (sortDirection === "asc") {
-        setSortDirection("desc");
-      } else if (sortDirection === "desc") {
-        setSortField(null);
-        setSortDirection(null);
-      } else {
-        setSortDirection("asc");
-      }
-    } else {
-      // Set new field and default to ascending
-      setSortField(field);
-      setSortDirection("asc");
-    }
-  };
   
   return (
     <PageContainer>
@@ -73,9 +52,6 @@ const Employees = () => {
               employees={employees} 
               onDelete={deleteEmployee}
               searchTerm={searchTerm}
-              sortField={sortField}
-              sortDirection={sortDirection}
-              onSort={handleSort}
             />
           ) : (
             <EmptyEmployeeState isAdmin={isAdmin} searchTerm={searchTerm} />

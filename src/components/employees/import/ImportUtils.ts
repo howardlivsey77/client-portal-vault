@@ -1,24 +1,12 @@
 
 // Re-export from smaller utility files
 export { readFileData } from './fileParsingUtils';
-export { 
-  autoMapColumns, 
-  saveMappings, 
-  loadSavedMappings, 
-  clearSavedMappings, 
-  hasDuplicatePayrollIds 
-} from './columnMappingUtils';
-export { 
-  transformData,
-  excelDateToISO,
-  normalizeTimeString,
-  parseBooleanValue,
-  extractWorkPattern 
-} from './dataTransformUtils';
+export { autoMapColumns, saveMappings, loadSavedMappings, clearSavedMappings } from './columnMappingUtils';
+export { transformData, excelDateToISO } from './dataTransformUtils';
 
 // Legacy export to maintain backward compatibility with the original functionality
 import { EmployeeData, ColumnMapping } from "./ImportConstants";
-import { areRequiredFieldsMapped as checkRequiredFields } from "./utils/mappingValidation";
+import { areRequiredFieldsMapped as checkRequiredFields } from "./columnMappingUtils";
 
 // Original function for backward compatibility
 export const areRequiredFieldsMapped = (columnMappings: ColumnMapping[]): boolean => {

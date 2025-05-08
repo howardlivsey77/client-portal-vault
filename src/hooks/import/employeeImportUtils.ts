@@ -9,7 +9,7 @@ export const areRequiredFieldsMapped = (mappings: ColumnMapping[]): boolean => {
   );
 };
 
-// Enhanced compare function with better handling of various data formats
+// Compare employees and detect changes
 export const compareEmployees = (
   preview: EmployeeData[],
   existingEmployees: EmployeeData[]
@@ -20,70 +20,41 @@ export const compareEmployees = (
   const newEmps: EmployeeData[] = [];
   const updatedEmps: {existing: EmployeeData; imported: EmployeeData}[] = [];
   
-  // First, validate we have existing employees data
-  console.log(`Comparing ${preview.length} imported records against ${existingEmployees.length} existing employees`);
-  
   preview.forEach(importedEmp => {
-    // Normalize data for comparison - handle more formats and edge cases
-    const importedEmail = importedEmp.email ? String(importedEmp.email).toLowerCase().trim() : null;
-    const importedPayrollId = importedEmp.payroll_id ? String(importedEmp.payroll_id).trim() : null;
-    
-    // Name matching vars (for fallback)
-    const importedFirstName = importedEmp.first_name ? String(importedEmp.first_name).trim().toLowerCase() : '';
-    const importedLastName = importedEmp.last_name ? String(importedEmp.last_name).trim().toLowerCase() : '';
-    
-    // Find matching existing employee by email OR payroll_id (OR name as last resort)
-    const existingEmp = existingEmployees.find(existing => {
-      // Match by payroll ID if both have valid payroll IDs
-      if (importedPayrollId && existing.payroll_id) {
-        const existingPayrollId = String(existing.payroll_id).trim();
-        if (existingPayrollId === importedPayrollId) {
-          console.log(`Found match by payroll ID: ${importedPayrollId} for employee ${importedEmp.first_name} ${importedEmp.last_name}`);
-          return true;
-        }
-      }
-      
-      // Match by email if both have valid emails
-      if (importedEmail && existing.email) {
-        const existingEmail = String(existing.email).toLowerCase().trim();
-        if (existingEmail === importedEmail) {
-          console.log(`Found match by email: ${importedEmail} for employee ${importedEmp.first_name} ${importedEmp.last_name}`);
-          return true;
-        }
-      }
-      
-      // As last resort, try to match by full name if both first and last name match perfectly
-      // Only use this if no payroll ID or email is available
-      if (!importedPayrollId && !importedEmail && 
-          importedFirstName && importedLastName && 
-          existing.first_name && existing.last_name) {
-        
-        const existingFirstName = String(existing.first_name).trim().toLowerCase();
-        const existingLastName = String(existing.last_name).trim().toLowerCase();
-        
-        if (existingFirstName === importedFirstName && existingLastName === importedLastName) {
-          console.log(`Found match by name: ${importedFirstName} ${importedLastName}`);
-          return true;
-        }
-      }
-      
-      return false;
-    });
+    const existingEmp = existingEmployees.find(existing => 
+      existing.email && importedEmp.email && 
+      existing.email.toLowerCase() === importedEmp.email.toLowerCase()
+    );
     
     if (existingEmp) {
-      console.log(`Employee found - treating as update: ${existingEmp.first_name} ${existingEmp.last_name} (ID: ${existingEmp.id})`);
-      
-      // Always add to updatedEmps if we found a match - it's clearly an update operation
-      updatedEmps.push({
-        existing: existingEmp,
-        imported: importedEmp
+      // Check for changes in standard fields
+      const hasStandardChanges = Object.keys(importedEmp).some(key => {
+        if (key === 'id' || key.startsWith('rate_')) return false;
+        
+        return importedEmp[key] !== undefined && 
+              importedEmp[key] !== null && 
+              importedEmp[key] !== '' && 
+              importedEmp[key] !== existingEmp[key];
       });
+
+      // Check for changes in rate fields - consider any imported rates as changes
+      // since we want to always update them if present
+      const hasRateChanges = ['rate_2', 'rate_3', 'rate_4'].some(rateKey => 
+        importedEmp[rateKey] !== undefined && 
+        importedEmp[rateKey] !== null && 
+        importedEmp[rateKey] !== ''
+      );
+      
+      if (hasStandardChanges || hasRateChanges) {
+        updatedEmps.push({
+          existing: existingEmp,
+          imported: importedEmp
+        });
+      }
     } else {
-      console.log(`No match found - treating as new employee: ${importedEmp.first_name} ${importedEmp.last_name}`);
       newEmps.push(importedEmp);
     }
   });
   
-  console.log(`Comparison results: ${newEmps.length} new employees, ${updatedEmps.length} employees to update`);
   return { newEmployees: newEmps, updatedEmployees: updatedEmps };
 };
