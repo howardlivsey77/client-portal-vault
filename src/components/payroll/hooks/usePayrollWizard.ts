@@ -3,6 +3,7 @@ import { useState, useCallback } from "react";
 import { toast } from "@/hooks/use-toast";
 import { processExtraHoursFile, savePayrollData } from "@/services/payroll";
 import { ExtraHoursSummary, PayrollFiles } from "../types";
+import { useAuth } from "@/providers/AuthProvider";
 
 // Create a simple store for sharing data between components
 // In a real app, you might use a more robust state management solution
@@ -26,6 +27,7 @@ export function usePayrollWizard() {
   // Keep track of processed data
   const [processedData, setProcessedData] = useState<ExtraHoursSummary | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { user } = useAuth();
 
   const handleFileUpload = (stepId: keyof PayrollFiles, file: File | null) => {
     setUploadedFiles(prev => ({
@@ -70,15 +72,45 @@ export function usePayrollWizard() {
     }
   }, [processedData]);
 
-  const handleNext = (onOpenChange: (open: boolean) => void) => {
+  const handleNext = async (onOpenChange: (open: boolean) => void) => {
     if (currentStep < 2) { // Hardcoded length to avoid circular dependency
       setCurrentStep(currentStep + 1);
     } else {
       // Process all data and finish the wizard
-      toast({
-        title: "Payroll input completed",
-        description: "Your payroll data has been processed successfully.",
-      });
+      if (processedData && user) {
+        setIsProcessing(true);
+        try {
+          // Save data to Supabase
+          const saveResult = await savePayrollData(processedData, user.id);
+          
+          if (saveResult.success) {
+            toast({
+              title: "Payroll input completed",
+              description: "Your payroll data has been processed and saved successfully.",
+            });
+          } else {
+            toast({
+              title: "Warning",
+              description: saveResult.message || "Payroll data was processed but couldn't be saved to the database.",
+              variant: "destructive",
+            });
+          }
+        } catch (error) {
+          console.error("Error saving payroll data:", error);
+          toast({
+            title: "Error saving data",
+            description: "There was a problem saving your payroll data.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsProcessing(false);
+        }
+      } else {
+        toast({
+          title: "Payroll input completed",
+          description: "Your payroll data has been processed successfully.",
+        });
+      }
       onOpenChange(false);
     }
   };

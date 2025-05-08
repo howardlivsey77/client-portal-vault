@@ -120,6 +120,98 @@ export type Database = {
         }
         Relationships: []
       }
+      payroll_employee_details: {
+        Row: {
+          created_at: string
+          employee_id: string | null
+          employee_name: string | null
+          entries: number
+          extra_hours: number
+          id: string
+          payroll_id: string | null
+          payroll_period_id: string
+          rate_type: string | null
+          rate_value: number | null
+        }
+        Insert: {
+          created_at?: string
+          employee_id?: string | null
+          employee_name?: string | null
+          entries: number
+          extra_hours: number
+          id?: string
+          payroll_id?: string | null
+          payroll_period_id: string
+          rate_type?: string | null
+          rate_value?: number | null
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string | null
+          employee_name?: string | null
+          entries?: number
+          extra_hours?: number
+          id?: string
+          payroll_id?: string | null
+          payroll_period_id?: string
+          rate_type?: string | null
+          rate_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_employee_details_payroll_period_id_fkey"
+            columns: ["payroll_period_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_periods: {
+        Row: {
+          created_at: string
+          date_from: string
+          date_to: string
+          employee_count: number
+          financial_year: number
+          id: string
+          period_name: string | null
+          period_number: number
+          total_entries: number
+          total_extra_hours: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date_from: string
+          date_to: string
+          employee_count: number
+          financial_year: number
+          id?: string
+          period_name?: string | null
+          period_number: number
+          total_entries: number
+          total_extra_hours: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date_from?: string
+          date_to?: string
+          employee_count?: number
+          financial_year?: number
+          id?: string
+          period_name?: string | null
+          period_number?: number
+          total_entries?: number
+          total_extra_hours?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

@@ -11,13 +11,41 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmployeeHoursData } from "@/components/payroll/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PaymentHoursRatesReportProps {
   standalone?: boolean;
   data?: EmployeeHoursData[];
+  isLoading?: boolean;
 }
 
-export function PaymentHoursRatesReport({ standalone = false, data = [] }: PaymentHoursRatesReportProps) {
+export function PaymentHoursRatesReport({ 
+  standalone = false, 
+  data = [], 
+  isLoading = false 
+}: PaymentHoursRatesReportProps) {
+  // If loading, display a skeleton UI
+  if (isLoading) {
+    return (
+      <Card className="shadow-sm">
+        {standalone && (
+          <div className="p-6 border-b flex items-center gap-2">
+            <ChartBar className="h-5 w-5" />
+            <h2 className="monday-section-title">Payment Hours and Rates Report</h2>
+          </div>
+        )}
+        <div className="p-6">
+          <Skeleton className="w-full h-8 mb-4" />
+          <Skeleton className="w-full h-6 mb-2" />
+          <Skeleton className="w-full h-6 mb-2" />
+          <Skeleton className="w-full h-6 mb-2" />
+          <Skeleton className="w-full h-6 mb-2" />
+          <Skeleton className="w-full h-6" />
+        </div>
+      </Card>
+    );
+  }
+  
   // If no data is provided, display a message
   const hasData = data && data.length > 0;
   
