@@ -152,7 +152,8 @@ export const formatTime = (time: string | null): string => {
 export const generateHoursList = (): string[] => {
   const timeIntervals: string[] = [];
   
-  for (let hour = 0; hour < 24; hour++) {
+  // Only generate times from 6am to 10pm (6:00 to 22:00)
+  for (let hour = 6; hour <= 22; hour++) {
     const hourString = hour.toString().padStart(2, '0');
     
     // Add each 15-minute interval
