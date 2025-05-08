@@ -22,7 +22,7 @@ export const checkDuplicatePayrollIds = async (payrollIds: string[]) => {
 // Check for existing employees
 export const findExistingEmployees = async (importData: EmployeeData[]): Promise<EmployeeData[]> => {
   try {
-    // Extract emails and payroll_ids from import data
+    // Extract emails and payroll_ids from import data (and normalize them)
     const emails = importData
       .filter(emp => emp.email && typeof emp.email === 'string')
       .map(emp => emp.email.toLowerCase().trim());
@@ -74,6 +74,37 @@ export const findExistingEmployees = async (importData: EmployeeData[]): Promise
         payrollMatches.forEach(employee => {
           if (!allMatches.some(e => e.id === employee.id)) {
             allMatches.push(employee);
+          }
+        });
+      }
+    }
+    
+    // If we didn't find any matches but have names, try matching by name as a last resort
+    if (allMatches.length === 0 && importData.some(emp => emp.first_name && emp.last_name)) {
+      console.log("No matches found by email or payroll ID, trying name matching...");
+      
+      // Get all employees to match against
+      const { data: allEmployees, error: employeeError } = await supabase
+        .from("employees")
+        .select("*");
+        
+      if (employeeError) {
+        console.error("Error fetching employees for name matching:", employeeError);
+        throw employeeError;
+      }
+      
+      if (allEmployees) {
+        importData.forEach(importedEmp => {
+          if (importedEmp.first_name && importedEmp.last_name) {
+            const matchedEmp = allEmployees.find(existing => 
+              existing.first_name?.toLowerCase().trim() === importedEmp.first_name.toLowerCase().trim() && 
+              existing.last_name?.toLowerCase().trim() === importedEmp.last_name.toLowerCase().trim()
+            );
+            
+            if (matchedEmp && !allMatches.some(e => e.id === matchedEmp.id)) {
+              console.log(`Found match by name: ${matchedEmp.first_name} ${matchedEmp.last_name}`);
+              allMatches.push(matchedEmp);
+            }
           }
         });
       }

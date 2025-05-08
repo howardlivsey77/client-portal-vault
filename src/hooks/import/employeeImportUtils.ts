@@ -9,7 +9,7 @@ export const areRequiredFieldsMapped = (mappings: ColumnMapping[]): boolean => {
   );
 };
 
-// Compare employees and detect changes
+// Enhanced compare function with better handling of various data formats
 export const compareEmployees = (
   preview: EmployeeData[],
   existingEmployees: EmployeeData[]
@@ -24,11 +24,15 @@ export const compareEmployees = (
   console.log(`Comparing ${preview.length} imported records against ${existingEmployees.length} existing employees`);
   
   preview.forEach(importedEmp => {
-    // Normalize data for comparison
+    // Normalize data for comparison - handle more formats and edge cases
     const importedEmail = importedEmp.email ? String(importedEmp.email).toLowerCase().trim() : null;
     const importedPayrollId = importedEmp.payroll_id ? String(importedEmp.payroll_id).trim() : null;
     
-    // Find matching existing employee by email OR payroll_id
+    // Name matching vars (for fallback)
+    const importedFirstName = importedEmp.first_name ? String(importedEmp.first_name).trim().toLowerCase() : '';
+    const importedLastName = importedEmp.last_name ? String(importedEmp.last_name).trim().toLowerCase() : '';
+    
+    // Find matching existing employee by email OR payroll_id (OR name as last resort)
     const existingEmp = existingEmployees.find(existing => {
       // Match by payroll ID if both have valid payroll IDs
       if (importedPayrollId && existing.payroll_id) {
@@ -44,6 +48,21 @@ export const compareEmployees = (
         const existingEmail = String(existing.email).toLowerCase().trim();
         if (existingEmail === importedEmail) {
           console.log(`Found match by email: ${importedEmail} for employee ${importedEmp.first_name} ${importedEmp.last_name}`);
+          return true;
+        }
+      }
+      
+      // As last resort, try to match by full name if both first and last name match perfectly
+      // Only use this if no payroll ID or email is available
+      if (!importedPayrollId && !importedEmail && 
+          importedFirstName && importedLastName && 
+          existing.first_name && existing.last_name) {
+        
+        const existingFirstName = String(existing.first_name).trim().toLowerCase();
+        const existingLastName = String(existing.last_name).trim().toLowerCase();
+        
+        if (existingFirstName === importedFirstName && existingLastName === importedLastName) {
+          console.log(`Found match by name: ${importedFirstName} ${importedLastName}`);
           return true;
         }
       }

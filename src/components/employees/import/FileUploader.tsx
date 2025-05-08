@@ -28,6 +28,7 @@ export const FileUploader = ({
   const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) {
@@ -35,6 +36,7 @@ export const FileUploader = ({
     }
 
     setError(null);
+    setIsProcessing(true);
     const selectedFile = e.target.files[0];
     setFile(selectedFile);
     
@@ -42,6 +44,7 @@ export const FileUploader = ({
       // Parse file data
       const { data, headers } = await readFileData(selectedFile);
       console.log("File parsed successfully, headers:", headers);
+      console.log("Sample data from file:", data.slice(0, 2));
 
       if (!data || data.length === 0) {
         setError("No data found in the selected file. Please check the file content.");
@@ -50,6 +53,7 @@ export const FileUploader = ({
           description: "The selected file does not contain any data.",
           variant: "destructive"
         });
+        setIsProcessing(false);
         return;
       }
 
@@ -59,15 +63,20 @@ export const FileUploader = ({
 
       // Transform the data based on mappings
       const transformedData = transformData(data, mappings);
-      console.log("Transformed data:", transformedData);
+      console.log("Transformed data sample:", transformedData.slice(0, 2));
       
       if (transformedData.length === 0) {
-        setError("Could not extract valid employee data. Please check column mappings or file format.");
+        setError("Could not extract valid employee data. This usually means required fields like first name, last name and department are missing or not mapped correctly. Please check the file format or map columns manually.");
         toast({
           title: "No valid data found",
-          description: "Could not extract employee data. Please check your file format and column mappings.",
+          description: "Could not extract required employee data. Please check your file format and manually map the columns.",
           variant: "destructive"
         });
+        
+        // Even though we couldn't transform data, we'll still pass the raw data and mappings
+        // This allows the user to manually map columns
+        onFileProcessed(data, [], mappings, headers, []);
+        setIsProcessing(false);
         return;
       }
       
@@ -80,6 +89,7 @@ export const FileUploader = ({
           description: `Your import contains duplicate payroll IDs: ${duplicates.join(', ')}. Please ensure all payroll IDs are unique.`,
           variant: "destructive"
         });
+        setIsProcessing(false);
         return;
       }
       
@@ -89,17 +99,28 @@ export const FileUploader = ({
         description: "Checking for existing employees to update...",
       });
       
-      const existingEmployees = await findExistingEmployees(transformedData);
-      
-      if (existingEmployees.length > 0) {
+      try {
+        const existingEmployees = await findExistingEmployees(transformedData);
+        
+        if (existingEmployees.length > 0) {
+          toast({
+            title: "Found existing employees",
+            description: `Found ${existingEmployees.length} existing employees that will be updated instead of created.`,
+          });
+        }
+        
+        // Pass the data back to parent component including existing employee data
+        onFileProcessed(data, transformedData, mappings, headers, existingEmployees);
+      } catch (dbError: any) {
+        console.error("Error fetching existing employees:", dbError);
         toast({
-          title: "Found existing employees",
-          description: `Found ${existingEmployees.length} existing employees that will be updated instead of created.`,
+          title: "Warning",
+          description: "Could not check for existing employees. Import will treat all records as new employees.",
+          variant: "destructive"
         });
+        // Still proceed with the import but without existing employee data
+        onFileProcessed(data, transformedData, mappings, headers, []);
       }
-      
-      // Pass the data back to parent component including existing employee data
-      onFileProcessed(data, transformedData, mappings, headers, existingEmployees);
     } catch (error: any) {
       console.error("Error processing file:", error);
       setError(error.message || "Failed to process file");
@@ -108,6 +129,8 @@ export const FileUploader = ({
         description: error.message || "Please make sure your file is a valid Excel or CSV file.",
         variant: "destructive"
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -140,13 +163,16 @@ export const FileUploader = ({
         type="file" 
         accept=".xlsx,.xls,.csv" 
         onChange={handleFileChange} 
-        disabled={disabled} 
+        disabled={disabled || isProcessing} 
         className="px-0 my-[2px] mx-0" 
       />
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-muted-foreground mt-2">
         File must contain columns for first name, last name, and department.
         Updates to existing employees will be detected automatically if email or payroll ID matches.
       </p>
+      {isProcessing && (
+        <p className="text-sm text-amber-600">Processing file, please wait...</p>
+      )}
     </div>
   );
 };

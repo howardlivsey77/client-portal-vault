@@ -1,95 +1,103 @@
 
-import { ColumnMapping } from "../ImportConstants";
+import { ColumnMapping, availableFields } from "../ImportConstants";
 
-// Attempt to find the best match between source column names and target field names
 export const autoMapColumns = (headers: string[]): ColumnMapping[] => {
-  return headers.map(header => {
-    const lowerHeader = header.toLowerCase().trim();
+  const mappings: ColumnMapping[] = [];
+  
+  // Create lowercase versions for easier matching
+  const lowercaseHeaders = headers.map(h => h.toLowerCase());
+  
+  headers.forEach((header, index) => {
+    const lowerHeader = header.toLowerCase();
+    let targetField: string | null = null;
     
-    // Direct mappings
-    if (lowerHeader.includes('first name') || lowerHeader === 'firstname' || lowerHeader === 'first_name' || lowerHeader === 'givenname') {
-      return { sourceColumn: header, targetField: 'first_name' };
+    // Improved name field mappings
+    if (lowerHeader.includes('employee name') || lowerHeader === 'name' || lowerHeader === 'first name' || lowerHeader === 'firstname') {
+      targetField = 'first_name';
     }
-    if (lowerHeader.includes('last name') || lowerHeader === 'lastname' || lowerHeader === 'last_name' || lowerHeader === 'surname') {
-      return { sourceColumn: header, targetField: 'last_name' };
+    else if (lowerHeader === 'last name' || lowerHeader === 'lastname' || lowerHeader === 'surname') {
+      targetField = 'last_name';
     }
-    if (lowerHeader.includes('department') || lowerHeader === 'dept' || lowerHeader === 'team') {
-      return { sourceColumn: header, targetField: 'department' };
+    // Common department mappings
+    else if (lowerHeader === 'dept' || lowerHeader === 'department') {
+      targetField = 'department';
     }
-    if (lowerHeader.includes('email') || lowerHeader === 'e-mail' || lowerHeader === 'mail address') {
-      return { sourceColumn: header, targetField: 'email' };
+    // Email mappings
+    else if (lowerHeader === 'email' || lowerHeader === 'email address' || lowerHeader.includes('email')) {
+      targetField = 'email';
     }
-    if (lowerHeader.includes('address line 1') || lowerHeader === 'address1' || lowerHeader === 'street') {
-      return { sourceColumn: header, targetField: 'address1' };
+    // Payroll ID mappings
+    else if (lowerHeader === 'payroll id' || lowerHeader === 'employee id' || lowerHeader === 'id') {
+      targetField = 'payroll_id';
     }
-    if (lowerHeader.includes('address line 2') || lowerHeader === 'address2') {
-      return { sourceColumn: header, targetField: 'address2' };
+    // Address mappings
+    else if (lowerHeader === 'address line 1' || lowerHeader === 'address1') {
+      targetField = 'address1';
     }
-    if (lowerHeader.includes('address line 3') || lowerHeader === 'address3') {
-      return { sourceColumn: header, targetField: 'address3' };
+    else if (lowerHeader === 'address line 2' || lowerHeader === 'address2') {
+      targetField = 'address2';
     }
-    if (lowerHeader.includes('address line 4') || lowerHeader === 'address4') {
-      return { sourceColumn: header, targetField: 'address4' };
+    else if (lowerHeader === 'address line 3' || lowerHeader === 'address3') {
+      targetField = 'address3';
     }
-    if (lowerHeader.includes('postcode') || lowerHeader === 'post code' || lowerHeader === 'zip' || lowerHeader === 'zipcode') {
-      return { sourceColumn: header, targetField: 'postcode' };
+    else if (lowerHeader === 'address line 4' || lowerHeader === 'address4') {
+      targetField = 'address4';
     }
-    if (lowerHeader.includes('date of birth') || lowerHeader === 'dob' || lowerHeader === 'birthdate') {
-      return { sourceColumn: header, targetField: 'date_of_birth' };
+    else if (lowerHeader === 'post code' || lowerHeader === 'postcode' || lowerHeader === 'zip' || lowerHeader === 'zip code') {
+      targetField = 'postcode';
     }
-    if (lowerHeader.includes('hire date') || lowerHeader === 'start date' || lowerHeader === 'joining date') {
-      return { sourceColumn: header, targetField: 'hire_date' };
+    // Date fields
+    else if (lowerHeader === 'dob' || lowerHeader === 'date of birth') {
+      targetField = 'date_of_birth';
     }
-    if (lowerHeader.includes('gender') || lowerHeader === 'sex') {
-      return { sourceColumn: header, targetField: 'gender' };
+    else if (lowerHeader === 'hire date' || lowerHeader === 'start date' || lowerHeader.includes('hire')) {
+      targetField = 'hire_date';
     }
-    if (lowerHeader.includes('hours per week') || lowerHeader === 'working hours' || lowerHeader === 'weekly hours') {
-      return { sourceColumn: header, targetField: 'hours_per_week' };
+    // Rates and hours
+    else if (lowerHeader === 'hourly rate' || lowerHeader === 'rate' || lowerHeader === 'hourly rate of pay') {
+      targetField = 'hourly_rate';
     }
-    if (lowerHeader.includes('hourly rate') || lowerHeader === 'base rate' || lowerHeader === 'pay rate') {
-      return { sourceColumn: header, targetField: 'hourly_rate' };
+    else if (lowerHeader === 'rate 2') {
+      targetField = 'rate_2';
     }
-    if (lowerHeader.includes('rate 2')) {
-      return { sourceColumn: header, targetField: 'rate_2' };
+    else if (lowerHeader === 'rate 3') {
+      targetField = 'rate_3';
     }
-    if (lowerHeader.includes('rate 3')) {
-      return { sourceColumn: header, targetField: 'rate_3' };
+    else if (lowerHeader === 'rate 4') {
+      targetField = 'rate_4';
     }
-    if (lowerHeader.includes('rate 4')) {
-      return { sourceColumn: header, targetField: 'rate_4' };
+    else if (lowerHeader.includes('hours') && lowerHeader.includes('week')) {
+      targetField = 'hours_per_week';
     }
-    if (lowerHeader.includes('payroll id') || lowerHeader === 'employee id' || lowerHeader === 'staff id') {
-      return { sourceColumn: header, targetField: 'payroll_id' };
+    // Work pattern fields
+    else if (lowerHeader.includes('monday') && lowerHeader.includes('working')) {
+      targetField = 'monday_working';
     }
+    else if (lowerHeader.includes('monday') && lowerHeader.includes('start')) {
+      targetField = 'monday_start_time';
+    }
+    else if (lowerHeader.includes('monday') && lowerHeader.includes('end')) {
+      targetField = 'monday_end_time';
+    }
+    // Add mapping patterns for other days of the week...
     
-    // Work pattern mappings with better day handling
-    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    
-    for (const day of days) {
-      // Remove spaces and standardize day name for matching
-      const cleanHeader = lowerHeader.replace(/\s+/g, '');
-      const cleanDay = day.toLowerCase();
+    // Try to find an exact match if we didn't catch it with the rules above
+    if (!targetField) {
+      const cleanHeader = lowerHeader.replace(/[^a-z0-9]/g, '_');
       
-      if (cleanHeader === `${cleanDay}working` || 
-          cleanHeader === `${cleanDay}_working` || 
-          cleanHeader === `${cleanDay}works`) {
-        return { sourceColumn: header, targetField: `${day}_working` };
-      }
-      
-      if (cleanHeader.includes(`${cleanDay}start`) || 
-          cleanHeader.includes(`${cleanDay}_start`) || 
-          cleanHeader.includes(`${cleanDay}from`)) {
-        return { sourceColumn: header, targetField: `${day}_start_time` };
-      }
-      
-      if (cleanHeader.includes(`${cleanDay}end`) || 
-          cleanHeader.includes(`${cleanDay}_end`) || 
-          cleanHeader.includes(`${cleanDay}to`)) {
-        return { sourceColumn: header, targetField: `${day}_end_time` };
+      // Try to find an exact match in available fields
+      const exactMatch = availableFields.find(field => field === cleanHeader);
+      if (exactMatch) {
+        targetField = exactMatch;
       }
     }
     
-    // No match found
-    return { sourceColumn: header, targetField: null };
+    mappings.push({
+      sourceColumn: header,
+      targetField: targetField
+    });
   });
+
+  console.log("Generated column mappings:", mappings);
+  return mappings;
 };
