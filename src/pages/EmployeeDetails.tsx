@@ -17,6 +17,9 @@ const EmployeeDetails = () => {
     loading, 
     isAdmin,
     formattedAddress,
+    nextEmployeeId,
+    prevEmployeeId,
+    navigateToEmployee,
     deleteEmployee,
     fetchEmployeeData,
     updateEmployeeField
@@ -43,6 +46,9 @@ const EmployeeDetails = () => {
       <EmployeeHeader 
         employee={employee} 
         isAdmin={isAdmin} 
+        nextEmployeeId={nextEmployeeId}
+        prevEmployeeId={prevEmployeeId}
+        navigateToEmployee={navigateToEmployee}
         deleteEmployee={deleteEmployee} 
       />
       

@@ -34,6 +34,8 @@ export interface Employee {
 export const useEmployeeDetails = (employeeId: string | undefined) => {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
+  const [nextEmployeeId, setNextEmployeeId] = useState<string | null>(null);
+  const [prevEmployeeId, setPrevEmployeeId] = useState<string | null>(null);
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -55,6 +57,9 @@ export const useEmployeeDetails = (employeeId: string | undefined) => {
       
       console.log("Employee data retrieved:", data);
       setEmployee(data as Employee);
+      
+      // Fetch next and previous employee IDs
+      await fetchAdjacentEmployees(data.last_name, data.first_name, data.id);
     } catch (error: any) {
       console.error("Error in fetchEmployeeData:", error);
       toast({
@@ -64,6 +69,48 @@ export const useEmployeeDetails = (employeeId: string | undefined) => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const fetchAdjacentEmployees = async (lastName: string, firstName: string, currentId: string) => {
+    try {
+      // Fetch next employee (alphabetically by last name, then first name)
+      const { data: nextData, error: nextError } = await supabase
+        .from("employees")
+        .select("id")
+        .or(`last_name.gt.${lastName},and(last_name.eq.${lastName},first_name.gt.${firstName})`)
+        .order('last_name', { ascending: true })
+        .order('first_name', { ascending: true })
+        .limit(1);
+      
+      if (!nextError && nextData && nextData.length > 0) {
+        setNextEmployeeId(nextData[0].id);
+      } else {
+        setNextEmployeeId(null);
+      }
+      
+      // Fetch previous employee
+      const { data: prevData, error: prevError } = await supabase
+        .from("employees")
+        .select("id")
+        .or(`last_name.lt.${lastName},and(last_name.eq.${lastName},first_name.lt.${firstName})`)
+        .order('last_name', { ascending: false })
+        .order('first_name', { ascending: false })
+        .limit(1);
+      
+      if (!prevError && prevData && prevData.length > 0) {
+        setPrevEmployeeId(prevData[0].id);
+      } else {
+        setPrevEmployeeId(null);
+      }
+    } catch (error) {
+      console.error("Error fetching adjacent employees:", error);
+    }
+  };
+  
+  const navigateToEmployee = (id: string | null) => {
+    if (id) {
+      navigate(`/employee/${id}`);
     }
   };
   
@@ -166,6 +213,9 @@ export const useEmployeeDetails = (employeeId: string | undefined) => {
     loading,
     isAdmin,
     formattedAddress,
+    nextEmployeeId,
+    prevEmployeeId,
+    navigateToEmployee,
     deleteEmployee,
     fetchEmployeeData,
     updateEmployeeField
