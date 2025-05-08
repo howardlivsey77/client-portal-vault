@@ -33,6 +33,7 @@ export type Database = {
           rate_4: number | null
           updated_at: string
           user_id: string
+          work_pattern: string | null
         }
         Insert: {
           address1?: string | null
@@ -57,6 +58,7 @@ export type Database = {
           rate_4?: number | null
           updated_at?: string
           user_id: string
+          work_pattern?: string | null
         }
         Update: {
           address1?: string | null
@@ -81,6 +83,7 @@ export type Database = {
           rate_4?: number | null
           updated_at?: string
           user_id?: string
+          work_pattern?: string | null
         }
         Relationships: []
       }
