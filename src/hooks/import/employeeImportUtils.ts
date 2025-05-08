@@ -21,9 +21,12 @@ export const compareEmployees = (
   const updatedEmps: {existing: EmployeeData; imported: EmployeeData}[] = [];
   
   preview.forEach(importedEmp => {
+    // Find by email OR payroll_id to better match existing employees
     const existingEmp = existingEmployees.find(existing => 
-      existing.email && importedEmp.email && 
-      existing.email.toLowerCase() === importedEmp.email.toLowerCase()
+      (existing.email && importedEmp.email && 
+       existing.email.toLowerCase() === importedEmp.email.toLowerCase()) ||
+      (existing.payroll_id && importedEmp.payroll_id && 
+       existing.payroll_id.trim() === importedEmp.payroll_id.trim())
     );
     
     if (existingEmp) {

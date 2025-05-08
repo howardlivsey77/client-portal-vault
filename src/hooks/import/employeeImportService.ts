@@ -59,41 +59,51 @@ export const findExistingEmployees = async (importData: EmployeeData[]): Promise
       .map(emp => emp.email);
     
     const payrollIds = importData
-      .filter(emp => emp.payroll_id)
-      .map(emp => emp.payroll_id);
+      .filter(emp => emp.payroll_id && emp.payroll_id.trim() !== '')
+      .map(emp => emp.payroll_id.trim());
     
     console.log("Checking for existing employees with emails:", emails);
     console.log("Checking for existing employees with payroll IDs:", payrollIds);
     
-    // First check for existing employees with matching emails
-    const { data: emailMatches, error: emailError } = await supabase
-      .from("employees")
-      .select("*")
-      .in("email", emails.length > 0 ? emails : ['no-emails-found']);
+    let allMatches: EmployeeData[] = [];
     
-    if (emailError) throw emailError;
+    // Only run query if we have emails to check
+    if (emails.length > 0) {
+      // Check for existing employees with matching emails
+      const { data: emailMatches, error: emailError } = await supabase
+        .from("employees")
+        .select("*")
+        .in("email", emails);
+      
+      if (emailError) throw emailError;
+      
+      if (emailMatches) {
+        allMatches = [...emailMatches];
+      }
+    }
     
-    // Then check for existing employees with matching payroll IDs
-    const { data: payrollMatches, error: payrollError } = await supabase
-      .from("employees")
-      .select("*")
-      .in("payroll_id", payrollIds.length > 0 ? payrollIds : ['no-payroll-ids-found']);
-    
-    if (payrollError) throw payrollError;
-    
-    // Combine the results, removing duplicates
-    const allMatches = [...(emailMatches || [])];
-    
-    if (payrollMatches) {
-      payrollMatches.forEach(employee => {
-        if (!allMatches.some(e => e.id === employee.id)) {
-          allMatches.push(employee);
-        }
-      });
+    // Only run query if we have payroll IDs to check
+    if (payrollIds.length > 0) {
+      // Check for existing employees with matching payroll IDs
+      const { data: payrollMatches, error: payrollError } = await supabase
+        .from("employees")
+        .select("*")
+        .in("payroll_id", payrollIds);
+      
+      if (payrollError) throw payrollError;
+      
+      if (payrollMatches) {
+        // Add unique payroll matches (that aren't already in the array from email matches)
+        payrollMatches.forEach(employee => {
+          if (!allMatches.some(e => e.id === employee.id)) {
+            allMatches.push(employee);
+          }
+        });
+      }
     }
     
     console.log("Found existing employees:", allMatches);
-    return allMatches || [];
+    return allMatches;
   } catch (error) {
     console.error("Error checking for existing employees:", error);
     return [];

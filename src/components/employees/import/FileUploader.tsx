@@ -67,8 +67,20 @@ export const FileUploader = ({
         return;
       }
       
-      // Check for existing employees based on email or first name + last name
+      // Check for existing employees based on email and payroll ID
+      toast({
+        title: "Processing file",
+        description: "Checking for existing employees to update...",
+      });
+      
       const existingEmployees = await findExistingEmployees(transformedData);
+      
+      if (existingEmployees.length > 0) {
+        toast({
+          title: "Found existing employees",
+          description: `Found ${existingEmployees.length} existing employees that may be updated.`,
+        });
+      }
       
       // Pass the data back to parent component including existing employee data
       onFileProcessed(data, transformedData, mappings, headers, existingEmployees);
@@ -98,7 +110,7 @@ export const FileUploader = ({
       />
       <p className="text-sm text-muted-foreground">
         File must contain columns for first name, last name, and department.
-        To import work patterns, include columns for each day with working status and start/end times.
+        To update existing employees, include email or payroll ID that matches existing records.
       </p>
     </div>
   );
