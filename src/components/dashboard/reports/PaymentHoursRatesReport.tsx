@@ -1,9 +1,13 @@
+
 import { PaymentHoursRatesReport as PaymentHoursRatesReportComponent } from "./payment-hours-rates/PaymentHoursRatesReport";
 import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getProcessedPayrollData } from "@/components/payroll/hooks/usePayrollWizard";
 import { ExtraHoursSummary, EmployeeHoursData } from "@/components/payroll/types";
-import { fetchPayrollPeriods, fetchPayrollEmployeeDetails } from "@/services/payroll";
+import { 
+  fetchPayrollPeriods, 
+  fetchPayrollEmployeeDetails 
+} from "@/services/payroll";
 import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 

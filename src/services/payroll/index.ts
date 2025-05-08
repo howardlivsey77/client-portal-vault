@@ -1,3 +1,8 @@
 
 // Re-export payroll service functions
-export { processExtraHoursFile, savePayrollData } from './processExtraHours';
+export { 
+  processExtraHoursFile, 
+  savePayrollData,
+  fetchPayrollPeriods,
+  fetchPayrollEmployeeDetails
+} from './processExtraHours';
