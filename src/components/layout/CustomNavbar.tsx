@@ -25,7 +25,7 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
         <img 
           src="/lovable-uploads/88765623-01f7-44d0-8eca-60657594447c.png" 
           alt="Rams Brown Logo" 
-          className="h-8 mr-2" 
+          className="h-12 mr-2" 
         />
       </div>
       
