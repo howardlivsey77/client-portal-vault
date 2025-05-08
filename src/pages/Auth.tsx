@@ -115,7 +115,13 @@ const Auth = () => {
       <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto mt-16">
         <Card className="w-full">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Document Vault</CardTitle>
+            <div className="flex justify-center mb-2">
+              <img 
+                src="/lovable-uploads/3e0f0f1b-006e-4094-a7af-1a0b28bab13c.png" 
+                alt="Ramsay Brown Logo" 
+                className="h-16" 
+              />
+            </div>
             <CardDescription>
               Access your secure document portal
             </CardDescription>
