@@ -1,37 +1,21 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
+import { 
+  Employee, 
+  EmployeeDetailsHookReturn 
+} from "@/types/employeeDetails";
+import { 
+  fetchEmployeeWithNavigation, 
+  updateEmployeeFieldById, 
+  deleteEmployeeById 
+} from "@/services/employeeDetailsService";
 
-export interface Employee {
-  id: string;
-  first_name: string;
-  last_name: string;
-  department: string;
-  hire_date: string;
-  hours_per_week: number | null;
-  hourly_rate: number | null;
-  rate_2: number | null;
-  rate_3: number | null;
-  rate_4: number | null;
-  email: string | null;
-  address1: string | null;
-  address2: string | null;
-  address3: string | null;
-  address4: string | null;
-  postcode: string | null;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-  date_of_birth: string | null;
-  payroll_id: string | null;
-  gender: string | null;
-  work_pattern: string | null;
-}
+export { Employee } from "@/types/employeeDetails";
 
-export const useEmployeeDetails = (employeeId: string | undefined) => {
+export const useEmployeeDetails = (employeeId: string | undefined): EmployeeDetailsHookReturn => {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
   const [nextEmployeeId, setNextEmployeeId] = useState<string | null>(null);
@@ -45,21 +29,12 @@ export const useEmployeeDetails = (employeeId: string | undefined) => {
       if (!employeeId) return;
       
       setLoading(true);
-      console.log("Fetching employee data for ID:", employeeId);
       
-      const { data, error } = await supabase
-        .from("employees")
-        .select("*")
-        .eq("id", employeeId)
-        .single();
-        
-      if (error) throw error;
+      const { employee, nextEmployeeId, prevEmployeeId } = await fetchEmployeeWithNavigation(employeeId);
       
-      console.log("Employee data retrieved:", data);
-      setEmployee(data as Employee);
-      
-      // Fetch next and previous employee IDs
-      await fetchAdjacentEmployees(data.last_name, data.first_name, data.id);
+      setEmployee(employee);
+      setNextEmployeeId(nextEmployeeId);
+      setPrevEmployeeId(prevEmployeeId);
     } catch (error: any) {
       console.error("Error in fetchEmployeeData:", error);
       toast({
@@ -69,42 +44,6 @@ export const useEmployeeDetails = (employeeId: string | undefined) => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-  
-  const fetchAdjacentEmployees = async (lastName: string, firstName: string, currentId: string) => {
-    try {
-      // Fetch next employee (alphabetically by last name, then first name)
-      const { data: nextData, error: nextError } = await supabase
-        .from("employees")
-        .select("id")
-        .or(`last_name.gt.${lastName},and(last_name.eq.${lastName},first_name.gt.${firstName})`)
-        .order('last_name', { ascending: true })
-        .order('first_name', { ascending: true })
-        .limit(1);
-      
-      if (!nextError && nextData && nextData.length > 0) {
-        setNextEmployeeId(nextData[0].id);
-      } else {
-        setNextEmployeeId(null);
-      }
-      
-      // Fetch previous employee
-      const { data: prevData, error: prevError } = await supabase
-        .from("employees")
-        .select("id")
-        .or(`last_name.lt.${lastName},and(last_name.eq.${lastName},first_name.lt.${firstName})`)
-        .order('last_name', { ascending: false })
-        .order('first_name', { ascending: false })
-        .limit(1);
-      
-      if (!prevError && prevData && prevData.length > 0) {
-        setPrevEmployeeId(prevData[0].id);
-      } else {
-        setPrevEmployeeId(null);
-      }
-    } catch (error) {
-      console.error("Error fetching adjacent employees:", error);
     }
   };
   
@@ -132,12 +71,8 @@ export const useEmployeeDetails = (employeeId: string | undefined) => {
     try {
       setLoading(true);
       
-      const { error } = await supabase
-        .from("employees")
-        .delete()
-        .eq("id", employeeId);
-      
-      if (error) throw error;
+      if (!employeeId) return;
+      await deleteEmployeeById(employeeId);
       
       toast({
         title: "Employee deleted",
@@ -170,12 +105,7 @@ export const useEmployeeDetails = (employeeId: string | undefined) => {
     try {
       setLoading(true);
       
-      const { error } = await supabase
-        .from("employees")
-        .update({ [fieldName]: value })
-        .eq("id", employeeId);
-      
-      if (error) throw error;
+      await updateEmployeeFieldById(employeeId, fieldName, value);
       
       toast({
         title: "Update successful",
@@ -183,7 +113,7 @@ export const useEmployeeDetails = (employeeId: string | undefined) => {
       });
       
       // Refresh data
-      fetchEmployeeData();
+      await fetchEmployeeData();
       return true;
     } catch (error: any) {
       toast({

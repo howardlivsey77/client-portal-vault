@@ -12,7 +12,8 @@ import { defaultWorkPattern } from "@/types/employee";
 export const WorkPatternCard = ({ 
   employee, 
   isAdmin,
-  refetchEmployeeData
+  refetchEmployeeData,
+  updateEmployeeField
 }: WorkPatternCardProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
