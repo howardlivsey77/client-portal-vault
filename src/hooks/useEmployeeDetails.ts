@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +12,8 @@ import {
   deleteEmployeeById 
 } from "@/services/employeeDetailsService";
 
-export { Employee } from "@/types/employeeDetails";
+// Properly re-export the type using 'export type'
+export type { Employee } from "@/types/employeeDetails";
 
 export const useEmployeeDetails = (employeeId: string | undefined): EmployeeDetailsHookReturn => {
   const [employee, setEmployee] = useState<Employee | null>(null);

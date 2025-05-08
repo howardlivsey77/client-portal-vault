@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeData } from "@/components/employees/import/ImportConstants";
 import { roundToTwoDecimals } from "@/lib/formatters";
@@ -73,8 +72,12 @@ export const createNewEmployees = async (
     if (employeeData && employeeData.length > 0) {
       const employeeId = employeeData[0].id;
       
-      // Get work patterns data, either from the form or use default
-      let workPatterns: WorkDay[] = defaultWorkPattern;
+      // Get work patterns data, either from the form or use default with payrollId
+      let workPatterns: WorkDay[] = defaultWorkPattern.map(pattern => ({
+        ...pattern,
+        payrollId: emp.payroll_id || null
+      }));
+      
       const extractedPatterns = extractWorkPatternWithPayrollId(emp);
       if (extractedPatterns) {
         workPatterns = extractedPatterns;
@@ -160,9 +163,12 @@ export const updateExistingEmployees = async (
       
       // Update work patterns if we have them in the imported data
       if (existing.id) {
-        let workPatterns: WorkDay[] = defaultWorkPattern;
-        const extractedPatterns = extractWorkPatternWithPayrollId(imported);
+        let workPatterns: WorkDay[] = defaultWorkPattern.map(pattern => ({
+          ...pattern,
+          payrollId: imported.payroll_id || null
+        }));
         
+        const extractedPatterns = extractWorkPatternWithPayrollId(imported);
         if (extractedPatterns) {
           workPatterns = extractedPatterns;
           

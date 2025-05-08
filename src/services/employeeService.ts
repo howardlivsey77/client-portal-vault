@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeFormValues, defaultWorkPattern } from "@/types/employee";
 import { roundToTwoDecimals } from "@/lib/formatters";
@@ -49,10 +50,19 @@ export const createEmployee = async (employeeData: EmployeeFormValues, userId: s
     const employeeId = data[0].id;
     
     // Get work patterns data, either from the form or use default
-    let workPatterns: WorkDay[] = defaultWorkPattern;
+    let workPatterns: WorkDay[] = defaultWorkPattern.map(pattern => ({
+      ...pattern,
+      payrollId: employeeData.payroll_id || null
+    }));
+    
     if (employeeData.work_pattern) {
       try {
-        workPatterns = JSON.parse(employeeData.work_pattern);
+        // Parse the work pattern and ensure it has payrollId
+        const parsedPattern = JSON.parse(employeeData.work_pattern);
+        workPatterns = parsedPattern.map((pattern: any) => ({
+          ...pattern,
+          payrollId: employeeData.payroll_id || null
+        }));
       } catch (e) {
         console.error("Failed to parse work pattern, using default:", e);
       }

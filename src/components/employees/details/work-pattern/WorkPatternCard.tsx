@@ -17,7 +17,13 @@ export const WorkPatternCard = ({
 }: WorkPatternCardProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [workPattern, setWorkPattern] = useState<WorkDay[]>(defaultWorkPattern);
+  const [workPattern, setWorkPattern] = useState<WorkDay[]>(
+    // Initialize with payrollId
+    defaultWorkPattern.map(pattern => ({
+      ...pattern,
+      payrollId: employee.payroll_id || null
+    }))
+  );
   const { toast } = useToast();
   
   useEffect(() => {

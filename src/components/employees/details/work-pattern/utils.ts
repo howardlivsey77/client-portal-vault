@@ -1,4 +1,3 @@
-
 import { WorkDay } from "./types";
 import { defaultWorkPattern } from "@/types/employee";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,7 +38,7 @@ export const fetchWorkPatterns = async (employeeId: string): Promise<WorkDay[]> 
           isWorking: pattern.is_working,
           startTime: pattern.start_time,
           endTime: pattern.end_time,
-          payrollId: pattern.payroll_id || payrollId // Use pattern payroll_id if available, otherwise use employee's
+          payrollId: pattern.payroll_id || payrollId
         });
       });
 
@@ -63,7 +62,11 @@ export const fetchWorkPatterns = async (employeeId: string): Promise<WorkDay[]> 
     }));
   } catch (e) {
     console.error("Error in fetchWorkPatterns:", e);
-    return defaultWorkPattern;
+    // Make sure to include payrollId in the default pattern
+    return defaultWorkPattern.map(pattern => ({
+      ...pattern,
+      payrollId: null
+    }));
   }
 };
 
@@ -154,7 +157,8 @@ export const fetchWorkPatternsByPayrollId = async (payrollId: string): Promise<W
           day: pattern.day,
           isWorking: pattern.is_working,
           startTime: pattern.start_time,
-          endTime: pattern.end_time
+          endTime: pattern.end_time,
+          payrollId: pattern.payroll_id || payrollId
         });
       });
 
@@ -165,15 +169,23 @@ export const fetchWorkPatternsByPayrollId = async (payrollId: string): Promise<W
           day,
           isWorking: false,
           startTime: null,
-          endTime: null
+          endTime: null,
+          payrollId: payrollId
         };
       });
     }
     
-    return defaultWorkPattern;
+    // Make sure to include payrollId in the default pattern
+    return defaultWorkPattern.map(pattern => ({
+      ...pattern,
+      payrollId: payrollId
+    }));
   } catch (e) {
     console.error("Error in fetchWorkPatternsByPayrollId:", e);
-    return defaultWorkPattern;
+    return defaultWorkPattern.map(pattern => ({
+      ...pattern,
+      payrollId: null
+    }));
   }
 };
 
