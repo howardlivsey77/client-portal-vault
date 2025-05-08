@@ -1,6 +1,7 @@
 
 import { WorkDay } from "../types";
 import { supabase } from "@/integrations/supabase/client";
+import { DAYS_OF_WEEK } from "../utils/constants";
 
 export const saveWorkPatterns = async (employeeId: string, patterns: WorkDay[]): Promise<boolean> => {
   try {
@@ -17,9 +18,8 @@ export const saveWorkPatterns = async (employeeId: string, patterns: WorkDay[]):
     
     const payrollId = patterns[0]?.payrollId || employeeData?.payroll_id || null;
     
-    // Ensure we have exactly 7 days
-    const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-    const completePatterns = daysOfWeek.map(day => {
+    // Ensure we have exactly 7 days using the DAYS_OF_WEEK constant
+    const completePatterns = DAYS_OF_WEEK.map(day => {
       const existingPattern = patterns.find(p => p.day === day);
       return existingPattern || {
         day,
