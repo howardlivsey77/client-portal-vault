@@ -2,7 +2,13 @@
 // Re-export from smaller utility files
 export { readFileData } from './fileParsingUtils';
 export { autoMapColumns, saveMappings, loadSavedMappings, clearSavedMappings } from './columnMappingUtils';
-export { transformData, excelDateToISO } from './dataTransformUtils';
+export { 
+  transformData,
+  excelDateToISO,
+  normalizeTimeString,
+  parseBooleanValue,
+  extractWorkPattern 
+} from './dataTransformUtils';
 
 // Legacy export to maintain backward compatibility with the original functionality
 import { EmployeeData, ColumnMapping } from "./ImportConstants";
