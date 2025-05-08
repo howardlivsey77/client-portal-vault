@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -104,6 +105,46 @@ export const useEmployeeDetails = (employeeId: string | undefined) => {
     }
   };
 
+  // Update specific field
+  const updateEmployeeField = async (fieldName: string, value: any) => {
+    if (!isAdmin || !employeeId) {
+      toast({
+        title: "Permission denied",
+        description: "Only administrators can edit employee records.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from("employees")
+        .update({ [fieldName]: value })
+        .eq("id", employeeId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Update successful",
+        description: "Employee information has been updated.",
+      });
+      
+      // Refresh data
+      fetchEmployeeData();
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Error updating employee",
+        description: error.message,
+        variant: "destructive"
+      });
+      setLoading(false);
+      return false;
+    }
+  };
+
   useEffect(() => {
     if (employeeId) {
       fetchEmployeeData();
@@ -122,6 +163,7 @@ export const useEmployeeDetails = (employeeId: string | undefined) => {
     isAdmin,
     formattedAddress,
     deleteEmployee,
-    fetchEmployeeData
+    fetchEmployeeData,
+    updateEmployeeField
   };
 };

@@ -18,7 +18,8 @@ const EmployeeDetails = () => {
     isAdmin,
     formattedAddress,
     deleteEmployee,
-    fetchEmployeeData
+    fetchEmployeeData,
+    updateEmployeeField
   } = useEmployeeDetails(id);
   
   if (loading) {
@@ -46,13 +47,26 @@ const EmployeeDetails = () => {
       />
       
       <div className="grid gap-6 md:grid-cols-2">
-        <PersonalInfoCard employee={employee} />
-        <ContactInfoCard employee={employee} formattedAddress={formattedAddress} />
+        <PersonalInfoCard 
+          employee={employee}
+          isAdmin={isAdmin}
+          updateEmployeeField={updateEmployeeField}
+        />
+        
+        <ContactInfoCard 
+          employee={employee} 
+          formattedAddress={formattedAddress}
+          isAdmin={isAdmin}
+          updateEmployeeField={updateEmployeeField} 
+        />
+        
         <WorkPatternCard 
           employee={employee} 
           isAdmin={isAdmin}
           refetchEmployeeData={fetchEmployeeData}
+          updateEmployeeField={updateEmployeeField}
         />
+        
         <SystemInfoCard employee={employee} />
       </div>
     </PageContainer>
