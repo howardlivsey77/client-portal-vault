@@ -31,7 +31,15 @@ export const WorkPatternDialog = ({
   const toggleWorkDay = (index: number) => {
     setWorkPattern(
       workPattern.map((day, i) =>
-        i === index ? { ...day, isWorking: !day.isWorking } : day
+        i === index 
+          ? { 
+              ...day, 
+              isWorking: !day.isWorking,
+              // Reset times to null when toggling from working to non-working
+              startTime: !day.isWorking ? day.startTime : null,
+              endTime: !day.isWorking ? day.endTime : null
+            } 
+          : day
       )
     );
   };
@@ -65,6 +73,16 @@ export const WorkPatternDialog = ({
 
   const handleSave = async () => {
     setSaving(true);
+    
+    // Ensure all non-working days have null start and end times
+    const sanitizedPattern = workPattern.map(day => ({
+      ...day,
+      startTime: day.isWorking ? day.startTime : null,
+      endTime: day.isWorking ? day.endTime : null
+    }));
+    
+    setWorkPattern(sanitizedPattern);
+    
     const success = await saveWorkPattern();
     setSaving(false);
     

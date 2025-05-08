@@ -35,11 +35,12 @@ export const fetchWorkPatterns = async (employeeId: string): Promise<WorkDay[]> 
       // Create a map of the fetched patterns by day
       const patternsByDay = new Map();
       data.forEach(pattern => {
+        // Ensure that non-working days have null start and end times
         patternsByDay.set(pattern.day, {
           day: pattern.day,
           isWorking: pattern.is_working,
-          startTime: pattern.start_time,
-          endTime: pattern.end_time,
+          startTime: pattern.is_working ? pattern.start_time : null,
+          endTime: pattern.is_working ? pattern.end_time : null,
           payrollId: pattern.payroll_id || payrollId
         });
       });
@@ -59,6 +60,8 @@ export const fetchWorkPatterns = async (employeeId: string): Promise<WorkDay[]> 
     // If no patterns found, return the default pattern with payroll_id
     return defaultWorkPattern.map(pattern => ({
       ...pattern,
+      startTime: pattern.isWorking ? pattern.startTime : null,
+      endTime: pattern.isWorking ? pattern.endTime : null,
       payrollId: payrollId
     }));
   } catch (e) {
@@ -66,6 +69,8 @@ export const fetchWorkPatterns = async (employeeId: string): Promise<WorkDay[]> 
     // Make sure to include payrollId in the default pattern
     return defaultWorkPattern.map(pattern => ({
       ...pattern,
+      startTime: pattern.isWorking ? pattern.startTime : null,
+      endTime: pattern.isWorking ? pattern.endTime : null,
       payrollId: null
     }));
   }
@@ -88,11 +93,12 @@ export const fetchWorkPatternsByPayrollId = async (payrollId: string): Promise<W
       // Create a map of the fetched patterns by day
       const patternsByDay = new Map();
       data.forEach(pattern => {
+        // Ensure that non-working days have null start and end times
         patternsByDay.set(pattern.day, {
           day: pattern.day,
           isWorking: pattern.is_working,
-          startTime: pattern.start_time,
-          endTime: pattern.end_time,
+          startTime: pattern.is_working ? pattern.start_time : null,
+          endTime: pattern.is_working ? pattern.end_time : null,
           payrollId: pattern.payroll_id || payrollId
         });
       });
@@ -112,12 +118,16 @@ export const fetchWorkPatternsByPayrollId = async (payrollId: string): Promise<W
     // Make sure to include payrollId in the default pattern
     return defaultWorkPattern.map(pattern => ({
       ...pattern,
+      startTime: pattern.isWorking ? pattern.startTime : null,
+      endTime: pattern.isWorking ? pattern.endTime : null,
       payrollId: payrollId
     }));
   } catch (e) {
     console.error("Error in fetchWorkPatternsByPayrollId:", e);
     return defaultWorkPattern.map(pattern => ({
       ...pattern,
+      startTime: pattern.isWorking ? pattern.startTime : null,
+      endTime: pattern.isWorking ? pattern.endTime : null,
       payrollId: null
     }));
   }

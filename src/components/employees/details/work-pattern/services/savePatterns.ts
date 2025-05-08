@@ -21,7 +21,18 @@ export const saveWorkPatterns = async (employeeId: string, patterns: WorkDay[]):
     // Ensure we have exactly 7 days using the DAYS_OF_WEEK constant
     const completePatterns = DAYS_OF_WEEK.map(day => {
       const existingPattern = patterns.find(p => p.day === day);
-      return existingPattern || {
+      
+      // Ensure that non-working days have null start and end times
+      if (existingPattern) {
+        return {
+          ...existingPattern,
+          startTime: existingPattern.isWorking ? existingPattern.startTime : null,
+          endTime: existingPattern.isWorking ? existingPattern.endTime : null,
+          payrollId: payrollId
+        };
+      }
+      
+      return {
         day,
         isWorking: false,
         startTime: null,
