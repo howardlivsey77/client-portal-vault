@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { readFileData, autoMapColumns, transformData } from "./ImportUtils";
+import { readFileData, autoMapColumns, transformData, hasDuplicatePayrollIds } from "./ImportUtils";
 import { EmployeeData, ColumnMapping } from "./ImportConstants";
 import { findExistingEmployees } from "@/hooks/import/employeeImportService";
 import { WorkPatternImportGuide } from "./WorkPatternImportGuide";
@@ -55,6 +55,17 @@ export const FileUploader = ({
       // Transform the data based on mappings
       const transformedData = transformData(data, mappings);
       console.log("Transformed data:", transformedData);
+      
+      // Check for duplicate payroll IDs within the imported data
+      const { hasDuplicates, duplicates } = hasDuplicatePayrollIds(transformedData);
+      if (hasDuplicates) {
+        toast({
+          title: "Duplicate payroll IDs detected",
+          description: `Your import contains duplicate payroll IDs: ${duplicates.join(', ')}. Please ensure all payroll IDs are unique.`,
+          variant: "destructive"
+        });
+        return;
+      }
       
       // Check for existing employees based on email or first name + last name
       const existingEmployees = await findExistingEmployees(transformedData);

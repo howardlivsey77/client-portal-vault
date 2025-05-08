@@ -3,7 +3,7 @@ import { ColumnMapping } from "./ImportConstants";
 
 // Import from utility files
 import { autoMapColumns } from "./utils/autoMapper";
-import { areRequiredFieldsMapped as checkRequiredFields } from "./utils/mappingValidation";
+import { areRequiredFieldsMapped as checkRequiredFields, hasDuplicatePayrollIds } from "./utils/mappingValidation";
 import { saveMappings, loadSavedMappings, clearSavedMappings } from "./utils/mappingStorage";
 
 // Re-export all functions
@@ -11,7 +11,8 @@ export {
   autoMapColumns,
   saveMappings, 
   loadSavedMappings, 
-  clearSavedMappings 
+  clearSavedMappings,
+  hasDuplicatePayrollIds 
 };
 
 // Original function for backward compatibility

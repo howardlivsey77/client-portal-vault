@@ -1,7 +1,13 @@
 
 // Re-export from smaller utility files
 export { readFileData } from './fileParsingUtils';
-export { autoMapColumns, saveMappings, loadSavedMappings, clearSavedMappings } from './columnMappingUtils';
+export { 
+  autoMapColumns, 
+  saveMappings, 
+  loadSavedMappings, 
+  clearSavedMappings, 
+  hasDuplicatePayrollIds 
+} from './columnMappingUtils';
 export { 
   transformData,
   excelDateToISO,
