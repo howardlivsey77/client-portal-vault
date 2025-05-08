@@ -20,44 +20,50 @@ export const compareEmployees = (
   const newEmps: EmployeeData[] = [];
   const updatedEmps: {existing: EmployeeData; imported: EmployeeData}[] = [];
   
+  // First, validate we have existing employees data
+  console.log(`Comparing ${preview.length} imported records against ${existingEmployees.length} existing employees`);
+  
   preview.forEach(importedEmp => {
-    // Find by email OR payroll_id to better match existing employees
-    const existingEmp = existingEmployees.find(existing => 
-      (existing.email && importedEmp.email && 
-       existing.email.toLowerCase() === importedEmp.email.toLowerCase()) ||
-      (existing.payroll_id && importedEmp.payroll_id && 
-       existing.payroll_id.trim() === importedEmp.payroll_id.trim())
-    );
+    // Normalize data for comparison
+    const importedEmail = importedEmp.email ? importedEmp.email.toLowerCase().trim() : null;
+    const importedPayrollId = importedEmp.payroll_id ? importedEmp.payroll_id.trim() : null;
+    
+    // Find matching existing employee by email OR payroll_id
+    const existingEmp = existingEmployees.find(existing => {
+      // Match by payroll ID if both have valid payroll IDs
+      if (importedPayrollId && existing.payroll_id) {
+        if (existing.payroll_id.trim() === importedPayrollId) {
+          console.log(`Found match by payroll ID: ${importedPayrollId}`);
+          return true;
+        }
+      }
+      
+      // Match by email if both have valid emails
+      if (importedEmail && existing.email) {
+        const existingEmail = existing.email.toLowerCase().trim();
+        if (existingEmail === importedEmail) {
+          console.log(`Found match by email: ${importedEmail}`);
+          return true;
+        }
+      }
+      
+      return false;
+    });
     
     if (existingEmp) {
-      // Check for changes in standard fields
-      const hasStandardChanges = Object.keys(importedEmp).some(key => {
-        if (key === 'id' || key.startsWith('rate_')) return false;
-        
-        return importedEmp[key] !== undefined && 
-              importedEmp[key] !== null && 
-              importedEmp[key] !== '' && 
-              importedEmp[key] !== existingEmp[key];
-      });
-
-      // Check for changes in rate fields - consider any imported rates as changes
-      // since we want to always update them if present
-      const hasRateChanges = ['rate_2', 'rate_3', 'rate_4'].some(rateKey => 
-        importedEmp[rateKey] !== undefined && 
-        importedEmp[rateKey] !== null && 
-        importedEmp[rateKey] !== ''
-      );
+      console.log(`Employee found - treating as update: ${existingEmp.first_name} ${existingEmp.last_name} (ID: ${existingEmp.id})`);
       
-      if (hasStandardChanges || hasRateChanges) {
-        updatedEmps.push({
-          existing: existingEmp,
-          imported: importedEmp
-        });
-      }
+      // Always add to updatedEmps if we found a match - it's clearly an update operation
+      updatedEmps.push({
+        existing: existingEmp,
+        imported: importedEmp
+      });
     } else {
+      console.log(`No match found - treating as new employee: ${importedEmp.first_name} ${importedEmp.last_name}`);
       newEmps.push(importedEmp);
     }
   });
   
+  console.log(`Comparison results: ${newEmps.length} new employees, ${updatedEmps.length} employees to update`);
   return { newEmployees: newEmps, updatedEmployees: updatedEmps };
 };

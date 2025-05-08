@@ -9,6 +9,8 @@ import { checkDuplicatePayrollIds } from "./checkExistingService";
 export const updateExistingEmployees = async (
   updatedEmployees: {existing: EmployeeData; imported: EmployeeData}[]
 ) => {
+  console.log(`Processing ${updatedEmployees.length} employee updates`);
+  
   // Extract all new payroll IDs from updates where they differ from existing
   const newPayrollIds = updatedEmployees
     .filter(({ existing, imported }) => 
@@ -23,20 +25,22 @@ export const updateExistingEmployees = async (
     
     // If we have duplicate payroll IDs, throw an error
     if (existingPayrollIds.length > 0) {
+      console.error("Duplicate payroll IDs found in database:", existingPayrollIds);
       throw new Error(`duplicate key value violates unique constraint "unique_payroll_id" for IDs: ${existingPayrollIds.join(', ')}`);
     }
   }
   
   for (const { existing, imported } of updatedEmployees) {
-    console.log("Updating employee:", existing.id);
+    console.log(`Updating employee ID ${existing.id}: ${existing.first_name} ${existing.last_name}`);
     
     const updates: any = {};
     
-    // Only include fields that have changed
+    // Only include fields that have values in the imported data
+    // This ensures we don't overwrite existing data with empty values
     Object.keys(imported).forEach(key => {
       if (key !== 'id' && key !== 'work_pattern' && 
           imported[key] !== undefined && imported[key] !== null && 
-          imported[key] !== '' && imported[key] !== existing[key]) {
+          imported[key] !== '') {
         
         // For payroll_id, ensure it's trimmed
         if (key === 'payroll_id' && imported[key]) {
@@ -47,27 +51,30 @@ export const updateExistingEmployees = async (
       }
     });
     
-    // Always include rounded rate fields in updates if they exist in the imported data
-    if (imported.rate_2 !== undefined) updates.rate_2 = roundToTwoDecimals(imported.rate_2);
-    if (imported.rate_3 !== undefined) updates.rate_3 = roundToTwoDecimals(imported.rate_3);
-    if (imported.rate_4 !== undefined) updates.rate_4 = roundToTwoDecimals(imported.rate_4);
+    // Always round numeric fields
+    if ('hourly_rate' in updates) updates.hourly_rate = roundToTwoDecimals(updates.hourly_rate);
+    if ('rate_2' in updates) updates.rate_2 = roundToTwoDecimals(updates.rate_2);
+    if ('rate_3' in updates) updates.rate_3 = roundToTwoDecimals(updates.rate_3);
+    if ('rate_4' in updates) updates.rate_4 = roundToTwoDecimals(updates.rate_4);
     
-    // Update hourly_rate with rounding
-    if (imported.hourly_rate !== undefined) {
-      updates.hourly_rate = roundToTwoDecimals(imported.hourly_rate);
-    }
+    console.log("Applying these updates:", updates);
     
-    // Update employee if there are changes
+    // Only update if there are actual changes
     if (Object.keys(updates).length > 0) {
-      console.log("Updating employee with data:", updates);
       const { error: updateError } = await supabase
         .from("employees")
         .update(updates)
         .eq("id", existing.id);
       
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Error updating employee:", updateError);
+        throw updateError;
+      }
+    } else {
+      console.log("No fields to update for this employee");
     }
     
+    // Always check for work pattern updates
     await updateWorkPatterns(imported, existing.id);
   }
 };

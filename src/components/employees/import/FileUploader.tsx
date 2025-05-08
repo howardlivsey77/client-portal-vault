@@ -5,8 +5,10 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { readFileData, autoMapColumns, transformData, hasDuplicatePayrollIds } from "./ImportUtils";
 import { EmployeeData, ColumnMapping } from "./ImportConstants";
-import { findExistingEmployees } from "@/hooks/import/employeeImportService";
+import { findExistingEmployees } from "@/services/employeeImport";
 import { WorkPatternImportGuide } from "./WorkPatternImportGuide";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
 
 interface FileUploaderProps {
   onFileProcessed: (
@@ -56,6 +58,15 @@ export const FileUploader = ({
       const transformedData = transformData(data, mappings);
       console.log("Transformed data:", transformedData);
       
+      if (transformedData.length === 0) {
+        toast({
+          title: "No valid data found",
+          description: "Could not extract employee data. Please check your file format and column mappings.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       // Check for duplicate payroll IDs within the imported data
       const { hasDuplicates, duplicates } = hasDuplicatePayrollIds(transformedData);
       if (hasDuplicates) {
@@ -78,7 +89,7 @@ export const FileUploader = ({
       if (existingEmployees.length > 0) {
         toast({
           title: "Found existing employees",
-          description: `Found ${existingEmployees.length} existing employees that may be updated.`,
+          description: `Found ${existingEmployees.length} existing employees that will be updated instead of created.`,
         });
       }
       
@@ -95,11 +106,21 @@ export const FileUploader = ({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Label htmlFor="file">Upload Excel or CSV file</Label>
         <WorkPatternImportGuide />
       </div>
+      
+      <Alert className="mb-4 bg-blue-50">
+        <InfoIcon className="h-4 w-4" />
+        <AlertTitle>Employee Update Process</AlertTitle>
+        <AlertDescription>
+          To update existing employees, include either their email address or payroll ID in the file.
+          Employees will be matched based on these fields and updated instead of creating duplicates.
+        </AlertDescription>
+      </Alert>
+      
       <Input 
         id="file" 
         type="file" 
@@ -110,7 +131,7 @@ export const FileUploader = ({
       />
       <p className="text-sm text-muted-foreground">
         File must contain columns for first name, last name, and department.
-        To update existing employees, include email or payroll ID that matches existing records.
+        Updates to existing employees will be detected automatically if email or payroll ID matches.
       </p>
     </div>
   );

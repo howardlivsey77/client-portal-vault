@@ -9,6 +9,10 @@ export interface ImportResult {
   success: boolean;
   message: string;
   error?: any;
+  details?: {
+    newCount: number;
+    updateCount: number;
+  };
 }
 
 // Handle the import operation
@@ -17,6 +21,8 @@ export const executeImport = async (
   updatedEmployees: { existing: EmployeeData; imported: EmployeeData }[]
 ): Promise<ImportResult> => {
   try {
+    console.log(`Starting import with ${newEmployees.length} new employees and ${updatedEmployees.length} updates`);
+    
     // Get the current user's ID
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -24,17 +30,31 @@ export const executeImport = async (
       throw new Error("User not authenticated");
     }
     
-    // Process new employees
-    await createNewEmployees(newEmployees, user.id);
+    // Process updated employees first
+    if (updatedEmployees.length > 0) {
+      console.log(`Processing ${updatedEmployees.length} employee updates`);
+      await updateExistingEmployees(updatedEmployees);
+    }
     
-    // Process updated employees
-    await updateExistingEmployees(updatedEmployees);
+    // Process new employees if any
+    if (newEmployees.length > 0) {
+      console.log(`Processing ${newEmployees.length} new employees`);
+      await createNewEmployees(newEmployees, user.id);
+    }
     
     return {
       success: true,
-      message: `${newEmployees.length} employees added and ${updatedEmployees.length} employees updated.`
+      message: `${updatedEmployees.length > 0 ? `${updatedEmployees.length} employees updated` : ""}${
+        newEmployees.length > 0 && updatedEmployees.length > 0 ? " and " : ""
+      }${newEmployees.length > 0 ? `${newEmployees.length} employees added` : ""}.`,
+      details: {
+        newCount: newEmployees.length,
+        updateCount: updatedEmployees.length
+      }
     };
   } catch (error: any) {
+    console.error("Import failed with error:", error);
+    
     // Check for specific database constraint violations
     if (error.message && error.message.includes("unique_payroll_id")) {
       return {
@@ -59,3 +79,6 @@ export {
   createNewEmployees,
   updateExistingEmployees
 };
+
+// Use 'export type' when re-exporting types with isolatedModules enabled
+export type { ImportResult };

@@ -25,7 +25,7 @@ export const findExistingEmployees = async (importData: EmployeeData[]): Promise
     // Extract emails and payroll_ids from import data
     const emails = importData
       .filter(emp => emp.email)
-      .map(emp => emp.email);
+      .map(emp => emp.email.toLowerCase().trim());
     
     const payrollIds = importData
       .filter(emp => emp.payroll_id && emp.payroll_id.trim() !== '')
