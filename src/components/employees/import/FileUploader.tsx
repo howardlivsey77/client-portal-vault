@@ -8,7 +8,7 @@ import { EmployeeData, ColumnMapping } from "./ImportConstants";
 import { findExistingEmployees } from "@/services/employeeImport";
 import { WorkPatternImportGuide } from "./WorkPatternImportGuide";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { InfoIcon } from "lucide-react";
+import { InfoIcon, AlertCircle } from "lucide-react";
 
 interface FileUploaderProps {
   onFileProcessed: (
@@ -27,12 +27,14 @@ export const FileUploader = ({
 }: FileUploaderProps) => {
   const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) {
       return;
     }
 
+    setError(null);
     const selectedFile = e.target.files[0];
     setFile(selectedFile);
     
@@ -42,6 +44,7 @@ export const FileUploader = ({
       console.log("File parsed successfully, headers:", headers);
 
       if (!data || data.length === 0) {
+        setError("No data found in the selected file. Please check the file content.");
         toast({
           title: "No data found",
           description: "The selected file does not contain any data.",
@@ -59,6 +62,7 @@ export const FileUploader = ({
       console.log("Transformed data:", transformedData);
       
       if (transformedData.length === 0) {
+        setError("Could not extract valid employee data. Please check column mappings or file format.");
         toast({
           title: "No valid data found",
           description: "Could not extract employee data. Please check your file format and column mappings.",
@@ -70,6 +74,7 @@ export const FileUploader = ({
       // Check for duplicate payroll IDs within the imported data
       const { hasDuplicates, duplicates } = hasDuplicatePayrollIds(transformedData);
       if (hasDuplicates) {
+        setError(`Duplicate payroll IDs detected: ${duplicates.join(', ')}. Please ensure all payroll IDs are unique.`);
         toast({
           title: "Duplicate payroll IDs detected",
           description: `Your import contains duplicate payroll IDs: ${duplicates.join(', ')}. Please ensure all payroll IDs are unique.`,
@@ -97,6 +102,7 @@ export const FileUploader = ({
       onFileProcessed(data, transformedData, mappings, headers, existingEmployees);
     } catch (error: any) {
       console.error("Error processing file:", error);
+      setError(error.message || "Failed to process file");
       toast({
         title: "Error parsing file",
         description: error.message || "Please make sure your file is a valid Excel or CSV file.",
@@ -120,6 +126,14 @@ export const FileUploader = ({
           Employees will be matched based on these fields and updated instead of creating duplicates.
         </AlertDescription>
       </Alert>
+      
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error Processing File</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
       
       <Input 
         id="file" 

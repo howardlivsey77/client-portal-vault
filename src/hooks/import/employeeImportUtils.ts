@@ -25,24 +25,25 @@ export const compareEmployees = (
   
   preview.forEach(importedEmp => {
     // Normalize data for comparison
-    const importedEmail = importedEmp.email ? importedEmp.email.toLowerCase().trim() : null;
-    const importedPayrollId = importedEmp.payroll_id ? importedEmp.payroll_id.trim() : null;
+    const importedEmail = importedEmp.email ? String(importedEmp.email).toLowerCase().trim() : null;
+    const importedPayrollId = importedEmp.payroll_id ? String(importedEmp.payroll_id).trim() : null;
     
     // Find matching existing employee by email OR payroll_id
     const existingEmp = existingEmployees.find(existing => {
       // Match by payroll ID if both have valid payroll IDs
       if (importedPayrollId && existing.payroll_id) {
-        if (existing.payroll_id.trim() === importedPayrollId) {
-          console.log(`Found match by payroll ID: ${importedPayrollId}`);
+        const existingPayrollId = String(existing.payroll_id).trim();
+        if (existingPayrollId === importedPayrollId) {
+          console.log(`Found match by payroll ID: ${importedPayrollId} for employee ${importedEmp.first_name} ${importedEmp.last_name}`);
           return true;
         }
       }
       
       // Match by email if both have valid emails
       if (importedEmail && existing.email) {
-        const existingEmail = existing.email.toLowerCase().trim();
+        const existingEmail = String(existing.email).toLowerCase().trim();
         if (existingEmail === importedEmail) {
-          console.log(`Found match by email: ${importedEmail}`);
+          console.log(`Found match by email: ${importedEmail} for employee ${importedEmp.first_name} ${importedEmp.last_name}`);
           return true;
         }
       }

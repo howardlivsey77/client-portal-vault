@@ -24,11 +24,11 @@ export const findExistingEmployees = async (importData: EmployeeData[]): Promise
   try {
     // Extract emails and payroll_ids from import data
     const emails = importData
-      .filter(emp => emp.email)
+      .filter(emp => emp.email && typeof emp.email === 'string')
       .map(emp => emp.email.toLowerCase().trim());
     
     const payrollIds = importData
-      .filter(emp => emp.payroll_id && emp.payroll_id.trim() !== '')
+      .filter(emp => emp.payroll_id && typeof emp.payroll_id === 'string' && emp.payroll_id.trim() !== '')
       .map(emp => emp.payroll_id.trim());
     
     console.log("Checking for existing employees with emails:", emails);
@@ -44,9 +44,13 @@ export const findExistingEmployees = async (importData: EmployeeData[]): Promise
         .select("*")
         .in("email", emails);
       
-      if (emailError) throw emailError;
+      if (emailError) {
+        console.error("Error checking emails:", emailError);
+        throw emailError;
+      }
       
       if (emailMatches) {
+        console.log(`Found ${emailMatches.length} matches by email`);
         allMatches = [...emailMatches];
       }
     }
@@ -59,9 +63,13 @@ export const findExistingEmployees = async (importData: EmployeeData[]): Promise
         .select("*")
         .in("payroll_id", payrollIds);
       
-      if (payrollError) throw payrollError;
+      if (payrollError) {
+        console.error("Error checking payroll IDs:", payrollError);
+        throw payrollError;
+      }
       
       if (payrollMatches) {
+        console.log(`Found ${payrollMatches.length} matches by payroll ID`);
         // Add unique payroll matches (that aren't already in the array from email matches)
         payrollMatches.forEach(employee => {
           if (!allMatches.some(e => e.id === employee.id)) {

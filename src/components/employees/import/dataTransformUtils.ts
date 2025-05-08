@@ -17,6 +17,7 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): 
   
   // First check if we have any data to transform
   if (!data || data.length === 0) {
+    console.log("No data to transform");
     return [];
   }
   
@@ -25,42 +26,55 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): 
     
     mappings.forEach(mapping => {
       if (mapping.targetField && row[mapping.sourceColumn] !== undefined) {
+        const sourceValue = row[mapping.sourceColumn];
+        
+        // Skip empty values except for boolean fields which could legitimately be false
+        if (sourceValue === null || sourceValue === '' && !mapping.targetField.endsWith('_working')) {
+          return;
+        }
+        
         // Handle date fields specifically
         if (mapping.targetField === 'date_of_birth' || mapping.targetField === 'hire_date') {
-          const dateValue = row[mapping.sourceColumn];
-          const isoDate = excelDateToISO(dateValue);
-          transformedRow[mapping.targetField] = isoDate;
+          const isoDate = excelDateToISO(sourceValue);
+          if (isoDate) {
+            transformedRow[mapping.targetField] = isoDate;
+          }
         } 
         // Handle rate fields to ensure they're numeric
         else if (mapping.targetField === 'rate_2' || mapping.targetField === 'rate_3' || mapping.targetField === 'rate_4' || 
-                 mapping.targetField === 'hourly_rate') {
-          const rateValue = row[mapping.sourceColumn];
-          if (rateValue !== undefined && rateValue !== null && rateValue !== '') {
-            // Parse rate as number
-            transformedRow[mapping.targetField] = Number(rateValue);
+                 mapping.targetField === 'hourly_rate' || mapping.targetField === 'hours_per_week') {
+          if (sourceValue !== undefined && sourceValue !== null && sourceValue !== '') {
+            // Parse rate as number, handle strings that might have currency symbols
+            const numericValue = typeof sourceValue === 'string' 
+              ? parseFloat(sourceValue.replace(/[^0-9.-]+/g, ''))
+              : Number(sourceValue);
+            
+            if (!isNaN(numericValue)) {
+              transformedRow[mapping.targetField] = numericValue;
+            }
           }
         }
         // Handle time fields
         else if (mapping.targetField.endsWith('_start_time') || mapping.targetField.endsWith('_end_time')) {
-          transformedRow[mapping.targetField] = normalizeTimeString(row[mapping.sourceColumn]);
+          const normalizedTime = normalizeTimeString(sourceValue);
+          if (normalizedTime) {
+            transformedRow[mapping.targetField] = normalizedTime;
+          }
         }
         // Handle work pattern boolean fields
         else if (mapping.targetField.endsWith('_working')) {
-          transformedRow[mapping.targetField] = parseBooleanValue(row[mapping.sourceColumn]);
+          transformedRow[mapping.targetField] = parseBooleanValue(sourceValue);
         }
         else {
-          transformedRow[mapping.targetField] = row[mapping.sourceColumn];
+          // For text fields, ensure we're not storing undefined or null
+          transformedRow[mapping.targetField] = sourceValue !== null && sourceValue !== undefined ? String(sourceValue) : '';
         }
       }
     });
     
     // Set default values for missing fields
-    if (!transformedRow.hours_per_week) transformedRow.hours_per_week = 40;
-    if (!transformedRow.hourly_rate) transformedRow.hourly_rate = 0;
-    
-    // Convert numeric fields
-    if (transformedRow.hours_per_week) transformedRow.hours_per_week = Number(transformedRow.hours_per_week);
-    if (transformedRow.hourly_rate) transformedRow.hourly_rate = Number(transformedRow.hourly_rate);
+    if (!transformedRow.hours_per_week && transformedRow.hours_per_week !== 0) transformedRow.hours_per_week = 40;
+    if (!transformedRow.hourly_rate && transformedRow.hourly_rate !== 0) transformedRow.hourly_rate = 0;
     
     // Extract work pattern data from the transformed row
     // This looks for any work pattern field that was mapped
@@ -80,8 +94,22 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): 
     return transformedRow;
   });
   
-  // Filter out rows without required fields
-  return results.filter(row => 
-    requiredFields.every(field => row[field] !== undefined && row[field] !== null && row[field] !== '')
+  // Filter out rows without required fields and log helpful info
+  const validRows = results.filter(row => 
+    requiredFields.every(field => {
+      const hasField = row[field] !== undefined && row[field] !== null && row[field] !== '';
+      if (!hasField) {
+        console.log(`Missing required field ${field} in row:`, row);
+      }
+      return hasField;
+    })
   );
+  
+  console.log(`Data transformation complete: ${validRows.length} valid rows out of ${results.length} total`);
+  if (validRows.length === 0) {
+    console.log("No valid rows found. Sample row from raw data:", data[0]);
+    console.log("Sample transformed row before filtering:", results[0]);
+  }
+  
+  return validRows;
 };
