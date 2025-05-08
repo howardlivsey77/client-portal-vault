@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { generateHoursList } from "./utils";
 import { WorkDay } from "./types";
+import { Copy } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface WorkPatternDialogProps {
   open: boolean;
@@ -42,6 +44,25 @@ export const WorkPatternDialog = ({
     );
   };
 
+  const copyFromFirstDay = () => {
+    const firstDay = workPattern[0];
+    if (!firstDay.isWorking) {
+      return; // Nothing to copy if first day is not a working day
+    }
+    
+    const updatedPattern = workPattern.map((day, index) => {
+      if (index === 0) return day; // Skip the first day
+      return {
+        ...day,
+        isWorking: firstDay.isWorking,
+        startTime: firstDay.startTime,
+        endTime: firstDay.endTime
+      };
+    });
+    
+    setWorkPattern(updatedPattern);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     const success = await saveWorkPattern();
@@ -56,7 +77,27 @@ export const WorkPatternDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit Work Pattern</DialogTitle>
+          <DialogTitle className="flex justify-between items-center">
+            <span>Edit Work Pattern</span>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={copyFromFirstDay}
+                    className="ml-2"
+                  >
+                    <Copy className="h-4 w-4 mr-1" />
+                    <span>Copy Monday to All</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Copy Monday's working hours to all days</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
