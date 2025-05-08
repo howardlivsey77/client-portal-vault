@@ -26,6 +26,9 @@ export const updateWorkPatterns = async (imported: EmployeeData, employeeId: str
 // Helper function to update work patterns from individual fields
 export const updateWorkPatternsFromFields = async (workPatternFields: Record<string, any>, employeeId: string) => {
   try {
+    // Log the fields we're working with for debugging
+    console.log("Working with pattern fields:", workPatternFields);
+    
     // Extract work patterns from fields
     const workPatterns = extractWorkPatternsFromFields(workPatternFields);
     
@@ -79,8 +82,10 @@ const extractWorkPatternsFromFields = (workPatternFields: Record<string, any>): 
       endTime = normalizeTimeString(workPatternFields[endTimeField]);
     }
     
-    // If no explicit working status, but both times are empty, assume not working
-    if (workPatternFields[isWorkingField] === undefined && !startTime && !endTime) {
+    // If no explicit working status, but both times are empty or undefined, assume not working
+    if (workPatternFields[isWorkingField] === undefined && 
+        workPatternFields[startTimeField] === undefined && 
+        workPatternFields[endTimeField] === undefined) {
       isWorking = false;
     }
     
