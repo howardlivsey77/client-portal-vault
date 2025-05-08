@@ -12,7 +12,11 @@ import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
 import { formatCurrency } from "@/lib/formatters";
 
-export function EmployeeChangesReport() {
+interface EmployeeChangesReportProps {
+  standalone?: boolean;
+}
+
+export function EmployeeChangesReport({ standalone = false }: EmployeeChangesReportProps) {
   const { toast } = useToast();
   // Make sure May 5th, 2025 is within the default date range
   const defaultStartDate = subMonths(new Date(2025, 4, 5), 1); // Go back 1 month from May 5th
@@ -132,12 +136,14 @@ export function EmployeeChangesReport() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="monday-section-title flex items-center gap-2">
-          <CalendarDays className="h-5 w-5" />
-          Employee Changes Report
-        </h2>
-      </div>
+      {standalone && (
+        <div className="flex items-center justify-between">
+          <h2 className="monday-section-title flex items-center gap-2">
+            <CalendarDays className="h-5 w-5" />
+            Employee Changes Report
+          </h2>
+        </div>
+      )}
       
       {/* Date Range Filter Controls */}
       <DateRangeFilter

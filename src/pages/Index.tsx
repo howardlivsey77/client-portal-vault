@@ -5,7 +5,7 @@ import { DocumentUploadModal } from "@/components/dashboard/DocumentUploadModal"
 import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "react-router-dom";
 import { TaskList } from "@/components/dashboard/tasks/TaskList";
-import { EmployeeChangesReport } from "@/components/dashboard/reports/employee-changes/EmployeeChangesReport";
+import { ReportsNavigation } from "@/components/dashboard/reports/ReportsNavigation";
 import { PayrollInputWizard } from "@/components/payroll/PayrollInputWizard";
 import { EmployeeDashboard } from "@/components/dashboard/EmployeeDashboard";
 import { DocumentsTab } from "@/components/dashboard/tabs/DocumentsTab";
@@ -61,7 +61,7 @@ const Index = () => {
       case "tasks":
         return <TaskList />;
       case "reports":
-        return <EmployeeChangesReport />;
+        return <ReportsNavigation />;
       case "payroll":
         return <PayrollTab onOpenPayrollWizard={() => setPayrollWizardOpen(true)} />;
       default:
