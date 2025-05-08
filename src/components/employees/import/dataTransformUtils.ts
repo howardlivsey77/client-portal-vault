@@ -33,18 +33,26 @@ export const excelDateToISO = (excelDate: number | string): string | null => {
 };
 
 // Helper function to normalize and validate time strings
-export const normalizeTimeString = (timeString: string | null): string | null => {
-  if (!timeString) return null;
+export const normalizeTimeString = (timeString: string | number | null | undefined): string | null => {
+  // Early return for null, undefined or empty values
+  if (timeString === null || timeString === undefined || timeString === '') {
+    return null;
+  }
+  
+  // Convert to string if it's a number
+  const timeStrValue = typeof timeString === 'number' 
+    ? timeString.toString() 
+    : String(timeString); // Convert to string regardless of type
   
   // Already in 24-hour format like "09:30"
-  if (/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeString)) {
+  if (/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeStrValue)) {
     // Ensure leading zeros for hours
-    const [hours, minutes] = timeString.split(':');
+    const [hours, minutes] = timeStrValue.split(':');
     return `${hours.padStart(2, '0')}:${minutes}`;
   }
   
   // Try to parse AM/PM format
-  const amPmMatch = timeString.match(/^(\d{1,2})(?::(\d{2}))?(?:\s*)?(am|pm|a|p)?$/i);
+  const amPmMatch = timeStrValue.match(/^(\d{1,2})(?::(\d{2}))?(?:\s*)?(am|pm|a|p)?$/i);
   if (amPmMatch) {
     let hours = parseInt(amPmMatch[1], 10);
     const minutes = amPmMatch[2] ? parseInt(amPmMatch[2], 10) : 0;
@@ -61,8 +69,8 @@ export const normalizeTimeString = (timeString: string | null): string | null =>
   }
   
   // For Excel time (fraction of 24 hours)
-  if (typeof timeString === 'string' && !isNaN(Number(timeString))) {
-    const excelTime = parseFloat(timeString);
+  if (typeof timeString === 'number' || !isNaN(Number(timeStrValue))) {
+    const excelTime = parseFloat(timeStrValue);
     if (excelTime >= 0 && excelTime < 1) {
       const totalMinutes = Math.round(excelTime * 24 * 60);
       const hours = Math.floor(totalMinutes / 60);
@@ -72,7 +80,7 @@ export const normalizeTimeString = (timeString: string | null): string | null =>
   }
   
   // If we can't normalize it, return the original string
-  return timeString;
+  return timeStrValue;
 };
 
 // Parse boolean value from various formats

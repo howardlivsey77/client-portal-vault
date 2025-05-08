@@ -1,146 +1,131 @@
 
 import { ColumnMapping } from "./ImportConstants";
 
-// Helper to map column headers to database fields
-const fieldMappings: Record<string, string[]> = {
-  first_name: ['first name', 'firstname', 'first', 'name', 'given name'],
-  last_name: ['last name', 'lastname', 'surname', 'family name'],
-  department: ['department', 'dept', 'team', 'section', 'division'],
-  hours_per_week: ['hours per week', 'weekly hours', 'contracted hours'],
-  hourly_rate: ['hourly rate', 'rate', 'pay rate', 'basic rate', 'basic hourly rate'],
-  date_of_birth: ['date of birth', 'dob', 'birth date', 'birthday'],
-  hire_date: ['hire date', 'start date', 'joining date', 'employment date'],
-  email: ['email', 'email address', 'e-mail', 'mail'],
-  address1: ['address 1', 'address line 1', 'street address', 'address'],
-  address2: ['address 2', 'address line 2'],
-  address3: ['address 3', 'address line 3', 'city', 'town'],
-  address4: ['address 4', 'address line 4', 'county', 'state', 'province'],
-  postcode: ['postcode', 'zip', 'zip code', 'postal code'],
-  payroll_id: ['payroll id', 'employee id', 'staff id', 'payroll number', 'employee number', 'id'],
-  gender: ['gender', 'sex'],
-  rate_2: ['rate 2', 'rate2', 'second rate', 'overtime rate'],
-  rate_3: ['rate 3', 'rate3', 'third rate', 'weekend rate'],
-  rate_4: ['rate 4', 'rate4', 'fourth rate', 'special rate'],
-  
-  // Work pattern fields - expanded with more variations
-  monday_working: ['monday working', 'monday', 'mon working', 'mon works', 'monday works', 'monday active', 'mon active', 'works monday'],
-  monday_start_time: ['monday start', 'monday start time', 'mon start', 'mon start time', 'monday in', 'mon in', 'monday from'],
-  monday_end_time: ['monday end', 'monday end time', 'mon end', 'mon end time', 'monday out', 'mon out', 'monday to', 'monday until'],
-  
-  tuesday_working: ['tuesday working', 'tuesday', 'tue working', 'tue works', 'tuesday works', 'tuesday active', 'tue active', 'works tuesday'],
-  tuesday_start_time: ['tuesday start', 'tuesday start time', 'tue start', 'tue start time', 'tuesday in', 'tue in', 'tuesday from'],
-  tuesday_end_time: ['tuesday end', 'tuesday end time', 'tue end', 'tue end time', 'tuesday out', 'tue out', 'tuesday to', 'tuesday until'],
-  
-  wednesday_working: ['wednesday working', 'wednesday', 'wed working', 'wed works', 'wednesday works', 'wednesday active', 'wed active', 'works wednesday'],
-  wednesday_start_time: ['wednesday start', 'wednesday start time', 'wed start', 'wed start time', 'wednesday in', 'wed in', 'wednesday from'],
-  wednesday_end_time: ['wednesday end', 'wednesday end time', 'wed end', 'wed end time', 'wednesday out', 'wed out', 'wednesday to', 'wednesday until'],
-  
-  thursday_working: ['thursday working', 'thursday', 'thu working', 'thu works', 'thursday works', 'thursday active', 'thu active', 'works thursday'],
-  thursday_start_time: ['thursday start', 'thursday start time', 'thu start', 'thu start time', 'thursday in', 'thu in', 'thursday from'],
-  thursday_end_time: ['thursday end', 'thursday end time', 'thu end', 'thu end time', 'thursday out', 'thu out', 'thursday to', 'thursday until'],
-  
-  friday_working: ['friday working', 'friday', 'fri working', 'fri works', 'friday works', 'friday active', 'fri active', 'works friday'],
-  friday_start_time: ['friday start', 'friday start time', 'fri start', 'fri start time', 'friday in', 'fri in', 'friday from'],
-  friday_end_time: ['friday end', 'friday end time', 'fri end', 'fri end time', 'friday out', 'fri out', 'friday to', 'friday until'],
-  
-  saturday_working: ['saturday working', 'saturday', 'sat working', 'sat works', 'saturday works', 'saturday active', 'sat active', 'works saturday'],
-  saturday_start_time: ['saturday start', 'saturday start time', 'sat start', 'sat start time', 'saturday in', 'sat in', 'saturday from'],
-  saturday_end_time: ['saturday end', 'saturday end time', 'sat end', 'sat end time', 'saturday out', 'sat out', 'saturday to', 'saturday until'],
-  
-  sunday_working: ['sunday working', 'sunday', 'sun working', 'sun works', 'sunday works', 'sunday active', 'sun active', 'works sunday'],
-  sunday_start_time: ['sunday start', 'sunday start time', 'sun start', 'sun start time', 'sunday in', 'sun in', 'sunday from'],
-  sunday_end_time: ['sunday end', 'sunday end time', 'sun end', 'sun end time', 'sunday out', 'sun out', 'sunday to', 'sunday until'],
-};
-
-// Auto-map columns based on header names
+// Attempt to find the best match between source column names and target field names
 export const autoMapColumns = (headers: string[]): ColumnMapping[] => {
-  const mappings: ColumnMapping[] = [];
-  
-  headers.forEach(header => {
+  return headers.map(header => {
     const lowerHeader = header.toLowerCase().trim();
-    let mapped = false;
     
-    // Check if the header matches any known field
-    Object.entries(fieldMappings).forEach(([fieldName, aliases]) => {
-      if (!mapped && aliases.includes(lowerHeader)) {
-        mappings.push({
-          sourceColumn: header,
-          targetField: fieldName
-        });
-        mapped = true;
-      }
-    });
-    
-    // If no match was found, add it as unmapped
-    if (!mapped) {
-      mappings.push({
-        sourceColumn: header,
-        targetField: null
-      });
+    // Direct mappings
+    if (lowerHeader.includes('first name') || lowerHeader === 'firstname' || lowerHeader === 'first_name' || lowerHeader === 'givenname') {
+      return { sourceColumn: header, targetField: 'first_name' };
     }
+    if (lowerHeader.includes('last name') || lowerHeader === 'lastname' || lowerHeader === 'last_name' || lowerHeader === 'surname') {
+      return { sourceColumn: header, targetField: 'last_name' };
+    }
+    if (lowerHeader.includes('department') || lowerHeader === 'dept' || lowerHeader === 'team') {
+      return { sourceColumn: header, targetField: 'department' };
+    }
+    if (lowerHeader.includes('email') || lowerHeader === 'e-mail' || lowerHeader === 'mail address') {
+      return { sourceColumn: header, targetField: 'email' };
+    }
+    if (lowerHeader.includes('address line 1') || lowerHeader === 'address1' || lowerHeader === 'street') {
+      return { sourceColumn: header, targetField: 'address1' };
+    }
+    if (lowerHeader.includes('address line 2') || lowerHeader === 'address2') {
+      return { sourceColumn: header, targetField: 'address2' };
+    }
+    if (lowerHeader.includes('address line 3') || lowerHeader === 'address3') {
+      return { sourceColumn: header, targetField: 'address3' };
+    }
+    if (lowerHeader.includes('address line 4') || lowerHeader === 'address4') {
+      return { sourceColumn: header, targetField: 'address4' };
+    }
+    if (lowerHeader.includes('postcode') || lowerHeader === 'post code' || lowerHeader === 'zip' || lowerHeader === 'zipcode') {
+      return { sourceColumn: header, targetField: 'postcode' };
+    }
+    if (lowerHeader.includes('date of birth') || lowerHeader === 'dob' || lowerHeader === 'birthdate') {
+      return { sourceColumn: header, targetField: 'date_of_birth' };
+    }
+    if (lowerHeader.includes('hire date') || lowerHeader === 'start date' || lowerHeader === 'joining date') {
+      return { sourceColumn: header, targetField: 'hire_date' };
+    }
+    if (lowerHeader.includes('gender') || lowerHeader === 'sex') {
+      return { sourceColumn: header, targetField: 'gender' };
+    }
+    if (lowerHeader.includes('hours per week') || lowerHeader === 'working hours' || lowerHeader === 'weekly hours') {
+      return { sourceColumn: header, targetField: 'hours_per_week' };
+    }
+    if (lowerHeader.includes('hourly rate') || lowerHeader === 'base rate' || lowerHeader === 'pay rate') {
+      return { sourceColumn: header, targetField: 'hourly_rate' };
+    }
+    if (lowerHeader.includes('rate 2')) {
+      return { sourceColumn: header, targetField: 'rate_2' };
+    }
+    if (lowerHeader.includes('rate 3')) {
+      return { sourceColumn: header, targetField: 'rate_3' };
+    }
+    if (lowerHeader.includes('rate 4')) {
+      return { sourceColumn: header, targetField: 'rate_4' };
+    }
+    if (lowerHeader.includes('payroll id') || lowerHeader === 'employee id' || lowerHeader === 'staff id') {
+      return { sourceColumn: header, targetField: 'payroll_id' };
+    }
+    
+    // Work pattern mappings with better day handling
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    
+    for (const day of days) {
+      // Remove spaces and standardize day name for matching
+      const cleanHeader = lowerHeader.replace(/\s+/g, '');
+      const cleanDay = day.toLowerCase();
+      
+      if (cleanHeader === `${cleanDay}working` || 
+          cleanHeader === `${cleanDay}_working` || 
+          cleanHeader === `${cleanDay}works`) {
+        return { sourceColumn: header, targetField: `${day}_working` };
+      }
+      
+      if (cleanHeader.includes(`${cleanDay}start`) || 
+          cleanHeader.includes(`${cleanDay}_start`) || 
+          cleanHeader.includes(`${cleanDay}from`)) {
+        return { sourceColumn: header, targetField: `${day}_start_time` };
+      }
+      
+      if (cleanHeader.includes(`${cleanDay}end`) || 
+          cleanHeader.includes(`${cleanDay}_end`) || 
+          cleanHeader.includes(`${cleanDay}to`)) {
+        return { sourceColumn: header, targetField: `${day}_end_time` };
+      }
+    }
+    
+    // No match found
+    return { sourceColumn: header, targetField: null };
   });
-  
-  return mappings;
 };
 
 // Check if required fields are mapped
-export const areRequiredFieldsMapped = (
-  columnMappings: ColumnMapping[],
-  requiredFields = ["first_name", "last_name", "department"]
-): boolean => {
+export const areRequiredFieldsMapped = (columnMappings: ColumnMapping[], requiredFields: string[] = ['first_name', 'last_name', 'department']): boolean => {
   return requiredFields.every(requiredField => 
     columnMappings.some(mapping => mapping.targetField === requiredField)
   );
 };
 
-// Save column mappings to localStorage
+// Save column mappings to local storage
 export const saveMappings = (mappings: ColumnMapping[]): void => {
   try {
-    localStorage.setItem('columnMappings', JSON.stringify(mappings));
-  } catch (e) {
-    console.error("Failed to save mappings to localStorage:", e);
+    localStorage.setItem('employee_import_mappings', JSON.stringify(mappings));
+  } catch (error) {
+    console.error("Error saving mappings to local storage", error);
   }
 };
 
-// Load saved mappings from localStorage
-export const loadSavedMappings = (headers: string[]): ColumnMapping[] | null => {
+// Load saved column mappings from local storage
+export const loadSavedMappings = (): ColumnMapping[] | null => {
   try {
-    const savedMappings = localStorage.getItem('columnMappings');
-    if (savedMappings) {
-      const parsedMappings: ColumnMapping[] = JSON.parse(savedMappings);
-      
-      // Check if the headers match the saved mappings
-      const currentHeaders = new Set(headers);
-      const savedHeaders = new Set(parsedMappings.map(m => m.sourceColumn));
-      
-      // If the headers match exactly, we can use the saved mappings
-      if (currentHeaders.size === savedHeaders.size && 
-          [...currentHeaders].every(h => savedHeaders.has(h))) {
-        return parsedMappings;
-      }
-      
-      // Otherwise, try to map the current headers based on saved mappings
-      return headers.map(header => {
-        const savedMapping = parsedMappings.find(m => m.sourceColumn === header);
-        if (savedMapping) {
-          return savedMapping;
-        } else {
-          return { sourceColumn: header, targetField: null };
-        }
-      });
-    }
-  } catch (e) {
-    console.error("Failed to load mappings from localStorage:", e);
+    const savedMappings = localStorage.getItem('employee_import_mappings');
+    return savedMappings ? JSON.parse(savedMappings) : null;
+  } catch (error) {
+    console.error("Error loading mappings from local storage", error);
+    return null;
   }
-  
-  return null;
 };
 
-// Clear saved mappings from localStorage
+// Clear saved mappings from local storage
 export const clearSavedMappings = (): void => {
   try {
-    localStorage.removeItem('columnMappings');
-  } catch (e) {
-    console.error("Failed to clear mappings from localStorage:", e);
+    localStorage.removeItem('employee_import_mappings');
+  } catch (error) {
+    console.error("Error clearing mappings from local storage", error);
   }
 };
