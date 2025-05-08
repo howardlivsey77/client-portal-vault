@@ -43,6 +43,8 @@ export const useEmployeeDetails = (employeeId: string | undefined) => {
       if (!employeeId) return;
       
       setLoading(true);
+      console.log("Fetching employee data for ID:", employeeId);
+      
       const { data, error } = await supabase
         .from("employees")
         .select("*")
@@ -51,8 +53,10 @@ export const useEmployeeDetails = (employeeId: string | undefined) => {
         
       if (error) throw error;
       
+      console.log("Employee data retrieved:", data);
       setEmployee(data as Employee);
     } catch (error: any) {
+      console.error("Error in fetchEmployeeData:", error);
       toast({
         title: "Error fetching employee data",
         description: error.message,

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -69,6 +68,9 @@ export const useEmployeeForm = (employeeId?: string) => {
           payroll_id: data.payroll_id || "",
           gender: validGender,
           work_pattern: data.work_pattern || JSON.stringify(defaultWorkPattern),
+          rate_2: data.rate_2,
+          rate_3: data.rate_3,
+          rate_4: data.rate_4,
         });
       }
     } catch (error: any) {

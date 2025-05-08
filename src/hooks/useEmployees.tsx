@@ -44,7 +44,10 @@ export const useEmployees = () => {
       }
       
       console.log("Employees data retrieved:", data?.length || 0, "records");
-      setEmployees(data || []);
+      
+      // Cast the data to ensure TypeScript recognizes work_pattern
+      const typedData = data as Employee[];
+      setEmployees(typedData || []);
     } catch (error: any) {
       console.error("Error in fetchEmployees:", error);
       toast({
