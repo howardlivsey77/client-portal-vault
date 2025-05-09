@@ -8,6 +8,16 @@ interface PersonalInfoDisplayProps {
 }
 
 export const PersonalInfoDisplay = ({ employee }: PersonalInfoDisplayProps) => {
+  // Calculate monthly salary: (weekly hours × hourly rate) ÷ 7 × 365 ÷ 12
+  const calculateMonthlySalary = () => {
+    const hoursPerWeek = employee.hours_per_week || 0;
+    const hourlyRate = employee.hourly_rate || 0;
+    
+    // Formula: (weekly hours × hourly rate) ÷ 7 × 365 ÷ 12
+    const monthlySalary = (hoursPerWeek * hourlyRate) / 7 * 365 / 12;
+    return roundToTwoDecimals(monthlySalary);
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -62,10 +72,18 @@ export const PersonalInfoDisplay = ({ employee }: PersonalInfoDisplayProps) => {
         </div>
       </div>
 
-      <div>
-        <div className="text-sm font-medium mb-2">Hours Per Week</div>
-        <div className="p-2.5 bg-gray-50 rounded border border-gray-200">
-          {employee.hours_per_week || "40"}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <div className="text-sm font-medium mb-2">Hours Per Week</div>
+          <div className="p-2.5 bg-gray-50 rounded border border-gray-200">
+            {employee.hours_per_week || "40"}
+          </div>
+        </div>
+        <div>
+          <div className="text-sm font-medium mb-2">Monthly Salary</div>
+          <div className="p-2.5 bg-gray-50 rounded border border-gray-200">
+            {formatCurrency(calculateMonthlySalary())}
+          </div>
         </div>
       </div>
 

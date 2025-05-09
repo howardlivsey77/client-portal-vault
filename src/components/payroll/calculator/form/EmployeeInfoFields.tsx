@@ -25,8 +25,8 @@ export function EmployeeInfoFields({
       const hoursPerWeek = employee.hours_per_week || 0;
       
       // Calculate monthly salary based on hourly rate and weekly hours
-      // We use 4.33 as the average number of weeks per month (52/12)
-      const monthlySalary = Number((hourlyRate * hoursPerWeek * 4.33).toFixed(2));
+      // Formula: (weekly hours × hourly rate) ÷ 7 × 365 ÷ 12
+      const monthlySalary = Number(((hourlyRate * hoursPerWeek) / 7 * 365 / 12).toFixed(2));
 
       onChange({
         ...formValues,
