@@ -33,12 +33,19 @@ export function PayrollConstantForm({ constant, category, onSave, onCancel }: Pa
     resolver: zodResolver(FormSchema),
     defaultValues: {
       key: constant?.key || "",
-      value_numeric: constant?.value_numeric !== null ? String(constant.value_numeric) : "",
+      // Add null safety check for value_numeric 
+      value_numeric: constant?.value_numeric !== null && constant?.value_numeric !== undefined 
+        ? String(constant.value_numeric) 
+        : "",
       value_text: constant?.value_text || "",
       description: constant?.description || "",
       region: constant?.region || "UK",
-      effective_from: constant?.effective_from ? new Date(constant.effective_from).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-      effective_to: constant?.effective_to ? new Date(constant.effective_to).toISOString().split('T')[0] : "",
+      effective_from: constant?.effective_from 
+        ? new Date(constant.effective_from).toISOString().split('T')[0] 
+        : new Date().toISOString().split('T')[0],
+      effective_to: constant?.effective_to 
+        ? new Date(constant.effective_to).toISOString().split('T')[0] 
+        : "",
     },
   });
 
