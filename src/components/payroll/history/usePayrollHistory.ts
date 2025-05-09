@@ -10,12 +10,38 @@ export function usePayrollHistory() {
   const [loading, setLoading] = useState<boolean>(true);
   const [payrollHistory, setPayrollHistory] = useState<PayrollHistoryItem[]>([]);
   const [filters, setFilters] = useState<PayrollHistoryFilters>({});
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize = 10; // Number of records per page
 
-  const fetchPayrollHistory = async (currentFilters: PayrollHistoryFilters) => {
+  const fetchPayrollHistory = async (currentFilters: PayrollHistoryFilters, page: number) => {
     try {
       setLoading(true);
       
-      // Start building the query
+      // Start building the query for count
+      let countQuery = supabase
+        .from('payroll_results')
+        .select('id', { count: 'exact', head: true });
+      
+      // Apply date filters to count query if they exist
+      if (currentFilters.dateFrom) {
+        countQuery = countQuery.gte('payroll_period', currentFilters.dateFrom.toISOString().split('T')[0]);
+      }
+      
+      if (currentFilters.dateTo) {
+        countQuery = countQuery.lte('payroll_period', currentFilters.dateTo.toISOString().split('T')[0]);
+      }
+      
+      // Get the count
+      const { count, error: countError } = await countQuery;
+      
+      if (countError) {
+        console.error("Error fetching count:", countError);
+      } else {
+        setTotalCount(count || 0);
+      }
+      
+      // Start building the main query
       let query = supabase
         .from('payroll_results')
         .select(`
@@ -35,10 +61,14 @@ export function usePayrollHistory() {
         query = query.lte('payroll_period', currentFilters.dateTo.toISOString().split('T')[0]);
       }
       
-      // Execute the query
+      // Apply pagination
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      
+      // Execute the query with pagination
       const { data, error } = await query
         .order('payroll_period', { ascending: false })
-        .limit(100);
+        .range(from, to);
           
       if (error) {
         console.error("Error fetching payroll history:", error);
@@ -76,13 +106,27 @@ export function usePayrollHistory() {
   
   // Fetch data when component mounts or filters change
   useEffect(() => {
-    fetchPayrollHistory(filters);
-  }, [toast, filters]);
+    fetchPayrollHistory(filters, currentPage);
+  }, [toast, filters, currentPage]);
 
   // Handler for filter changes
   const handleFilterChange = (newFilters: PayrollHistoryFilters) => {
     setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page when filters change
   };
 
-  return { loading, payrollHistory, handleFilterChange };
+  // Handler for page changes
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  return { 
+    loading, 
+    payrollHistory, 
+    handleFilterChange,
+    totalCount,
+    currentPage,
+    pageSize,
+    handlePageChange
+  };
 }

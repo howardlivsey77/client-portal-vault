@@ -6,9 +6,19 @@ import { PayrollHistoryTableContent } from "./history/PayrollHistoryTable";
 import { usePayrollHistory } from "./history/usePayrollHistory";
 import { usePayslipGenerator } from "./history/usePayslipGenerator";
 import { PayrollHistoryFilter } from "./history/PayrollHistoryFilter";
+import { PayrollHistoryPagination } from "./history/PayrollHistoryPagination";
 
 export function PayrollHistoryTable() {
-  const { loading, payrollHistory, handleFilterChange } = usePayrollHistory();
+  const { 
+    loading, 
+    payrollHistory, 
+    handleFilterChange, 
+    totalCount,
+    currentPage,
+    pageSize,
+    handlePageChange 
+  } = usePayrollHistory();
+  
   const { handleDownloadPayslip } = usePayslipGenerator();
 
   if (loading) {
@@ -29,10 +39,23 @@ export function PayrollHistoryTable() {
             <p className="text-muted-foreground">Use the calculator tab to process and save payroll results.</p>
           </div>
         ) : (
-          <PayrollHistoryTableContent 
-            payrollHistory={payrollHistory}
-            onDownloadPayslip={handleDownloadPayslip}
-          />
+          <>
+            <PayrollHistoryTableContent 
+              payrollHistory={payrollHistory}
+              onDownloadPayslip={handleDownloadPayslip}
+            />
+            
+            <PayrollHistoryPagination
+              currentPage={currentPage}
+              totalCount={totalCount}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+            />
+            
+            <div className="text-xs text-muted-foreground mt-2 text-center">
+              Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} records
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
