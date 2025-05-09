@@ -275,6 +275,95 @@ export type Database = {
         }
         Relationships: []
       }
+      payroll_results: {
+        Row: {
+          created_at: string | null
+          earnings_above_st_this_period: number
+          earnings_above_uel_this_period: number
+          earnings_at_lel_this_period: number
+          earnings_lel_to_pt_this_period: number
+          earnings_pt_to_uel_this_period: number
+          employee_id: string
+          employee_pension_this_period: number
+          employer_pension_this_period: number
+          free_pay_this_period: number
+          gross_pay_this_period: number
+          id: string
+          income_tax_this_period: number
+          net_pay_this_period: number
+          nic_employee_this_period: number
+          nic_employer_this_period: number
+          nic_letter: string
+          pay_liable_to_nic_this_period: number
+          payroll_period: string
+          student_loan_plan: number | null
+          student_loan_this_period: number
+          tax_code: string
+          taxable_pay_this_period: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          earnings_above_st_this_period: number
+          earnings_above_uel_this_period: number
+          earnings_at_lel_this_period: number
+          earnings_lel_to_pt_this_period: number
+          earnings_pt_to_uel_this_period: number
+          employee_id: string
+          employee_pension_this_period: number
+          employer_pension_this_period: number
+          free_pay_this_period: number
+          gross_pay_this_period: number
+          id?: string
+          income_tax_this_period: number
+          net_pay_this_period: number
+          nic_employee_this_period: number
+          nic_employer_this_period: number
+          nic_letter: string
+          pay_liable_to_nic_this_period: number
+          payroll_period: string
+          student_loan_plan?: number | null
+          student_loan_this_period: number
+          tax_code: string
+          taxable_pay_this_period: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          earnings_above_st_this_period?: number
+          earnings_above_uel_this_period?: number
+          earnings_at_lel_this_period?: number
+          earnings_lel_to_pt_this_period?: number
+          earnings_pt_to_uel_this_period?: number
+          employee_id?: string
+          employee_pension_this_period?: number
+          employer_pension_this_period?: number
+          free_pay_this_period?: number
+          gross_pay_this_period?: number
+          id?: string
+          income_tax_this_period?: number
+          net_pay_this_period?: number
+          nic_employee_this_period?: number
+          nic_employer_this_period?: number
+          nic_letter?: string
+          pay_liable_to_nic_this_period?: number
+          payroll_period?: string
+          student_loan_plan?: number | null
+          student_loan_this_period?: number
+          tax_code?: string
+          taxable_pay_this_period?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_results_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
