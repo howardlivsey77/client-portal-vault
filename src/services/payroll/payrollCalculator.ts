@@ -28,7 +28,8 @@ export function calculateMonthlyPayroll(details: PayrollDetails): PayrollResult 
     studentLoanPlan = null,
     additionalDeductions = [],
     additionalAllowances = [],
-    additionalEarnings = []
+    additionalEarnings = [],
+    nicCode = 'A'  // Default to category A if not specified
   } = details;
   
   // Calculate earnings
@@ -54,7 +55,7 @@ export function calculateMonthlyPayroll(details: PayrollDetails): PayrollResult 
     employeeName,
     payrollId,
     monthlySalary,
-    taxCode, // Include taxCode in the result
+    taxCode,
     taxRegion,
     grossPay: roundToTwoDecimals(grossPay),
     incomeTax: roundToTwoDecimals(incomeTax),
@@ -68,7 +69,8 @@ export function calculateMonthlyPayroll(details: PayrollDetails): PayrollResult 
     additionalEarnings,
     totalDeductions: roundToTwoDecimals(totalDeductions),
     totalAllowances: roundToTwoDecimals(totalAllowances),
-    netPay: roundToTwoDecimals(netPay)
+    netPay: roundToTwoDecimals(netPay),
+    nicCode
   };
 }
 

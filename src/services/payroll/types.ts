@@ -15,6 +15,7 @@ export interface PayrollDetails {
   additionalDeductions?: Array<{ name: string, amount: number }>;
   additionalAllowances?: Array<{ name: string, amount: number }>;
   additionalEarnings?: Array<{ name: string, amount: number }>;
+  nicCode?: string; // Added NIC code property
 }
 
 export interface PayrollResult {
@@ -22,7 +23,7 @@ export interface PayrollResult {
   employeeName: string;
   payrollId?: string;
   monthlySalary: number;
-  taxCode: string; // Added taxCode property
+  taxCode: string;
   taxRegion?: 'UK' | 'Scotland' | 'Wales';
   grossPay: number;
   incomeTax: number;
@@ -37,4 +38,5 @@ export interface PayrollResult {
   totalDeductions: number;
   totalAllowances: number;
   netPay: number;
+  nicCode?: string; // Added NIC code property
 }

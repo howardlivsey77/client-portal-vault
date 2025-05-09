@@ -1,73 +1,140 @@
 
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { getHardcodedNIRates, getHardcodedNIThresholds, getTaxConstantsByCategory } from "../utils/tax-constants-service";
+import { NICCalculator, NICRates, NICThresholds, NICResult } from "./NICCalculator";
+
+// Default NIC letter if not specified
+const DEFAULT_NIC_LETTER = 'A';
 
 /**
  * Get NI thresholds and rates from database or fallback to hardcoded values
  */
 async function getNIData(): Promise<{ 
-  thresholds: { primaryThreshold: number; upperEarningsLimit: number };
-  rates: { mainRate: number; higherRate: number };
+  thresholds: NICThresholds;
+  rates: NICRates;
 }> {
   try {
+    // Fetch data from database
     const thresholdsData = await getTaxConstantsByCategory('NI_THRESHOLDS');
     const ratesData = await getTaxConstantsByCategory('NI_RATES');
     
-    // Extract threshold values
-    const primaryThreshold = thresholdsData.find(t => t.key === 'PRIMARY_THRESHOLD')?.value_numeric ?? 0;
-    const upperEarningsLimit = thresholdsData.find(t => t.key === 'UPPER_EARNINGS_LIMIT')?.value_numeric ?? 0;
+    // Extract threshold values in pence
+    const primaryThresholdMonthly = thresholdsData.find(t => t.key === 'PRIMARY_THRESHOLD')?.value_numeric ?? 0;
+    const secondaryThresholdMonthly = thresholdsData.find(t => t.key === 'SECONDARY_THRESHOLD')?.value_numeric ?? 0; 
+    const upperEarningsLimitMonthly = thresholdsData.find(t => t.key === 'UPPER_EARNINGS_LIMIT')?.value_numeric ?? 0;
     
-    // Extract rate values
+    // Convert monthly values to pence
+    const PT = Math.round(primaryThresholdMonthly * 100);
+    const ST = Math.round(secondaryThresholdMonthly * 100);
+    const UEL = Math.round(upperEarningsLimitMonthly * 100);
+    
+    // Extract rate values 
     const mainRate = ratesData.find(r => r.key === 'MAIN_RATE')?.value_numeric ?? 0;
     const higherRate = ratesData.find(r => r.key === 'HIGHER_RATE')?.value_numeric ?? 0;
     
+    // Create the rates structure needed for NICCalculator
+    const rates: NICRates = {
+      employee: {
+        'A': { LELToPT: 0, PTToUEL: mainRate, AboveUEL: higherRate },
+        // Add other NIC categories as needed
+      },
+      employer: {
+        'A': { LELToPT: 0, PTToUEL: 0.138, AboveUEL: 0.138 }, // Employer rates 13.8%
+        // Add other NIC categories as needed
+      }
+    };
+    
     return {
-      thresholds: { primaryThreshold, upperEarningsLimit },
-      rates: { mainRate, higherRate }
+      thresholds: { PT, ST, UEL },
+      rates
     };
   } catch (error) {
     console.error("Error fetching NI data:", error);
     // Fallback to hardcoded values
-    const hardcodedThresholds = getHardcodedNIThresholds();
-    const hardcodedRates = getHardcodedNIRates();
-    
-    return {
-      thresholds: {
-        primaryThreshold: hardcodedThresholds.PRIMARY_THRESHOLD.monthly,
-        upperEarningsLimit: hardcodedThresholds.UPPER_EARNINGS_LIMIT.monthly
-      },
-      rates: {
-        mainRate: hardcodedRates.MAIN_RATE,
-        higherRate: hardcodedRates.HIGHER_RATE
-      }
-    };
+    return getHardcodedNICalculatorData();
   }
+}
+
+/**
+ * Get hardcoded NI calculator data
+ */
+function getHardcodedNICalculatorData(): { thresholds: NICThresholds; rates: NICRates } {
+  const hardcodedThresholds = getHardcodedNIThresholds();
+  const hardcodedRates = getHardcodedNIRates();
+  
+  // Convert monthly values to pence
+  const PT = Math.round(hardcodedThresholds.PRIMARY_THRESHOLD.monthly * 100);
+  const ST = PT; // Usually the same as PT for most categories
+  const UEL = Math.round(hardcodedThresholds.UPPER_EARNINGS_LIMIT.monthly * 100);
+  
+  // Create NICRates with multiple categories
+  const rates: NICRates = {
+    employee: {
+      'A': { LELToPT: 0, PTToUEL: hardcodedRates.MAIN_RATE, AboveUEL: hardcodedRates.HIGHER_RATE },
+      'B': { LELToPT: 0, PTToUEL: 0.0585, AboveUEL: 0.0585 }, // Married women's reduced rate
+      'C': { LELToPT: 0, PTToUEL: 0, AboveUEL: 0 },           // Not liable for EE contributions
+      'H': { LELToPT: 0, PTToUEL: hardcodedRates.MAIN_RATE, AboveUEL: hardcodedRates.HIGHER_RATE }, // Apprentice
+      'J': { LELToPT: 0, PTToUEL: hardcodedRates.MAIN_RATE, AboveUEL: hardcodedRates.HIGHER_RATE }, // Deferred
+      'M': { LELToPT: 0, PTToUEL: 0.0585, AboveUEL: 0.0585 }, // Married women's reduced rate, deferred
+      // Add other categories as needed
+    },
+    employer: {
+      'A': { LELToPT: 0, PTToUEL: 0.138, AboveUEL: 0.138 },    // Standard rate 13.8%
+      'B': { LELToPT: 0, PTToUEL: 0.138, AboveUEL: 0.138 },    // Standard rate 13.8%
+      'C': { LELToPT: 0, PTToUEL: 0.138, AboveUEL: 0.138 },    // Standard rate 13.8%
+      'H': { LELToPT: 0, PTToUEL: 0.00, AboveUEL: 0.00 },      // No employer NI for apprentices under 25
+      'J': { LELToPT: 0, PTToUEL: 0.138, AboveUEL: 0.138 },    // Standard rate 13.8%
+      'M': { LELToPT: 0, PTToUEL: 0.138, AboveUEL: 0.138 },    // Standard rate 13.8%
+      // Add other categories as needed
+    }
+  };
+  
+  return {
+    thresholds: { PT, ST, UEL },
+    rates
+  };
 }
 
 /**
  * Calculate National Insurance contributions asynchronously
+ * @param monthlySalary Salary in pounds (will be converted to pence)
+ * @param nicCode NI code letter (defaults to 'A' if not specified)
  */
-export async function calculateNationalInsurance(monthlySalary: number): Promise<number> {
+export async function calculateNationalInsurance(
+  monthlySalary: number,
+  nicCode: string = DEFAULT_NIC_LETTER
+): Promise<number> {
   const { thresholds, rates } = await getNIData();
   
-  let ni = 0;
+  // Convert pounds to pence
+  const grossPayPence = Math.round(monthlySalary * 100);
   
-  // Main rate between primary threshold and upper earnings limit
-  if (monthlySalary > thresholds.primaryThreshold) {
-    const mainRatePortion = Math.min(monthlySalary, thresholds.upperEarningsLimit) - thresholds.primaryThreshold;
-    ni += mainRatePortion * rates.mainRate;
+  // Create calculator instance
+  const calculator = new NICCalculator(thresholds, rates);
+  
+  try {
+    // Calculate NI contributions
+    const result = calculator.calculate(grossPayPence, nicCode);
     
-    // Higher rate above upper earnings limit
-    if (monthlySalary > thresholds.upperEarningsLimit) {
-      ni += (monthlySalary - thresholds.upperEarningsLimit) * rates.higherRate;
+    // Return employee NI in pounds (convert from pence)
+    return roundToTwoDecimals(result.employeeNIC / 100);
+  } catch (error) {
+    console.error(`Error calculating National Insurance for code ${nicCode}:`, error);
+    
+    // Fallback to standard category 'A' if specific category fails
+    if (nicCode !== DEFAULT_NIC_LETTER) {
+      console.warn(`Falling back to category '${DEFAULT_NIC_LETTER}' for NI calculation`);
+      return calculateNationalInsurance(monthlySalary, DEFAULT_NIC_LETTER);
     }
+    
+    // Last resort fallback to old calculation method
+    return calculateNationalInsuranceSync(monthlySalary);
   }
-  
-  return roundToTwoDecimals(ni);
 }
 
 /**
  * Synchronous version using hardcoded values for compatibility
+ * This is kept for backward compatibility
  */
 export function calculateNationalInsuranceSync(monthlySalary: number): number {
   const hardcodedThresholds = getHardcodedNIThresholds();
