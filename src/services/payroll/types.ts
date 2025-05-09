@@ -25,7 +25,7 @@ export interface PayrollResult {
   nationalInsurance: number;
   nicCode: string;
   studentLoan: number;
-  studentLoanPlan: string | null;
+  studentLoanPlan: number | null;
   pensionContribution: number;
   pensionPercentage: number;
   totalDeductions: number;
@@ -53,7 +53,7 @@ export interface PayrollDetails {
   useEmergencyTax?: boolean;
   isNewEmployee?: boolean;
   pensionPercentage?: number;
-  studentLoanPlan?: string | null;
+  studentLoanPlan?: number | null;
   additionalEarnings?: { id: string; description: string; amount: number; }[];
   additionalDeductions?: { id: string; description: string; amount: number; }[];
   additionalAllowances?: { id: string; description: string; amount: number; }[];
@@ -68,5 +68,6 @@ export interface PreviousPeriodData {
   taxablePayYTD: number;
   incomeTaxYTD: number;
   nationalInsuranceYTD: number;
+  studentLoanYTD: number;
   lastPeriod: number;
 }

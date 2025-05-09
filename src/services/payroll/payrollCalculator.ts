@@ -58,9 +58,10 @@ export async function calculateMonthlyPayroll(
     const pensionContribution = calculatePension(grossPay, pensionPercentage);
     
     // Calculate student loan repayment
+    const studentLoanPlan = details.studentLoanPlan !== undefined ? details.studentLoanPlan : null;
     const studentLoanRepayment = calculateStudentLoan(
       grossPay, 
-      details.studentLoanPlan
+      studentLoanPlan
     );
     
     // Parse tax code to get tax-free allowance
@@ -87,11 +88,21 @@ export async function calculateMonthlyPayroll(
     // Calculate net pay
     const netPay = grossPay - totalDeductions;
     
-    // Build YTD values
-    const grossPayYTD = ytdData ? ytdData.grossPayYTD + grossPay : grossPay;
-    const taxablePayYTD = ytdData ? ytdData.taxablePayYTD + taxablePay : taxablePay;
-    const incomeTaxYTD = ytdData ? ytdData.incomeTaxYTD + monthlyTax : monthlyTax;
-    const nationalInsuranceYTD = ytdData ? ytdData.nationalInsuranceYTD + niContribution : niContribution;
+    // Build YTD values - handle properly without direct Promise operations
+    let grossPayYTD = grossPay;
+    let taxablePayYTD = taxablePay;
+    let incomeTaxYTD = monthlyTax;
+    let nationalInsuranceYTD = niContribution;
+    let studentLoanYTD = studentLoanRepayment;
+    
+    // Add YTD data if available
+    if (ytdData) {
+      grossPayYTD = ytdData.grossPayYTD + grossPay;
+      taxablePayYTD = ytdData.taxablePayYTD + taxablePay;
+      incomeTaxYTD = ytdData.incomeTaxYTD + monthlyTax;
+      nationalInsuranceYTD = ytdData.nationalInsuranceYTD + niContribution;
+      studentLoanYTD = ytdData.studentLoanYTD + studentLoanRepayment;
+    }
     
     return {
       employeeId: details.employeeId,
@@ -122,7 +133,7 @@ export async function calculateMonthlyPayroll(
       taxablePayYTD,
       incomeTaxYTD,
       nationalInsuranceYTD,
-      studentLoanYTD: studentLoanRepayment // Just this period for now
+      studentLoanYTD
     };
   } catch (error) {
     console.error("Error in calculateMonthlyPayroll:", error);

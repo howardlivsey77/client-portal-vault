@@ -33,6 +33,7 @@ export async function getPreviousPeriodData(
         taxable_pay_this_period,
         income_tax_this_period,
         nic_employee_this_period,
+        student_loan_this_period,
         payroll_period
       `)
       .eq('employee_id', employeeId)
@@ -52,6 +53,7 @@ export async function getPreviousPeriodData(
         taxablePayYTD: 0,
         incomeTaxYTD: 0,
         nationalInsuranceYTD: 0,
+        studentLoanYTD: 0,
         lastPeriod: 0
       };
     }
@@ -62,6 +64,7 @@ export async function getPreviousPeriodData(
       taxablePayYTD: 0,
       incomeTaxYTD: 0,
       nationalInsuranceYTD: 0,
+      studentLoanYTD: 0,
       lastPeriod: data.length
     };
     
@@ -70,6 +73,7 @@ export async function getPreviousPeriodData(
       results.taxablePayYTD += record.taxable_pay_this_period / 100;
       results.incomeTaxYTD += record.income_tax_this_period / 100;
       results.nationalInsuranceYTD += record.nic_employee_this_period / 100;
+      results.studentLoanYTD += record.student_loan_this_period / 100;
     });
     
     return results;
@@ -95,6 +99,7 @@ export async function saveYTDData(
     taxablePayYTD: number,
     incomeTaxYTD: number,
     nationalInsuranceYTD: number,
+    studentLoanYTD: number,
     taxYear: string,
     taxPeriod: number
   }

@@ -55,7 +55,9 @@ export function usePayslipGenerator() {
         taxablePayYTD: item.taxable_pay_ytd ? item.taxable_pay_ytd / 100 : item.gross_pay_this_period / 100,
         incomeTaxYTD: item.income_tax_ytd ? item.income_tax_ytd / 100 : item.income_tax_this_period / 100,
         nationalInsuranceYTD: item.nic_employee_ytd ? item.nic_employee_ytd / 100 : item.nic_employee_this_period / 100,
-        grossPayYTD: item.gross_pay_ytd ? item.gross_pay_ytd / 100 : item.gross_pay_this_period / 100
+        grossPayYTD: item.gross_pay_ytd ? item.gross_pay_ytd / 100 : item.gross_pay_this_period / 100,
+        studentLoanPlan: item.student_loan_plan,
+        studentLoanYTD: item.student_loan_this_period / 100 // Just this period for now
       };
       
       const filename = `${item.employee_name?.replace(/\s+/g, '-').toLowerCase() || 'employee'}-payslip-${item.payroll_period}.pdf`;

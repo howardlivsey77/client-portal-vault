@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { PayrollResult } from "./types";
 import { roundToTwoDecimals } from "@/lib/formatters";
@@ -71,8 +70,8 @@ export async function savePayrollResult(
       earnings_above_uel_this_period: 0,
       earnings_above_st_this_period: 0,
       
-      // Student loan
-      student_loan_plan: result.studentLoanPlan || null,
+      // Student loan - ensure it's a number type for the database
+      student_loan_plan: result.studentLoanPlan,
       student_loan_this_period: poundsToPence(result.studentLoan),
       
       // Pension

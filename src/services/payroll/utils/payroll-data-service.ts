@@ -3,55 +3,102 @@ import { supabase } from "@/integrations/supabase/client";
 import { PreviousPeriodData } from "../types";
 
 /**
- * Get employee year-to-date payroll data
+ * Get YTD data for an employee
  * @param employeeId Employee ID
- * @param taxYear Current tax year (e.g., "2024-2025")
- * @returns Year-to-date payroll data 
+ * @param taxYear Current tax year (format: "YYYY-YYYY")
+ * @returns Previous period data for calculations
  */
 export async function getEmployeeYTDData(
-  employeeId: string, 
+  employeeId: string,
   taxYear: string
-): Promise<PreviousPeriodData | null> {
+): Promise<PreviousPeriodData> {
   try {
-    // Extract years from tax year string (e.g., "2025-2026")
-    const years = taxYear.split('-');
+    // Parse tax year to get date ranges
+    const years = taxYear.split("-");
+    if (years.length !== 2) {
+      throw new Error(`Invalid tax year format: ${taxYear}`);
+    }
+    
     const startYear = parseInt(years[0], 10);
-    const endYear = parseInt(years[1], 10);
-    
-    // Tax year ranges from April 6 of start year to April 5 of end year
+    // UK tax year runs from April 6 to April 5
     const startDate = new Date(startYear, 3, 6); // April 6th
-    const endDate = new Date(new Date().getTime()); // Today's date
+    const endDate = new Date(startYear + 1, 3, 5); // April 5th next year
     
-    // Get all payroll records for this employee in the tax year
+    // Format dates for database query
+    const startDateStr = startDate.toISOString().split("T")[0];
+    const endDateStr = endDate.toISOString().split("T")[0];
+    
+    // Get all payroll results for this employee in the current tax year
     const { data, error } = await supabase
-      .from('payroll_results')
-      .select('*')
-      .eq('employee_id', employeeId)
-      .gte('payroll_period', startDate.toISOString().split('T')[0])
-      .lte('payroll_period', endDate.toISOString().split('T')[0])
-      .order('payroll_period', { ascending: true });
-      
+      .from("payroll_results")
+      .select("*")
+      .eq("employee_id", employeeId)
+      .gte("payroll_period", startDateStr)
+      .lt("payroll_period", endDateStr)
+      .order("payroll_period", { ascending: false });
+    
     if (error) {
-      console.error("Error fetching employee YTD data:", error);
-      return null;
+      console.error("Error fetching YTD data:", error);
+      throw error;
     }
     
+    // If no data found, return zeros
     if (!data || data.length === 0) {
-      return null;
+      return {
+        grossPayYTD: 0,
+        taxablePayYTD: 0,
+        incomeTaxYTD: 0,
+        nationalInsuranceYTD: 0,
+        studentLoanYTD: 0,
+        lastPeriod: 0
+      };
     }
     
-    // Calculate YTD totals (convert from pence to pounds)
-    const ytdData: PreviousPeriodData = {
-      grossPayYTD: data.reduce((sum, record) => sum + (record.gross_pay_this_period || 0), 0) / 100,
-      taxablePayYTD: data.reduce((sum, record) => sum + (record.taxable_pay_this_period || 0), 0) / 100,
-      incomeTaxYTD: data.reduce((sum, record) => sum + (record.income_tax_this_period || 0), 0) / 100,
-      nationalInsuranceYTD: data.reduce((sum, record) => sum + (record.nic_employee_this_period || 0), 0) / 100,
+    // Add up all values from existing periods
+    // Database stores monetary values in pence, so convert to pounds
+    let grossPayYTD = 0;
+    let taxablePayYTD = 0;
+    let incomeTaxYTD = 0;
+    let nationalInsuranceYTD = 0;
+    let studentLoanYTD = 0;
+    
+    // Use the most recent record for YTD values if available
+    if (data[0].gross_pay_ytd) {
+      // YTD values are already stored, use them
+      grossPayYTD = data[0].gross_pay_ytd / 100;
+      taxablePayYTD = data[0].taxable_pay_ytd / 100;
+      incomeTaxYTD = data[0].income_tax_ytd / 100;
+      nationalInsuranceYTD = data[0].nic_employee_ytd / 100;
+      studentLoanYTD = data[0].student_loan_this_period / 100; // Use current period as YTD not stored
+    } else {
+      // Sum up individual periods
+      data.forEach((record) => {
+        grossPayYTD += record.gross_pay_this_period / 100;
+        taxablePayYTD += record.taxable_pay_this_period / 100;
+        incomeTaxYTD += record.income_tax_this_period / 100;
+        nationalInsuranceYTD += record.nic_employee_this_period / 100;
+        studentLoanYTD += record.student_loan_this_period / 100;
+      });
+    }
+    
+    return {
+      grossPayYTD,
+      taxablePayYTD,
+      incomeTaxYTD,
+      nationalInsuranceYTD,
+      studentLoanYTD,
       lastPeriod: data.length
     };
-    
-    return ytdData;
   } catch (error) {
     console.error("Error in getEmployeeYTDData:", error);
-    return null;
+    // Return zeros if error
+    return {
+      grossPayYTD: 0,
+      taxablePayYTD: 0,
+      incomeTaxYTD: 0,
+      nationalInsuranceYTD: 0,
+      studentLoanYTD: 0,
+      lastPeriod: 0
+    };
   }
 }

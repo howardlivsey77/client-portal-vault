@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/select";
 
 interface StudentLoanFieldProps {
-  studentLoanPlan: 1 | 2 | 4 | 5 | null;
+  studentLoanPlan: number | null;
   onInputChange: (field: string, value: any) => void;
 }
 
@@ -20,7 +20,7 @@ export function StudentLoanField({ studentLoanPlan, onInputChange }: StudentLoan
       <Select
         value={studentLoanPlan?.toString() || "none"}
         onValueChange={(value) => {
-          const planNumber = value !== "none" ? parseInt(value, 10) as 1 | 2 | 4 | 5 : null;
+          const planNumber = value !== "none" ? parseInt(value, 10) as number | null : null;
           onInputChange('studentLoanPlan', planNumber);
         }}
       >

@@ -107,23 +107,25 @@ export function generatePayslip(
   // Get position after the second table
   const finalY2 = (doc as any).lastAutoTable.finalY;
   
-  // Net Pay box
+  // Net pay table
   autoTable(doc, {
     startY: finalY2 + 10,
-    head: [['Net Pay', `£${payrollData.netPay.toFixed(2)}`]],
-    body: [],
-    headStyles: { fillColor: [50, 50, 50], fontSize: 12, fontStyle: 'bold' },
+    body: [
+      ['Net Pay', `£${payrollData.netPay.toFixed(2)}`]
+    ],
+    styles: { textColor: [0, 0, 0], fontSize: 12, fontStyle: 'bold' },
     columnStyles: {
       0: { cellWidth: 90 },
-      1: { cellWidth: 80, halign: 'right' }
+      1: { cellWidth: 40, halign: 'right' }
     },
+    bodyStyles: { fillColor: [220, 220, 220] },
     margin: { top: 55, left: 20, right: 20 }
   });
   
   // Add footer
   doc.setFontSize(8);
   doc.setTextColor(100, 100, 100);
-  doc.text("This payslip was generated automatically and does not require a signature.", 105, 280, { align: "center" });
+  doc.text("This payslip was generated automatically. Not valid as an official document unless signed.", 105, 280, { align: "center" });
   
   // Save the PDF
   doc.save(filename);
