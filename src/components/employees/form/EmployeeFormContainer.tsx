@@ -16,7 +16,6 @@ import { AddressFields } from "@/components/employees/AddressFields";
 import { HireDateField } from "@/components/employees/HireDateField";
 import { PayrollIdField } from "@/components/employees/PayrollIdField";
 import { EmployeeFormActions } from "@/components/employees/EmployeeFormActions";
-import { HmrcFields } from "@/components/employees/HmrcFields";
 import { departments } from "@/types/employee";
 import { UseFormReturn } from "react-hook-form";
 import { EmployeeFormValues } from "@/types/employee";
@@ -75,9 +74,6 @@ export const EmployeeFormContainer = ({
             <div className="max-w-xs">
               <PayrollIdField form={form} readOnly={readOnly} />
             </div>
-            
-            {/* HMRC Section */}
-            <HmrcFields control={form.control} readOnly={readOnly} />
             
             {/* Compensation Information */}
             <CompensationFields 

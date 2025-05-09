@@ -12,7 +12,6 @@ import EmployeeForm from "./pages/EmployeeForm";
 import EmployeeDetails from "./pages/EmployeeDetails";
 import TimesheetSettings from "./pages/TimesheetSettings";
 import Notifications from "./pages/Notifications";
-import PayrollProcessing from "./pages/PayrollProcessing";
 import NotFound from "./pages/NotFound";
 import AuthProvider from "./providers/AuthProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -38,7 +37,6 @@ const App = () => (
               <Route path="/employee/edit/:id" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
               <Route path="/settings/timesheets" element={<ProtectedRoute><TimesheetSettings /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-              <Route path="/payroll-processing" element={<ProtectedRoute><PayrollProcessing /></ProtectedRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

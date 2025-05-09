@@ -1,7 +1,7 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { File, FileText, Home, Settings, Users, CheckSquare, ChartBar, Receipt, Clock, BanknoteIcon } from "lucide-react";
+import { File, FileText, Home, Settings, Users, CheckSquare, ChartBar, Receipt, Clock } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 
@@ -73,12 +73,6 @@ export function Sidebar({
             <Link to={getTabUrl("payroll")}>
               <Receipt className="h-4 w-4" />
               Payroll Input
-            </Link>
-          </Button>
-          <Button variant="ghost" className={cn("monday-sidebar-item w-full justify-start", isRouteActive("/payroll-processing") && "bg-accent text-accent-foreground")} asChild>
-            <Link to="/payroll-processing">
-              <Receipt className="h-4 w-4" />
-              Payroll Processing
             </Link>
           </Button>
           <Button variant="ghost" className={cn("monday-sidebar-item w-full justify-start", isTabActive("documents") && "bg-accent text-accent-foreground")} asChild>

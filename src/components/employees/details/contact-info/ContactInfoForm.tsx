@@ -5,7 +5,7 @@ import { z } from "zod";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ContactInfoFormProps, ContactInfoFormValues } from "./types";
+import { ContactInfoFormValues } from "./types";
 
 // Form schema
 const contactInfoSchema = z.object({
@@ -16,6 +16,12 @@ const contactInfoSchema = z.object({
   address4: z.string().optional().nullable(),
   postcode: z.string().optional().nullable(),
 });
+
+interface ContactInfoFormProps {
+  defaultValues: ContactInfoFormValues;
+  onSubmit: (data: ContactInfoFormValues) => Promise<void>;
+  onCancel: () => void;
+}
 
 export const ContactInfoForm = ({ defaultValues, onSubmit, onCancel }: ContactInfoFormProps) => {
   // Setup form

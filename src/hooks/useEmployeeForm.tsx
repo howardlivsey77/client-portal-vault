@@ -33,11 +33,6 @@ export const useEmployeeForm = (employeeId?: string) => {
       address4: "",
       postcode: "",
       work_pattern: JSON.stringify(defaultWorkPattern),
-      // Default values for HMRC fields
-      tax_code: "",
-      week_one_month_one: false,
-      nic_code: "",
-      student_loan_plan: null,
     },
   });
   
@@ -112,11 +107,6 @@ export const useEmployeeForm = (employeeId?: string) => {
           rate_2: data.rate_2,
           rate_3: data.rate_3,
           rate_4: data.rate_4,
-          // HMRC fields
-          tax_code: data.tax_code || "",
-          week_one_month_one: data.week_one_month_one || false,
-          nic_code: data.nic_code || "",
-          student_loan_plan: data.student_loan_plan,
         });
       }
     } catch (error: any) {

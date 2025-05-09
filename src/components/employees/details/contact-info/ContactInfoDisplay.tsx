@@ -1,50 +1,29 @@
 
-import { Employee } from "@/types/employeeDetails";
-import { ContactInfoDisplayProps } from "./types";
+import { Employee } from "@/hooks/useEmployeeDetails";
+
+interface ContactInfoDisplayProps {
+  employee: Employee;
+  formattedAddress: string;
+}
 
 export const ContactInfoDisplay = ({ employee, formattedAddress }: ContactInfoDisplayProps) => {
   return (
-    <div className="grid grid-cols-1 gap-4">
+    <div className="grid grid-cols-1 gap-2">
       <div>
-        <h3 className="text-sm font-medium mb-2">Email</h3>
-        <p className="p-2 bg-gray-50 rounded border border-gray-100">
-          {employee.email || "Not provided"}
-        </p>
+        <p className="text-sm font-medium text-muted-foreground">Email</p>
+        <p>{employee.email || "Not provided"}</p>
       </div>
       
-      <div>
-        <h3 className="text-sm font-medium mb-2">Address Line 1</h3>
-        <p className="p-2 bg-gray-50 rounded border border-gray-100">
-          {employee.address1 || "Not provided"}
-        </p>
-      </div>
-      
-      <div>
-        <h3 className="text-sm font-medium mb-2">Address Line 2</h3>
-        <p className="p-2 bg-gray-50 rounded border border-gray-100">
-          {employee.address2 || "Not provided"}
-        </p>
-      </div>
-      
-      <div>
-        <h3 className="text-sm font-medium mb-2">Address Line 3</h3>
-        <p className="p-2 bg-gray-50 rounded border border-gray-100">
-          {employee.address3 || "Not provided"}
-        </p>
-      </div>
-      
-      <div>
-        <h3 className="text-sm font-medium mb-2">Address Line 4</h3>
-        <p className="p-2 bg-gray-50 rounded border border-gray-100">
-          {employee.address4 || "Not provided"}
-        </p>
-      </div>
-      
-      <div>
-        <h3 className="text-sm font-medium mb-2">Postcode</h3>
-        <p className="p-2 bg-gray-50 rounded border border-gray-100">
-          {employee.postcode || "Not provided"}
-        </p>
+      <div className="mt-2">
+        <p className="text-sm font-medium text-muted-foreground">Address</p>
+        <div className="space-y-1">
+          {employee.address1 && <p>{employee.address1}</p>}
+          {employee.address2 && <p>{employee.address2}</p>}
+          {employee.address3 && <p>{employee.address3}</p>}
+          {employee.address4 && <p>{employee.address4}</p>}
+          {employee.postcode && <p>{employee.postcode}</p>}
+          {!formattedAddress && <p>Not provided</p>}
+        </div>
       </div>
     </div>
   );
