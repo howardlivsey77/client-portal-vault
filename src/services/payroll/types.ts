@@ -1,3 +1,4 @@
+
 /**
  * Types for payroll calculations
  */
@@ -24,7 +25,7 @@ export interface PayrollResult {
   nationalInsurance: number;
   nicCode: string;
   studentLoan: number;
-  studentLoanPlan?: string;
+  studentLoanPlan?: number | null;
   pensionContribution: number;
   pensionPercentage: number;
   totalDeductions: number;
@@ -50,7 +51,7 @@ export interface PayrollDetails {
   taxYear?: string;
   taxPeriod?: number;
   nicCode?: string;
-  studentLoanPlan?: string;
+  studentLoanPlan?: number | null;
   pensionPercentage?: number;
   additionalEarnings?: { name: string; amount: number }[];
   additionalDeductions?: { name: string; amount: number }[];
@@ -66,4 +67,5 @@ export interface PreviousPeriodData {
   incomeTaxYTD: number;
   nationalInsuranceYTD: number;
   studentLoanYTD: number;
+  lastPeriod?: number; // Added as optional to fix existing code
 }

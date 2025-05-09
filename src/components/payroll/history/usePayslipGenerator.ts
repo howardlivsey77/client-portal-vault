@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { generatePayslipPDF } from '@/utils/payslipGenerator';
+import { generatePayslip } from '@/utils/payslipGenerator';
 import { formatCurrency } from '@/lib/formatters';
 import { PayrollResult } from '@/services/payroll/types';
 
@@ -25,7 +25,7 @@ export function usePayslipGenerator() {
         incomeTax: (record.income_tax_this_period || 0) / 100,
         nationalInsurance: (record.nic_employee_this_period || 0) / 100,
         studentLoan: (record.student_loan_this_period || 0) / 100,
-        studentLoanPlan: record.student_loan_plan ? record.student_loan_plan.toString() : undefined,
+        studentLoanPlan: record.student_loan_plan,
         pensionContribution: (record.employee_pension_this_period || 0) / 100,
         pensionPercentage: record.pension_percentage || 0,
         monthlySalary: (record.gross_pay_this_period || 0) / 100,
@@ -57,7 +57,7 @@ export function usePayslipGenerator() {
         day: 'numeric'
       });
       
-      await generatePayslipPDF(payrollResult, dateStr);
+      await generatePayslip(payrollResult, dateStr, `payslip-${record.employee_id}-${dateStr}.pdf`);
     } catch (error) {
       console.error('Error generating payslip:', error);
       // Handle error

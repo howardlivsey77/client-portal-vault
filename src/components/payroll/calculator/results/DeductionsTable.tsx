@@ -73,7 +73,7 @@ export function DeductionsTable({ result, showTaxYTD = false }: DeductionsTableP
             )}
             {result.additionalDeductions?.map((deduction, index) => (
               <TableRow key={index}>
-                <TableCell>{deduction.description}</TableCell>
+                <TableCell>{deduction.name}</TableCell>
                 <TableCell className="text-right">£{formatCurrency(deduction.amount)}</TableCell>
                 {showTaxYTD && <TableCell className="text-right">-</TableCell>}
               </TableRow>

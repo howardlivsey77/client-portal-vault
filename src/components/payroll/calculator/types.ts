@@ -19,7 +19,7 @@ export interface PayrollFormValues {
   taxCode: string;
   taxRegion?: 'UK' | 'Scotland' | 'Wales';
   pensionPercentage: number;
-  studentLoanPlan: 1 | 2 | 4 | 5 | null;
+  studentLoanPlan: number | null;
   additionalDeductions: AdditionalItem[];
   additionalAllowances: AdditionalItem[];
   additionalEarnings: AdditionalItem[];

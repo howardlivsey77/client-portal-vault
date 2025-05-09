@@ -19,7 +19,7 @@ export function PayrollHistoryTable() {
     handlePageChange 
   } = usePayrollHistory();
   
-  const { handleDownloadPayslip } = usePayslipGenerator();
+  const { generatePayslip, isGenerating } = usePayslipGenerator();
 
   if (loading) {
     return <PayrollHistoryLoading />;
@@ -42,7 +42,7 @@ export function PayrollHistoryTable() {
           <>
             <PayrollHistoryTableContent 
               payrollHistory={payrollHistory}
-              onDownloadPayslip={handleDownloadPayslip}
+              onDownloadPayslip={generatePayslip}
             />
             
             <PayrollHistoryPagination

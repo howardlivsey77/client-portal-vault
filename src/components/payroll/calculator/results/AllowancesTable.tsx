@@ -30,7 +30,7 @@ export function AllowancesTable({ result }: AllowancesTableProps) {
           <TableBody>
             {result.additionalAllowances.map((allowance, index) => (
               <TableRow key={index}>
-                <TableCell>{allowance.description}</TableCell>
+                <TableCell>{allowance.name}</TableCell>
                 <TableCell className="text-right font-medium">£{formatCurrency(allowance.amount)}</TableCell>
               </TableRow>
             ))}

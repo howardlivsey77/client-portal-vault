@@ -1,9 +1,5 @@
 
 /**
- * Utility functions for converting between different data formats for payroll
- */
-
-/**
  * Convert pounds to pence for database storage
  */
 export function poundsToPence(amount: number): number {
@@ -11,15 +7,8 @@ export function poundsToPence(amount: number): number {
 }
 
 /**
- * Convert pence to pounds for application use
+ * Convert pence to pounds for display
  */
-export function penceToPounds(amount: number): number {
-  return amount / 100;
-}
-
-/**
- * Format numeric value to 2 decimal places
- */
-export function formatCurrency(amount: number): string {
-  return amount.toFixed(2);
+export function penceToPounds(pence: number): number {
+  return Math.round((pence / 100) * 100) / 100;
 }

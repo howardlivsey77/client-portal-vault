@@ -59,9 +59,12 @@ function convertToDbFormat(
 ) {
   // Convert the student loan plan to a number if it's a string
   let studentLoanPlanNumber: number | null = null;
-  if (result.studentLoanPlan) {
-    // Parse the plan number, e.g., "1", "2", "4"
-    studentLoanPlanNumber = parseInt(result.studentLoanPlan, 10);
+  if (result.studentLoanPlan !== undefined && result.studentLoanPlan !== null) {
+    // If it's already a number, use it directly
+    studentLoanPlanNumber = typeof result.studentLoanPlan === 'number' ? 
+      result.studentLoanPlan : 
+      parseInt(String(result.studentLoanPlan), 10);
+      
     // If parsing fails, set to null
     if (isNaN(studentLoanPlanNumber)) {
       studentLoanPlanNumber = null;

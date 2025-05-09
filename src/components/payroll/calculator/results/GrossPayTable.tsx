@@ -29,7 +29,7 @@ export function GrossPayTable({ result }: GrossPayTableProps) {
             </TableRow>
             {result.additionalEarnings && result.additionalEarnings.map((earning, index) => (
               <TableRow key={index}>
-                <TableCell>{earning.description}</TableCell>
+                <TableCell>{earning.name}</TableCell>
                 <TableCell className="text-right font-medium">£{formatCurrency(earning.amount)}</TableCell>
               </TableRow>
             ))}

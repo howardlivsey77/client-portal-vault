@@ -61,7 +61,7 @@ export function generatePayslip(
     body: [
       ['Basic Salary', `£${payrollData.monthlySalary.toFixed(2)}`, `£${(payrollData.grossPayYTD || 0).toFixed(2)}`],
       ...(payrollData.additionalEarnings.map(earning => 
-        [earning.description, `£${earning.amount.toFixed(2)}`, '']
+        [earning.name, `£${earning.amount.toFixed(2)}`, '']
       )),
       ['Total Gross Pay', `£${payrollData.grossPay.toFixed(2)}`, `£${(payrollData.grossPayYTD || 0).toFixed(2)}`]
     ],
@@ -89,7 +89,7 @@ export function generatePayslip(
       ...(payrollData.studentLoan > 0 ? [['Student Loan', `£${payrollData.studentLoan.toFixed(2)}`, '']] : []),
       ...(payrollData.pensionContribution > 0 ? [['Pension', `£${payrollData.pensionContribution.toFixed(2)}`, '']] : []),
       ...(payrollData.additionalDeductions.map(deduction => 
-        [deduction.description, `£${deduction.amount.toFixed(2)}`, '']
+        [deduction.name, `£${deduction.amount.toFixed(2)}`, '']
       )),
       ['Total Deductions', `£${payrollData.totalDeductions.toFixed(2)}`, '']
     ],
@@ -128,3 +128,4 @@ export function generatePayslip(
   // Save the PDF
   doc.save(filename);
 }
+

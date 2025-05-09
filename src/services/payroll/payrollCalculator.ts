@@ -92,6 +92,7 @@ export async function calculateMonthlyPayroll(
     let taxablePayYTD = taxablePay;
     let incomeTaxYTD = monthlyTax;
     let nationalInsuranceYTD = niContribution;
+    let studentLoanYTD = studentLoanRepayment;
     
     // Add YTD values from previous periods if available
     if (ytdData) {
@@ -99,6 +100,7 @@ export async function calculateMonthlyPayroll(
       taxablePayYTD += ytdData.taxablePayYTD;
       incomeTaxYTD += ytdData.incomeTaxYTD;
       nationalInsuranceYTD += ytdData.nationalInsuranceYTD;
+      studentLoanYTD += ytdData.studentLoanYTD;
     }
     
     return {
@@ -130,7 +132,7 @@ export async function calculateMonthlyPayroll(
       taxablePayYTD,
       incomeTaxYTD,
       nationalInsuranceYTD,
-      studentLoanYTD: ytdData ? ytdData.studentLoanYTD + studentLoanRepayment : studentLoanRepayment
+      studentLoanYTD
     };
   } catch (error) {
     console.error("Error in calculateMonthlyPayroll:", error);
