@@ -9,7 +9,8 @@ import { PayrollConstantForm } from "./PayrollConstantForm";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Filter } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 interface PayrollConstantsDialogProps {
   open: boolean;
@@ -24,6 +25,7 @@ export function PayrollConstantsDialog({ open, onOpenChange }: PayrollConstantsD
   const [deletingConstant, setDeletingConstant] = useState<TaxConstant | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showHistorical, setShowHistorical] = useState(false);
   const { toast } = useToast();
 
   const categories = [
@@ -37,17 +39,23 @@ export function PayrollConstantsDialog({ open, onOpenChange }: PayrollConstantsD
     if (open) {
       loadConstants(activeCategory);
     }
-  }, [open, activeCategory]);
+  }, [open, activeCategory, showHistorical]);
 
   const loadConstants = async (category: string) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("payroll_constants")
         .select("*")
         .eq("category", category)
-        .eq("is_current", true)
         .order("key");
+      
+      // Only filter by is_current if we're not showing historical data
+      if (!showHistorical) {
+        query = query.eq("is_current", true);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setConstants(data || []);
@@ -211,7 +219,17 @@ export function PayrollConstantsDialog({ open, onOpenChange }: PayrollConstantsD
                   />
                 ) : (
                   <div className="flex-1 flex flex-col">
-                    <div className="mb-4 flex justify-end">
+                    <div className="mb-4 flex justify-between items-center">
+                      <div className="flex items-center space-x-2">
+                        <Switch 
+                          id="show-historical" 
+                          checked={showHistorical} 
+                          onCheckedChange={setShowHistorical}
+                        />
+                        <label htmlFor="show-historical" className="text-sm cursor-pointer flex items-center gap-1">
+                          <Filter className="h-4 w-4" /> Show historical records
+                        </label>
+                      </div>
                       <Button onClick={handleAddNew}>Add New Constant</Button>
                     </div>
                     
