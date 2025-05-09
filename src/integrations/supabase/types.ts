@@ -26,13 +26,17 @@ export type Database = {
           hours_per_week: number | null
           id: string
           last_name: string
+          nic_code: string | null
           payroll_id: string | null
           postcode: string | null
           rate_2: number | null
           rate_3: number | null
           rate_4: number | null
+          student_loan_plan: number | null
+          tax_code: string | null
           updated_at: string
           user_id: string
+          week_one_month_one: boolean | null
           work_pattern: string | null
         }
         Insert: {
@@ -51,13 +55,17 @@ export type Database = {
           hours_per_week?: number | null
           id?: string
           last_name: string
+          nic_code?: string | null
           payroll_id?: string | null
           postcode?: string | null
           rate_2?: number | null
           rate_3?: number | null
           rate_4?: number | null
+          student_loan_plan?: number | null
+          tax_code?: string | null
           updated_at?: string
           user_id: string
+          week_one_month_one?: boolean | null
           work_pattern?: string | null
         }
         Update: {
@@ -76,13 +84,17 @@ export type Database = {
           hours_per_week?: number | null
           id?: string
           last_name?: string
+          nic_code?: string | null
           payroll_id?: string | null
           postcode?: string | null
           rate_2?: number | null
           rate_3?: number | null
           rate_4?: number | null
+          student_loan_plan?: number | null
+          tax_code?: string | null
           updated_at?: string
           user_id?: string
+          week_one_month_one?: boolean | null
           work_pattern?: string | null
         }
         Relationships: []
