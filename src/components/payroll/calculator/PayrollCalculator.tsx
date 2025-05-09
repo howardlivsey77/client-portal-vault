@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,29 +11,40 @@ import { generatePayslip } from "@/utils/payslipGenerator";
 import { PayrollForm } from "./PayrollForm";
 import { PayrollResults } from "./PayrollResults";
 import { PayrollCalculatorProps, PayrollFormValues } from "./types";
+import { getTaxYear, getTaxPeriod, formatTaxPeriod } from "@/utils/taxYearUtils";
 
 export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
   const { toast } = useToast();
   const [selectedTab, setSelectedTab] = useState<string>("calculator");
+  
+  // Get current tax year and format tax period
+  const currentTaxYear = getTaxYear();
+  const currentTaxPeriod = getTaxPeriod();
+  
   const [payrollDetails, setPayrollDetails] = useState<PayrollFormValues>({
     employeeId: employee?.id || '',
     employeeName: employee ? `${employee.first_name} ${employee.last_name}` : '',
     payrollId: employee?.payroll_id || '',
-    monthlySalary: 0,
-    taxCode: '1257L', // Standard tax code
+    monthlySalary: employee?.monthly_salary || 0,
+    taxCode: employee?.tax_code || '1257L', // Standard tax code
     taxRegion: 'UK', // Default to UK/England
     pensionPercentage: 5,
-    studentLoanPlan: null,
+    studentLoanPlan: employee?.student_loan_plan || null,
     additionalDeductions: [],
     additionalAllowances: [],
-    additionalEarnings: []
+    additionalEarnings: [],
+    nicCode: employee?.nic_code || 'A',
+    taxYear: currentTaxYear,
+    taxPeriod: currentTaxPeriod,
+    useEmergencyTax: employee?.week_one_month_one || false,
+    isNewEmployee: false
   });
   
   const [calculationResult, setCalculationResult] = useState<PayrollResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [payPeriod, setPayPeriod] = useState<string>(
-    new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+    formatTaxPeriod(new Date())
   );
   const [autoCalculate, setAutoCalculate] = useState<boolean>(true);
 
@@ -40,18 +52,21 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
   useEffect(() => {
     if (autoCalculate && payrollDetails.monthlySalary > 0 && payrollDetails.employeeName) {
       try {
-        const result = calculateMonthlyPayroll(payrollDetails);
-        setCalculationResult(result);
+        const calculatePayroll = async () => {
+          const result = await calculateMonthlyPayroll(payrollDetails);
+          setCalculationResult(result);
+        };
+        calculatePayroll();
       } catch (error) {
         console.error("Auto payroll calculation error:", error);
       }
     }
   }, [payrollDetails, autoCalculate]);
 
-  const handleCalculatePayroll = () => {
+  const handleCalculatePayroll = async () => {
     try {
       setIsCalculating(true);
-      const result = calculateMonthlyPayroll(payrollDetails);
+      const result = await calculateMonthlyPayroll(payrollDetails);
       setCalculationResult(result);
       setIsCalculating(false);
       
@@ -126,7 +141,10 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
       <CardHeader>
         <CardTitle>UK Payroll Calculator</CardTitle>
         <CardDescription>
-          {employee ? `Calculate payroll for ${employee.first_name} ${employee.last_name}` : 'Calculate monthly payroll including tax, NI, and other deductions'}
+          {employee ? 
+            `Calculate payroll for ${employee.first_name} ${employee.last_name} (${currentTaxYear} Tax Year)` : 
+            `Calculate monthly payroll including tax, NI, and other deductions - ${currentTaxYear} Tax Year`
+          }
         </CardDescription>
       </CardHeader>
       <CardContent>

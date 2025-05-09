@@ -43,6 +43,8 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
           )}
           <div>Pay Period:</div>
           <div className="font-medium">{payPeriod}</div>
+          <div>Tax Year:</div>
+          <div className="font-medium">{result.taxYear}</div>
           <div>Gross Pay:</div>
           <div className="font-medium">{formatCurrency(result.grossPay)}</div>
           <div>Net Pay:</div>
@@ -108,7 +110,8 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
         <TableHeader>
           <TableRow>
             <TableHead>Deductions</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
+            <TableHead className="text-right">This Period</TableHead>
+            <TableHead className="text-right">Year To Date</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -123,14 +126,17 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
               </div>
             </TableCell>
             <TableCell className="text-right text-red-500">-{formatCurrency(result.incomeTax)}</TableCell>
+            <TableCell className="text-right text-red-500">-{formatCurrency(result.incomeTaxYTD || result.incomeTax)}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell>National Insurance</TableCell>
             <TableCell className="text-right text-red-500">-{formatCurrency(result.nationalInsurance)}</TableCell>
+            <TableCell className="text-right text-red-500">-{formatCurrency(result.nationalInsuranceYTD || result.nationalInsurance)}</TableCell>
           </TableRow>
           {result.studentLoan > 0 && (
             <TableRow>
               <TableCell>Student Loan ({getStudentLoanPlanName(result.studentLoanPlan)})</TableCell>
+              <TableCell className="text-right text-red-500">-{formatCurrency(result.studentLoan)}</TableCell>
               <TableCell className="text-right text-red-500">-{formatCurrency(result.studentLoan)}</TableCell>
             </TableRow>
           )}
@@ -138,16 +144,19 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
             <TableRow>
               <TableCell>Pension Contribution ({result.pensionPercentage}%)</TableCell>
               <TableCell className="text-right text-red-500">-{formatCurrency(result.pensionContribution)}</TableCell>
+              <TableCell className="text-right text-red-500">-{formatCurrency(result.pensionContribution)}</TableCell>
             </TableRow>
           )}
           {result.additionalDeductions && result.additionalDeductions.length > 0 && result.additionalDeductions.map((deduction, index) => (
             <TableRow key={`deduction-${index}`}>
               <TableCell>{deduction.name}</TableCell>
               <TableCell className="text-right text-red-500">-{formatCurrency(deduction.amount)}</TableCell>
+              <TableCell className="text-right text-red-500">-{formatCurrency(deduction.amount)}</TableCell>
             </TableRow>
           ))}
           <TableRow className="border-t">
             <TableCell className="font-medium">Total Deductions</TableCell>
+            <TableCell className="text-right font-medium text-red-500">-{formatCurrency(result.totalDeductions)}</TableCell>
             <TableCell className="text-right font-medium text-red-500">-{formatCurrency(result.totalDeductions)}</TableCell>
           </TableRow>
         </TableBody>
@@ -159,7 +168,8 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Allowances</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
+              <TableHead className="text-right">This Period</TableHead>
+              <TableHead className="text-right">Year To Date</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -167,10 +177,12 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
               <TableRow key={`allowance-${index}`}>
                 <TableCell>{allowance.name}</TableCell>
                 <TableCell className="text-right text-green-500">+{formatCurrency(allowance.amount)}</TableCell>
+                <TableCell className="text-right text-green-500">+{formatCurrency(allowance.amount)}</TableCell>
               </TableRow>
             ))}
             <TableRow className="border-t">
               <TableCell className="font-medium">Total Allowances</TableCell>
+              <TableCell className="text-right font-medium text-green-500">+{formatCurrency(result.totalAllowances)}</TableCell>
               <TableCell className="text-right font-medium text-green-500">+{formatCurrency(result.totalAllowances)}</TableCell>
             </TableRow>
           </TableBody>
@@ -178,10 +190,43 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
       )}
       
       {/* Net Pay Section */}
-      <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-md">
-        <div className="flex justify-between items-center">
-          <span className="font-bold text-lg">Net Pay</span>
-          <span className="font-bold text-lg text-green-600">{formatCurrency(result.netPay)}</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-md">
+          <div className="flex justify-between items-center">
+            <span className="font-bold text-lg">This Period Net Pay</span>
+            <span className="font-bold text-lg text-green-600">{formatCurrency(result.netPay)}</span>
+          </div>
+        </div>
+        
+        <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-md">
+          <div className="flex flex-col">
+            <div className="flex justify-between items-center mb-1">
+              <span className="font-medium">YTD Gross Pay</span>
+              <span className="font-medium">{formatCurrency(result.grossPayYTD || result.grossPay)}</span>
+            </div>
+            <div className="flex justify-between items-center mb-1">
+              <span className="font-medium">YTD Deductions</span>
+              <span className="font-medium text-red-500">-{formatCurrency((result.incomeTaxYTD || result.incomeTax) + (result.nationalInsuranceYTD || result.nationalInsurance))}</span>
+            </div>
+            <div className="border-t mt-1 pt-1 flex justify-between items-center">
+              <span className="font-bold">YTD Net Pay</span>
+              <span className="font-bold text-green-600">{formatCurrency(result.netPay)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* UK Tax Year Information */}
+      <div className="bg-slate-50 dark:bg-slate-950/30 p-4 rounded-md mt-4">
+        <h3 className="text-md font-medium mb-1">UK Tax Year Information</h3>
+        <div className="text-sm text-muted-foreground">
+          <p>Tax Year: {result.taxYear} (6 Apr to 5 Apr)</p>
+          <p>Tax Period: {result.taxPeriod} of 12</p>
+          {result.taxCode.includes('M1') && (
+            <p className="text-amber-600 mt-1">
+              Emergency tax basis (Month 1) is being applied. Each period is calculated in isolation.
+            </p>
+          )}
         </div>
       </div>
     </div>

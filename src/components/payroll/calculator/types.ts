@@ -23,4 +23,9 @@ export interface PayrollFormValues {
   additionalDeductions: AdditionalItem[];
   additionalAllowances: AdditionalItem[];
   additionalEarnings: AdditionalItem[];
+  nicCode?: string;
+  taxYear?: string;
+  taxPeriod?: number;
+  useEmergencyTax?: boolean;
+  isNewEmployee?: boolean;
 }

@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { PayrollResult } from "./types";
 import { roundToTwoDecimals } from "@/lib/formatters";
+import { getTaxYear, getTaxPeriod } from "@/utils/taxYearUtils";
 
 /**
  * Convert pounds to pence for database storage
@@ -29,6 +30,10 @@ export async function savePayrollResult(
       return { success: false, message: "Invalid payroll period date" };
     }
     
+    // Get tax year and period if not provided
+    const taxYear = result.taxYear || getTaxYear(periodDate);
+    const taxPeriod = result.taxPeriod || getTaxPeriod(periodDate);
+    
     // Convert PayrollResult to database format (mainly converting pounds to pence)
     const payrollData = {
       employee_id: result.employeeId,
@@ -36,15 +41,22 @@ export async function savePayrollResult(
       
       // Tax information
       tax_code: result.taxCode,
+      tax_year: taxYear,
+      tax_period: taxPeriod,
       free_pay_this_period: poundsToPence(result.monthlySalary - result.incomeTax / 0.2), // Approximate free pay
-      taxable_pay_this_period: poundsToPence(result.monthlySalary),
+      taxable_pay_this_period: poundsToPence(result.taxablePay || result.monthlySalary),
       income_tax_this_period: poundsToPence(result.incomeTax),
+      
+      // YTD information
+      taxable_pay_ytd: poundsToPence(result.taxablePayYTD || result.taxablePay || result.monthlySalary),
+      income_tax_ytd: poundsToPence(result.incomeTaxYTD || result.incomeTax),
       
       // NIC information
       nic_letter: result.nicCode || 'A',
       pay_liable_to_nic_this_period: poundsToPence(result.monthlySalary),
       nic_employee_this_period: poundsToPence(result.nationalInsurance),
       nic_employer_this_period: poundsToPence(result.nationalInsurance * 1.5), // Approximate employer NI
+      nic_employee_ytd: poundsToPence(result.nationalInsuranceYTD || result.nationalInsurance),
       
       // NIC bands (these would ideally come from the NIC calculator)
       earnings_at_lel_this_period: 0,
@@ -63,6 +75,7 @@ export async function savePayrollResult(
       
       // Totals
       gross_pay_this_period: poundsToPence(result.grossPay),
+      gross_pay_ytd: poundsToPence(result.grossPayYTD || result.grossPay),
       net_pay_this_period: poundsToPence(result.netPay)
     };
     
@@ -118,6 +131,41 @@ export async function fetchPayrollResults(
     return data || [];
   } catch (error) {
     console.error("Unexpected error fetching payroll results:", error);
+    return [];
+  }
+}
+
+/**
+ * Fetch payroll results by tax year
+ */
+export async function fetchPayrollResultsByTaxYear(
+  taxYear: string
+): Promise<any[]> {
+  try {
+    // Extract years from tax year string (e.g., "2025-2026")
+    const years = taxYear.split('-');
+    const startYear = parseInt(years[0], 10);
+    const endYear = parseInt(years[1], 10);
+    
+    // Tax year ranges from April 6 of start year to April 5 of end year
+    const startDate = new Date(startYear, 3, 6); // April 6th
+    const endDate = new Date(endYear, 3, 5); // April 5th
+    
+    const { data, error } = await supabase
+      .from('payroll_results')
+      .select('*')
+      .gte('payroll_period', startDate.toISOString().split('T')[0])
+      .lte('payroll_period', endDate.toISOString().split('T')[0])
+      .order('payroll_period', { ascending: false });
+      
+    if (error) {
+      console.error("Error fetching payroll results by tax year:", error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error("Unexpected error fetching payroll results by tax year:", error);
     return [];
   }
 }
