@@ -15,21 +15,26 @@ export interface TaxConstant {
   effective_from: string;
   effective_to: string | null;
   is_current: boolean;
+  region: string;
 }
 
 /**
- * Get all current tax constants by category
+ * Get all current tax constants by category and region
  */
-export async function getTaxConstantsByCategory(category: string): Promise<TaxConstant[]> {
+export async function getTaxConstantsByCategory(
+  category: string, 
+  region: string = 'UK'
+): Promise<TaxConstant[]> {
   const { data, error } = await supabase
     .from('payroll_constants')
     .select('*')
     .eq('category', category)
     .eq('is_current', true)
+    .eq('region', region)
     .order('key');
   
   if (error) {
-    console.error(`Error fetching ${category} constants:`, error);
+    console.error(`Error fetching ${category} constants for region ${region}:`, error);
     throw error;
   }
   
@@ -37,15 +42,20 @@ export async function getTaxConstantsByCategory(category: string): Promise<TaxCo
 }
 
 /**
- * Get a specific tax constant by category and key
+ * Get a specific tax constant by category, key, and region
  */
-export async function getTaxConstant(category: string, key: string): Promise<TaxConstant | null> {
+export async function getTaxConstant(
+  category: string, 
+  key: string, 
+  region: string = 'UK'
+): Promise<TaxConstant | null> {
   const { data, error } = await supabase
     .from('payroll_constants')
     .select('*')
     .eq('category', category)
     .eq('key', key)
     .eq('is_current', true)
+    .eq('region', region)
     .single();
   
   if (error) {
@@ -53,7 +63,7 @@ export async function getTaxConstant(category: string, key: string): Promise<Tax
     if (error.code === 'PGRST116') {
       return null;
     }
-    console.error(`Error fetching constant ${category}.${key}:`, error);
+    console.error(`Error fetching constant ${category}.${key} for region ${region}:`, error);
     throw error;
   }
   
@@ -63,13 +73,33 @@ export async function getTaxConstant(category: string, key: string): Promise<Tax
 /**
  * Fallback to use the hardcoded constants when database query fails
  */
-export function getHardcodedTaxBands() {
-  return {
-    PERSONAL_ALLOWANCE: { threshold: 12570, rate: 0 },
-    BASIC_RATE: { threshold: 50270, rate: 0.20 },
-    HIGHER_RATE: { threshold: 125140, rate: 0.40 },
-    ADDITIONAL_RATE: { threshold: Infinity, rate: 0.45 }
-  };
+export function getHardcodedTaxBands(region: string = 'UK') {
+  if (region === 'Scotland') {
+    return {
+      PERSONAL_ALLOWANCE: { threshold: 12570, rate: 0 },
+      STARTER_RATE: { threshold: 14732, rate: 0.19 },
+      BASIC_RATE: { threshold: 25688, rate: 0.20 },
+      INTERMEDIATE_RATE: { threshold: 43662, rate: 0.21 },
+      HIGHER_RATE: { threshold: 125140, rate: 0.42 },
+      ADDITIONAL_RATE: { threshold: Infinity, rate: 0.47 }
+    };
+  } else if (region === 'Wales') {
+    // Currently same as UK/England
+    return {
+      PERSONAL_ALLOWANCE: { threshold: 12570, rate: 0 },
+      BASIC_RATE: { threshold: 50270, rate: 0.20 },
+      HIGHER_RATE: { threshold: 125140, rate: 0.40 },
+      ADDITIONAL_RATE: { threshold: Infinity, rate: 0.45 }
+    };
+  } else {
+    // UK/England default
+    return {
+      PERSONAL_ALLOWANCE: { threshold: 12570, rate: 0 },
+      BASIC_RATE: { threshold: 50270, rate: 0.20 },
+      HIGHER_RATE: { threshold: 125140, rate: 0.40 },
+      ADDITIONAL_RATE: { threshold: Infinity, rate: 0.45 }
+    };
+  }
 }
 
 export function getHardcodedNIThresholds() {

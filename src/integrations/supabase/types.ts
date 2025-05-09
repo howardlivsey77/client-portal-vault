@@ -145,6 +145,7 @@ export type Database = {
           id: string
           is_current: boolean
           key: string
+          region: string
           updated_at: string
           user_id: string | null
           value_numeric: number | null
@@ -159,6 +160,7 @@ export type Database = {
           id?: string
           is_current?: boolean
           key: string
+          region?: string
           updated_at?: string
           user_id?: string | null
           value_numeric?: number | null
@@ -173,6 +175,7 @@ export type Database = {
           id?: string
           is_current?: boolean
           key?: string
+          region?: string
           updated_at?: string
           user_id?: string | null
           value_numeric?: number | null

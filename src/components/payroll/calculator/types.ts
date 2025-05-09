@@ -1,19 +1,24 @@
-
-import { Employee } from "@/types/employee-types";
+export interface AdditionalItem {
+  name: string;
+  amount: number;
+}
 
 export interface PayrollCalculatorProps {
-  employee?: Employee | null;
+  employeeId?: string;
+  employeeName?: string;
+  monthlySalary?: number;
 }
 
 export interface PayrollFormValues {
   employeeId: string;
   employeeName: string;
-  payrollId?: string;
+  payrollId: string;
   monthlySalary: number;
   taxCode: string;
+  taxRegion?: 'UK' | 'Scotland' | 'Wales';
   pensionPercentage: number;
   studentLoanPlan: 1 | 2 | 4 | 5 | null;
-  additionalDeductions: Array<{ description: string, amount: number }>;
-  additionalAllowances: Array<{ description: string, amount: number }>;
-  additionalEarnings: Array<{ description: string, amount: number }>;
+  additionalDeductions: AdditionalItem[];
+  additionalAllowances: AdditionalItem[];
+  additionalEarnings: AdditionalItem[];
 }

@@ -20,6 +20,7 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
     payrollId: employee?.payroll_id || '',
     monthlySalary: 0,
     taxCode: '1257L', // Standard tax code
+    taxRegion: 'UK', // Default to UK/England
     pensionPercentage: 5,
     studentLoanPlan: null,
     additionalDeductions: [],

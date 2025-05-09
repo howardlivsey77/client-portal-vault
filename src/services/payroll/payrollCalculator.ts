@@ -23,6 +23,7 @@ export function calculateMonthlyPayroll(details: PayrollDetails): PayrollResult 
     payrollId,
     monthlySalary,
     taxCode,
+    taxRegion = 'UK',
     pensionPercentage = 0,
     studentLoanPlan = null,
     additionalDeductions = [],
@@ -35,7 +36,7 @@ export function calculateMonthlyPayroll(details: PayrollDetails): PayrollResult 
   const grossPay = monthlySalary + totalAdditionalEarnings;
   
   // Calculate deductions
-  const incomeTax = calculateMonthlyIncomeTaxSync(grossPay, taxCode);
+  const incomeTax = calculateMonthlyIncomeTaxSync(grossPay, taxCode, taxRegion);
   const nationalInsurance = calculateNationalInsuranceSync(grossPay);
   const studentLoan = calculateStudentLoanSync(grossPay, studentLoanPlan);
   const pensionContribution = calculatePension(grossPay, pensionPercentage);
@@ -53,6 +54,7 @@ export function calculateMonthlyPayroll(details: PayrollDetails): PayrollResult 
     employeeName,
     payrollId,
     monthlySalary,
+    taxRegion,
     grossPay: roundToTwoDecimals(grossPay),
     incomeTax: roundToTwoDecimals(incomeTax),
     nationalInsurance: roundToTwoDecimals(nationalInsurance),
