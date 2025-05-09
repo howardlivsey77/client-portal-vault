@@ -5,6 +5,39 @@ import { addDays, format, parse } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 
 /**
+ * Fetches timesheet settings from the database
+ */
+export const fetchTimesheetSettings = async () => {
+  try {
+    // In a real implementation, this would fetch from a settings table
+    // For now, we'll return hardcoded values that match the TimesheetSettings page
+    return {
+      earlyClockInTolerance: 15,
+      lateClockInTolerance: 5, 
+      earlyClockOutTolerance: 5,
+      lateClockOutTolerance: 15,
+      roundClockTimes: true,
+      roundingIntervalMinutes: 15,
+      requireManagerApproval: true,
+      allowEmployeeNotes: true
+    };
+  } catch (error) {
+    console.error("Error fetching timesheet settings:", error);
+    // Return default settings
+    return {
+      earlyClockInTolerance: 15,
+      lateClockInTolerance: 5,
+      earlyClockOutTolerance: 5,
+      lateClockOutTolerance: 15,
+      roundClockTimes: false,
+      roundingIntervalMinutes: 15,
+      requireManagerApproval: true,
+      allowEmployeeNotes: true
+    };
+  }
+};
+
+/**
  * Fetches timesheet entries for an employee for a specific week
  */
 export const fetchTimesheetEntries = async (

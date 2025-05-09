@@ -4,6 +4,17 @@ import { WeeklyTimesheetDay } from '@/hooks/useEmployeeTimesheet';
 import { saveTimesheetEntries } from '@/services/timesheetServices';
 import { useToast } from '@/hooks/use-toast';
 
+interface TimesheetSettings {
+  earlyClockInTolerance: number;
+  lateClockInTolerance: number;
+  earlyClockOutTolerance: number;
+  lateClockOutTolerance: number;
+  roundClockTimes: boolean;
+  roundingIntervalMinutes: number;
+  requireManagerApproval: boolean;
+  allowEmployeeNotes: boolean;
+}
+
 interface TimesheetContextType {
   currentEmployeeId: string | null;
   setCurrentEmployeeId: (id: string | null) => void;
@@ -13,7 +24,20 @@ interface TimesheetContextType {
   setActualTime: (day: string, type: 'startTime' | 'endTime', value: string | null) => void;
   saveTimesheet: (timesheet: WeeklyTimesheetDay[]) => Promise<boolean>;
   saving: boolean;
+  settings: TimesheetSettings;
+  setSettings: (settings: TimesheetSettings) => void;
 }
+
+const defaultSettings: TimesheetSettings = {
+  earlyClockInTolerance: 15,
+  lateClockInTolerance: 5,
+  earlyClockOutTolerance: 5,
+  lateClockOutTolerance: 15,
+  roundClockTimes: false,
+  roundingIntervalMinutes: 15,
+  requireManagerApproval: true,
+  allowEmployeeNotes: true
+};
 
 const TimesheetContext = createContext<TimesheetContextType>({
   currentEmployeeId: null,
@@ -23,7 +47,9 @@ const TimesheetContext = createContext<TimesheetContextType>({
   actualTimes: {},
   setActualTime: () => {},
   saveTimesheet: async () => false,
-  saving: false
+  saving: false,
+  settings: defaultSettings,
+  setSettings: () => {}
 });
 
 export const useTimesheetContext = () => useContext(TimesheetContext);
@@ -43,6 +69,7 @@ export const TimesheetProvider = ({ children }: TimesheetProviderProps) => {
   });
   const [actualTimes, setActualTimes] = useState<Record<string, { startTime: string | null; endTime: string | null }>>({});
   const [saving, setSaving] = useState(false);
+  const [settings, setSettings] = useState<TimesheetSettings>(defaultSettings);
   const { toast } = useToast();
 
   const setActualTime = (day: string, type: 'startTime' | 'endTime', value: string | null) => {
@@ -97,7 +124,9 @@ export const TimesheetProvider = ({ children }: TimesheetProviderProps) => {
       actualTimes,
       setActualTime,
       saveTimesheet,
-      saving
+      saving,
+      settings,
+      setSettings
     }}>
       {children}
     </TimesheetContext.Provider>

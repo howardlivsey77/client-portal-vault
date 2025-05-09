@@ -6,7 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTimesheetContext } from './TimesheetContext';
-import { SaveIcon } from 'lucide-react';
+import { SaveIcon, AlertTriangle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { fetchTimesheetSettings, isTimeOutsideTolerance } from '@/utils/timesheetUtils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface WeeklyTimesheetGridProps {
   timesheet: WeeklyTimesheetDay[];
@@ -14,6 +17,26 @@ interface WeeklyTimesheetGridProps {
 
 export const WeeklyTimesheetGrid = ({ timesheet }: WeeklyTimesheetGridProps) => {
   const { setActualTime, saveTimesheet, saving, actualTimes } = useTimesheetContext();
+  const [settings, setSettings] = useState({
+    earlyClockInTolerance: 15,
+    lateClockInTolerance: 5,
+    earlyClockOutTolerance: 5,
+    lateClockOutTolerance: 15,
+    roundClockTimes: false,
+    roundingIntervalMinutes: 15,
+    requireManagerApproval: true,
+    allowEmployeeNotes: true
+  });
+
+  // Load timesheet settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      const timesheetSettings = await fetchTimesheetSettings();
+      setSettings(timesheetSettings);
+    };
+    
+    loadSettings();
+  }, []);
 
   const handleActualTimeChange = (
     dayString: string,
@@ -26,6 +49,30 @@ export const WeeklyTimesheetGrid = ({ timesheet }: WeeklyTimesheetGridProps) => 
 
   const handleSaveTimesheet = async () => {
     await saveTimesheet(timesheet);
+  };
+
+  const checkTimeException = (day: WeeklyTimesheetDay, isStartTime: boolean) => {
+    const { scheduledStart, scheduledEnd } = day;
+    const actualStart = actualTimes[day.dayString]?.startTime || day.actualStart;
+    const actualEnd = actualTimes[day.dayString]?.endTime || day.actualEnd;
+    
+    if (isStartTime) {
+      return isTimeOutsideTolerance(
+        scheduledStart,
+        actualStart,
+        settings.earlyClockInTolerance,
+        settings.lateClockInTolerance,
+        true
+      );
+    } else {
+      return isTimeOutsideTolerance(
+        scheduledEnd,
+        actualEnd,
+        settings.earlyClockOutTolerance,
+        settings.lateClockOutTolerance,
+        false
+      );
+    }
   };
 
   return (
@@ -59,6 +106,8 @@ export const WeeklyTimesheetGrid = ({ timesheet }: WeeklyTimesheetGridProps) => 
             {timesheet.map((day) => {
               const actualStart = actualTimes[day.dayString]?.startTime || day.actualStart;
               const actualEnd = actualTimes[day.dayString]?.endTime || day.actualEnd;
+              const hasStartException = day.isWorking && checkTimeException(day, true);
+              const hasEndException = day.isWorking && checkTimeException(day, false);
               
               return (
                 <TableRow key={day.dayString}>
@@ -76,24 +125,52 @@ export const WeeklyTimesheetGrid = ({ timesheet }: WeeklyTimesheetGridProps) => 
                   <TableCell>{day.isWorking ? (day.scheduledEnd || 'N/A') : '-'}</TableCell>
                   <TableCell>
                     {day.isWorking ? (
-                      <Input
-                        type="time"
-                        value={actualStart || ''}
-                        onChange={(e) => handleActualTimeChange(day.dayString, 'actualStart', e.target.value)}
-                        className="w-32"
-                      />
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="time"
+                          value={actualStart || ''}
+                          onChange={(e) => handleActualTimeChange(day.dayString, 'actualStart', e.target.value)}
+                          className={`w-32 ${hasStartException ? 'border-red-500' : ''}`}
+                        />
+                        {hasStartException && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Clock-in time is outside allowed tolerance</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     ) : (
                       '-'
                     )}
                   </TableCell>
                   <TableCell>
                     {day.isWorking ? (
-                      <Input
-                        type="time"
-                        value={actualEnd || ''}
-                        onChange={(e) => handleActualTimeChange(day.dayString, 'actualEnd', e.target.value)}
-                        className="w-32"
-                      />
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="time"
+                          value={actualEnd || ''}
+                          onChange={(e) => handleActualTimeChange(day.dayString, 'actualEnd', e.target.value)}
+                          className={`w-32 ${hasEndException ? 'border-red-500' : ''}`}
+                        />
+                        {hasEndException && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Clock-out time is outside allowed tolerance</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     ) : (
                       '-'
                     )}
