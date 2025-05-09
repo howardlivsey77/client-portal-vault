@@ -1,8 +1,15 @@
 
 import { roundToTwoDecimals } from "@/lib/formatters";
-import { calculateMonthlyIncomeTax } from "./calculations/income-tax";
-import { calculateNationalInsurance } from "./calculations/national-insurance";
-import { calculateStudentLoan } from "./calculations/student-loan";
+import { 
+  calculateIncomeTaxSync, 
+  calculateMonthlyIncomeTaxSync 
+} from "./calculations/income-tax";
+import { 
+  calculateNationalInsuranceSync 
+} from "./calculations/national-insurance";
+import { 
+  calculateStudentLoanSync 
+} from "./calculations/student-loan";
 import { calculatePension } from "./calculations/pension";
 import { PayrollDetails, PayrollResult } from "./types";
 
@@ -28,9 +35,9 @@ export function calculateMonthlyPayroll(details: PayrollDetails): PayrollResult 
   const grossPay = monthlySalary + totalAdditionalEarnings;
   
   // Calculate deductions
-  const incomeTax = calculateMonthlyIncomeTax(grossPay, taxCode);
-  const nationalInsurance = calculateNationalInsurance(grossPay);
-  const studentLoan = calculateStudentLoan(grossPay, studentLoanPlan);
+  const incomeTax = calculateMonthlyIncomeTaxSync(grossPay, taxCode);
+  const nationalInsurance = calculateNationalInsuranceSync(grossPay);
+  const studentLoan = calculateStudentLoanSync(grossPay, studentLoanPlan);
   const pensionContribution = calculatePension(grossPay, pensionPercentage);
   
   // Calculate totals
@@ -68,5 +75,5 @@ export * from "./calculations/national-insurance";
 export * from "./calculations/student-loan";
 export * from "./calculations/pension";
 export * from "./utils/tax-code-utils";
-export * from "./constants/tax-constants";
+export * from "./utils/tax-constants-service";
 export * from "./types";

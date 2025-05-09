@@ -135,6 +135,51 @@ export type Database = {
         }
         Relationships: []
       }
+      payroll_constants: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          effective_from: string
+          effective_to: string | null
+          id: string
+          is_current: boolean
+          key: string
+          updated_at: string
+          user_id: string | null
+          value_numeric: number | null
+          value_text: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          is_current?: boolean
+          key: string
+          updated_at?: string
+          user_id?: string | null
+          value_numeric?: number | null
+          value_text?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          is_current?: boolean
+          key?: string
+          updated_at?: string
+          user_id?: string | null
+          value_numeric?: number | null
+          value_text?: string | null
+        }
+        Relationships: []
+      }
       payroll_employee_details: {
         Row: {
           created_at: string
