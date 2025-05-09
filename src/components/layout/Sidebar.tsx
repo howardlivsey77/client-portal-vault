@@ -69,16 +69,16 @@ export function Sidebar({
               Timesheets
             </Link>
           </Button>
-          <Button variant="ghost" className={cn("monday-sidebar-item w-full justify-start", isRouteActive("/payroll-processing") && "bg-accent text-accent-foreground")} asChild>
-            <Link to="/payroll-processing">
-              <Receipt className="h-4 w-4" />
-              Payroll Processing
-            </Link>
-          </Button>
           <Button variant="ghost" className={cn("monday-sidebar-item w-full justify-start", isTabActive("payroll") && "bg-accent text-accent-foreground")} asChild>
             <Link to={getTabUrl("payroll")}>
               <Receipt className="h-4 w-4" />
               Payroll Input
+            </Link>
+          </Button>
+          <Button variant="ghost" className={cn("monday-sidebar-item w-full justify-start", isRouteActive("/payroll-processing") && "bg-accent text-accent-foreground")} asChild>
+            <Link to="/payroll-processing">
+              <Receipt className="h-4 w-4" />
+              Payroll Processing
             </Link>
           </Button>
           <Button variant="ghost" className={cn("monday-sidebar-item w-full justify-start", isTabActive("documents") && "bg-accent text-accent-foreground")} asChild>
