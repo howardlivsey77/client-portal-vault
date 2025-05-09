@@ -16,9 +16,12 @@ export function parseTaxCode(taxCode: string): TaxCode {
   // Handle common tax code formats
   taxCode = taxCode.toUpperCase().trim();
   
+  // Remove any M1 (emergency tax) indicator for allowance calculation
+  let cleanTaxCode = taxCode.replace(' M1', '');
+  
   // Basic number-L code (e.g., 1257L)
-  if (/^\d+L$/.test(taxCode)) {
-    const numberPart = parseInt(taxCode.replace('L', ''), 10);
+  if (/^\d+L$/.test(cleanTaxCode)) {
+    const numberPart = parseInt(cleanTaxCode.replace('L', ''), 10);
     const annualAllowance = numberPart * 10;
     return { 
       code: taxCode, 
@@ -28,7 +31,7 @@ export function parseTaxCode(taxCode: string): TaxCode {
   }
   
   // BR code (basic rate on all income)
-  if (taxCode === 'BR') {
+  if (cleanTaxCode === 'BR') {
     return { 
       code: taxCode, 
       allowance: 0,
@@ -37,7 +40,7 @@ export function parseTaxCode(taxCode: string): TaxCode {
   }
   
   // NT code (no tax)
-  if (taxCode === 'NT') {
+  if (cleanTaxCode === 'NT') {
     return { 
       code: taxCode, 
       allowance: Infinity,
@@ -46,8 +49,8 @@ export function parseTaxCode(taxCode: string): TaxCode {
   }
   
   // K codes (reduce personal allowance)
-  if (/^K\d+$/.test(taxCode)) {
-    const numberPart = parseInt(taxCode.replace('K', ''), 10);
+  if (/^K\d+$/.test(cleanTaxCode)) {
+    const numberPart = parseInt(cleanTaxCode.replace('K', ''), 10);
     const annualAllowance = -numberPart * 10;
     return { 
       code: taxCode, 
@@ -76,7 +79,7 @@ export function calculateTaxFreeAmountForPeriod(
   period: number = 1, 
   cumulative: boolean = true
 ): number {
-  const { allowance } = parseTaxCode(taxCode);
+  const { allowance } = parseTaxCode(taxCode.replace(' M1', ''));
   
   // For Week1/Month1 basis (non-cumulative), only use current period
   if (!cumulative) {

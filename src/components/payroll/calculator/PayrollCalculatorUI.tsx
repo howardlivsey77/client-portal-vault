@@ -2,11 +2,12 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Download, Save } from "lucide-react";
+import { Download, Save, Info } from "lucide-react";
 import { PayrollForm } from "./PayrollForm";
 import { PayrollResults } from "./PayrollResults";
 import { PayrollFormValues } from "./types";
 import { PayrollResult } from "@/services/payroll/types";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PayrollCalculatorUIProps {
   selectedTab: string;
@@ -42,13 +43,35 @@ export function PayrollCalculatorUI({
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>UK Payroll Calculator</CardTitle>
-        <CardDescription>
-          {employee ? 
-            `Calculate payroll for ${employee.first_name} ${employee.last_name} (${payrollDetails.taxYear} Tax Year)` : 
-            `Calculate monthly payroll including tax, NI, and other deductions - ${payrollDetails.taxYear} Tax Year`
-          }
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>UK Payroll Calculator</CardTitle>
+            <CardDescription>
+              {employee ? 
+                `Calculate payroll for ${employee.first_name} ${employee.last_name} (${payrollDetails.taxYear} Tax Year)` : 
+                `Calculate monthly payroll including tax, NI, and other deductions - ${payrollDetails.taxYear} Tax Year`
+              }
+            </CardDescription>
+          </div>
+          {calculationResult && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center text-sm bg-muted px-2 py-1 rounded">
+                    <Info className="h-3 w-3 mr-1 text-muted-foreground" />
+                    <span>Taxable Pay: <span className="font-medium">{new Intl.NumberFormat('en-GB', {
+                      style: 'currency',
+                      currency: 'GBP'
+                    }).format(calculationResult.taxablePay)}</span></span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Taxable pay is your gross pay minus pension contributions and other pre-tax deductions.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>

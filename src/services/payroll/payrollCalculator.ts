@@ -1,3 +1,4 @@
+
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { 
   calculateIncomeTaxSync, 
@@ -88,7 +89,8 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   const taxablePay = grossPay - pensionContribution;
   
   // Calculate deductions
-  const incomeTax = calculateMonthlyIncomeTaxSync(grossPay, effectiveTaxCode, taxRegion);
+  // FIXED: Now using taxablePay instead of grossPay for income tax calculation
+  const incomeTax = calculateMonthlyIncomeTaxSync(taxablePay, effectiveTaxCode, taxRegion);
   const nationalInsurance = calculateNationalInsuranceSync(grossPay);
   const studentLoan = calculateStudentLoanSync(grossPay, studentLoanPlan);
   
