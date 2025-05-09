@@ -4,7 +4,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { useEmployeeDetails } from "@/hooks/useEmployeeDetails";
 import { EmployeeHeader } from "@/components/employees/details/EmployeeHeader";
 import { PersonalInfoCard } from "@/components/employees/details";
-import { ContactInfoCard } from "@/components/employees/details/ContactInfoCard";
+import { ContactInfoCard } from "@/components/employees/details/contact-info/ContactInfoCard";
 import { SystemInfoCard } from "@/components/employees/details/SystemInfoCard";
 import { WorkPatternCard } from "@/components/employees/details/WorkPatternCard";
 import { EmployeeNotFound } from "@/components/employees/details/EmployeeNotFound";
