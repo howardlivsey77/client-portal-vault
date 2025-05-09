@@ -5,7 +5,7 @@
  */
 
 // Export async tax calculation methods
-export { calculateIncomeTax } from "./income-tax-async";
+export { calculateIncomeTax, calculateMonthlyIncomeTax } from "./income-tax-async";
 
 // Export sync tax calculation methods
 export { 

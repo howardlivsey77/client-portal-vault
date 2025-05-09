@@ -1,65 +1,55 @@
 
+import { Card, CardContent } from "@/components/ui/card";
 import { PayrollResult } from "@/services/payroll/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/formatters";
 
 interface PayrollSummaryProps {
   result: PayrollResult;
-  showTaxYTD?: boolean;
+  payPeriod?: string; // Make payPeriod optional
 }
 
-export function PayrollSummary({ result, showTaxYTD = false }: PayrollSummaryProps) {
+export function PayrollSummary({ result, payPeriod }: PayrollSummaryProps) {
   return (
-    <Card className="mb-4">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Payroll Summary</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[70%]">Description</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-              {showTaxYTD && <TableHead className="text-right">YTD</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell>Total Gross Pay</TableCell>
-              <TableCell className="text-right">£{formatCurrency(result.grossPay)}</TableCell>
-              {showTaxYTD && (
-                <TableCell className="text-right">
-                  £{formatCurrency(result.grossPayYTD || result.grossPay)}
-                </TableCell>
-              )}
-            </TableRow>
-            <TableRow>
-              <TableCell>Tax-Free Amount</TableCell>
-              <TableCell className="text-right">£{formatCurrency(result.taxFreeAmount)}</TableCell>
-              {showTaxYTD && <TableCell className="text-right">-</TableCell>}
-            </TableRow>
-            <TableRow>
-              <TableCell>Taxable Pay</TableCell>
-              <TableCell className="text-right">£{formatCurrency(result.taxablePay)}</TableCell>
-              {showTaxYTD && (
-                <TableCell className="text-right">
-                  £{formatCurrency(result.taxablePayYTD || result.taxablePay)}
-                </TableCell>
-              )}
-            </TableRow>
-            <TableRow>
-              <TableCell>Total Deductions</TableCell>
-              <TableCell className="text-right">£{formatCurrency(result.totalDeductions)}</TableCell>
-              {showTaxYTD && <TableCell className="text-right">-</TableCell>}
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-bold">Net Pay</TableCell>
-              <TableCell className="text-right font-bold">£{formatCurrency(result.netPay)}</TableCell>
-              {showTaxYTD && <TableCell className="text-right">-</TableCell>}
-            </TableRow>
-          </TableBody>
-        </Table>
+    <Card>
+      <CardContent className="p-4">
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="font-medium">Gross Pay:</div>
+          <div className="text-right">{formatCurrency(result.grossPay)}</div>
+          
+          <div className="font-medium">Tax-Free Amount:</div>
+          <div className="text-right">{formatCurrency(result.taxFreeAmount)}</div>
+          
+          <div className="font-medium">Income Tax:</div>
+          <div className="text-right">{formatCurrency(result.incomeTax)}</div>
+          
+          <div className="font-medium">National Insurance:</div>
+          <div className="text-right">{formatCurrency(result.nationalInsurance)}</div>
+          
+          {result.studentLoan > 0 && (
+            <>
+              <div className="font-medium">Student Loan:</div>
+              <div className="text-right">{formatCurrency(result.studentLoan)}</div>
+            </>
+          )}
+          
+          {result.pensionContribution > 0 && (
+            <>
+              <div className="font-medium">Pension ({result.pensionPercentage}%):</div>
+              <div className="text-right">{formatCurrency(result.pensionContribution)}</div>
+            </>
+          )}
+          
+          <div className="border-t border-gray-200 col-span-2 my-1"></div>
+          
+          <div className="font-medium text-base">Net Pay:</div>
+          <div className="text-right font-bold text-base">{formatCurrency(result.netPay)}</div>
+          
+          {payPeriod && (
+            <div className="col-span-2 text-xs text-gray-500 mt-2">
+              Payment period: {payPeriod}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

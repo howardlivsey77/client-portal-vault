@@ -4,6 +4,7 @@ import { TaxCalculator } from "./TaxCalculator";
 import { convertTaxConstantsToTaxBands } from "../utils/tax-bands-converter";
 import { getTaxConstantsByCategory } from "../utils/tax-constants-service";
 import { calculateIncomeTaxSync, calculateMonthlyIncomeTaxSync } from "./income-tax-sync";
+import { getTaxBands } from "./tax-bands-service";
 
 /**
  * Calculate income tax based on annual salary, tax code, and region using the advanced TaxCalculator
@@ -15,11 +16,8 @@ export async function calculateIncomeTax(
   region: string = 'UK'
 ): Promise<number> {
   try {
-    // Get tax constants from database
-    const constants = await getTaxConstantsByCategory('TAX_BANDS', region);
-    
-    // Convert constants to tax bands format
-    const taxBands = convertTaxConstantsToTaxBands(constants);
+    // Get tax constants from database via the tax-bands-service
+    const taxBands = await getTaxBands(region);
     
     // Create calculator with tax bands
     const calculator = new TaxCalculator({ hmrcTax: taxBands });
@@ -55,11 +53,8 @@ export async function calculateMonthlyIncomeTax(
     // Get current month (1-12)
     const currentMonth = new Date().getMonth() + 1;
     
-    // Get tax constants from database
-    const constants = await getTaxConstantsByCategory('TAX_BANDS', region);
-    
-    // Convert constants to tax bands format
-    const taxBands = convertTaxConstantsToTaxBands(constants);
+    // Get tax bands from the dedicated service
+    const taxBands = await getTaxBands(region);
     
     // Create calculator with tax bands
     const calculator = new TaxCalculator({ hmrcTax: taxBands });
@@ -78,7 +73,6 @@ export async function calculateMonthlyIncomeTax(
     console.error("Error calculating monthly income tax with advanced calculator:", error);
     // Fallback to original calculation method
     const annualSalary = monthlySalary * 12;
-    const annualTax = await calculateIncomeTax(annualSalary, taxCode, region);
-    return roundToTwoDecimals(annualTax / 12);
+    return roundToTwoDecimals(calculateIncomeTaxSync(annualSalary, taxCode, region) / 12);
   }
 }

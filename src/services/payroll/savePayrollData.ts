@@ -57,6 +57,17 @@ function convertToDbFormat(
   taxPeriod: number,
   freePay: number
 ) {
+  // Convert the student loan plan to a number if it's a string
+  let studentLoanPlanNumber: number | null = null;
+  if (result.studentLoanPlan) {
+    // Parse the plan number, e.g., "1", "2", "4"
+    studentLoanPlanNumber = parseInt(result.studentLoanPlan, 10);
+    // If parsing fails, set to null
+    if (isNaN(studentLoanPlanNumber)) {
+      studentLoanPlanNumber = null;
+    }
+  }
+
   return {
     employee_id: result.employeeId,
     payroll_period: periodDate.toISOString().split('T')[0], // YYYY-MM-DD format
@@ -87,8 +98,8 @@ function convertToDbFormat(
     earnings_above_uel_this_period: 0,
     earnings_above_st_this_period: 0,
     
-    // Student loan
-    student_loan_plan: result.studentLoanPlan ? parseInt(result.studentLoanPlan) : null,
+    // Student loan - convert to number for database
+    student_loan_plan: studentLoanPlanNumber,
     student_loan_this_period: poundsToPence(result.studentLoan),
     
     // Pension

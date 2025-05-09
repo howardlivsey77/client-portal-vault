@@ -1,79 +1,70 @@
 
-import { useToast } from "@/hooks/use-toast";
-import { generatePayslip } from "@/utils/payslipGenerator";
-import { PayrollResult } from "@/services/payroll/types";
-import { PayrollHistoryItem } from "./types";
-import { getTaxYear, getTaxPeriod } from "@/utils/taxYearUtils";
+import { useState } from 'react';
+import { generatePayslipPDF } from '@/utils/payslipGenerator';
+import { formatCurrency } from '@/lib/formatters';
+import { PayrollResult } from '@/services/payroll/types';
 
 export function usePayslipGenerator() {
-  const { toast } = useToast();
-
-  const handleDownloadPayslip = (item: PayrollHistoryItem) => {
+  const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Generate a payslip PDF for a given payroll record
+  const generatePayslip = async (record: any) => {
     try {
-      const payrollPeriod = new Date(item.payroll_period).toLocaleDateString('en-GB', {
-        month: 'long',
-        year: 'numeric'
-      });
+      setIsGenerating(true);
       
-      // Get current tax year and period for the payroll date
-      const payrollDate = new Date(item.payroll_period);
-      const currentTaxYear = getTaxYear(payrollDate);
-      const currentTaxPeriod = getTaxPeriod(payrollDate);
-      
-      // Convert db values from pence to pounds and create a complete PayrollResult object
-      const payrollData: PayrollResult = {
-        employeeId: item.employee_id,
-        employeeName: item.employee_name || 'Employee',
-        payrollId: item.id || '',
-        taxCode: item.tax_code,
-        taxRegion: 'UK',
-        taxFreeAmount: item.free_pay_this_period / 100,
-        nicCode: item.nic_letter || 'A',
-        grossPay: item.gross_pay_this_period / 100,
-        incomeTax: item.income_tax_this_period / 100,
-        nationalInsurance: item.nic_employee_this_period / 100,
-        studentLoan: item.student_loan_this_period / 100,
-        pensionContribution: item.employee_pension_this_period / 100,
-        pensionPercentage: 0, // Default value
-        netPay: item.net_pay_this_period / 100,
-        // Required fields for PayrollResult type that weren't in our original object
-        monthlySalary: item.gross_pay_this_period / 100,
+      // Convert the database record format to the format expected by the PDF generator
+      const payrollResult: PayrollResult = {
+        employeeId: record.employee_id,
+        employeeName: record.employee_name || 'Employee',
+        payrollId: record.payroll_id || '',
+        taxCode: record.tax_code,
+        taxRegion: record.tax_region || 'UK',
+        taxFreeAmount: (record.free_pay_this_period || 0) / 100,
+        nicCode: record.nic_letter || 'A',
+        grossPay: (record.gross_pay_this_period || 0) / 100,
+        incomeTax: (record.income_tax_this_period || 0) / 100,
+        nationalInsurance: (record.nic_employee_this_period || 0) / 100,
+        studentLoan: (record.student_loan_this_period || 0) / 100,
+        studentLoanPlan: record.student_loan_plan ? record.student_loan_plan.toString() : undefined,
+        pensionContribution: (record.employee_pension_this_period || 0) / 100,
+        pensionPercentage: record.pension_percentage || 0,
+        monthlySalary: (record.gross_pay_this_period || 0) / 100,
+        taxYear: record.tax_year,
+        taxPeriod: record.tax_period,
+        taxablePay: (record.taxable_pay_this_period || 0) / 100,
+        totalDeductions: (
+          (record.income_tax_this_period || 0) + 
+          (record.nic_employee_this_period || 0) + 
+          (record.student_loan_this_period || 0) + 
+          (record.employee_pension_this_period || 0)
+        ) / 100,
+        netPay: (record.net_pay_this_period || 0) / 100,
+        additionalEarnings: [],
         additionalDeductions: [],
         additionalAllowances: [],
-        additionalEarnings: [],
-        totalDeductions: (
-          item.income_tax_this_period + 
-          item.nic_employee_this_period + 
-          item.student_loan_this_period + 
-          item.employee_pension_this_period
-        ) / 100,
         totalAllowances: 0,
-        // Add the new required fields for YTD support
-        taxYear: item.tax_year || currentTaxYear,
-        taxPeriod: item.tax_period || currentTaxPeriod,
-        taxablePay: item.taxable_pay_this_period ? item.taxable_pay_this_period / 100 : item.gross_pay_this_period / 100,
-        taxablePayYTD: item.taxable_pay_ytd ? item.taxable_pay_ytd / 100 : item.gross_pay_this_period / 100,
-        incomeTaxYTD: item.income_tax_ytd ? item.income_tax_ytd / 100 : item.income_tax_this_period / 100,
-        nationalInsuranceYTD: item.nic_employee_ytd ? item.nic_employee_ytd / 100 : item.nic_employee_this_period / 100,
-        grossPayYTD: item.gross_pay_ytd ? item.gross_pay_ytd / 100 : item.gross_pay_this_period / 100
+        grossPayYTD: (record.gross_pay_ytd || 0) / 100,
+        taxablePayYTD: (record.taxable_pay_ytd || 0) / 100,
+        incomeTaxYTD: (record.income_tax_ytd || 0) / 100,
+        nationalInsuranceYTD: (record.nic_employee_ytd || 0) / 100,
+        studentLoanYTD: (record.student_loan_ytd || 0) / 100
       };
       
-      const filename = `${item.employee_name?.replace(/\s+/g, '-').toLowerCase() || 'employee'}-payslip-${item.payroll_period}.pdf`;
-      generatePayslip(payrollData, payrollPeriod, filename);
+      // Generate the PDF
+      const dateStr = new Date(record.payroll_period).toLocaleDateString('en-GB', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
       
-      toast({
-        title: "Payslip Generated",
-        description: "Your payslip has been downloaded."
-      });
+      await generatePayslipPDF(payrollResult, dateStr);
     } catch (error) {
-      console.error("Error generating payslip:", error);
-      toast({
-        title: "Error",
-        description: "Failed to generate payslip",
-        variant: "destructive"
-      });
+      console.error('Error generating payslip:', error);
+      // Handle error
+    } finally {
+      setIsGenerating(false);
     }
   };
-
-  return { handleDownloadPayslip };
+  
+  return { generatePayslip, isGenerating };
 }

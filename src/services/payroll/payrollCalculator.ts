@@ -44,7 +44,7 @@ export async function calculateMonthlyPayroll(
       console.error("Error getting YTD data:", error);
     }
     
-    // Calculate tax
+    // Calculate tax - must be synchronous for now to avoid async issues
     const monthlyTax = calculateMonthlyIncomeTaxSync(
       grossPay,
       taxCode,
@@ -88,10 +88,18 @@ export async function calculateMonthlyPayroll(
     const netPay = grossPay - totalDeductions;
     
     // Build YTD values
-    const grossPayYTD = ytdData ? ytdData.grossPayYTD + grossPay : grossPay;
-    const taxablePayYTD = ytdData ? ytdData.taxablePayYTD + taxablePay : taxablePay;
-    const incomeTaxYTD = ytdData ? ytdData.incomeTaxYTD + monthlyTax : monthlyTax;
-    const nationalInsuranceYTD = ytdData ? ytdData.nationalInsuranceYTD + niContribution : niContribution;
+    let grossPayYTD = grossPay;
+    let taxablePayYTD = taxablePay;
+    let incomeTaxYTD = monthlyTax;
+    let nationalInsuranceYTD = niContribution;
+    
+    // Add YTD values from previous periods if available
+    if (ytdData) {
+      grossPayYTD += ytdData.grossPayYTD;
+      taxablePayYTD += ytdData.taxablePayYTD;
+      incomeTaxYTD += ytdData.incomeTaxYTD;
+      nationalInsuranceYTD += ytdData.nationalInsuranceYTD;
+    }
     
     return {
       employeeId: details.employeeId,
@@ -122,7 +130,7 @@ export async function calculateMonthlyPayroll(
       taxablePayYTD,
       incomeTaxYTD,
       nationalInsuranceYTD,
-      studentLoanYTD: studentLoanRepayment // Just this period for now
+      studentLoanYTD: ytdData ? ytdData.studentLoanYTD + studentLoanRepayment : studentLoanRepayment
     };
   } catch (error) {
     console.error("Error in calculateMonthlyPayroll:", error);

@@ -1,4 +1,3 @@
-
 /**
  * Types for payroll calculations
  */
@@ -10,8 +9,8 @@ export interface TaxCode {
 }
 
 export interface PayrollResult {
-  employeeId: string;
-  employeeName: string;
+  employeeId?: string;
+  employeeName?: string;
   payrollId: string;
   monthlySalary: number;
   grossPay: number;
@@ -25,39 +24,37 @@ export interface PayrollResult {
   nationalInsurance: number;
   nicCode: string;
   studentLoan: number;
-  studentLoanPlan: string | null;
+  studentLoanPlan?: string;
   pensionContribution: number;
   pensionPercentage: number;
   totalDeductions: number;
   netPay: number;
-  additionalEarnings: { id: string; description: string; amount: number; }[];
-  additionalDeductions: { id: string; description: string; amount: number; }[];
-  additionalAllowances: { id: string; description: string; amount: number; }[];
-  totalAllowances: number; // Total of all additional allowances
-  grossPayYTD?: number;
-  taxablePayYTD?: number;
-  incomeTaxYTD?: number;
-  nationalInsuranceYTD?: number;
-  studentLoanYTD?: number;
+  additionalEarnings: { name: string; amount: number }[];
+  additionalDeductions: { name: string; amount: number }[];
+  additionalAllowances: { name: string; amount: number }[];
+  totalAllowances: number;
+  grossPayYTD: number;
+  taxablePayYTD: number;
+  incomeTaxYTD: number;
+  nationalInsuranceYTD: number;
+  studentLoanYTD: number;
 }
 
 export interface PayrollDetails {
-  employeeId: string;
-  employeeName: string;
+  employeeId?: string;
+  employeeName?: string;
   payrollId?: string;
   monthlySalary: number;
   taxCode: string;
   taxRegion?: string;
   taxYear?: string;
   taxPeriod?: number;
-  useEmergencyTax?: boolean;
-  isNewEmployee?: boolean;
-  pensionPercentage?: number;
-  studentLoanPlan?: string | null;
-  additionalEarnings?: { id: string; description: string; amount: number; }[];
-  additionalDeductions?: { id: string; description: string; amount: number; }[];
-  additionalAllowances?: { id: string; description: string; amount: number; }[];
   nicCode?: string;
+  studentLoanPlan?: string;
+  pensionPercentage?: number;
+  additionalEarnings?: { name: string; amount: number }[];
+  additionalDeductions?: { name: string; amount: number }[];
+  additionalAllowances?: { name: string; amount: number }[];
 }
 
 /**
@@ -68,5 +65,5 @@ export interface PreviousPeriodData {
   taxablePayYTD: number;
   incomeTaxYTD: number;
   nationalInsuranceYTD: number;
-  lastPeriod: number;
+  studentLoanYTD: number;
 }
