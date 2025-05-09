@@ -2,6 +2,7 @@
 import { formatCurrency } from "@/lib/formatters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PayrollResult } from "@/services/payroll/types";
+import { Badge } from "@/components/ui/badge";
 
 interface PayrollResultsProps {
   result: PayrollResult;
@@ -20,6 +21,12 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
     };
     return planMap[plan] || `Plan ${plan}`;
   };
+  
+  // Check if the tax code has specific indicators
+  const isEmergencyTaxCode = result.taxCode?.includes('M1');
+  const isScottishTaxCode = result.taxCode?.startsWith('S');
+  const isBRTaxCode = result.taxCode === 'BR';
+  const isNTTaxCode = result.taxCode === 'NT';
 
   return (
     <div className="space-y-4">
@@ -40,6 +47,18 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
           <div className="font-medium">{formatCurrency(result.grossPay)}</div>
           <div>Net Pay:</div>
           <div className="font-medium text-green-600">{formatCurrency(result.netPay)}</div>
+          <div>Tax Code:</div>
+          <div className="font-medium flex items-center gap-2">
+            {result.taxCode}
+            {isEmergencyTaxCode && <Badge variant="destructive">Emergency</Badge>}
+            {isScottishTaxCode && <Badge>Scottish</Badge>}
+          </div>
+          {result.taxRegion && result.taxRegion !== 'UK' && (
+            <>
+              <div>Tax Region:</div>
+              <div className="font-medium">{result.taxRegion}</div>
+            </>
+          )}
           {result.studentLoanPlan && (
             <>
               <div>Student Loan Plan:</div>
@@ -94,7 +113,15 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
         </TableHeader>
         <TableBody>
           <TableRow>
-            <TableCell>Income Tax</TableCell>
+            <TableCell>
+              Income Tax
+              <div className="text-xs text-muted-foreground mt-1">
+                {isEmergencyTaxCode && "Emergency tax code applied"}
+                {isScottishTaxCode && "Scottish tax rates applied"}
+                {isBRTaxCode && "Basic rate applied to all income"}
+                {isNTTaxCode && "No tax deducted"}
+              </div>
+            </TableCell>
             <TableCell className="text-right text-red-500">-{formatCurrency(result.incomeTax)}</TableCell>
           </TableRow>
           <TableRow>

@@ -1,7 +1,8 @@
-
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { getHardcodedTaxBands, getTaxConstantsByCategory } from "../utils/tax-constants-service";
 import { parseTaxCode } from "../utils/tax-code-utils";
+import { TaxCalculator, TaxBands } from "./TaxCalculator";
+import { convertTaxConstantsToTaxBands } from "../utils/tax-bands-converter";
 
 interface TaxBand {
   threshold: number;
@@ -75,62 +76,38 @@ async function getTaxBands(region: string = 'UK'): Promise<Record<string, TaxBan
 }
 
 /**
- * Calculate income tax based on annual salary, tax code, and region
+ * Calculate income tax based on annual salary, tax code, and region using the advanced TaxCalculator
  */
 export async function calculateIncomeTax(
   annualSalary: number, 
   taxCode: string, 
   region: string = 'UK'
 ): Promise<number> {
-  const { allowance } = parseTaxCode(taxCode);
-  const taxBands = await getTaxBands(region);
-  
-  let taxableIncome = Math.max(0, annualSalary - allowance);
-  let tax = 0;
-  
-  if (region === 'Scotland') {
-    // Scottish tax calculation - has different bands
-    if (taxableIncome > taxBands.HIGHER_RATE.threshold) {
-      tax += (taxableIncome - taxBands.HIGHER_RATE.threshold) * taxBands.ADDITIONAL_RATE.rate;
-      taxableIncome = taxBands.HIGHER_RATE.threshold;
-    }
+  try {
+    // Get tax constants from database
+    const constants = await getTaxConstantsByCategory('TAX_BANDS', region);
     
-    if (taxableIncome > taxBands.INTERMEDIATE_RATE.threshold) {
-      tax += (taxableIncome - taxBands.INTERMEDIATE_RATE.threshold) * taxBands.HIGHER_RATE.rate;
-      taxableIncome = taxBands.INTERMEDIATE_RATE.threshold;
-    }
+    // Convert constants to tax bands format
+    const taxBands = convertTaxConstantsToTaxBands(constants);
     
-    if (taxableIncome > taxBands.BASIC_RATE.threshold) {
-      tax += (taxableIncome - taxBands.BASIC_RATE.threshold) * taxBands.INTERMEDIATE_RATE.rate;
-      taxableIncome = taxBands.BASIC_RATE.threshold;
-    }
+    // Create calculator with tax bands
+    const calculator = new TaxCalculator({ hmrcTax: taxBands });
     
-    if (taxableIncome > taxBands.STARTER_RATE.threshold) {
-      tax += (taxableIncome - taxBands.STARTER_RATE.threshold) * taxBands.BASIC_RATE.rate;
-      taxableIncome = taxBands.STARTER_RATE.threshold;
-    }
+    // Calculate tax for annual salary
+    const result = calculator.calculate({
+      taxablePay: annualSalary * 100, // convert to pence
+      period: 12, // Annual calculation
+      taxCode: taxCode,
+      totalPreviousPay: 0,
+      totalPreviousTax: 0
+    });
     
-    if (taxableIncome > taxBands.PERSONAL_ALLOWANCE.threshold) {
-      tax += (taxableIncome - taxBands.PERSONAL_ALLOWANCE.threshold) * taxBands.STARTER_RATE.rate;
-    }
-  } else {
-    // UK/Wales tax calculation
-    if (taxableIncome > taxBands.HIGHER_RATE.threshold) {
-      tax += (taxableIncome - taxBands.HIGHER_RATE.threshold) * taxBands.ADDITIONAL_RATE.rate;
-      taxableIncome = taxBands.HIGHER_RATE.threshold;
-    }
-    
-    if (taxableIncome > taxBands.BASIC_RATE.threshold) {
-      tax += (taxableIncome - taxBands.BASIC_RATE.threshold) * taxBands.HIGHER_RATE.rate;
-      taxableIncome = taxBands.BASIC_RATE.threshold;
-    }
-    
-    if (taxableIncome > taxBands.PERSONAL_ALLOWANCE.threshold) {
-      tax += (taxableIncome - taxBands.PERSONAL_ALLOWANCE.threshold) * taxBands.BASIC_RATE.rate;
-    }
+    return roundToTwoDecimals(result.totalTaxToDate / 100); // convert back to pounds
+  } catch (error) {
+    console.error("Error calculating income tax with advanced calculator:", error);
+    // Fallback to original calculation method
+    return calculateIncomeTaxSync(annualSalary, taxCode, region);
   }
-  
-  return roundToTwoDecimals(tax);
 }
 
 /**
@@ -141,14 +118,40 @@ export async function calculateMonthlyIncomeTax(
   taxCode: string, 
   region: string = 'UK'
 ): Promise<number> {
-  const annualSalary = monthlySalary * 12;
-  const annualTax = await calculateIncomeTax(annualSalary, taxCode, region);
-  return roundToTwoDecimals(annualTax / 12);
+  // For monthly calculation, we'll use the month to determine the proportion of allowance
+  try {
+    // Get current month (1-12)
+    const currentMonth = new Date().getMonth() + 1;
+    
+    // Get tax constants from database
+    const constants = await getTaxConstantsByCategory('TAX_BANDS', region);
+    
+    // Convert constants to tax bands format
+    const taxBands = convertTaxConstantsToTaxBands(constants);
+    
+    // Create calculator with tax bands
+    const calculator = new TaxCalculator({ hmrcTax: taxBands });
+    
+    // Calculate tax for monthly salary - assuming this is a standalone month
+    const result = calculator.calculate({
+      taxablePay: monthlySalary * 100, // convert to pence
+      period: 1, // Just for this month
+      taxCode: taxCode,
+      totalPreviousPay: 0,
+      totalPreviousTax: 0
+    });
+    
+    return roundToTwoDecimals(result.taxThisPeriod / 100); // convert back to pounds
+  } catch (error) {
+    console.error("Error calculating monthly income tax with advanced calculator:", error);
+    // Fallback to original calculation method
+    const annualSalary = monthlySalary * 12;
+    const annualTax = await calculateIncomeTax(annualSalary, taxCode, region);
+    return roundToTwoDecimals(annualTax / 12);
+  }
 }
 
-/**
- * Synchronous version using hardcoded values for compatibility
- */
+// Keep existing sync calculation methods as fallbacks
 export function calculateIncomeTaxSync(
   annualSalary: number, 
   taxCode: string, 

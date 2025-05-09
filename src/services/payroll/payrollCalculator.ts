@@ -54,6 +54,7 @@ export function calculateMonthlyPayroll(details: PayrollDetails): PayrollResult 
     employeeName,
     payrollId,
     monthlySalary,
+    taxCode,
     taxRegion,
     grossPay: roundToTwoDecimals(grossPay),
     incomeTax: roundToTwoDecimals(incomeTax),
