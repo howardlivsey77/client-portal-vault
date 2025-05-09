@@ -6,6 +6,7 @@ import { PayrollConstantsTable } from "./PayrollConstantsTable";
 import { PayrollConstantForm } from "./PayrollConstantForm";
 import { TaxConstant } from "@/services/payroll/utils/tax-constants-service";
 import { Loader2 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ConstantsTabContentProps {
   loading: boolean;
@@ -62,11 +63,13 @@ export function ConstantsTabContent({
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       ) : (
-        <PayrollConstantsTable 
-          constants={constants} 
-          onEdit={onEdit}
-          onDelete={onDelete}
-        />
+        <ScrollArea className="flex-1 pr-4">
+          <PayrollConstantsTable 
+            constants={constants} 
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        </ScrollArea>
       )}
     </div>
   );

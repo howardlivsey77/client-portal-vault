@@ -125,7 +125,7 @@ export function PayrollConstantsDialog({ open, onOpenChange }: PayrollConstantsD
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>Manage Payroll Constants</DialogTitle>
           </DialogHeader>
@@ -133,7 +133,7 @@ export function PayrollConstantsDialog({ open, onOpenChange }: PayrollConstantsD
           <Tabs 
             value={activeCategory} 
             onValueChange={handleTabChange}
-            className="flex-1 flex flex-col"
+            className="flex-1 flex flex-col overflow-hidden"
           >
             <TabsList className="grid grid-cols-4">
               {PAYROLL_CATEGORIES.map(category => (
@@ -150,7 +150,7 @@ export function PayrollConstantsDialog({ open, onOpenChange }: PayrollConstantsD
               <TabsContent 
                 key={category.id} 
                 value={category.id}
-                className="flex-1 flex flex-col"
+                className="flex-1 flex flex-col overflow-hidden mt-0 pt-4 border-t"
               >
                 <ConstantsTabContent 
                   loading={loading}
