@@ -100,25 +100,21 @@ export async function saveYTDData(
   }
 ): Promise<boolean> {
   try {
-    // According to the database schema, these YTD fields need to be added to the table
-    // Convert to pence for database storage (database stores in pence)
-    // We need to check the Supabase Types to ensure we're using the correct column names
-
-    // Update the record in the database using the correct database column names
+    // Now that the database has the YTD columns, we can use them properly
+    // Convert to pence for database storage (database stores monetary values in pence)
+    const updatedData = {
+      gross_pay_ytd: Math.round(ytdData.grossPayYTD * 100),
+      taxable_pay_ytd: Math.round(ytdData.taxablePayYTD * 100),
+      income_tax_ytd: Math.round(ytdData.incomeTaxYTD * 100),
+      nic_employee_ytd: Math.round(ytdData.nationalInsuranceYTD * 100),
+      tax_year: ytdData.taxYear,
+      tax_period: ytdData.taxPeriod
+    };
+    
+    // Update the record in the database using the correct column names
     const { error } = await supabase
       .from('payroll_results')
-      .update({
-        // The TypeScript error suggests these fields don't exist in the database schema
-        // We need to find out what the actual column names are in the database
-        // For now, commenting out to fix the build error
-        // We will need to add these columns to the database schema
-        // gross_pay_ytd: Math.round(ytdData.grossPayYTD * 100),
-        // taxable_pay_ytd: Math.round(ytdData.taxablePayYTD * 100),
-        // income_tax_ytd: Math.round(ytdData.incomeTaxYTD * 100),
-        // nic_employee_ytd: Math.round(ytdData.nationalInsuranceYTD * 100),
-        // tax_year: ytdData.taxYear,
-        // tax_period: ytdData.taxPeriod
-      })
+      .update(updatedData)
       .eq('employee_id', employeeId)
       .eq('payroll_period', payrollPeriod);
       

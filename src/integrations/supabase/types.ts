@@ -288,10 +288,13 @@ export type Database = {
           employer_pension_this_period: number
           free_pay_this_period: number
           gross_pay_this_period: number
+          gross_pay_ytd: number | null
           id: string
           income_tax_this_period: number
+          income_tax_ytd: number | null
           net_pay_this_period: number
           nic_employee_this_period: number
+          nic_employee_ytd: number | null
           nic_employer_this_period: number
           nic_letter: string
           pay_liable_to_nic_this_period: number
@@ -299,7 +302,10 @@ export type Database = {
           student_loan_plan: number | null
           student_loan_this_period: number
           tax_code: string
+          tax_period: number | null
+          tax_year: string | null
           taxable_pay_this_period: number
+          taxable_pay_ytd: number | null
           updated_at: string | null
         }
         Insert: {
@@ -314,10 +320,13 @@ export type Database = {
           employer_pension_this_period: number
           free_pay_this_period: number
           gross_pay_this_period: number
+          gross_pay_ytd?: number | null
           id?: string
           income_tax_this_period: number
+          income_tax_ytd?: number | null
           net_pay_this_period: number
           nic_employee_this_period: number
+          nic_employee_ytd?: number | null
           nic_employer_this_period: number
           nic_letter: string
           pay_liable_to_nic_this_period: number
@@ -325,7 +334,10 @@ export type Database = {
           student_loan_plan?: number | null
           student_loan_this_period: number
           tax_code: string
+          tax_period?: number | null
+          tax_year?: string | null
           taxable_pay_this_period: number
+          taxable_pay_ytd?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -340,10 +352,13 @@ export type Database = {
           employer_pension_this_period?: number
           free_pay_this_period?: number
           gross_pay_this_period?: number
+          gross_pay_ytd?: number | null
           id?: string
           income_tax_this_period?: number
+          income_tax_ytd?: number | null
           net_pay_this_period?: number
           nic_employee_this_period?: number
+          nic_employee_ytd?: number | null
           nic_employer_this_period?: number
           nic_letter?: string
           pay_liable_to_nic_this_period?: number
@@ -351,7 +366,10 @@ export type Database = {
           student_loan_plan?: number | null
           student_loan_this_period?: number
           tax_code?: string
+          tax_period?: number | null
+          tax_year?: string | null
           taxable_pay_this_period?: number
+          taxable_pay_ytd?: number | null
           updated_at?: string | null
         }
         Relationships: [
