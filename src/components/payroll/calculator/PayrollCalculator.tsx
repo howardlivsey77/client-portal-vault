@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,6 +32,19 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
   const [payPeriod, setPayPeriod] = useState<string>(
     new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
   );
+  const [autoCalculate, setAutoCalculate] = useState<boolean>(true);
+
+  // Auto-calculate effect
+  useEffect(() => {
+    if (autoCalculate && payrollDetails.monthlySalary > 0 && payrollDetails.employeeName) {
+      try {
+        const result = calculateMonthlyPayroll(payrollDetails);
+        setCalculationResult(result);
+      } catch (error) {
+        console.error("Auto payroll calculation error:", error);
+      }
+    }
+  }, [payrollDetails, autoCalculate]);
 
   const handleCalculatePayroll = () => {
     try {
