@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TimesheetProvider, useTimesheetContext } from "@/components/timesheets/TimesheetContext";
 import { EmployeeTimesheet } from "@/components/timesheets/EmployeeTimesheet";
+import { useNotifications } from "@/components/notifications/NotificationsContext";
 
 export const TimesheetsTab = () => {
   return (
@@ -27,9 +28,11 @@ export const TimesheetsTab = () => {
 // New component to handle auto-loading functionality
 const AutoLoadEmployeeTimesheet = () => {
   const { loadFirstEmployee } = useTimesheetContext();
+  const { checkForTimesheetExceptions } = useNotifications();
   
   useEffect(() => {
     loadFirstEmployee();
+    checkForTimesheetExceptions();
   }, []);
   
   return <EmployeeTimesheet autoLoad={true} />;

@@ -11,9 +11,11 @@ import Employees from "./pages/Employees";
 import EmployeeForm from "./pages/EmployeeForm";
 import EmployeeDetails from "./pages/EmployeeDetails";
 import TimesheetSettings from "./pages/TimesheetSettings";
+import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
 import AuthProvider from "./providers/AuthProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { NotificationsProvider } from "./components/notifications/NotificationsContext";
 
 const queryClient = new QueryClient();
 
@@ -24,18 +26,21 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/invites" element={<ProtectedRoute adminOnly={true}><InviteManagement /></ProtectedRoute>} />
-            <Route path="/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
-            <Route path="/employee/new" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
-            <Route path="/employee/:id" element={<ProtectedRoute><EmployeeDetails /></ProtectedRoute>} />
-            <Route path="/employee/edit/:id" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
-            <Route path="/settings/timesheets" element={<ProtectedRoute><TimesheetSettings /></ProtectedRoute>} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <NotificationsProvider>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+              <Route path="/invites" element={<ProtectedRoute adminOnly={true}><InviteManagement /></ProtectedRoute>} />
+              <Route path="/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
+              <Route path="/employee/new" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
+              <Route path="/employee/:id" element={<ProtectedRoute><EmployeeDetails /></ProtectedRoute>} />
+              <Route path="/employee/edit/:id" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
+              <Route path="/settings/timesheets" element={<ProtectedRoute><TimesheetSettings /></ProtectedRoute>} />
+              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </NotificationsProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

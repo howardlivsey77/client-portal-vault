@@ -10,7 +10,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/providers/AuthProvider";
-import { FileText, LogOut, Menu, Settings, User, UserPlus } from "lucide-react";
+import { FileText, LogOut, Menu, Settings, User, UserPlus, Bell, BellDot } from "lucide-react";
+import { useNotifications } from "@/components/notifications/NotificationsContext";
+import { Badge } from "@/components/ui/badge";
 
 interface NavbarProps {
   toggleSidebar?: () => void;
@@ -18,6 +20,9 @@ interface NavbarProps {
 
 export function Navbar({ toggleSidebar }: NavbarProps) {
   const { user, isAdmin, signOut } = useAuth();
+  const { unreadCount, timesheetExceptionsCount } = useNotifications();
+  
+  const hasNotifications = unreadCount > 0 || timesheetExceptionsCount > 0;
   
   console.log("Navbar rendering - User:", user?.email, "Admin status:", isAdmin);
 
@@ -46,6 +51,28 @@ export function Navbar({ toggleSidebar }: NavbarProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          {user && (
+            <Button variant="ghost" size="icon" asChild className="relative">
+              <Link to="/notifications">
+                {hasNotifications ? (
+                  <>
+                    <BellDot className="h-5 w-5 text-amber-500" />
+                    {(unreadCount + timesheetExceptionsCount > 0) && (
+                      <Badge 
+                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white rounded-full text-xs"
+                      >
+                        {unreadCount + timesheetExceptionsCount}
+                      </Badge>
+                    )}
+                  </>
+                ) : (
+                  <Bell className="h-5 w-5" />
+                )}
+                <span className="sr-only">Notifications</span>
+              </Link>
+            </Button>
+          )}
+          
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

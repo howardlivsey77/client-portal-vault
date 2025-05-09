@@ -10,6 +10,7 @@ import { SaveIcon, AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { fetchTimesheetSettings, isTimeOutsideTolerance } from '@/utils/timesheetUtils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useNotifications } from '@/components/notifications/NotificationsContext';
 
 interface WeeklyTimesheetGridProps {
   timesheet: WeeklyTimesheetDay[];
@@ -17,6 +18,8 @@ interface WeeklyTimesheetGridProps {
 
 export const WeeklyTimesheetGrid = ({ timesheet }: WeeklyTimesheetGridProps) => {
   const { setActualTime, saveTimesheet, saving, actualTimes } = useTimesheetContext();
+  const { checkForTimesheetExceptions } = useNotifications();
+  
   const [settings, setSettings] = useState({
     earlyClockInTolerance: 15,
     lateClockInTolerance: 5,
@@ -49,6 +52,8 @@ export const WeeklyTimesheetGrid = ({ timesheet }: WeeklyTimesheetGridProps) => 
 
   const handleSaveTimesheet = async () => {
     await saveTimesheet(timesheet);
+    // After saving, check for exceptions to update the notifications
+    await checkForTimesheetExceptions();
   };
 
   const checkTimeException = (day: WeeklyTimesheetDay, isStartTime: boolean) => {
@@ -74,6 +79,11 @@ export const WeeklyTimesheetGrid = ({ timesheet }: WeeklyTimesheetGridProps) => 
       );
     }
   };
+
+  // Check for exceptions on initial render and when actual times change
+  useEffect(() => {
+    checkForTimesheetExceptions();
+  }, [actualTimes]);
 
   return (
     <div className="space-y-4">
