@@ -1,8 +1,13 @@
 
 import { roundToTwoDecimals } from "@/lib/formatters";
-import { parseTaxCode } from "../utils/tax-code-utils";
+import { parseTaxCode, calculateMonthlyFreePay } from "../utils/tax-code-utils";
 import { getHardcodedTaxBands } from "../utils/tax-constants-service";
 import { TaxBandCollection } from "./income-tax-types";
+import { calculateUKTax } from "./uk-tax-calculator";
+import { calculateScottishTax } from "./scottish-tax-calculator";
+import { calculateEmergencyTax } from "./emergency-tax-calculator";
+import { calculateMonthlyUKTax } from "./uk-tax-calculator";
+import { calculateMonthlyScottishTax } from "./scottish-tax-calculator";
 
 /**
  * Calculate income tax based on annual salary, tax code, and region
@@ -13,61 +18,27 @@ export function calculateIncomeTaxSync(
   taxCode: string, 
   region: string = 'UK'
 ): number {
+  // Get tax-free allowance from tax code
   const { allowance } = parseTaxCode(taxCode);
+  
+  // Get tax bands for this region
   const taxBands = getHardcodedTaxBands(region);
   
-  let taxableIncome = Math.max(0, annualSalary - allowance);
-  let tax = 0;
+  // Calculate taxable income after personal allowance
+  const taxableIncome = Math.max(0, annualSalary - allowance);
   
+  // Use the appropriate tax calculation based on region
   if (region === 'Scotland') {
-    // Scottish tax calculation
-    if (taxableIncome > taxBands.HIGHER_RATE.threshold) {
-      tax += (taxableIncome - taxBands.HIGHER_RATE.threshold) * taxBands.ADDITIONAL_RATE.rate;
-      taxableIncome = taxBands.HIGHER_RATE.threshold;
-    }
-    
-    if (taxableIncome > taxBands.INTERMEDIATE_RATE.threshold) {
-      tax += (taxableIncome - taxBands.INTERMEDIATE_RATE.threshold) * taxBands.HIGHER_RATE.rate;
-      taxableIncome = taxBands.INTERMEDIATE_RATE.threshold;
-    }
-    
-    if (taxableIncome > taxBands.BASIC_RATE.threshold) {
-      tax += (taxableIncome - taxBands.BASIC_RATE.threshold) * taxBands.INTERMEDIATE_RATE.rate;
-      taxableIncome = taxBands.BASIC_RATE.threshold;
-    }
-    
-    if (taxableIncome > taxBands.STARTER_RATE.threshold) {
-      tax += (taxableIncome - taxBands.STARTER_RATE.threshold) * taxBands.BASIC_RATE.rate;
-      taxableIncome = taxBands.STARTER_RATE.threshold;
-    }
-    
-    if (taxableIncome > taxBands.PERSONAL_ALLOWANCE.threshold) {
-      tax += (taxableIncome - taxBands.PERSONAL_ALLOWANCE.threshold) * taxBands.STARTER_RATE.rate;
-    }
+    return calculateScottishTax(taxableIncome, taxBands);
   } else {
-    // UK/Wales tax calculation
-    if (taxableIncome > taxBands.HIGHER_RATE.threshold) {
-      tax += (taxableIncome - taxBands.HIGHER_RATE.threshold) * taxBands.ADDITIONAL_RATE.rate;
-      taxableIncome = taxBands.HIGHER_RATE.threshold;
-    }
-    
-    if (taxableIncome > taxBands.BASIC_RATE.threshold) {
-      tax += (taxableIncome - taxBands.BASIC_RATE.threshold) * taxBands.HIGHER_RATE.rate;
-      taxableIncome = taxBands.BASIC_RATE.threshold;
-    }
-    
-    if (taxableIncome > taxBands.PERSONAL_ALLOWANCE.threshold) {
-      tax += (taxableIncome - taxBands.PERSONAL_ALLOWANCE.threshold) * taxBands.BASIC_RATE.rate;
-    }
+    // UK or Wales
+    return calculateUKTax(taxableIncome, taxBands);
   }
-  
-  return roundToTwoDecimals(tax);
 }
 
 /**
  * Calculate monthly income tax based on monthly salary
  * Synchronous version for immediate calculations
- * FIXED: Improved monthly tax calculation logic
  */
 export function calculateMonthlyIncomeTaxSync(
   monthlySalary: number, 
@@ -77,140 +48,25 @@ export function calculateMonthlyIncomeTaxSync(
   // Check if this is an emergency tax code (Week1/Month1)
   const isEmergencyTax = taxCode.includes('M1');
   
-  // For emergency tax calculation, process just this month's salary
+  // Get tax bands for this region
+  const taxBands = getHardcodedTaxBands(region);
+  
+  // For emergency tax calculation (Week1/Month1)
   if (isEmergencyTax) {
     const { monthlyAllowance } = parseTaxCode(taxCode.replace(' M1', ''));
-    const taxableMonthlyIncome = Math.max(0, monthlySalary - monthlyAllowance);
-    
-    // Get tax bands for this region
-    const taxBands = getHardcodedTaxBands(region);
-    let tax = 0;
-    
-    if (region === 'Scotland') {
-      // Scottish tax calculation - monthly thresholds
-      const monthlyThresholds = {
-        starter: taxBands.STARTER_RATE.threshold / 12,
-        basic: taxBands.BASIC_RATE.threshold / 12,
-        intermediate: taxBands.INTERMEDIATE_RATE.threshold / 12,
-        higher: taxBands.HIGHER_RATE.threshold / 12,
-        additional: Infinity
-      };
-      
-      let remainingIncome = taxableMonthlyIncome;
-      
-      if (remainingIncome > monthlyThresholds.higher) {
-        tax += (remainingIncome - monthlyThresholds.higher) * taxBands.ADDITIONAL_RATE.rate;
-        remainingIncome = monthlyThresholds.higher;
-      }
-      
-      if (remainingIncome > monthlyThresholds.intermediate) {
-        tax += (remainingIncome - monthlyThresholds.intermediate) * taxBands.HIGHER_RATE.rate;
-        remainingIncome = monthlyThresholds.intermediate;
-      }
-      
-      if (remainingIncome > monthlyThresholds.basic) {
-        tax += (remainingIncome - monthlyThresholds.basic) * taxBands.INTERMEDIATE_RATE.rate;
-        remainingIncome = monthlyThresholds.basic;
-      }
-      
-      if (remainingIncome > monthlyThresholds.starter) {
-        tax += (remainingIncome - monthlyThresholds.starter) * taxBands.BASIC_RATE.rate;
-        remainingIncome = monthlyThresholds.starter;
-      }
-      
-      if (remainingIncome > 0) {
-        tax += remainingIncome * taxBands.STARTER_RATE.rate;
-      }
-    } else {
-      // UK/Wales tax calculation - monthly thresholds
-      const monthlyBasicThreshold = taxBands.BASIC_RATE.threshold / 12;
-      const monthlyHigherThreshold = taxBands.HIGHER_RATE.threshold / 12;
-      
-      let remainingIncome = taxableMonthlyIncome;
-      
-      if (remainingIncome > monthlyHigherThreshold) {
-        tax += (remainingIncome - monthlyHigherThreshold) * taxBands.ADDITIONAL_RATE.rate;
-        remainingIncome = monthlyHigherThreshold;
-      }
-      
-      if (remainingIncome > monthlyBasicThreshold) {
-        tax += (remainingIncome - monthlyBasicThreshold) * taxBands.HIGHER_RATE.rate;
-        remainingIncome = monthlyBasicThreshold;
-      }
-      
-      if (remainingIncome > 0) {
-        tax += remainingIncome * taxBands.BASIC_RATE.rate;
-      }
-    }
-    
-    return roundToTwoDecimals(tax);
+    return calculateEmergencyTax(monthlySalary, monthlyAllowance, region, taxBands);
   }
   
-  // IMPROVED: For normal calculation (non-emergency)
-  // We'll calculate this directly rather than going through the annual calculation
+  // For normal calculation (non-emergency)
+  // Get monthly allowance from tax code
   const { monthlyAllowance } = parseTaxCode(taxCode);
   const taxableMonthlyIncome = Math.max(0, monthlySalary - monthlyAllowance);
   
-  // Get tax bands for this region
-  const taxBands = getHardcodedTaxBands(region);
-  let tax = 0;
-  
+  // Use the appropriate monthly tax calculator based on region
   if (region === 'Scotland') {
-    // Scottish tax calculation with monthly thresholds
-    const monthlyThresholds = {
-      starter: taxBands.STARTER_RATE.threshold / 12,
-      basic: taxBands.BASIC_RATE.threshold / 12,
-      intermediate: taxBands.INTERMEDIATE_RATE.threshold / 12,
-      higher: taxBands.HIGHER_RATE.threshold / 12,
-      additional: Infinity
-    };
-    
-    let remainingIncome = taxableMonthlyIncome;
-    
-    if (remainingIncome > monthlyThresholds.higher) {
-      tax += (remainingIncome - monthlyThresholds.higher) * taxBands.ADDITIONAL_RATE.rate;
-      remainingIncome = monthlyThresholds.higher;
-    }
-    
-    if (remainingIncome > monthlyThresholds.intermediate) {
-      tax += (remainingIncome - monthlyThresholds.intermediate) * taxBands.HIGHER_RATE.rate;
-      remainingIncome = monthlyThresholds.intermediate;
-    }
-    
-    if (remainingIncome > monthlyThresholds.basic) {
-      tax += (remainingIncome - monthlyThresholds.basic) * taxBands.INTERMEDIATE_RATE.rate;
-      remainingIncome = monthlyThresholds.basic;
-    }
-    
-    if (remainingIncome > monthlyThresholds.starter) {
-      tax += (remainingIncome - monthlyThresholds.starter) * taxBands.BASIC_RATE.rate;
-      remainingIncome = monthlyThresholds.starter;
-    }
-    
-    if (remainingIncome > 0) {
-      tax += remainingIncome * taxBands.STARTER_RATE.rate;
-    }
+    return calculateMonthlyScottishTax(taxableMonthlyIncome, taxBands);
   } else {
-    // UK/Wales tax calculation with monthly thresholds
-    const monthlyBasicThreshold = taxBands.BASIC_RATE.threshold / 12;
-    const monthlyHigherThreshold = taxBands.HIGHER_RATE.threshold / 12;
-    
-    let remainingIncome = taxableMonthlyIncome;
-    
-    if (remainingIncome > monthlyHigherThreshold) {
-      tax += (remainingIncome - monthlyHigherThreshold) * taxBands.ADDITIONAL_RATE.rate;
-      remainingIncome = monthlyHigherThreshold;
-    }
-    
-    if (remainingIncome > monthlyBasicThreshold) {
-      tax += (remainingIncome - monthlyBasicThreshold) * taxBands.HIGHER_RATE.rate;
-      remainingIncome = monthlyBasicThreshold;
-    }
-    
-    if (remainingIncome > 0) {
-      tax += remainingIncome * taxBands.BASIC_RATE.rate;
-    }
+    // UK or Wales
+    return calculateMonthlyUKTax(taxableMonthlyIncome, taxBands);
   }
-  
-  return roundToTwoDecimals(tax);
 }

@@ -13,6 +13,23 @@ export {
   calculateMonthlyIncomeTaxSync 
 } from "./income-tax-sync";
 
+// Export UK tax calculator functions
+export {
+  calculateUKTax,
+  calculateMonthlyUKTax
+} from "./uk-tax-calculator";
+
+// Export Scottish tax calculator functions
+export {
+  calculateScottishTax,
+  calculateMonthlyScottishTax
+} from "./scottish-tax-calculator";
+
+// Export emergency tax calculator functions
+export {
+  calculateEmergencyTax
+} from "./emergency-tax-calculator";
+
 // Export tax band services
 export { getTaxBands } from "./tax-bands-service";
 
