@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { File, FileText, Home, Settings, Users, CheckSquare, ChartBar, Receipt, Clock } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { useState } from "react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ export function Sidebar({
   isOpen
 }: SidebarProps) {
   const location = useLocation();
+  const [showSettingsSubmenu, setShowSettingsSubmenu] = useState(false);
 
   // Function to check if a tab is active based on URL query parameters
   const isTabActive = (tab: string) => {
@@ -31,6 +33,10 @@ export function Sidebar({
   // Function to create a URL that navigates to the home page with a specific tab
   const getTabUrl = (tab: string) => {
     return `/?tab=${tab}`;
+  };
+
+  const toggleSettingsSubmenu = () => {
+    setShowSettingsSubmenu(!showSettingsSubmenu);
   };
 
   return <aside className={cn("fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white transition-transform duration-300 ease-in-out lg:static", isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")}>
@@ -90,12 +96,50 @@ export function Sidebar({
               Team Access
             </Link>
           </Button>
-          <Button variant="ghost" className="monday-sidebar-item w-full justify-start" asChild>
-            <Link to="/">
-              <Settings className="h-4 w-4" />
-              Settings
-            </Link>
-          </Button>
+          
+          <div className="relative">
+            <Button 
+              variant="ghost" 
+              className={cn(
+                "monday-sidebar-item w-full justify-between", 
+                (isRouteActive("/settings") || showSettingsSubmenu) && "bg-accent text-accent-foreground"
+              )}
+              onClick={toggleSettingsSubmenu}
+            >
+              <div className="flex items-center">
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </div>
+              <svg 
+                className={cn("h-4 w-4 transition-transform", showSettingsSubmenu ? "rotate-180" : "")} 
+                xmlns="http://www.w3.org/2000/svg" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </Button>
+            
+            {showSettingsSubmenu && (
+              <div className="ml-6 mt-1 space-y-1 pl-2 border-l border-gray-200">
+                <Button 
+                  variant="ghost" 
+                  className={cn(
+                    "monday-sidebar-item w-full justify-start text-sm", 
+                    isRouteActive("/settings/timesheets") && "bg-accent text-accent-foreground"
+                  )} 
+                  asChild
+                >
+                  <Link to="/settings/timesheets">
+                    <Clock className="h-3 w-3 mr-2" />
+                    Timesheet Settings
+                  </Link>
+                </Button>
+                {/* Add more settings submenu items here as needed */}
+              </div>
+            )}
+          </div>
         </div>
       </nav>
     </aside>;

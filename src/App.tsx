@@ -10,6 +10,7 @@ import InviteManagement from "./pages/InviteManagement";
 import Employees from "./pages/Employees";
 import EmployeeForm from "./pages/EmployeeForm";
 import EmployeeDetails from "./pages/EmployeeDetails";
+import TimesheetSettings from "./pages/TimesheetSettings";
 import NotFound from "./pages/NotFound";
 import AuthProvider from "./providers/AuthProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/employee/new" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
             <Route path="/employee/:id" element={<ProtectedRoute><EmployeeDetails /></ProtectedRoute>} />
             <Route path="/employee/edit/:id" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
+            <Route path="/settings/timesheets" element={<ProtectedRoute><TimesheetSettings /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
