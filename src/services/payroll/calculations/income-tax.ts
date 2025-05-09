@@ -13,5 +13,6 @@ export { calculateIncomeTaxSync, calculateMonthlyIncomeTaxSync } from "./income-
 // Export tax band services
 export { getTaxBands } from "./tax-bands-service";
 
-// Export types
-export { TaxBand, TaxBandCollection, TaxCalculatorOptions } from "./income-tax-types";
+// Export types properly using 'export type'
+export type { TaxBand, TaxBandCollection, TaxCalculatorOptions } from "./income-tax-types";
+
