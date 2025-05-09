@@ -1,21 +1,17 @@
 
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { getHardcodedStudentLoanThresholds, getTaxConstantsByCategory } from "../utils/tax-constants-service";
-
-interface StudentLoanPlanInfo {
-  threshold: number;
-  rate: number;
-}
+import { StudentLoanCalculator, StudentLoanPlan, StudentLoanThresholds } from "./StudentLoanCalculator";
 
 /**
  * Get student loan plan details from database or fallback to hardcoded values
  */
-async function getStudentLoanPlans(): Promise<Record<number, StudentLoanPlanInfo>> {
+async function getStudentLoanPlans(): Promise<Record<number, { threshold: number; rate: number }>> {
   try {
     const constants = await getTaxConstantsByCategory('STUDENT_LOAN');
     
     // Convert database constants to the student loan plan format
-    const plans: Record<number, StudentLoanPlanInfo> = {};
+    const plans: Record<number, { threshold: number; rate: number }> = {};
     
     constants.forEach(constant => {
       const planMatch = constant.key.match(/PLAN_(\d+)_(THRESHOLD|RATE)/);
@@ -54,6 +50,28 @@ async function getStudentLoanPlans(): Promise<Record<number, StudentLoanPlanInfo
 }
 
 /**
+ * Convert plans data to format required by StudentLoanCalculator
+ */
+function convertToCalculatorThresholds(plans: Record<number, { threshold: number; rate: number }>): 
+  Record<StudentLoanPlan, StudentLoanThresholds> {
+  const result: Record<StudentLoanPlan, StudentLoanThresholds> = {} as Record<StudentLoanPlan, StudentLoanThresholds>;
+  
+  // Convert each plan's monthly threshold to annual in pence
+  Object.entries(plans).forEach(([planKey, planValue]) => {
+    const plan = parseInt(planKey) as StudentLoanPlan;
+    // Only include valid plan types
+    if (plan === 1 || plan === 2 || plan === 3 || plan === 4 || plan === 5) {
+      result[plan] = {
+        annualThreshold: Math.round(planValue.threshold * 12 * 100), // Monthly to annual, pounds to pence
+        repaymentRate: planValue.rate
+      };
+    }
+  });
+  
+  return result;
+}
+
+/**
  * Calculate student loan repayments
  */
 export async function calculateStudentLoan(monthlySalary: number, planType: 1 | 2 | 4 | 5 | null): Promise<number> {
@@ -64,12 +82,16 @@ export async function calculateStudentLoan(monthlySalary: number, planType: 1 | 
   // If plan not found, return 0
   if (!plans[planType]) return 0;
   
-  const { threshold, rate } = plans[planType];
+  const thresholds = convertToCalculatorThresholds(plans);
   
-  if (monthlySalary <= threshold) return 0;
+  const result = StudentLoanCalculator.calculate({
+    grossIncome: Math.round(monthlySalary * 100), // Convert to pence
+    plan: planType as StudentLoanPlan,
+    thresholds
+  });
   
-  const monthlyRepayment = (monthlySalary - threshold) * rate;
-  return roundToTwoDecimals(monthlyRepayment);
+  // Convert result back to pounds
+  return roundToTwoDecimals(result.repaymentAmount / 100);
 }
 
 /**
@@ -83,10 +105,25 @@ export function calculateStudentLoanSync(monthlySalary: number, planType: 1 | 2 
   // If plan not found, return 0
   if (!hardcoded[planType]) return 0;
   
-  const { monthly: threshold, rate } = hardcoded[planType];
+  const thresholds: Record<StudentLoanPlan, StudentLoanThresholds> = {} as Record<StudentLoanPlan, StudentLoanThresholds>;
   
-  if (monthlySalary <= threshold) return 0;
+  // Convert hardcoded thresholds to calculator format
+  Object.entries(hardcoded).forEach(([planKey, planValue]) => {
+    const plan = parseInt(planKey);
+    if (plan === 1 || plan === 2 || plan === 3 || plan === 4 || plan === 5) {
+      thresholds[plan as StudentLoanPlan] = {
+        annualThreshold: Math.round(planValue.monthly * 12 * 100), // Convert monthly to annual and pounds to pence
+        repaymentRate: planValue.rate
+      };
+    }
+  });
   
-  const monthlyRepayment = (monthlySalary - threshold) * rate;
-  return roundToTwoDecimals(monthlyRepayment);
+  const result = StudentLoanCalculator.calculate({
+    grossIncome: Math.round(monthlySalary * 100), // Convert to pence
+    plan: planType as StudentLoanPlan,
+    thresholds
+  });
+  
+  // Convert result back to pounds
+  return roundToTwoDecimals(result.repaymentAmount / 100);
 }
