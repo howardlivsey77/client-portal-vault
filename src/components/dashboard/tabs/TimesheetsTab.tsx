@@ -1,7 +1,7 @@
 
 import { useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TimesheetProvider } from "@/components/timesheets/TimesheetContext";
+import { TimesheetProvider, useTimesheetContext } from "@/components/timesheets/TimesheetContext";
 import { EmployeeTimesheet } from "@/components/timesheets/EmployeeTimesheet";
 
 export const TimesheetsTab = () => {
