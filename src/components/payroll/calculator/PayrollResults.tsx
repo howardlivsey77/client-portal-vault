@@ -72,7 +72,7 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
             </TableRow>
             {result.additionalEarnings && result.additionalEarnings.length > 0 && result.additionalEarnings.map((earning, index) => (
               <TableRow key={`earning-${index}`}>
-                <TableCell>{earning.description}</TableCell>
+                <TableCell>{earning.name}</TableCell>
                 <TableCell className="text-right text-green-500">+{formatCurrency(earning.amount)}</TableCell>
               </TableRow>
             ))}
@@ -115,7 +115,7 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
           )}
           {result.additionalDeductions && result.additionalDeductions.length > 0 && result.additionalDeductions.map((deduction, index) => (
             <TableRow key={`deduction-${index}`}>
-              <TableCell>{deduction.description}</TableCell>
+              <TableCell>{deduction.name}</TableCell>
               <TableCell className="text-right text-red-500">-{formatCurrency(deduction.amount)}</TableCell>
             </TableRow>
           ))}
@@ -138,7 +138,7 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
           <TableBody>
             {result.additionalAllowances.map((allowance, index) => (
               <TableRow key={`allowance-${index}`}>
-                <TableCell>{allowance.description}</TableCell>
+                <TableCell>{allowance.name}</TableCell>
                 <TableCell className="text-right text-green-500">+{formatCurrency(allowance.amount)}</TableCell>
               </TableRow>
             ))}

@@ -65,7 +65,7 @@ export const generatePayslip = (payrollData: PayrollResult, period: string, file
   }
   
   payrollData.additionalDeductions.forEach(deduction => {
-    deductionsData.push([deduction.description, formatCurrency(deduction.amount)]);
+    deductionsData.push([deduction.name, formatCurrency(deduction.amount)]);
   });
   
   autoTable(doc, {
@@ -85,7 +85,7 @@ export const generatePayslip = (payrollData: PayrollResult, period: string, file
     doc.text('Allowances', 14, allowancesY);
     
     const allowancesData = payrollData.additionalAllowances.map(allowance => [
-      allowance.description, formatCurrency(allowance.amount)
+      allowance.name, formatCurrency(allowance.amount)
     ]);
     
     autoTable(doc, {
