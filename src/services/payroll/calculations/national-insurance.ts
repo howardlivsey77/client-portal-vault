@@ -16,7 +16,8 @@ async function getNIData(): Promise<{
   try {
     // Fetch data from database
     const thresholdsData = await getTaxConstantsByCategory('NI_THRESHOLDS');
-    const ratesData = await getTaxConstantsByCategory('NI_RATES');
+    const employeeRatesData = await getTaxConstantsByCategory('NI_EMPLOYEE_RATES');
+    const employerRatesData = await getTaxConstantsByCategory('NI_EMPLOYER_RATES');
     
     // Extract threshold values in pence
     const primaryThresholdMonthly = thresholdsData.find(t => t.key === 'PRIMARY_THRESHOLD')?.value_numeric ?? 0;
@@ -28,20 +29,41 @@ async function getNIData(): Promise<{
     const ST = Math.round(secondaryThresholdMonthly * 100);
     const UEL = Math.round(upperEarningsLimitMonthly * 100);
     
-    // Extract rate values 
-    const mainRate = ratesData.find(r => r.key === 'MAIN_RATE')?.value_numeric ?? 0;
-    const higherRate = ratesData.find(r => r.key === 'HIGHER_RATE')?.value_numeric ?? 0;
+    // Create the rates structure for employee NI contributions
+    const employeeRates: Record<string, NICRateBand> = {};
+    const employerRates: Record<string, NICRateBand> = {};
     
-    // Create the rates structure needed for NICCalculator
+    // Get all NIC categories we support
+    const nicCategories = ['A', 'B', 'C', 'H', 'J', 'M'];
+    
+    // Build rate structures for each NIC category from database values
+    for (const category of nicCategories) {
+      // Get employee rates for this category
+      const lelToPtRate = employeeRatesData.find(r => r.key === `${category}_LEL_TO_PT`)?.value_numeric ?? 0;
+      const ptToUelRate = employeeRatesData.find(r => r.key === `${category}_PT_TO_UEL`)?.value_numeric ?? 0;
+      const aboveUelRate = employeeRatesData.find(r => r.key === `${category}_ABOVE_UEL`)?.value_numeric ?? 0;
+      
+      employeeRates[category] = {
+        LELToPT: lelToPtRate,
+        PTToUEL: ptToUelRate,
+        AboveUEL: aboveUelRate
+      };
+      
+      // Get employer rates for this category
+      const lelToStRate = employerRatesData.find(r => r.key === `${category}_LEL_TO_ST`)?.value_numeric ?? 0;
+      const stToUelRate = employerRatesData.find(r => r.key === `${category}_ST_TO_UEL`)?.value_numeric ?? 0;
+      const erAboveUelRate = employerRatesData.find(r => r.key === `${category}_ABOVE_UEL`)?.value_numeric ?? 0;
+      
+      employerRates[category] = {
+        LELToPT: lelToStRate,
+        PTToUEL: stToUelRate,
+        AboveUEL: erAboveUelRate
+      };
+    }
+    
     const rates: NICRates = {
-      employee: {
-        'A': { LELToPT: 0, PTToUEL: mainRate, AboveUEL: higherRate },
-        // Add other NIC categories as needed
-      },
-      employer: {
-        'A': { LELToPT: 0, PTToUEL: 0.138, AboveUEL: 0.138 }, // Employer rates 13.8%
-        // Add other NIC categories as needed
-      }
+      employee: employeeRates,
+      employer: employerRates
     };
     
     return {
@@ -76,7 +98,6 @@ function getHardcodedNICalculatorData(): { thresholds: NICThresholds; rates: NIC
       'H': { LELToPT: 0, PTToUEL: hardcodedRates.MAIN_RATE, AboveUEL: hardcodedRates.HIGHER_RATE }, // Apprentice
       'J': { LELToPT: 0, PTToUEL: hardcodedRates.MAIN_RATE, AboveUEL: hardcodedRates.HIGHER_RATE }, // Deferred
       'M': { LELToPT: 0, PTToUEL: 0.0585, AboveUEL: 0.0585 }, // Married women's reduced rate, deferred
-      // Add other categories as needed
     },
     employer: {
       'A': { LELToPT: 0, PTToUEL: 0.138, AboveUEL: 0.138 },    // Standard rate 13.8%
@@ -85,7 +106,6 @@ function getHardcodedNICalculatorData(): { thresholds: NICThresholds; rates: NIC
       'H': { LELToPT: 0, PTToUEL: 0.00, AboveUEL: 0.00 },      // No employer NI for apprentices under 25
       'J': { LELToPT: 0, PTToUEL: 0.138, AboveUEL: 0.138 },    // Standard rate 13.8%
       'M': { LELToPT: 0, PTToUEL: 0.138, AboveUEL: 0.138 },    // Standard rate 13.8%
-      // Add other categories as needed
     }
   };
   

@@ -11,7 +11,7 @@ export interface NICRates {
 }
 
 export interface NICRateBand {
-  LELToPT: number;       // Usually 0%
+  LELToPT: number;       // Usually 0% 
   PTToUEL: number;       // Standard band
   AboveUEL: number;      // Higher band
 }
