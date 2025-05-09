@@ -14,11 +14,15 @@ export {
   calculateNationalInsurance,
   calculateStudentLoan,
   calculatePension,
-  parseTaxCode,
+  parseTaxCode
+} from './payrollCalculator';
+
+// Export tax constants from the constants file instead of payrollCalculator
+export {
   TAX_BANDS,
   NI_THRESHOLDS,
   NI_RATES
-} from './payrollCalculator';
+} from './constants/tax-constants';
 
 export type {
   PayrollDetails,
