@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,17 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Trash2, UserCog } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-
-interface Employee {
-  id: string;
-  first_name: string;
-  last_name: string;
-  department: string;
-  hire_date: string;
-  email: string | null;
-  payroll_id: string | null;
-  gender: string | null;
-}
+import { Employee } from "@/types/employee-types";
 
 interface EmployeeTableProps {
   employees: Employee[];

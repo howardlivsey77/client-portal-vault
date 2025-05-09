@@ -1,26 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
-
-interface Employee {
-  id: string;
-  first_name: string;
-  last_name: string;
-  department: string;
-  hire_date: string;
-  email: string | null;
-  address1: string | null;
-  address2: string | null;
-  address3: string | null;
-  address4: string | null;
-  postcode: string | null;
-  date_of_birth: string | null;
-  payroll_id: string | null;
-  gender: string | null;
-  work_pattern: string | null;
-}
+import { Employee } from "@/types/employee-types";
 
 export const useEmployees = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);

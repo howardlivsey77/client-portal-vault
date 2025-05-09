@@ -1,5 +1,5 @@
 
-import { Employee } from "@/hooks/useEmployees";
+import { Employee } from "@/types/employee-types";
 
 export interface PayrollCalculatorProps {
   employee?: Employee | null;
