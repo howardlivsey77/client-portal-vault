@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { WeeklyTimesheetDay } from "@/hooks/useEmployeeTimesheet";
 import { addDays, format, parse } from "date-fns";
@@ -71,6 +70,19 @@ export const fetchTimesheetEntries = async (
       });
     }
 
+    // Also fetch the employee to get their payroll_id
+    const { data: employee, error: employeeError } = await supabase
+      .from('employees')
+      .select('payroll_id')
+      .eq('id', employeeId)
+      .single();
+
+    if (employeeError) {
+      console.error("Error fetching employee:", employeeError);
+    }
+
+    const employeePayrollId = employee?.payroll_id || null;
+
     // Also fetch the work pattern for this employee to get scheduled times
     const { data: patterns, error: patternsError } = await supabase
       .from('work_patterns')
@@ -116,7 +128,7 @@ export const fetchTimesheetEntries = async (
         scheduledEnd: entry?.scheduled_end || (isWorking ? dayPattern?.endTime : null),
         actualStart: entry?.actual_start || null,
         actualEnd: entry?.actual_end || null,
-        payrollId: entry?.payroll_id || dayPattern?.payrollId || null
+        payrollId: entry?.payroll_id || employeePayrollId || dayPattern?.payrollId || null
       };
     });
   } catch (error) {
@@ -145,6 +157,21 @@ export const saveTimesheetEntries = async (
   }[]
 ): Promise<boolean> => {
   try {
+    // If payroll_id is not provided in the entries, fetch it from the employee record
+    let employeePayrollId = entries[0]?.payrollId;
+    
+    if (!employeePayrollId) {
+      const { data: employee, error: employeeError } = await supabase
+        .from('employees')
+        .select('payroll_id')
+        .eq('id', employeeId)
+        .single();
+        
+      if (!employeeError && employee?.payroll_id) {
+        employeePayrollId = employee.payroll_id;
+      }
+    }
+
     // Prepare the entries for upsert
     const upsertEntries = entries.map(entry => ({
       employee_id: employeeId,
@@ -153,7 +180,7 @@ export const saveTimesheetEntries = async (
       scheduled_end: entry.scheduledEnd,
       actual_start: entry.actualStart,
       actual_end: entry.actualEnd,
-      payroll_id: entry.payrollId
+      payroll_id: entry.payrollId || employeePayrollId
     }));
 
     // Use upsert to handle both insert and update cases
@@ -188,5 +215,24 @@ export const saveTimesheetEntries = async (
       variant: "destructive"
     });
     return false;
+  }
+};
+
+/**
+ * Syncs timesheet entries with employee payroll IDs
+ */
+export const syncTimesheetPayrollIds = async (): Promise<number> => {
+  try {
+    const { data, error } = await supabase.rpc('sync_timesheet_entries_payroll_ids');
+    
+    if (error) {
+      console.error("Error syncing timesheet payroll IDs:", error);
+      return 0;
+    }
+    
+    return data || 0;
+  } catch (error) {
+    console.error("Error in syncTimesheetPayrollIds:", error);
+    return 0;
   }
 };

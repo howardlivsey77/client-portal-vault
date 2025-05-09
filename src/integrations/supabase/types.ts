@@ -408,6 +408,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      sync_timesheet_entries_payroll_ids: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
