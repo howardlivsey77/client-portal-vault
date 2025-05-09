@@ -1,7 +1,7 @@
 
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { getHardcodedNIRates, getHardcodedNIThresholds, getTaxConstantsByCategory } from "../utils/tax-constants-service";
-import { NICCalculator, NICRates, NICThresholds, NICResult } from "./NICCalculator";
+import { NICCalculator, NICRates, NICThresholds, NICResult, NICRateBand } from "./NICCalculator";
 
 // Default NIC letter if not specified
 const DEFAULT_NIC_LETTER = 'A';
