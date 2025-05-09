@@ -9,6 +9,9 @@ export interface TaxCode {
   monthlyAllowance: number; // Monthly tax-free allowance in pounds
 }
 
+// HMRC standard is to use 4.33 weeks per month for tax calculations
+const WEEKS_PER_MONTH = 4.33;
+
 /**
  * Parse a UK tax code to determine the tax-free allowance
  */
@@ -23,10 +26,15 @@ export function parseTaxCode(taxCode: string): TaxCode {
   if (/^\d+L$/.test(cleanTaxCode)) {
     const numberPart = parseInt(cleanTaxCode.replace('L', ''), 10);
     const annualAllowance = numberPart * 10;
+    
+    // Using HMRC weekly to monthly calculation method
+    const weeklyAllowance = annualAllowance / 52;
+    const monthlyAllowance = weeklyAllowance * WEEKS_PER_MONTH;
+    
     return { 
       code: taxCode, 
       allowance: annualAllowance,
-      monthlyAllowance: annualAllowance / 12
+      monthlyAllowance: Math.ceil(monthlyAllowance * 100) / 100 // Round to nearest penny (up)
     };
   }
   
@@ -52,10 +60,15 @@ export function parseTaxCode(taxCode: string): TaxCode {
   if (/^K\d+$/.test(cleanTaxCode)) {
     const numberPart = parseInt(cleanTaxCode.replace('K', ''), 10);
     const annualAllowance = -numberPart * 10;
+    
+    // Using HMRC weekly to monthly calculation method
+    const weeklyAllowance = annualAllowance / 52;
+    const monthlyAllowance = weeklyAllowance * WEEKS_PER_MONTH;
+    
     return { 
       code: taxCode, 
       allowance: annualAllowance,
-      monthlyAllowance: annualAllowance / 12
+      monthlyAllowance: Math.floor(monthlyAllowance * 100) / 100 // Round negative values down
     };
   }
   
@@ -63,8 +76,40 @@ export function parseTaxCode(taxCode: string): TaxCode {
   return { 
     code: taxCode, 
     allowance: 12570, // Standard personal allowance for 2023-2024
-    monthlyAllowance: 12570 / 12 // Monthly standard allowance
+    monthlyAllowance: calculateMonthlyFreePay("1257L") // Use HMRC formula for default
   };
+}
+
+/**
+ * Calculates the monthly free pay (Month 1 basis) based on a UK tax code.
+ * @param taxCode - The employee's tax code (e.g. "1257L", "326L")
+ * @returns Monthly free pay in GBP
+ */
+export function calculateMonthlyFreePay(taxCode: string): number {
+  const numericMatch = taxCode.match(/\d+/);
+  if (!numericMatch) return 0;
+
+  const numericPart = parseInt(numericMatch[0], 10);
+
+  // HMRC formula: ((remainder * 10) + 9) / 12 + (quotient * (500 * 10 / 12))
+  if (numericPart >= 500) {
+    const quotient = Math.floor(numericPart / 500);
+    const remainder = numericPart % 500;
+
+    const annualRemainderValue = remainder * 10 + 9;
+    const monthlyRemainder = annualRemainderValue / 12;
+
+    const monthlyQuotient = quotient * (500 * 10 / 12);
+
+    return parseFloat((monthlyRemainder + monthlyQuotient).toFixed(2));
+  } else {
+    // Less than 500 — simpler logic
+    const annualValue = numericPart * 10 + 9;
+    const monthlyValue = annualValue / 12;
+
+    // Round up to nearest penny
+    return Math.ceil(monthlyValue * 100) / 100;
+  }
 }
 
 /**
@@ -79,13 +124,14 @@ export function calculateTaxFreeAmountForPeriod(
   period: number = 1, 
   cumulative: boolean = true
 ): number {
-  const { allowance } = parseTaxCode(taxCode.replace(' M1', ''));
-  
-  // For Week1/Month1 basis (non-cumulative), only use current period
+  // For Week1/Month1 basis (non-cumulative), only use current period's allowance
   if (!cumulative) {
-    return allowance / 12;
+    // Use the HMRC-compliant monthly free pay calculation
+    return calculateMonthlyFreePay(taxCode.replace(' M1', ''));
   }
   
   // For cumulative basis, allowance is proportional to the number of periods
-  return (allowance / 12) * period;
+  // Use HMRC-compliant calculation then multiply by period
+  const monthlyFreePay = calculateMonthlyFreePay(taxCode.replace(' M1', ''));
+  return monthlyFreePay * period;
 }

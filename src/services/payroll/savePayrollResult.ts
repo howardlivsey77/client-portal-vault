@@ -34,6 +34,11 @@ export async function savePayrollResult(
     const taxYear = result.taxYear || getTaxYear(periodDate);
     const taxPeriod = result.taxPeriod || getTaxPeriod(periodDate);
     
+    // Calculate free pay using HMRC method
+    const taxCode = result.taxCode.replace(' M1', ''); // Remove M1 indicator if present
+    const { monthlyAllowance } = parseTaxCode(taxCode);
+    const freePay = monthlyAllowance;
+    
     // Convert PayrollResult to database format (mainly converting pounds to pence)
     const payrollData = {
       employee_id: result.employeeId,
@@ -43,7 +48,7 @@ export async function savePayrollResult(
       tax_code: result.taxCode,
       tax_year: taxYear,
       tax_period: taxPeriod,
-      free_pay_this_period: poundsToPence(result.monthlySalary - result.incomeTax / 0.2), // Approximate free pay
+      free_pay_this_period: poundsToPence(freePay), // Use HMRC free pay calculation
       taxable_pay_this_period: poundsToPence(result.taxablePay || result.monthlySalary),
       income_tax_this_period: poundsToPence(result.incomeTax),
       

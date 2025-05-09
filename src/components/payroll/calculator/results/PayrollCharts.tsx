@@ -77,7 +77,11 @@ export function PayrollCharts({ result }: PayrollChartsProps) {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => `£${value.toFixed(2)}`} />
+                <Tooltip formatter={(value) => {
+                  return typeof value === 'number' 
+                    ? `£${value.toFixed(2)}` 
+                    : `£${value}`;
+                }} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -89,7 +93,11 @@ export function PayrollCharts({ result }: PayrollChartsProps) {
               <BarChart data={payComparisonData}>
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip formatter={(value) => `£${value.toFixed(2)}`} />
+                <Tooltip formatter={(value) => {
+                  return typeof value === 'number' 
+                    ? `£${value.toFixed(2)}` 
+                    : `£${value}`;
+                }} />
                 <Bar dataKey="amount" fill="#3b82f6" />
               </BarChart>
             </ResponsiveContainer>
@@ -108,7 +116,11 @@ export function PayrollCharts({ result }: PayrollChartsProps) {
               <BarChart data={ytdComparisonData}>
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip formatter={(value) => `£${value.toFixed(2)}`} />
+                <Tooltip formatter={(value) => {
+                  return typeof value === 'number' 
+                    ? `£${value.toFixed(2)}` 
+                    : `£${value}`;
+                }} />
                 <Legend />
                 <Bar dataKey="gross" name="Gross Pay" fill="#3b82f6" />
                 <Bar dataKey="net" name="Net Pay" fill="#22c55e" />
