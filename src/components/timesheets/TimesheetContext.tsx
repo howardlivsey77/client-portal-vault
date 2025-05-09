@@ -1,8 +1,9 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { WeeklyTimesheetDay } from '@/hooks/useEmployeeTimesheet';
 import { saveTimesheetEntries } from '@/services/timesheetServices';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TimesheetSettings {
   earlyClockInTolerance: number;
@@ -26,6 +27,7 @@ interface TimesheetContextType {
   saving: boolean;
   settings: TimesheetSettings;
   setSettings: (settings: TimesheetSettings) => void;
+  loadFirstEmployee: () => Promise<void>;
 }
 
 const defaultSettings: TimesheetSettings = {
@@ -49,7 +51,8 @@ const TimesheetContext = createContext<TimesheetContextType>({
   saveTimesheet: async () => false,
   saving: false,
   settings: defaultSettings,
-  setSettings: () => {}
+  setSettings: () => {},
+  loadFirstEmployee: async () => {}
 });
 
 export const useTimesheetContext = () => useContext(TimesheetContext);
@@ -80,6 +83,25 @@ export const TimesheetProvider = ({ children }: TimesheetProviderProps) => {
         [type]: value
       }
     }));
+  };
+
+  const loadFirstEmployee = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('id')
+        .order('last_name', { ascending: true })
+        .order('first_name', { ascending: true })
+        .limit(1);
+        
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setCurrentEmployeeId(data[0].id);
+      }
+    } catch (error) {
+      console.error("Error loading first employee:", error);
+    }
   };
 
   const saveTimesheet = async (timesheet: WeeklyTimesheetDay[]): Promise<boolean> => {
@@ -126,7 +148,8 @@ export const TimesheetProvider = ({ children }: TimesheetProviderProps) => {
       saveTimesheet,
       saving,
       settings,
-      setSettings
+      setSettings,
+      loadFirstEmployee
     }}>
       {children}
     </TimesheetContext.Provider>

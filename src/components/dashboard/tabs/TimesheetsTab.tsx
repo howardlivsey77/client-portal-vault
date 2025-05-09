@@ -1,4 +1,5 @@
 
+import { useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TimesheetProvider } from "@/components/timesheets/TimesheetContext";
 import { EmployeeTimesheet } from "@/components/timesheets/EmployeeTimesheet";
@@ -15,10 +16,21 @@ export const TimesheetsTab = () => {
         </CardHeader>
         <CardContent>
           <TimesheetProvider>
-            <EmployeeTimesheet />
+            <AutoLoadEmployeeTimesheet />
           </TimesheetProvider>
         </CardContent>
       </Card>
     </div>
   );
+};
+
+// New component to handle auto-loading functionality
+const AutoLoadEmployeeTimesheet = () => {
+  const { loadFirstEmployee } = useTimesheetContext();
+  
+  useEffect(() => {
+    loadFirstEmployee();
+  }, []);
+  
+  return <EmployeeTimesheet autoLoad={true} />;
 };

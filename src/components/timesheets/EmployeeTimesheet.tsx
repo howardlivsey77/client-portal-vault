@@ -7,7 +7,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useTimesheetContext } from './TimesheetContext';
 import { EmployeeSelector } from './EmployeeSelector';
 
-export const EmployeeTimesheet = () => {
+interface EmployeeTimesheetProps {
+  autoLoad?: boolean;
+}
+
+export const EmployeeTimesheet = ({ autoLoad = false }: EmployeeTimesheetProps) => {
   const { 
     currentEmployeeId, 
     setCurrentEmployeeId, 
@@ -81,7 +85,7 @@ export const EmployeeTimesheet = () => {
     <div className="space-y-4">
       <EmployeeSelector />
       
-      {currentEmployeeId ? (
+      {currentEmployeeId || loading ? (
         <>
           <TimesheetHeader
             employee={employee}
@@ -99,7 +103,7 @@ export const EmployeeTimesheet = () => {
       ) : (
         <Card>
           <CardContent className="p-6 text-center">
-            <p className="text-lg text-gray-500">Please select an employee to view their timesheet</p>
+            <p className="text-lg text-gray-500">Loading employee timesheet...</p>
           </CardContent>
         </Card>
       )}
