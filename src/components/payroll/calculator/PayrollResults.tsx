@@ -40,13 +40,13 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
           <div className="font-medium">{formatCurrency(result.grossPay)}</div>
           <div>Net Pay:</div>
           <div className="font-medium text-green-600">{formatCurrency(result.netPay)}</div>
-          {result.studentLoan > 0 && (
+          {result.studentLoanPlan && (
             <>
               <div>Student Loan Plan:</div>
               <div className="font-medium">{getStudentLoanPlanName(result.studentLoanPlan)}</div>
             </>
           )}
-          {result.pensionContribution > 0 && (
+          {result.pensionPercentage > 0 && (
             <>
               <div>Pension Contribution:</div>
               <div className="font-medium">{result.pensionPercentage}%</div>
@@ -70,7 +70,7 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
               <TableCell>Monthly Salary</TableCell>
               <TableCell className="text-right">{formatCurrency(result.monthlySalary)}</TableCell>
             </TableRow>
-            {result.additionalEarnings && result.additionalEarnings.map((earning, index) => (
+            {result.additionalEarnings && result.additionalEarnings.length > 0 && result.additionalEarnings.map((earning, index) => (
               <TableRow key={`earning-${index}`}>
                 <TableCell>{earning.description}</TableCell>
                 <TableCell className="text-right text-green-500">+{formatCurrency(earning.amount)}</TableCell>
@@ -113,7 +113,7 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
               <TableCell className="text-right text-red-500">-{formatCurrency(result.pensionContribution)}</TableCell>
             </TableRow>
           )}
-          {result.additionalDeductions.map((deduction, index) => (
+          {result.additionalDeductions && result.additionalDeductions.length > 0 && result.additionalDeductions.map((deduction, index) => (
             <TableRow key={`deduction-${index}`}>
               <TableCell>{deduction.description}</TableCell>
               <TableCell className="text-right text-red-500">-{formatCurrency(deduction.amount)}</TableCell>
@@ -127,7 +127,7 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
       </Table>
       
       {/* Allowances Section - Only show if there are allowances */}
-      {result.additionalAllowances.length > 0 && (
+      {result.additionalAllowances && result.additionalAllowances.length > 0 && (
         <Table>
           <TableHeader>
             <TableRow>

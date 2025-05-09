@@ -30,7 +30,7 @@ export interface PayrollResult {
   pensionPercentage?: number;
   additionalDeductions: Array<{ description: string, amount: number }>;
   additionalAllowances: Array<{ description: string, amount: number }>;
-  additionalEarnings?: Array<{ description: string, amount: number }>;
+  additionalEarnings: Array<{ description: string, amount: number }>;
   totalDeductions: number;
   totalAllowances: number;
   netPay: number;

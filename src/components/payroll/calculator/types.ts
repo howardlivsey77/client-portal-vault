@@ -15,5 +15,5 @@ export interface PayrollFormValues {
   studentLoanPlan: 1 | 2 | 4 | 5 | null;
   additionalDeductions: Array<{ description: string, amount: number }>;
   additionalAllowances: Array<{ description: string, amount: number }>;
-  additionalEarnings?: Array<{ description: string, amount: number }>;
+  additionalEarnings: Array<{ description: string, amount: number }>;
 }
