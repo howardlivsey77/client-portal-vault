@@ -121,106 +121,146 @@ export const ContactInfoCard = ({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {isEditing ? (
-              <>
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Email</h3>
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="address1"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address Line 1</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Address Line 1</h3>
+                  <FormField
+                    control={form.control}
+                    name="address1"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="address2"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address Line 2</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Address Line 2</h3>
+                  <FormField
+                    control={form.control}
+                    name="address2"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="address3"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address Line 3</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Address Line 3</h3>
+                  <FormField
+                    control={form.control}
+                    name="address3"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="address4"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address Line 4</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Address Line 4</h3>
+                  <FormField
+                    control={form.control}
+                    name="address4"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="postcode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Postcode</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </>
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Postcode</h3>
+                  <FormField
+                    control={form.control}
+                    name="postcode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
             ) : (
-              /* Display mode */
-              <div className="grid grid-cols-1 gap-2">
-                <div className="mt-2">
-                  <p className="text-sm font-medium text-muted-foreground">Email</p>
-                  <p>{employee.email || "Not provided"}</p>
+              /* Display mode with similar layout to the edit mode */
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Email</h3>
+                  <p className="p-2 bg-gray-50 rounded border border-gray-100">
+                    {employee.email || "Not provided"}
+                  </p>
                 </div>
                 
-                <div className="mt-2">
-                  <p className="text-sm font-medium text-muted-foreground">Address</p>
-                  {formattedAddress ? (
-                    <p className="whitespace-pre-line">{formattedAddress}</p>
-                  ) : (
-                    <p>No address provided</p>
-                  )}
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Address Line 1</h3>
+                  <p className="p-2 bg-gray-50 rounded border border-gray-100">
+                    {employee.address1 || "Not provided"}
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Address Line 2</h3>
+                  <p className="p-2 bg-gray-50 rounded border border-gray-100">
+                    {employee.address2 || "Not provided"}
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Address Line 3</h3>
+                  <p className="p-2 bg-gray-50 rounded border border-gray-100">
+                    {employee.address3 || "Not provided"}
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Address Line 4</h3>
+                  <p className="p-2 bg-gray-50 rounded border border-gray-100">
+                    {employee.address4 || "Not provided"}
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Postcode</h3>
+                  <p className="p-2 bg-gray-50 rounded border border-gray-100">
+                    {employee.postcode || "Not provided"}
+                  </p>
                 </div>
               </div>
             )}
