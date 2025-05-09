@@ -9,7 +9,7 @@ import { TaxYearInfo } from "./TaxYearInfo";
 import { TaxCalculationDebug } from "./TaxCalculationDebug";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Bug } from "lucide-react";
+import { Bug, PieChart } from "lucide-react";
 
 interface PayrollResultsProps {
   result: PayrollResult;
@@ -18,6 +18,7 @@ interface PayrollResultsProps {
 
 export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
   const [showDebug, setShowDebug] = useState(false);
+  const [showCharts, setShowCharts] = useState(false);
   
   return (
     <div className="space-y-4">
@@ -28,7 +29,7 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
       <PaySummary result={result} />
       <TaxYearInfo result={result} />
       
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
         <Button 
           variant="outline" 
           size="sm" 

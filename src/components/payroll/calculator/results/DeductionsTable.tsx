@@ -25,6 +25,9 @@ export function DeductionsTable({ result }: DeductionsTableProps) {
   const isScottishTaxCode = result.taxCode?.startsWith('S');
   const isBRTaxCode = result.taxCode === 'BR';
   const isNTTaxCode = result.taxCode === 'NT';
+  
+  // For period 1, YTD should equal period values
+  const isPeriod1 = result.taxPeriod === 1;
 
   return (
     <Table>
@@ -47,12 +50,16 @@ export function DeductionsTable({ result }: DeductionsTableProps) {
             </div>
           </TableCell>
           <TableCell className="text-right text-red-500">-{formatCurrency(result.incomeTax)}</TableCell>
-          <TableCell className="text-right text-red-500">-{formatCurrency(result.incomeTaxYTD || result.incomeTax)}</TableCell>
+          <TableCell className="text-right text-red-500">
+            -{formatCurrency(isPeriod1 ? result.incomeTax : result.incomeTaxYTD)}
+          </TableCell>
         </TableRow>
         <TableRow>
           <TableCell>National Insurance</TableCell>
           <TableCell className="text-right text-red-500">-{formatCurrency(result.nationalInsurance)}</TableCell>
-          <TableCell className="text-right text-red-500">-{formatCurrency(result.nationalInsuranceYTD || result.nationalInsurance)}</TableCell>
+          <TableCell className="text-right text-red-500">
+            -{formatCurrency(isPeriod1 ? result.nationalInsurance : result.nationalInsuranceYTD)}
+          </TableCell>
         </TableRow>
         {result.studentLoan > 0 && (
           <TableRow>
@@ -78,7 +85,9 @@ export function DeductionsTable({ result }: DeductionsTableProps) {
         <TableRow className="border-t">
           <TableCell className="font-medium">Total Deductions</TableCell>
           <TableCell className="text-right font-medium text-red-500">-{formatCurrency(result.totalDeductions)}</TableCell>
-          <TableCell className="text-right font-medium text-red-500">-{formatCurrency(result.totalDeductions)}</TableCell>
+          <TableCell className="text-right font-medium text-red-500">
+            -{formatCurrency(isPeriod1 ? result.totalDeductions : (result.incomeTaxYTD + result.nationalInsuranceYTD + result.studentLoan + result.pensionContribution))}
+          </TableCell>
         </TableRow>
       </TableBody>
     </Table>
