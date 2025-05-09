@@ -76,26 +76,47 @@ export const NotificationsProvider = ({ children }: NotificationsProviderProps) 
           actual_start,
           actual_end
         `)
-        .eq('is_exception', true)
         .order('date', { ascending: false });
       
       if (timesheetError) {
-        console.error("Error fetching timesheet exceptions:", timesheetError);
+        console.error("Error fetching timesheet entries:", timesheetError);
         return;
       }
       
+      // Process entries to count exceptions
       if (timesheetData && timesheetData.length > 0) {
-        setTimesheetExceptionsCount(timesheetData.length);
+        // Calculate exceptions based on time tolerance
+        const exceptions = timesheetData.filter(entry => {
+          const hasStartException = isTimeOutsideTolerance(
+            entry.scheduled_start,
+            entry.actual_start,
+            15, // early tolerance
+            5,  // late tolerance
+            true // isStartTime
+          );
+          
+          const hasEndException = isTimeOutsideTolerance(
+            entry.scheduled_end,
+            entry.actual_end,
+            5,  // early tolerance
+            15, // late tolerance
+            false // isEndTime
+          );
+          
+          return hasStartException || hasEndException;
+        });
+        
+        setTimesheetExceptionsCount(exceptions.length);
         
         // If there are new exceptions, add a notification
         const existingExceptionNotif = notifications.find(n => n.type === 'timesheet-exception');
         
-        if (!existingExceptionNotif) {
+        if (exceptions.length > 0 && !existingExceptionNotif) {
           const newNotification: Notification = {
             id: `timesheet-exception-${Date.now()}`,
             type: 'timesheet-exception',
             title: 'Timesheet Exceptions',
-            message: `There are ${timesheetData.length} timesheet entries that need attention.`,
+            message: `There are ${exceptions.length} timesheet entries that need attention.`,
             read: false,
             createdAt: new Date()
           };
