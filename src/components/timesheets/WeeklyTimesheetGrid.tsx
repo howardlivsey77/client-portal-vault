@@ -130,7 +130,7 @@ export const WeeklyTimesheetGrid = ({ timesheet }: WeeklyTimesheetGridProps) => 
                           type="time"
                           value={actualStart || ''}
                           onChange={(e) => handleActualTimeChange(day.dayString, 'actualStart', e.target.value)}
-                          className={`w-32 ${hasStartException ? 'border-red-500' : ''}`}
+                          className={`w-32 ${hasStartException ? 'border-red-500 border-2 shadow-sm shadow-red-200' : ''}`}
                         />
                         {hasStartException && (
                           <TooltipProvider>
@@ -156,7 +156,7 @@ export const WeeklyTimesheetGrid = ({ timesheet }: WeeklyTimesheetGridProps) => 
                           type="time"
                           value={actualEnd || ''}
                           onChange={(e) => handleActualTimeChange(day.dayString, 'actualEnd', e.target.value)}
-                          className={`w-32 ${hasEndException ? 'border-red-500' : ''}`}
+                          className={`w-32 ${hasEndException ? 'border-red-500 border-2 shadow-sm shadow-red-200' : ''}`}
                         />
                         {hasEndException && (
                           <TooltipProvider>
