@@ -1,5 +1,5 @@
 
-import { Employee } from "@/hooks/useEmployeeDetails";
+import { Employee } from "@/types/employeeDetails";
 
 export interface ContactInfoCardProps {
   employee: Employee;
@@ -15,4 +15,15 @@ export interface ContactInfoFormValues {
   address3: string | null;
   address4: string | null;
   postcode: string | null;
+}
+
+export interface ContactInfoDisplayProps {
+  employee: Employee;
+  formattedAddress: string;
+}
+
+export interface ContactInfoFormProps {
+  defaultValues: ContactInfoFormValues;
+  onSubmit: (data: ContactInfoFormValues) => Promise<void>;
+  onCancel: () => void;
 }

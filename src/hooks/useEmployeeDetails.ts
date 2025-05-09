@@ -5,7 +5,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { 
   Employee, 
   EmployeeDetailsHookReturn 
-} from "@/types/employeeDetails";
+} from "@/types/employee-types";
 import { 
   fetchEmployeeWithNavigation, 
   updateEmployeeFieldById, 
@@ -13,7 +13,7 @@ import {
 } from "@/services/employeeDetailsService";
 
 // Properly re-export the type using 'export type'
-export type { Employee } from "@/types/employeeDetails";
+export type { Employee } from "@/types/employee-types";
 
 export const useEmployeeDetails = (employeeId: string | undefined): EmployeeDetailsHookReturn => {
   const [employee, setEmployee] = useState<Employee | null>(null);

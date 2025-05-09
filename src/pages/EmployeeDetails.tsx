@@ -3,12 +3,13 @@ import { useParams } from "react-router-dom";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useEmployeeDetails } from "@/hooks/useEmployeeDetails";
 import { EmployeeHeader } from "@/components/employees/details/EmployeeHeader";
-import { PersonalInfoCard } from "@/components/employees/details/PersonalInfoCard";
-import { ContactInfoCard } from "@/components/employees/details/ContactInfoCard";
+import { PersonalInfoCard } from "@/components/employees/details";
+import { ContactInfoCard } from "@/components/employees/details/contact-info/ContactInfoCard";
 import { SystemInfoCard } from "@/components/employees/details/SystemInfoCard";
 import { WorkPatternCard } from "@/components/employees/details/WorkPatternCard";
 import { EmployeeNotFound } from "@/components/employees/details/EmployeeNotFound";
 import { LoadingState } from "@/components/employees/details/LoadingState";
+import { HmrcInfoCard } from "@/components/employees/details/hmrc-info/HmrcInfoCard";
 
 const EmployeeDetails = () => {
   const { id } = useParams();
@@ -64,6 +65,12 @@ const EmployeeDetails = () => {
           formattedAddress={formattedAddress}
           isAdmin={isAdmin}
           updateEmployeeField={updateEmployeeField} 
+        />
+        
+        <HmrcInfoCard
+          employee={employee}
+          isAdmin={isAdmin}
+          updateEmployeeField={updateEmployeeField}
         />
         
         <WorkPatternCard 
