@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -38,6 +38,30 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
   const [payPeriod, setPayPeriod] = useState<string>(
     new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
   );
+
+  // Update payroll details when employee changes
+  useEffect(() => {
+    if (employee) {
+      const hourlyRate = employee.hourly_rate || 0;
+      const hoursPerWeek = employee.hours_per_week || 0;
+      
+      // Calculate monthly salary based on hourly rate and weekly hours
+      // We use 4.33 as the average number of weeks per month (52/12)
+      const monthlySalary = Number((hourlyRate * hoursPerWeek * 4.33).toFixed(2));
+
+      setPayrollDetails({
+        employeeId: employee.id,
+        employeeName: `${employee.first_name} ${employee.last_name}`,
+        payrollId: employee.payroll_id || '',
+        monthlySalary: monthlySalary,
+        taxCode: '1257L', // Default tax code
+        pensionPercentage: 5,
+        studentLoanPlan: null,
+        additionalDeductions: [],
+        additionalAllowances: []
+      });
+    }
+  }, [employee]);
 
   const handleInputChange = (field: keyof PayrollDetails, value: any) => {
     setPayrollDetails(prev => ({
@@ -100,7 +124,7 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
       <CardHeader>
         <CardTitle>UK Payroll Calculator</CardTitle>
         <CardDescription>
-          Calculate monthly payroll including tax, NI, and other deductions
+          {employee ? `Calculate payroll for ${employee.first_name} ${employee.last_name}` : 'Calculate monthly payroll including tax, NI, and other deductions'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -120,6 +144,7 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
                     value={payrollDetails.employeeName} 
                     onChange={(e) => handleInputChange('employeeName', e.target.value)} 
                     placeholder="Employee Name"
+                    readOnly={!!employee}
                   />
                 </div>
                 <div>
@@ -129,6 +154,7 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
                     value={payrollDetails.payrollId || ''} 
                     onChange={(e) => handleInputChange('payrollId', e.target.value)} 
                     placeholder="Payroll ID"
+                    readOnly={!!employee}
                   />
                 </div>
               </div>

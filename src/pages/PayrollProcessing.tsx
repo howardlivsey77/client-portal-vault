@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { PageContainer } from "@/components/layout/PageContainer";
-import { PayrollCalculator } from "@/components/payroll/PayrollCalculator";
+import { EmployeePayrollCalculator } from "@/components/payroll/EmployeePayrollCalculator";
 
 const PayrollProcessing = () => {
   return (
@@ -10,7 +10,7 @@ const PayrollProcessing = () => {
         <h1 className="text-2xl font-bold mb-4">UK Payroll Calculator</h1>
         
         <div className="mb-6">
-          <PayrollCalculator />
+          <EmployeePayrollCalculator />
         </div>
       </div>
     </PageContainer>
