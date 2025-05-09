@@ -1,4 +1,3 @@
-
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { 
   calculateIncomeTaxSync, 
@@ -14,6 +13,7 @@ import { calculatePension } from "./calculations/pension";
 import { PayrollDetails, PayrollResult } from "./types";
 import { getTaxYear, getTaxPeriod } from "@/utils/taxYearUtils";
 import { getPreviousPeriodData } from "./ytdDataService";
+import { parseTaxCode, calculateTaxFreeAmountForPeriod } from "./utils/tax-code-utils";
 
 /**
  * Main function to calculate monthly payroll
@@ -75,6 +75,13 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   if (useEmergencyTax && !taxCode.includes('M1')) {
     effectiveTaxCode = `${taxCode} M1`;
   }
+  
+  // Parse tax code to get tax-free allowance
+  const taxCodeInfo = parseTaxCode(taxCode);
+  const isCumulative = !useEmergencyTax;
+  
+  // Calculate tax-free amount for this period
+  const taxFreeAmount = calculateTaxFreeAmountForPeriod(taxCode, taxPeriod, isCumulative);
   
   // Calculate taxable pay (gross pay minus tax-free deductions like pension)
   const pensionContribution = calculatePension(grossPay, pensionPercentage);

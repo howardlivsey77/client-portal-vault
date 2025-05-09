@@ -67,7 +67,7 @@ export class TaxCalculator {
     const isNT = baseCode === 'NT';
 
     const cumulativePay = taxablePay + (isEmergency ? 0 : totalPreviousPay);
-    const allowance = this.getAllowance(baseCode, period, isKCode);
+    const allowance = this.getAllowance(baseCode, isEmergency ? 1 : period, isKCode);
     const adjustedTaxable = Math.max(0, (cumulativePay - allowance) / 100); // in £
 
     let taxDueToDate = 0;
@@ -105,7 +105,12 @@ export class TaxCalculator {
     const match = taxCode.match(/^(\d{3,4})L$/);
     if (!match) return 0;
 
+    // For tax codes like 1257L, extract 1257 and multiply by 10 to get annual allowance
     const allowance = parseInt(match[1], 10) * 10;
+    
+    // Calculate monthly allowance based on current period
+    // For emergency tax, month will be 1, so it returns one month's worth of allowance
+    // For cumulative tax, it returns allowance for all months up to current month
     return Math.round((allowance / this.periodsInYear) * month * 100); // in pence
   }
 
