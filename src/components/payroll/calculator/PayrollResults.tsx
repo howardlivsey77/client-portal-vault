@@ -1,7 +1,7 @@
 
 import { formatCurrency } from "@/lib/formatters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PayrollResult } from "@/services/payroll/ukPayrollCalculator";
+import { PayrollResult } from "@/services/payroll/types";
 
 interface PayrollResultsProps {
   result: PayrollResult;

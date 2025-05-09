@@ -1,7 +1,7 @@
 
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { PayrollResult } from '@/services/payroll/ukPayrollCalculator';
+import { PayrollResult } from '@/services/payroll/types';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 
 /**

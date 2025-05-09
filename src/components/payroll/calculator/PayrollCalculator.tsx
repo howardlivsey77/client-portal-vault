@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Download } from "lucide-react";
-import { calculateMonthlyPayroll, PayrollResult } from "@/services/payroll/ukPayrollCalculator";
+import { calculateMonthlyPayroll, PayrollResult } from "@/services/payroll/payrollCalculator";
 import { generatePayslip } from "@/utils/payslipGenerator";
 import { PayrollForm } from "./PayrollForm";
 import { PayrollResults } from "./PayrollResults";
