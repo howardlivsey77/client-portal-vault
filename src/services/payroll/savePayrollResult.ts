@@ -79,26 +79,66 @@ export async function savePayrollResult(
       net_pay_this_period: poundsToPence(result.netPay)
     };
     
-    // Insert into database
-    const { data, error } = await supabase
+    // Check if there's already a record for this employee and period
+    const { data: existingRecords, error: fetchError } = await supabase
       .from('payroll_results')
-      .insert(payrollData)
       .select('id')
-      .single();
+      .eq('employee_id', result.employeeId)
+      .eq('payroll_period', periodDate.toISOString().split('T')[0])
+      .eq('tax_year', taxYear);
       
-    if (error) {
-      console.error("Error saving payroll result:", error);
+    if (fetchError) {
+      console.error("Error checking for existing payroll records:", fetchError);
       return { 
         success: false, 
-        message: `Error saving payroll result: ${error.message}` 
+        message: `Error checking for existing records: ${fetchError.message}` 
       };
     }
     
-    return { 
-      success: true, 
-      message: "Payroll result saved successfully", 
-      id: data.id 
-    };
+    // If there are existing records, update the most recent one instead of creating a new one
+    if (existingRecords && existingRecords.length > 0) {
+      const mostRecentId = existingRecords[0].id;
+      
+      const { error: updateError } = await supabase
+        .from('payroll_results')
+        .update(payrollData)
+        .eq('id', mostRecentId);
+        
+      if (updateError) {
+        console.error("Error updating payroll result:", updateError);
+        return { 
+          success: false, 
+          message: `Error updating payroll result: ${updateError.message}` 
+        };
+      }
+      
+      return { 
+        success: true, 
+        message: "Payroll result updated successfully", 
+        id: mostRecentId 
+      };
+    } else {
+      // No existing record, insert a new one
+      const { data, error } = await supabase
+        .from('payroll_results')
+        .insert(payrollData)
+        .select('id')
+        .single();
+        
+      if (error) {
+        console.error("Error saving payroll result:", error);
+        return { 
+          success: false, 
+          message: `Error saving payroll result: ${error.message}` 
+        };
+      }
+      
+      return { 
+        success: true, 
+        message: "Payroll result saved successfully", 
+        id: data.id 
+      };
+    }
   } catch (error) {
     console.error("Unexpected error saving payroll result:", error);
     return { 

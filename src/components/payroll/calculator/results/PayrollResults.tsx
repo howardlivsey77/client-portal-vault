@@ -7,6 +7,7 @@ import { AllowancesTable } from "./AllowancesTable";
 import { PaySummary } from "./PaySummary";
 import { TaxYearInfo } from "./TaxYearInfo";
 import { TaxCalculationDebug } from "./TaxCalculationDebug";
+import { PayrollCharts } from "./PayrollCharts";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Bug, PieChart } from "lucide-react";
@@ -33,6 +34,15 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
         <Button 
           variant="outline" 
           size="sm" 
+          onClick={() => setShowCharts(!showCharts)}
+          className="text-xs"
+        >
+          <PieChart className="h-3 w-3 mr-1" />
+          {showCharts ? "Hide" : "Show"} Charts
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
           onClick={() => setShowDebug(!showDebug)}
           className="text-xs"
         >
@@ -41,6 +51,7 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
         </Button>
       </div>
       
+      {showCharts && <PayrollCharts result={result} />}
       {showDebug && <TaxCalculationDebug result={result} />}
     </div>
   );
