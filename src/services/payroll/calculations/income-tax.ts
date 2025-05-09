@@ -5,14 +5,16 @@
  */
 
 // Export async tax calculation methods
-export { calculateIncomeTax, calculateMonthlyIncomeTax } from "./income-tax-async";
+export { calculateIncomeTax } from "./income-tax-async";
 
 // Export sync tax calculation methods
-export { calculateIncomeTaxSync, calculateMonthlyIncomeTaxSync } from "./income-tax-sync";
+export { 
+  calculateIncomeTaxSync, 
+  calculateMonthlyIncomeTaxSync 
+} from "./income-tax-sync";
 
 // Export tax band services
 export { getTaxBands } from "./tax-bands-service";
 
 // Export types properly using 'export type'
 export type { TaxBand, TaxBandCollection, TaxCalculatorOptions } from "./income-tax-types";
-

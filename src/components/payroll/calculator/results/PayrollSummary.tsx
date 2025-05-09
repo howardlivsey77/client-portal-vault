@@ -1,75 +1,66 @@
 
-import { formatCurrency } from "@/lib/formatters";
-import { Badge } from "@/components/ui/badge";
 import { PayrollResult } from "@/services/payroll/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatCurrency } from "@/lib/formatters";
 
 interface PayrollSummaryProps {
   result: PayrollResult;
-  payPeriod: string;
+  showTaxYTD?: boolean;
 }
 
-export function PayrollSummary({ result, payPeriod }: PayrollSummaryProps) {
-  // Check if the tax code has specific indicators
-  const isEmergencyTaxCode = result.taxCode?.includes('M1');
-  const isScottishTaxCode = result.taxCode?.startsWith('S');
-  
-  // Map student loan plan numbers to descriptive text
-  const getStudentLoanPlanName = (plan: number | null) => {
-    if (!plan) return "None";
-    const planMap: Record<number, string> = {
-      1: "Plan 1",
-      2: "Plan 2",
-      4: "Plan 4",
-      5: "Plan 5"
-    };
-    return planMap[plan] || `Plan ${plan}`;
-  };
-
+export function PayrollSummary({ result, showTaxYTD = false }: PayrollSummaryProps) {
   return (
-    <div className="bg-muted p-4 rounded-md">
-      <h3 className="text-lg font-medium mb-2">Payroll Summary</h3>
-      <div className="grid grid-cols-2 gap-2">
-        <div>Employee:</div>
-        <div className="font-medium">{result.employeeName}</div>
-        {result.payrollId && (
-          <>
-            <div>Payroll ID:</div>
-            <div className="font-medium">{result.payrollId}</div>
-          </>
-        )}
-        <div>Pay Period:</div>
-        <div className="font-medium">{payPeriod}</div>
-        <div>Tax Year:</div>
-        <div className="font-medium">{result.taxYear}</div>
-        <div>Gross Pay:</div>
-        <div className="font-medium">{formatCurrency(result.grossPay)}</div>
-        <div>Net Pay:</div>
-        <div className="font-medium text-green-600">{formatCurrency(result.netPay)}</div>
-        <div>Tax Code:</div>
-        <div className="font-medium flex items-center gap-2">
-          {result.taxCode}
-          {isEmergencyTaxCode && <Badge variant="destructive">Emergency</Badge>}
-          {isScottishTaxCode && <Badge>Scottish</Badge>}
-        </div>
-        {result.taxRegion && result.taxRegion !== 'UK' && (
-          <>
-            <div>Tax Region:</div>
-            <div className="font-medium">{result.taxRegion}</div>
-          </>
-        )}
-        {result.studentLoanPlan && (
-          <>
-            <div>Student Loan Plan:</div>
-            <div className="font-medium">{getStudentLoanPlanName(result.studentLoanPlan)}</div>
-          </>
-        )}
-        {result.pensionPercentage > 0 && (
-          <>
-            <div>Pension Contribution:</div>
-            <div className="font-medium">{result.pensionPercentage}%</div>
-          </>
-        )}
-      </div>
-    </div>
+    <Card className="mb-4">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg">Payroll Summary</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[70%]">Description</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+              {showTaxYTD && <TableHead className="text-right">YTD</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell>Total Gross Pay</TableCell>
+              <TableCell className="text-right">£{formatCurrency(result.grossPay)}</TableCell>
+              {showTaxYTD && (
+                <TableCell className="text-right">
+                  £{formatCurrency(result.grossPayYTD || result.grossPay)}
+                </TableCell>
+              )}
+            </TableRow>
+            <TableRow>
+              <TableCell>Tax-Free Amount</TableCell>
+              <TableCell className="text-right">£{formatCurrency(result.taxFreeAmount)}</TableCell>
+              {showTaxYTD && <TableCell className="text-right">-</TableCell>}
+            </TableRow>
+            <TableRow>
+              <TableCell>Taxable Pay</TableCell>
+              <TableCell className="text-right">£{formatCurrency(result.taxablePay)}</TableCell>
+              {showTaxYTD && (
+                <TableCell className="text-right">
+                  £{formatCurrency(result.taxablePayYTD || result.taxablePay)}
+                </TableCell>
+              )}
+            </TableRow>
+            <TableRow>
+              <TableCell>Total Deductions</TableCell>
+              <TableCell className="text-right">£{formatCurrency(result.totalDeductions)}</TableCell>
+              {showTaxYTD && <TableCell className="text-right">-</TableCell>}
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-bold">Net Pay</TableCell>
+              <TableCell className="text-right font-bold">£{formatCurrency(result.netPay)}</TableCell>
+              {showTaxYTD && <TableCell className="text-right">-</TableCell>}
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }

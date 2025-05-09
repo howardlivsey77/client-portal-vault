@@ -1,95 +1,91 @@
 
-import { formatCurrency } from "@/lib/formatters";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PayrollResult } from "@/services/payroll/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatCurrency } from "@/lib/formatters";
 
 interface DeductionsTableProps {
   result: PayrollResult;
+  showTaxYTD?: boolean;
 }
 
-export function DeductionsTable({ result }: DeductionsTableProps) {
-  // Map student loan plan numbers to descriptive text
-  const getStudentLoanPlanName = (plan: number | null) => {
-    if (!plan) return "None";
-    const planMap: Record<number, string> = {
-      1: "Plan 1",
-      2: "Plan 2",
-      4: "Plan 4",
-      5: "Plan 5"
-    };
-    return planMap[plan] || `Plan ${plan}`;
-  };
-
-  // Check if the tax code has specific indicators
-  const isEmergencyTaxCode = result.taxCode?.includes('M1');
-  const isScottishTaxCode = result.taxCode?.startsWith('S');
-  const isBRTaxCode = result.taxCode === 'BR';
-  const isNTTaxCode = result.taxCode === 'NT';
+export function DeductionsTable({ result, showTaxYTD = false }: DeductionsTableProps) {
+  // Format student loan plan if it exists
+  const studentLoanPlanLabel = result.studentLoanPlan 
+    ? `Student Loan (Plan ${result.studentLoanPlan})` 
+    : 'Student Loan';
   
-  // For period 1, YTD should equal period values
-  const isPeriod1 = result.taxPeriod === 1;
-
+  // Calculate rate for Pension
+  const pensionRate = result.pensionPercentage > 0 
+    ? `(${result.pensionPercentage}%)` 
+    : '';
+  
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Deductions</TableHead>
-          <TableHead className="text-right">This Period</TableHead>
-          <TableHead className="text-right">Year To Date</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <TableRow>
-          <TableCell>
-            Income Tax
-            <div className="text-xs text-muted-foreground mt-1">
-              {isEmergencyTaxCode && "Emergency tax code applied"}
-              {isScottishTaxCode && "Scottish tax rates applied"}
-              {isBRTaxCode && "Basic rate applied to all income"}
-              {isNTTaxCode && "No tax deducted"}
-            </div>
-          </TableCell>
-          <TableCell className="text-right text-red-500">-{formatCurrency(result.incomeTax)}</TableCell>
-          <TableCell className="text-right text-red-500">
-            -{formatCurrency(isPeriod1 ? result.incomeTax : result.incomeTaxYTD)}
-          </TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell>National Insurance</TableCell>
-          <TableCell className="text-right text-red-500">-{formatCurrency(result.nationalInsurance)}</TableCell>
-          <TableCell className="text-right text-red-500">
-            -{formatCurrency(isPeriod1 ? result.nationalInsurance : result.nationalInsuranceYTD)}
-          </TableCell>
-        </TableRow>
-        {result.studentLoan > 0 && (
-          <TableRow>
-            <TableCell>Student Loan ({getStudentLoanPlanName(result.studentLoanPlan)})</TableCell>
-            <TableCell className="text-right text-red-500">-{formatCurrency(result.studentLoan)}</TableCell>
-            <TableCell className="text-right text-red-500">-{formatCurrency(result.studentLoan)}</TableCell>
-          </TableRow>
-        )}
-        {result.pensionContribution > 0 && (
-          <TableRow>
-            <TableCell>Pension Contribution ({result.pensionPercentage}%)</TableCell>
-            <TableCell className="text-right text-red-500">-{formatCurrency(result.pensionContribution)}</TableCell>
-            <TableCell className="text-right text-red-500">-{formatCurrency(result.pensionContribution)}</TableCell>
-          </TableRow>
-        )}
-        {result.additionalDeductions && result.additionalDeductions.length > 0 && result.additionalDeductions.map((deduction, index) => (
-          <TableRow key={`deduction-${index}`}>
-            <TableCell>{deduction.name}</TableCell>
-            <TableCell className="text-right text-red-500">-{formatCurrency(deduction.amount)}</TableCell>
-            <TableCell className="text-right text-red-500">-{formatCurrency(deduction.amount)}</TableCell>
-          </TableRow>
-        ))}
-        <TableRow className="border-t">
-          <TableCell className="font-medium">Total Deductions</TableCell>
-          <TableCell className="text-right font-medium text-red-500">-{formatCurrency(result.totalDeductions)}</TableCell>
-          <TableCell className="text-right font-medium text-red-500">
-            -{formatCurrency(isPeriod1 ? result.totalDeductions : (result.incomeTaxYTD + result.nationalInsuranceYTD + result.studentLoan + result.pensionContribution))}
-          </TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
+    <Card className="mb-4">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg">Monthly Deductions</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[70%]">Description</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+              {showTaxYTD && <TableHead className="text-right">YTD</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell>Income Tax</TableCell>
+              <TableCell className="text-right">£{formatCurrency(result.incomeTax)}</TableCell>
+              {showTaxYTD && (
+                <TableCell className="text-right">
+                  £{formatCurrency(result.incomeTaxYTD || result.incomeTax)}
+                </TableCell>
+              )}
+            </TableRow>
+            <TableRow>
+              <TableCell>National Insurance</TableCell>
+              <TableCell className="text-right">£{formatCurrency(result.nationalInsurance)}</TableCell>
+              {showTaxYTD && (
+                <TableCell className="text-right">
+                  £{formatCurrency(result.nationalInsuranceYTD || result.nationalInsurance)}
+                </TableCell>
+              )}
+            </TableRow>
+            {result.studentLoan > 0 && (
+              <TableRow>
+                <TableCell>{studentLoanPlanLabel}</TableCell>
+                <TableCell className="text-right">£{formatCurrency(result.studentLoan)}</TableCell>
+                {showTaxYTD && (
+                  <TableCell className="text-right">
+                    £{formatCurrency(result.studentLoanYTD || result.studentLoan)}
+                  </TableCell>
+                )}
+              </TableRow>
+            )}
+            {result.pensionContribution > 0 && (
+              <TableRow>
+                <TableCell>Pension Contribution {pensionRate}</TableCell>
+                <TableCell className="text-right">£{formatCurrency(result.pensionContribution)}</TableCell>
+                {showTaxYTD && <TableCell className="text-right">-</TableCell>}
+              </TableRow>
+            )}
+            {result.additionalDeductions?.map((deduction, index) => (
+              <TableRow key={index}>
+                <TableCell>{deduction.description}</TableCell>
+                <TableCell className="text-right">£{formatCurrency(deduction.amount)}</TableCell>
+                {showTaxYTD && <TableCell className="text-right">-</TableCell>}
+              </TableRow>
+            ))}
+            <TableRow>
+              <TableCell className="font-bold">Total Deductions</TableCell>
+              <TableCell className="text-right font-bold">£{formatCurrency(result.totalDeductions)}</TableCell>
+              {showTaxYTD && <TableCell className="text-right font-bold">-</TableCell>}
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }

@@ -13,7 +13,7 @@ export {
 
 // Export calculation functions from their respective files
 export {
-  calculateMonthlyIncomeTax
+  calculateMonthlyIncomeTaxSync
 } from './calculations/income-tax-sync';
 
 export {
@@ -32,6 +32,22 @@ export {
   parseTaxCode
 } from './utils/tax-code-utils';
 
+// Export payroll data functions
+export {
+  savePayrollResult
+} from './savePayrollData';
+
+export {
+  fetchPayrollResults,
+  fetchPayrollResultsByTaxYear
+} from './fetchPayrollData';
+
+// Export conversion utilities
+export {
+  poundsToPence,
+  penceToPounds
+} from './utils/payroll-format-utils';
+
 // Export tax constants from the constants file instead of payrollCalculator
 export {
   TAX_BANDS,
@@ -43,5 +59,6 @@ export {
 export type {
   PayrollResult,
   PayrollDetails,
-  TaxCode
+  TaxCode,
+  PreviousPeriodData
 } from './types';

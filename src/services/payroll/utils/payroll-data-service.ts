@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { PreviousPeriodData } from "../types";
 
 /**
  * Get employee year-to-date payroll data
@@ -10,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 export async function getEmployeeYTDData(
   employeeId: string, 
   taxYear: string
-) {
+): Promise<PreviousPeriodData | null> {
   try {
     // Extract years from tax year string (e.g., "2025-2026")
     const years = taxYear.split('-');
@@ -40,12 +41,12 @@ export async function getEmployeeYTDData(
     }
     
     // Calculate YTD totals (convert from pence to pounds)
-    const ytdData = {
+    const ytdData: PreviousPeriodData = {
       grossPayYTD: data.reduce((sum, record) => sum + (record.gross_pay_this_period || 0), 0) / 100,
       taxablePayYTD: data.reduce((sum, record) => sum + (record.taxable_pay_this_period || 0), 0) / 100,
       incomeTaxYTD: data.reduce((sum, record) => sum + (record.income_tax_this_period || 0), 0) / 100,
       nationalInsuranceYTD: data.reduce((sum, record) => sum + (record.nic_employee_this_period || 0), 0) / 100,
-      studentLoanYTD: data.reduce((sum, record) => sum + (record.student_loan_this_period || 0), 0) / 100
+      lastPeriod: data.length
     };
     
     return ytdData;

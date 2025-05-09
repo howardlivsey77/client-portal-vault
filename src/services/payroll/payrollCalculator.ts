@@ -1,109 +1,115 @@
 
+import { roundToTwoDecimals } from "@/lib/formatters";
+import { PayrollDetails, PayrollResult, PreviousPeriodData } from "./types";
 import { calculateNationalInsurance } from "./calculations/national-insurance";
 import { calculatePension } from "./calculations/pension";
 import { calculateStudentLoan } from "./calculations/student-loan";
-import { calculateMonthlyIncomeTax } from "./calculations/income-tax-sync";
+import { calculateMonthlyIncomeTaxSync } from "./calculations/income-tax-sync";
 import { parseTaxCode } from "./utils/tax-code-utils";
 import { getEmployeeYTDData } from "./utils/payroll-data-service";
-import { PayrollResult } from "./types";
 
 /**
- * Calculate monthly payroll based on input values
- * @param input PayrollFormValues from the calculator form
- * @returns PayrollResult with all calculated values
+ * Calculate monthly payroll including tax, NI, and other deductions
  */
-export async function calculateMonthlyPayroll(input: any): Promise<PayrollResult> {
+export async function calculateMonthlyPayroll(
+  details: PayrollDetails
+): Promise<PayrollResult> {
   try {
-    const {
-      employeeId,
-      employeeName,
-      payrollId,
-      monthlySalary,
+    // Set default values for missing fields
+    const monthlySalary = details.monthlySalary || 0;
+    const taxCode = details.taxCode || '1257L';
+    const taxRegion = details.taxRegion || 'UK';
+    const pensionPercentage = details.pensionPercentage || 0;
+    const additionalEarnings = details.additionalEarnings || [];
+    const additionalDeductions = details.additionalDeductions || [];
+    const additionalAllowances = details.additionalAllowances || [];
+    
+    // Calculate gross pay (salary + additional earnings)
+    const additionalEarningsTotal = additionalEarnings.reduce(
+      (sum, item) => sum + item.amount, 0
+    );
+    
+    const grossPay = monthlySalary + additionalEarningsTotal;
+    
+    // Get YTD data if available
+    let ytdData: PreviousPeriodData | null = null;
+    try {
+      if (details.employeeId) {
+        ytdData = await getEmployeeYTDData(
+          details.employeeId, 
+          details.taxYear || '2025-2026'
+        );
+      }
+    } catch (error) {
+      console.error("Error getting YTD data:", error);
+    }
+    
+    // Calculate tax
+    const monthlyTax = calculateMonthlyIncomeTaxSync(
+      grossPay,
       taxCode,
-      taxRegion,
-      pensionPercentage,
-      studentLoanPlan,
-      nicCode,
-      taxYear,
-      taxPeriod,
-      useEmergencyTax,
-      isNewEmployee,
-      additionalEarnings = [],
-      additionalDeductions = [],
-      additionalAllowances = []
-    } = input;
+      taxRegion
+    );
     
-    // Get tax-free allowance based on tax code
-    const { allowance, monthlyAllowance } = parseTaxCode(taxCode);
-    
-    // Apply Week1/Month1 basis if specified (emergency tax)
-    const actualTaxCode = useEmergencyTax ? `${taxCode} M1` : taxCode;
-    
-    // Calculate total gross earnings
-    const additionalEarningsAmount = additionalEarnings.reduce((sum, item) => sum + item.amount, 0);
-    const grossPay = monthlySalary + additionalEarningsAmount;
+    // Calculate NI contributions
+    const niContribution = calculateNationalInsurance(grossPay, details.nicCode);
     
     // Calculate pension contribution
     const pensionContribution = calculatePension(grossPay, pensionPercentage);
     
-    // Calculate taxable pay (gross minus pension contribution)
-    const taxablePay = grossPay - pensionContribution;
-
-    // Calculate income tax
-    // Using the actual tax code (with M1 if emergency basis)
-    const incomeTax = calculateMonthlyIncomeTax(
-      taxablePay, 
-      actualTaxCode, 
-      taxRegion
-    );
-    
-    // Calculate National Insurance
-    const nationalInsurance = calculateNationalInsurance(
-      grossPay, 
-      nicCode || 'A', 
-      taxYear
-    );
-    
     // Calculate student loan repayment
-    const studentLoan = calculateStudentLoan(
+    const studentLoanRepayment = calculateStudentLoan(
       grossPay, 
-      studentLoanPlan
+      details.studentLoanPlan
     );
-
-    // Calculate additional deductions
-    const additionalDeductionsAmount = additionalDeductions.reduce((sum, item) => sum + item.amount, 0);
     
-    // Calculate additional allowances
-    const additionalAllowancesAmount = additionalAllowances.reduce((sum, item) => sum + item.amount, 0);
+    // Parse tax code to get tax-free allowance
+    const { monthlyAllowance } = parseTaxCode(taxCode);
+    const taxFreeAmount = monthlyAllowance;
+    
+    // Calculate taxable pay
+    const taxablePay = Math.max(0, grossPay - taxFreeAmount);
+    
+    // Sum all additional deductions
+    const additionalDeductionsTotal = additionalDeductions.reduce(
+      (sum, item) => sum + item.amount, 0
+    );
+    
+    // Sum all additional allowances 
+    const totalAllowances = additionalAllowances.reduce(
+      (sum, item) => sum + item.amount, 0
+    );
     
     // Calculate total deductions
-    const totalDeductions = incomeTax + nationalInsurance + studentLoan + 
-      additionalDeductionsAmount - additionalAllowancesAmount;
+    const totalDeductions = monthlyTax + niContribution + 
+      studentLoanRepayment + pensionContribution + additionalDeductionsTotal;
     
     // Calculate net pay
     const netPay = grossPay - totalDeductions;
     
-    // Look up YTD data if not a new employee
-    const ytdData = isNewEmployee ? null : await getEmployeeYTDData(employeeId, taxYear);
+    // Build YTD values
+    const grossPayYTD = ytdData ? ytdData.grossPayYTD + grossPay : grossPay;
+    const taxablePayYTD = ytdData ? ytdData.taxablePayYTD + taxablePay : taxablePay;
+    const incomeTaxYTD = ytdData ? ytdData.incomeTaxYTD + monthlyTax : monthlyTax;
+    const nationalInsuranceYTD = ytdData ? ytdData.nationalInsuranceYTD + niContribution : niContribution;
     
-    // Prepare the result
-    const result: PayrollResult = {
-      employeeId,
-      employeeName,
-      payrollId,
+    return {
+      employeeId: details.employeeId,
+      employeeName: details.employeeName,
+      payrollId: details.payrollId || '',
       monthlySalary,
       grossPay,
-      taxCode: actualTaxCode,
+      taxCode,
       taxRegion,
-      taxYear,
-      taxPeriod: taxPeriod || 1,
+      taxYear: details.taxYear || '2025-2026',
+      taxPeriod: details.taxPeriod || 1,
       taxablePay,
-      taxFreeAmount: monthlyAllowance, // Using the HMRC-compliant monthly allowance
-      incomeTax,
-      nationalInsurance,
-      nicCode: nicCode || 'A',
-      studentLoan,
-      studentLoanPlan,
+      taxFreeAmount,
+      incomeTax: monthlyTax,
+      nationalInsurance: niContribution,
+      nicCode: details.nicCode || 'A',
+      studentLoan: studentLoanRepayment,
+      studentLoanPlan: details.studentLoanPlan,
       pensionContribution,
       pensionPercentage,
       totalDeductions,
@@ -111,19 +117,15 @@ export async function calculateMonthlyPayroll(input: any): Promise<PayrollResult
       additionalEarnings,
       additionalDeductions,
       additionalAllowances,
-      totalAllowances: additionalAllowancesAmount,
-      
-      // YTD data if available
-      grossPayYTD: ytdData?.grossPayYTD || grossPay,
-      taxablePayYTD: ytdData?.taxablePayYTD || taxablePay,
-      incomeTaxYTD: ytdData?.incomeTaxYTD || incomeTax,
-      nationalInsuranceYTD: ytdData?.nationalInsuranceYTD || nationalInsurance,
-      studentLoanYTD: ytdData?.studentLoanYTD || studentLoan,
+      totalAllowances,
+      grossPayYTD,
+      taxablePayYTD,
+      incomeTaxYTD,
+      nationalInsuranceYTD,
+      studentLoanYTD: studentLoanRepayment // Just this period for now
     };
-    
-    return result;
   } catch (error) {
-    console.error("Error calculating payroll:", error);
-    throw new Error(`Failed to calculate payroll: ${error instanceof Error ? error.message : String(error)}`);
+    console.error("Error in calculateMonthlyPayroll:", error);
+    throw error;
   }
 }

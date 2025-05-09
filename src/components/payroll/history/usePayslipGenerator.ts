@@ -24,12 +24,17 @@ export function usePayslipGenerator() {
       const payrollData: PayrollResult = {
         employeeId: item.employee_id,
         employeeName: item.employee_name || 'Employee',
+        payrollId: item.id || '',
         taxCode: item.tax_code,
+        taxRegion: 'UK',
+        taxFreeAmount: item.free_pay_this_period / 100,
+        nicCode: item.nic_letter || 'A',
         grossPay: item.gross_pay_this_period / 100,
         incomeTax: item.income_tax_this_period / 100,
         nationalInsurance: item.nic_employee_this_period / 100,
         studentLoan: item.student_loan_this_period / 100,
         pensionContribution: item.employee_pension_this_period / 100,
+        pensionPercentage: 0, // Default value
         netPay: item.net_pay_this_period / 100,
         // Required fields for PayrollResult type that weren't in our original object
         monthlySalary: item.gross_pay_this_period / 100,

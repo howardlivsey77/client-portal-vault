@@ -59,3 +59,14 @@ export interface PayrollDetails {
   additionalAllowances?: { id: string; description: string; amount: number; }[];
   nicCode?: string;
 }
+
+/**
+ * Interface for previous period data used in YTD calculations
+ */
+export interface PreviousPeriodData {
+  grossPayYTD: number;
+  taxablePayYTD: number;
+  incomeTaxYTD: number;
+  nationalInsuranceYTD: number;
+  lastPeriod: number;
+}

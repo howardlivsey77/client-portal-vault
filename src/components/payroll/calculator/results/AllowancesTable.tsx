@@ -1,41 +1,46 @@
 
-import { formatCurrency } from "@/lib/formatters";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PayrollResult } from "@/services/payroll/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatCurrency } from "@/lib/formatters";
 
 interface AllowancesTableProps {
   result: PayrollResult;
 }
 
 export function AllowancesTable({ result }: AllowancesTableProps) {
-  // Only render if there are allowances
+  // If there are no additional allowances, return nothing
   if (!result.additionalAllowances || result.additionalAllowances.length === 0) {
     return null;
   }
   
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Allowances</TableHead>
-          <TableHead className="text-right">This Period</TableHead>
-          <TableHead className="text-right">Year To Date</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {result.additionalAllowances.map((allowance, index) => (
-          <TableRow key={`allowance-${index}`}>
-            <TableCell>{allowance.name}</TableCell>
-            <TableCell className="text-right text-green-500">+{formatCurrency(allowance.amount)}</TableCell>
-            <TableCell className="text-right text-green-500">+{formatCurrency(allowance.amount)}</TableCell>
-          </TableRow>
-        ))}
-        <TableRow className="border-t">
-          <TableCell className="font-medium">Total Allowances</TableCell>
-          <TableCell className="text-right font-medium text-green-500">+{formatCurrency(result.totalAllowances)}</TableCell>
-          <TableCell className="text-right font-medium text-green-500">+{formatCurrency(result.totalAllowances)}</TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
+    <Card className="mb-4">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg">Additional Allowances</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[70%]">Description</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {result.additionalAllowances.map((allowance, index) => (
+              <TableRow key={index}>
+                <TableCell>{allowance.description}</TableCell>
+                <TableCell className="text-right font-medium">£{formatCurrency(allowance.amount)}</TableCell>
+              </TableRow>
+            ))}
+            <TableRow>
+              <TableCell className="font-bold">Total Allowances</TableCell>
+              <TableCell className="text-right font-bold">£{formatCurrency(result.totalAllowances)}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }
