@@ -4,15 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, X } from "lucide-react";
-
-interface EarningItem {
-  description: string;
-  amount: number;
-}
+import { AdditionalItem } from "../types";
 
 interface AdditionalEarningsFieldsProps {
-  additionalEarnings: EarningItem[];
-  onEarningsChange: (earnings: EarningItem[]) => void;
+  additionalEarnings: AdditionalItem[];
+  onEarningsChange: (earnings: AdditionalItem[]) => void;
 }
 
 export function AdditionalEarningsFields({ 
@@ -23,12 +19,12 @@ export function AdditionalEarningsFields({
   const addEarning = () => {
     const newEarnings = [
       ...additionalEarnings, 
-      { description: '', amount: 0 }
+      { name: '', amount: 0 }
     ];
     onEarningsChange(newEarnings);
   };
 
-  const updateEarning = (index: number, field: 'description' | 'amount', value: any) => {
+  const updateEarning = (index: number, field: 'name' | 'amount', value: any) => {
     const updatedEarnings = [...additionalEarnings];
     
     if (field === 'amount') {
@@ -70,8 +66,8 @@ export function AdditionalEarningsFields({
             <div key={`earning-${index}`} className="grid grid-cols-[1fr,120px,40px] gap-2">
               <Input
                 placeholder="Description (e.g., Overtime)"
-                value={earning.description}
-                onChange={(e) => updateEarning(index, 'description', e.target.value)}
+                value={earning.name}
+                onChange={(e) => updateEarning(index, 'name', e.target.value)}
               />
               <Input
                 type="number"

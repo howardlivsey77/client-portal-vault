@@ -1,3 +1,4 @@
+
 export interface AdditionalItem {
   name: string;
   amount: number;
@@ -7,6 +8,7 @@ export interface PayrollCalculatorProps {
   employeeId?: string;
   employeeName?: string;
   monthlySalary?: number;
+  employee?: any; // Allow passing the employee object directly
 }
 
 export interface PayrollFormValues {
