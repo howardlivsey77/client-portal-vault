@@ -32,6 +32,11 @@ export const employeeSchema = z.object({
   payroll_id: z.string().optional(),
   gender: z.enum(["Male", "Female", "Other", "Prefer not to say"]).optional(),
   work_pattern: z.string().optional(),
+  // HMRC fields
+  tax_code: z.string().optional().nullable(),
+  week_one_month_one: z.boolean().optional().nullable(),
+  nic_code: z.string().optional().nullable(),
+  student_loan_plan: z.number().optional().nullable(),
 });
 
 export type EmployeeFormValues = z.infer<typeof employeeSchema>;
@@ -64,4 +69,23 @@ export const defaultWorkPattern = [
   { day: "Friday", isWorking: true, startTime: "09:00", endTime: "17:00" },
   { day: "Saturday", isWorking: false, startTime: null, endTime: null },
   { day: "Sunday", isWorking: false, startTime: null, endTime: null },
+];
+
+// HMRC options
+export const studentLoanPlanOptions = [
+  { label: "None", value: null },
+  { label: "Plan 1", value: 1 },
+  { label: "Plan 2", value: 2 },
+  { label: "Plan 4", value: 4 },
+  { label: "Plan 5", value: 5 },
+];
+
+export const nicCodeOptions = [
+  { label: "A - Standard", value: "A" },
+  { label: "B - Married Women's Reduced Rate", value: "B" },
+  { label: "C - Over State Pension Age", value: "C" },
+  { label: "H - Apprentice under 25", value: "H" },
+  { label: "J - Under 21", value: "J" },
+  { label: "M - Under 21 Deferment", value: "M" },
+  { label: "Z - No NI Contribution", value: "Z" },
 ];

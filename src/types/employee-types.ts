@@ -28,6 +28,12 @@ export interface Employee {
   gender: string | null;
   work_pattern: string | null;
   monthly_salary: number | null;
+  
+  // HMRC section fields
+  tax_code: string | null;
+  week_one_month_one: boolean | null;
+  nic_code: string | null;
+  student_loan_plan: number | null;
 }
 
 /**

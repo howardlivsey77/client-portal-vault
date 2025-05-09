@@ -9,6 +9,7 @@ import { SystemInfoCard } from "@/components/employees/details/SystemInfoCard";
 import { WorkPatternCard } from "@/components/employees/details/WorkPatternCard";
 import { EmployeeNotFound } from "@/components/employees/details/EmployeeNotFound";
 import { LoadingState } from "@/components/employees/details/LoadingState";
+import { HmrcInfoCard } from "@/components/employees/details/hmrc-info/HmrcInfoCard";
 
 const EmployeeDetails = () => {
   const { id } = useParams();
@@ -64,6 +65,12 @@ const EmployeeDetails = () => {
           formattedAddress={formattedAddress}
           isAdmin={isAdmin}
           updateEmployeeField={updateEmployeeField} 
+        />
+        
+        <HmrcInfoCard
+          employee={employee}
+          isAdmin={isAdmin}
+          updateEmployeeField={updateEmployeeField}
         />
         
         <WorkPatternCard 
