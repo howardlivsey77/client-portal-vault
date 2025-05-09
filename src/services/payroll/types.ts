@@ -22,6 +22,7 @@ export interface PayrollResult {
   employeeName: string;
   payrollId?: string;
   monthlySalary: number;
+  taxCode: string; // Added taxCode property
   taxRegion?: 'UK' | 'Scotland' | 'Wales';
   grossPay: number;
   incomeTax: number;
