@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Download, Eye } from "lucide-react";
 import { generatePayslip } from "@/utils/payslipGenerator";
 import { formatCurrency } from "@/lib/formatters";
+import { PayrollResult } from "@/services/payroll/types";
 
 interface PayrollHistoryItem {
   id: string;
@@ -85,8 +86,8 @@ export function PayrollHistoryTable() {
         year: 'numeric'
       });
       
-      // Convert db values from pence to pounds
-      const payrollData = {
+      // Convert db values from pence to pounds and create a complete PayrollResult object
+      const payrollData: PayrollResult = {
         employeeId: item.employee_id,
         employeeName: item.employee_name || 'Employee',
         taxCode: item.tax_code,
@@ -95,7 +96,19 @@ export function PayrollHistoryTable() {
         nationalInsurance: item.nic_employee_this_period / 100,
         studentLoan: item.student_loan_this_period / 100,
         pensionContribution: item.employee_pension_this_period / 100,
-        netPay: item.net_pay_this_period / 100
+        netPay: item.net_pay_this_period / 100,
+        // Required fields for PayrollResult type that weren't in our original object
+        monthlySalary: item.gross_pay_this_period / 100,
+        additionalDeductions: [],
+        additionalAllowances: [],
+        additionalEarnings: [],
+        totalDeductions: (
+          item.income_tax_this_period + 
+          item.nic_employee_this_period + 
+          item.student_loan_this_period + 
+          item.employee_pension_this_period
+        ) / 100,
+        totalAllowances: 0
       };
       
       const filename = `${item.employee_name?.replace(/\s+/g, '-').toLowerCase() || 'employee'}-payslip-${item.payroll_period}.pdf`;
