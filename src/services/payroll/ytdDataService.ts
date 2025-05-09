@@ -110,10 +110,17 @@ export async function saveYTDData(
       tax_period: ytdData.taxPeriod
     };
     
-    // Update the record in the database
+    // Update the record in the database - use the correct table structure
     const { error } = await supabase
       .from('payroll_results')
-      .update(updatedData)
+      .update({
+        gross_pay_ytd: updatedData.gross_pay_ytd,
+        taxable_pay_ytd: updatedData.taxable_pay_ytd,
+        income_tax_ytd: updatedData.income_tax_ytd,
+        nic_employee_ytd: updatedData.nic_employee_ytd,
+        tax_year: updatedData.tax_year,
+        tax_period: updatedData.tax_period
+      })
       .eq('employee_id', employeeId)
       .eq('payroll_period', payrollPeriod);
       
