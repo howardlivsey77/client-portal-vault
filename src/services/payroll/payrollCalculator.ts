@@ -19,14 +19,19 @@ export function calculateMonthlyPayroll(details: PayrollDetails): PayrollResult 
     pensionPercentage = 0,
     studentLoanPlan = null,
     additionalDeductions = [],
-    additionalAllowances = []
+    additionalAllowances = [],
+    additionalEarnings = []
   } = details;
   
+  // Calculate earnings
+  const totalAdditionalEarnings = additionalEarnings?.reduce((sum, item) => sum + item.amount, 0) || 0;
+  const grossPay = monthlySalary + totalAdditionalEarnings;
+  
   // Calculate deductions
-  const incomeTax = calculateMonthlyIncomeTax(monthlySalary, taxCode);
-  const nationalInsurance = calculateNationalInsurance(monthlySalary);
-  const studentLoan = calculateStudentLoan(monthlySalary, studentLoanPlan);
-  const pensionContribution = calculatePension(monthlySalary, pensionPercentage);
+  const incomeTax = calculateMonthlyIncomeTax(grossPay, taxCode);
+  const nationalInsurance = calculateNationalInsurance(grossPay);
+  const studentLoan = calculateStudentLoan(grossPay, studentLoanPlan);
+  const pensionContribution = calculatePension(grossPay, pensionPercentage);
   
   // Calculate totals
   const totalAdditionalDeductions = additionalDeductions.reduce((sum, item) => sum + item.amount, 0);
@@ -34,19 +39,23 @@ export function calculateMonthlyPayroll(details: PayrollDetails): PayrollResult 
   
   const totalDeductions = incomeTax + nationalInsurance + studentLoan + pensionContribution + totalAdditionalDeductions;
   const totalAllowances = totalAdditionalAllowances;
-  const netPay = monthlySalary - totalDeductions + totalAllowances;
+  const netPay = grossPay - totalDeductions + totalAllowances;
   
   return {
     employeeId,
     employeeName,
     payrollId,
-    grossPay: roundToTwoDecimals(monthlySalary),
+    monthlySalary,
+    grossPay: roundToTwoDecimals(grossPay),
     incomeTax: roundToTwoDecimals(incomeTax),
     nationalInsurance: roundToTwoDecimals(nationalInsurance),
     studentLoan: roundToTwoDecimals(studentLoan),
+    studentLoanPlan,
     pensionContribution: roundToTwoDecimals(pensionContribution),
+    pensionPercentage,
     additionalDeductions,
     additionalAllowances,
+    additionalEarnings,
     totalDeductions: roundToTwoDecimals(totalDeductions),
     totalAllowances: roundToTwoDecimals(totalAllowances),
     netPay: roundToTwoDecimals(netPay)

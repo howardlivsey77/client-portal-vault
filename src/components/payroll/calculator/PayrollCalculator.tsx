@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +23,8 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
     pensionPercentage: 5,
     studentLoanPlan: null,
     additionalDeductions: [],
-    additionalAllowances: []
+    additionalAllowances: [],
+    additionalEarnings: []
   });
   
   const [calculationResult, setCalculationResult] = useState<PayrollResult | null>(null);
