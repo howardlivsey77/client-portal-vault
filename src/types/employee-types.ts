@@ -27,6 +27,7 @@ export interface Employee {
   payroll_id: string | null;
   gender: string | null;
   work_pattern: string | null;
+  monthly_salary: number | null;
 }
 
 /**

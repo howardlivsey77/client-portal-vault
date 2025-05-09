@@ -1,4 +1,3 @@
-
 import { formatCurrency, formatDate, roundToTwoDecimals } from "@/lib/formatters";
 import { CalendarIcon } from "lucide-react";
 import { Employee } from "@/types/employeeDetails";
@@ -8,12 +7,17 @@ interface PersonalInfoDisplayProps {
 }
 
 export const PersonalInfoDisplay = ({ employee }: PersonalInfoDisplayProps) => {
-  // Calculate monthly salary: (weekly hours × hourly rate) ÷ 7 × 365 ÷ 12
-  const calculateMonthlySalary = () => {
+  // Calculate monthly salary if not stored in employee record
+  const getMonthlySalary = () => {
+    // If we have the monthly_salary field use it
+    if (employee.monthly_salary !== undefined) {
+      return employee.monthly_salary;
+    }
+    
+    // Otherwise calculate it: (weekly hours × hourly rate) ÷ 7 × 365 ÷ 12
     const hoursPerWeek = employee.hours_per_week || 0;
     const hourlyRate = employee.hourly_rate || 0;
     
-    // Formula: (weekly hours × hourly rate) ÷ 7 × 365 ÷ 12
     const monthlySalary = (hoursPerWeek * hourlyRate) / 7 * 365 / 12;
     return roundToTwoDecimals(monthlySalary);
   };
@@ -82,7 +86,7 @@ export const PersonalInfoDisplay = ({ employee }: PersonalInfoDisplayProps) => {
         <div>
           <div className="text-sm font-medium mb-2">Monthly Salary</div>
           <div className="p-2.5 bg-gray-50 rounded border border-gray-200">
-            {formatCurrency(calculateMonthlySalary())}
+            {formatCurrency(getMonthlySalary())}
           </div>
         </div>
       </div>

@@ -21,12 +21,19 @@ export function EmployeeInfoFields({
   
   useEffect(() => {
     if (employee) {
-      const hourlyRate = employee.hourly_rate || 0;
-      const hoursPerWeek = employee.hours_per_week || 0;
+      // Use stored monthly salary if available, otherwise calculate it
+      let monthlySalary: number;
       
-      // Calculate monthly salary based on hourly rate and weekly hours
-      // Formula: (weekly hours × hourly rate) ÷ 7 × 365 ÷ 12
-      const monthlySalary = Number(((hourlyRate * hoursPerWeek) / 7 * 365 / 12).toFixed(2));
+      if (employee.monthly_salary !== undefined) {
+        monthlySalary = employee.monthly_salary;
+      } else {
+        const hourlyRate = employee.hourly_rate || 0;
+        const hoursPerWeek = employee.hours_per_week || 0;
+        
+        // Calculate monthly salary based on hourly rate and weekly hours
+        // Formula: (weekly hours × hourly rate) ÷ 7 × 365 ÷ 12
+        monthlySalary = Number(((hourlyRate * hoursPerWeek) / 7 * 365 / 12).toFixed(2));
+      }
 
       onChange({
         ...formValues,
