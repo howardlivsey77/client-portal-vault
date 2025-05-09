@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -167,9 +166,9 @@ export function FinancialDetailsFields({
         <div>
           <Label htmlFor="studentLoan">Student Loan Plan</Label>
           <Select
-            value={formValues.studentLoanPlan?.toString() || ""}
+            value={formValues.studentLoanPlan?.toString() || "none"}
             onValueChange={(value) => {
-              const planNumber = value ? parseInt(value, 10) as 1 | 2 | 4 | 5 : null;
+              const planNumber = value !== "none" ? parseInt(value, 10) as 1 | 2 | 4 | 5 : null;
               onInputChange('studentLoanPlan', planNumber);
             }}
           >
@@ -177,7 +176,7 @@ export function FinancialDetailsFields({
               <SelectValue placeholder="No student loan" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No student loan</SelectItem>
+              <SelectItem value="none">No student loan</SelectItem>
               <SelectItem value="1">Plan 1</SelectItem>
               <SelectItem value="2">Plan 2</SelectItem>
               <SelectItem value="4">Plan 4 (Scotland)</SelectItem>
