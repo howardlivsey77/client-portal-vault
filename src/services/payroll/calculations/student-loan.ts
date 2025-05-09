@@ -1,129 +1,71 @@
 
 import { roundToTwoDecimals } from "@/lib/formatters";
-import { getHardcodedStudentLoanThresholds, getTaxConstantsByCategory } from "../utils/tax-constants-service";
-import { StudentLoanCalculator, StudentLoanPlan, StudentLoanThresholds } from "./StudentLoanCalculator";
+
+// Annual thresholds for student loan repayments
+const PLAN_1_THRESHOLD = 22015; // £22,015 per year
+const PLAN_2_THRESHOLD = 27295; // £27,295 per year
+const PLAN_4_THRESHOLD = 27660; // £27,660 per year
+const PLAN_5_THRESHOLD = 25000; // £25,000 per year
+const POSTGRAD_THRESHOLD = 21000; // £21,000 per year
 
 /**
- * Get student loan plan details from database or fallback to hardcoded values
+ * Calculate student loan repayment amount for the given plan
+ * @param grossSalary Monthly gross salary
+ * @param plan Student loan plan type ('1', '2', '4', '5', 'PGL', or null)
+ * @returns Monthly student loan repayment amount
  */
-async function getStudentLoanPlans(): Promise<Record<number, { threshold: number; rate: number }>> {
-  try {
-    const constants = await getTaxConstantsByCategory('STUDENT_LOAN');
-    
-    // Convert database constants to the student loan plan format
-    const plans: Record<number, { threshold: number; rate: number }> = {};
-    
-    constants.forEach(constant => {
-      const planMatch = constant.key.match(/PLAN_(\d+)_(THRESHOLD|RATE)/);
-      if (planMatch && constant.value_numeric !== null) {
-        const planNumber = parseInt(planMatch[1]);
-        const property = planMatch[2].toLowerCase();
-        
-        if (!plans[planNumber]) {
-          plans[planNumber] = {
-            threshold: 0,
-            rate: 0
-          };
-        }
-        
-        if (property === 'threshold') {
-          plans[planNumber].threshold = constant.value_numeric;
-        } else if (property === 'rate') {
-          plans[planNumber].rate = constant.value_numeric;
-        }
-      }
-    });
-    
-    return plans;
-  } catch (error) {
-    console.error("Error fetching student loan plans:", error);
-    // Fallback to hardcoded values
-    const hardcoded = getHardcodedStudentLoanThresholds();
-    
-    return {
-      1: { threshold: hardcoded[1].monthly, rate: hardcoded[1].rate },
-      2: { threshold: hardcoded[2].monthly, rate: hardcoded[2].rate },
-      4: { threshold: hardcoded[4].monthly, rate: hardcoded[4].rate },
-      5: { threshold: hardcoded[5].monthly, rate: hardcoded[5].rate },
-    };
+export function calculateStudentLoan(
+  grossSalary: number, 
+  plan: string | null | undefined
+): number {
+  // If no plan specified, return 0
+  if (!plan) return 0;
+  
+  // Convert monthly salary to annual for threshold checks
+  const annualizedSalary = grossSalary * 12;
+  
+  // Default repayment rate
+  const rate = 0.09; // 9%
+  const postgradRate = 0.06; // 6% for postgraduate loans
+  
+  // Determine threshold based on plan
+  let threshold: number;
+  let repaymentRate: number = rate;
+  
+  switch (plan) {
+    case '1':
+      threshold = PLAN_1_THRESHOLD;
+      break;
+    case '2':
+      threshold = PLAN_2_THRESHOLD;
+      break;
+    case '4':
+      threshold = PLAN_4_THRESHOLD;
+      break;
+    case '5':
+      threshold = PLAN_5_THRESHOLD;
+      break;
+    case 'PGL':
+      threshold = POSTGRAD_THRESHOLD;
+      repaymentRate = postgradRate;
+      break;
+    default:
+      return 0; // Unknown plan
   }
+  
+  // Check if salary is above threshold
+  if (annualizedSalary <= threshold) {
+    return 0; // No repayment required
+  }
+  
+  // Calculate annual repayment
+  const annualRepayment = (annualizedSalary - threshold) * repaymentRate;
+  
+  // Convert to monthly repayment
+  const monthlyRepayment = annualRepayment / 12;
+  
+  return roundToTwoDecimals(monthlyRepayment);
 }
 
-/**
- * Convert plans data to format required by StudentLoanCalculator
- */
-function convertToCalculatorThresholds(plans: Record<number, { threshold: number; rate: number }>): 
-  Record<StudentLoanPlan, StudentLoanThresholds> {
-  const result: Record<StudentLoanPlan, StudentLoanThresholds> = {} as Record<StudentLoanPlan, StudentLoanThresholds>;
-  
-  // Convert each plan's monthly threshold to annual in pence
-  Object.entries(plans).forEach(([planKey, planValue]) => {
-    const plan = parseInt(planKey) as StudentLoanPlan;
-    // Only include valid plan types
-    if (plan === 1 || plan === 2 || plan === 3 || plan === 4 || plan === 5) {
-      result[plan] = {
-        annualThreshold: Math.round(planValue.threshold * 12 * 100), // Monthly to annual, pounds to pence
-        repaymentRate: planValue.rate
-      };
-    }
-  });
-  
-  return result;
-}
-
-/**
- * Calculate student loan repayments
- */
-export async function calculateStudentLoan(monthlySalary: number, planType: 1 | 2 | 4 | 5 | null): Promise<number> {
-  if (!planType) return 0;
-  
-  const plans = await getStudentLoanPlans();
-  
-  // If plan not found, return 0
-  if (!plans[planType]) return 0;
-  
-  const thresholds = convertToCalculatorThresholds(plans);
-  
-  const result = StudentLoanCalculator.calculate({
-    grossIncome: Math.round(monthlySalary * 100), // Convert to pence
-    plan: planType as StudentLoanPlan,
-    thresholds
-  });
-  
-  // Convert result back to pounds
-  return roundToTwoDecimals(result.repaymentAmount / 100);
-}
-
-/**
- * Synchronous version using hardcoded values for compatibility
- */
-export function calculateStudentLoanSync(monthlySalary: number, planType: 1 | 2 | 4 | 5 | null): number {
-  if (!planType) return 0;
-  
-  const hardcoded = getHardcodedStudentLoanThresholds();
-  
-  // If plan not found, return 0
-  if (!hardcoded[planType]) return 0;
-  
-  const thresholds: Record<StudentLoanPlan, StudentLoanThresholds> = {} as Record<StudentLoanPlan, StudentLoanThresholds>;
-  
-  // Convert hardcoded thresholds to calculator format
-  Object.entries(hardcoded).forEach(([planKey, planValue]) => {
-    const plan = parseInt(planKey);
-    if (plan === 1 || plan === 2 || plan === 3 || plan === 4 || plan === 5) {
-      thresholds[plan as StudentLoanPlan] = {
-        annualThreshold: Math.round(planValue.monthly * 12 * 100), // Convert monthly to annual and pounds to pence
-        repaymentRate: planValue.rate
-      };
-    }
-  });
-  
-  const result = StudentLoanCalculator.calculate({
-    grossIncome: Math.round(monthlySalary * 100), // Convert to pence
-    plan: planType as StudentLoanPlan,
-    thresholds
-  });
-  
-  // Convert result back to pounds
-  return roundToTwoDecimals(result.repaymentAmount / 100);
-}
+// For backward compatibility
+export const calculateStudentLoanRepayment = calculateStudentLoan;

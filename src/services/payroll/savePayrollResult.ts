@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PayrollResult } from "./types";
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { getTaxYear, getTaxPeriod } from "@/utils/taxYearUtils";
+import { parseTaxCode } from "./utils/tax-code-utils";
 
 /**
  * Convert pounds to pence for database storage

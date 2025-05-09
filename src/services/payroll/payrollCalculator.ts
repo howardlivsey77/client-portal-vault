@@ -1,40 +1,11 @@
+
 import { calculateNationalInsurance } from "./calculations/national-insurance";
-import { calculatePensionContribution } from "./calculations/pension";
-import { calculateStudentLoanRepayment } from "./calculations/student-loan";
-import { calculateMonthlyIncomeTax } from "./calculations/income-tax";
+import { calculatePension } from "./calculations/pension";
+import { calculateStudentLoan } from "./calculations/student-loan";
+import { calculateMonthlyIncomeTax } from "./calculations/income-tax-sync";
 import { parseTaxCode } from "./utils/tax-code-utils";
 import { getEmployeeYTDData } from "./utils/payroll-data-service";
-
-export interface PayrollResult {
-  employeeId: string;
-  employeeName: string;
-  payrollId: string;
-  monthlySalary: number;
-  grossPay: number;
-  taxCode: string;
-  taxRegion: string;
-  taxYear: string;
-  taxPeriod: number;
-  taxablePay: number;
-  taxFreeAmount: number;
-  incomeTax: number;
-  nationalInsurance: number;
-  nicCode: string;
-  studentLoan: number;
-  studentLoanPlan: string | null;
-  pensionContribution: number;
-  pensionPercentage: number;
-  totalDeductions: number;
-  netPay: number;
-  additionalEarnings: { id: string; description: string; amount: number; }[];
-  additionalDeductions: { id: string; description: string; amount: number; }[];
-  additionalAllowances: { id: string; description: string; amount: number; }[];
-  grossPayYTD?: number;
-  taxablePayYTD?: number;
-  incomeTaxYTD?: number;
-  nationalInsuranceYTD?: number;
-  studentLoanYTD?: number;
-}
+import { PayrollResult } from "./types";
 
 /**
  * Calculate monthly payroll based on input values
@@ -73,14 +44,14 @@ export async function calculateMonthlyPayroll(input: any): Promise<PayrollResult
     const grossPay = monthlySalary + additionalEarningsAmount;
     
     // Calculate pension contribution
-    const pensionContribution = calculatePensionContribution(grossPay, pensionPercentage);
+    const pensionContribution = calculatePension(grossPay, pensionPercentage);
     
     // Calculate taxable pay (gross minus pension contribution)
     const taxablePay = grossPay - pensionContribution;
 
     // Calculate income tax
     // Using the actual tax code (with M1 if emergency basis)
-    const incomeTax = await calculateMonthlyIncomeTax(
+    const incomeTax = calculateMonthlyIncomeTax(
       taxablePay, 
       actualTaxCode, 
       taxRegion
@@ -94,7 +65,7 @@ export async function calculateMonthlyPayroll(input: any): Promise<PayrollResult
     );
     
     // Calculate student loan repayment
-    const studentLoan = calculateStudentLoanRepayment(
+    const studentLoan = calculateStudentLoan(
       grossPay, 
       studentLoanPlan
     );
@@ -140,6 +111,7 @@ export async function calculateMonthlyPayroll(input: any): Promise<PayrollResult
       additionalEarnings,
       additionalDeductions,
       additionalAllowances,
+      totalAllowances: additionalAllowancesAmount,
       
       // YTD data if available
       grossPayYTD: ytdData?.grossPayYTD || grossPay,

@@ -28,13 +28,12 @@ export function parseTaxCode(taxCode: string): TaxCode {
     const annualAllowance = numberPart * 10;
     
     // Using HMRC weekly to monthly calculation method
-    const weeklyAllowance = annualAllowance / 52;
-    const monthlyAllowance = weeklyAllowance * WEEKS_PER_MONTH;
+    const monthlyAllowance = calculateMonthlyFreePay(cleanTaxCode);
     
     return { 
       code: taxCode, 
       allowance: annualAllowance,
-      monthlyAllowance: Math.ceil(monthlyAllowance * 100) / 100 // Round to nearest penny (up)
+      monthlyAllowance: monthlyAllowance
     };
   }
   
@@ -61,7 +60,7 @@ export function parseTaxCode(taxCode: string): TaxCode {
     const numberPart = parseInt(cleanTaxCode.replace('K', ''), 10);
     const annualAllowance = -numberPart * 10;
     
-    // Using HMRC weekly to monthly calculation method
+    // For K codes, we use a simple division as they reduce personal allowance
     const weeklyAllowance = annualAllowance / 52;
     const monthlyAllowance = weeklyAllowance * WEEKS_PER_MONTH;
     
