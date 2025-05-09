@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { formatCurrency, formatDate, roundToTwoDecimals } from "@/lib/utils";
+import { formatCurrency, formatDate, roundToTwoDecimals } from "@/lib/formatters";
 import { Employee } from "@/types/employeeDetails";
 import {
   Card,
