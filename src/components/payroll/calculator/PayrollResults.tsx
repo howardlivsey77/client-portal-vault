@@ -8,5 +8,6 @@ interface PayrollResultsProps {
 }
 
 export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
+  // The period should now be consistently "April 2025 (Period 1)"
   return <PayrollResultsComponent result={result} payPeriod={payPeriod} />;
 }

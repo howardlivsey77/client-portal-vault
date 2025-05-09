@@ -19,7 +19,8 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
   
   // Get current tax year and format tax period
   const currentTaxYear = getTaxYear();
-  const currentTaxPeriod = getTaxPeriod();
+  // Set tax period to 1 (April) for 2025-2026 tax year
+  const currentTaxPeriod = 1; // Fixed to period 1 (April)
   
   const [payrollDetails, setPayrollDetails] = useState<PayrollFormValues>({
     employeeId: employee?.id || '',
@@ -44,7 +45,7 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
   const [isCalculating, setIsCalculating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [payPeriod, setPayPeriod] = useState<string>(
-    formatTaxPeriod(new Date())
+    "April 2025 (Period 1)" // Default to April 2025 (Period 1)
   );
   const [autoCalculate, setAutoCalculate] = useState<boolean>(true);
 

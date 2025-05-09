@@ -11,7 +11,7 @@ const PayrollProcessing = () => {
   return (
     <PageContainer title="Payroll Processing">
       <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">UK Payroll Calculator</h1>
+        <h1 className="text-2xl font-bold mb-4">UK Payroll Calculator (2025-2026)</h1>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
           <TabsList className="mb-4">
