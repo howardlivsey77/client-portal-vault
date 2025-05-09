@@ -1,11 +1,11 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Download } from "lucide-react";
+import { Download, Save } from "lucide-react";
 import { calculateMonthlyPayroll, PayrollResult } from "@/services/payroll/payrollCalculator";
+import { savePayrollResult } from "@/services/payroll/savePayrollResult";
 import { generatePayslip } from "@/utils/payslipGenerator";
 import { PayrollForm } from "./PayrollForm";
 import { PayrollResults } from "./PayrollResults";
@@ -30,6 +30,7 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
   
   const [calculationResult, setCalculationResult] = useState<PayrollResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [payPeriod, setPayPeriod] = useState<string>(
     new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
   );
@@ -88,6 +89,38 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
     }
   };
 
+  const handleSavePayrollResult = async () => {
+    if (!calculationResult) return;
+    
+    try {
+      setIsSaving(true);
+      
+      const result = await savePayrollResult(calculationResult, payPeriod);
+      
+      if (result.success) {
+        toast({
+          title: "Payroll Saved",
+          description: "Payroll result has been saved to the database."
+        });
+      } else {
+        toast({
+          title: "Save Error",
+          description: result.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error saving payroll result:", error);
+      toast({
+        title: "Save Error",
+        description: "There was an error saving the payroll result.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -138,13 +171,23 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
         )}
         
         {calculationResult && selectedTab === "result" && (
-          <Button 
-            onClick={handleDownloadPayslip}
-            variant="secondary"
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Download Payslip
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleSavePayrollResult}
+              variant="secondary"
+              disabled={isSaving}
+            >
+              <Save className="mr-2 h-4 w-4" />
+              {isSaving ? "Saving..." : "Save Result"}
+            </Button>
+            <Button 
+              onClick={handleDownloadPayslip}
+              variant="secondary"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download Payslip
+            </Button>
+          </div>
         )}
       </CardFooter>
     </Card>
