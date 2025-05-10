@@ -1,8 +1,10 @@
 
 import { Employee } from "@/types/employee-types";
+import { PayPeriod } from "@/services/payroll/utils/financial-year-utils";
 
 export interface PayrollCalculatorProps {
   employee?: Employee | null;
+  payPeriod: PayPeriod;
 }
 
 export interface PayrollFormValues {

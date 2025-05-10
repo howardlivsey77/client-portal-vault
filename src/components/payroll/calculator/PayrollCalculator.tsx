@@ -5,13 +5,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Download } from "lucide-react";
-import { calculateMonthlyPayroll, PayrollResult } from "@/services/payroll/payrollCalculator";
+import { calculateMonthlyPayroll } from "@/services/payroll/payrollCalculator";
 import { generatePayslip } from "@/utils/payslipGenerator";
 import { PayrollForm } from "./PayrollForm";
 import { PayrollResults } from "./PayrollResults";
 import { PayrollCalculatorProps, PayrollFormValues } from "./types";
+import { PayPeriod } from "@/services/payroll/utils/financial-year-utils";
 
-export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
+export function PayrollCalculator({ employee, payPeriod }: PayrollCalculatorProps) {
   const { toast } = useToast();
   const [selectedTab, setSelectedTab] = useState<string>("calculator");
   const [payrollDetails, setPayrollDetails] = useState<PayrollFormValues>({
@@ -27,11 +28,8 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
     additionalEarnings: []
   });
   
-  const [calculationResult, setCalculationResult] = useState<PayrollResult | null>(null);
+  const [calculationResult, setCalculationResult] = useState<any | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
-  const [payPeriod, setPayPeriod] = useState<string>(
-    new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
-  );
   const [autoCalculate, setAutoCalculate] = useState<boolean>(true);
 
   // Auto-calculate effect
@@ -70,8 +68,8 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
     if (!calculationResult) return;
     
     try {
-      const filename = `${calculationResult.employeeName.replace(/\s+/g, '-').toLowerCase()}-payslip-${new Date().getTime()}.pdf`;
-      generatePayslip(calculationResult, payPeriod, filename);
+      const filename = `${calculationResult.employeeName.replace(/\s+/g, '-').toLowerCase()}-payslip-${payPeriod.description.replace(/\s+/g, '-').toLowerCase()}.pdf`;
+      generatePayslip(calculationResult, payPeriod.description, filename);
       
       toast({
         title: "Payslip Generated",
@@ -92,7 +90,7 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
       <CardHeader>
         <CardTitle>UK Payroll Calculator</CardTitle>
         <CardDescription>
-          {employee ? `Calculate payroll for ${employee.first_name} ${employee.last_name}` : 'Calculate monthly payroll including tax, NI, and other deductions'}
+          {employee ? `Calculate payroll for ${employee.first_name} ${employee.last_name} - ${payPeriod.description}` : 'Calculate monthly payroll including tax, NI, and other deductions'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -108,13 +106,15 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
               formValues={payrollDetails}
               onChange={setPayrollDetails}
               payPeriod={payPeriod}
-              onPayPeriodChange={setPayPeriod}
             />
           </TabsContent>
           
           <TabsContent value="result">
             {calculationResult && (
-              <PayrollResults result={calculationResult} payPeriod={payPeriod} />
+              <PayrollResults 
+                result={calculationResult} 
+                payPeriod={payPeriod.description} 
+              />
             )}
           </TabsContent>
         </Tabs>

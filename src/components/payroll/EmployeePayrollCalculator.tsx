@@ -5,8 +5,13 @@ import { useEmployees, Employee } from "@/hooks/useEmployees";
 import { PayrollCalculator } from "@/components/payroll/calculator/PayrollCalculator";
 import { EmployeeNavigation } from "@/components/payroll/EmployeeNavigation";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PayPeriod } from "@/services/payroll/utils/financial-year-utils";
 
-export function EmployeePayrollCalculator() {
+interface EmployeePayrollCalculatorProps {
+  payPeriod: PayPeriod;
+}
+
+export function EmployeePayrollCalculator({ payPeriod }: EmployeePayrollCalculatorProps) {
   const { toast } = useToast();
   const { employees, loading } = useEmployees();
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -64,6 +69,7 @@ export function EmployeePayrollCalculator() {
       {currentEmployee && (
         <PayrollCalculator 
           employee={currentEmployee}
+          payPeriod={payPeriod}
         />
       )}
     </div>

@@ -10,7 +10,6 @@ export {
 export {
   calculateMonthlyPayroll,
   calculateIncomeTax,
-  calculateMonthlyIncomeTax,
   calculateNationalInsurance,
   calculateStudentLoan,
   calculatePension,
@@ -24,3 +23,18 @@ export type {
   PayrollDetails,
   PayrollResult
 } from './types';
+
+// Export financial year utilities
+export {
+  getFinancialYearForDate,
+  getCurrentPayPeriod,
+  generatePayPeriodsForFinancialYear,
+  getFinancialYearRange,
+  CURRENT_FINANCIAL_YEAR,
+  CURRENT_PAY_PERIOD
+} from './utils/financial-year-utils';
+
+export type {
+  PayPeriod,
+  FinancialYear
+} from './utils/financial-year-utils';

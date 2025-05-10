@@ -8,21 +8,21 @@ import { PayrollFormValues } from "./types";
 import { EmployeeInfoFields } from "./form/EmployeeInfoFields";
 import { FinancialDetailsFields } from "./form/FinancialDetailsFields";
 import { AdditionalEarningsFields } from "./form/AdditionalEarningsFields";
+import { PayPeriod } from "@/services/payroll/utils/financial-year-utils";
+import { Badge } from "@/components/ui/badge";
 
 interface PayrollFormProps {
   employee?: Employee | null;
   formValues: PayrollFormValues;
   onChange: (values: PayrollFormValues) => void;
-  payPeriod: string;
-  onPayPeriodChange: (value: string) => void;
+  payPeriod: PayPeriod;
 }
 
 export function PayrollForm({ 
   employee, 
   formValues, 
   onChange, 
-  payPeriod,
-  onPayPeriodChange 
+  payPeriod 
 }: PayrollFormProps) {
   
   const handleInputChange = (field: keyof PayrollFormValues, value: any) => {
@@ -42,6 +42,12 @@ export function PayrollForm({
 
   return (
     <div className="space-y-4">
+      <div className="mb-4">
+        <Badge variant="outline" className="text-sm">
+          Pay Period: {payPeriod.description}
+        </Badge>
+      </div>
+      
       <EmployeeInfoFields 
         employee={employee}
         formValues={formValues}
@@ -59,16 +65,6 @@ export function PayrollForm({
         additionalEarnings={formValues.additionalEarnings}
         onEarningsChange={(newEarnings) => handleInputChange('additionalEarnings', newEarnings)}
       />
-      
-      <div>
-        <Label htmlFor="payPeriod">Pay Period</Label>
-        <Input 
-          id="payPeriod" 
-          value={payPeriod} 
-          onChange={(e) => onPayPeriodChange(e.target.value)} 
-          placeholder="May 2025"
-        />
-      </div>
     </div>
   );
 }

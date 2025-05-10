@@ -1,11 +1,10 @@
-
 import { formatCurrency } from "@/lib/formatters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PayrollResult } from "@/services/payroll/types";
 
 interface PayrollResultsProps {
   result: PayrollResult;
-  payPeriod: string;
+  payPeriod: string; // This is now a string description from PayPeriod.description
 }
 
 export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
