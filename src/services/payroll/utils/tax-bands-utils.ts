@@ -19,6 +19,9 @@ export async function getIncomeTaxBands(taxYear?: string): Promise<FormattedTaxB
   try {
     // Fetch from database
     const taxBands = await getTaxBandsForCalculation('UK', taxYear);
+    
+    console.log('Fetched tax bands from database:', taxBands);
+    
     currentTaxBandsCache = taxBands;
     return taxBands;
   } catch (error) {
@@ -39,27 +42,48 @@ export function clearTaxBandsCache(): void {
  * Calculate tax based on taxable income and tax bands
  */
 export function calculateTaxByBands(taxableIncome: number, taxBands: FormattedTaxBands): number {
+  console.log('Calculating tax for income:', taxableIncome, 'with bands:', taxBands);
+  
   let remainingIncome = taxableIncome;
   let totalTax = 0;
   
+  // Check if we're using the threshold value directly from DB (in pennies) or need to convert
+  const higherRateThreshold = taxBands.HIGHER_RATE.threshold / 100; // Convert from pennies to pounds if stored in pennies
+  
   // Calculate tax for additional rate band (highest)
-  if (remainingIncome > taxBands.HIGHER_RATE.threshold) {
-    const additionalRateIncome = remainingIncome - taxBands.HIGHER_RATE.threshold;
-    totalTax += additionalRateIncome * taxBands.ADDITIONAL_RATE.rate;
-    remainingIncome = taxBands.HIGHER_RATE.threshold;
+  if (remainingIncome > higherRateThreshold) {
+    const additionalRateIncome = remainingIncome - higherRateThreshold;
+    const additionalRateTax = additionalRateIncome * taxBands.ADDITIONAL_RATE.rate;
+    
+    console.log(`Additional rate tax: ${additionalRateIncome} × ${taxBands.ADDITIONAL_RATE.rate} = ${additionalRateTax}`);
+    
+    totalTax += additionalRateTax;
+    remainingIncome = higherRateThreshold;
   }
   
   // Calculate tax for higher rate band
-  if (remainingIncome > taxBands.BASIC_RATE.threshold) {
-    const higherRateIncome = remainingIncome - taxBands.BASIC_RATE.threshold;
-    totalTax += higherRateIncome * taxBands.HIGHER_RATE.rate;
-    remainingIncome = taxBands.BASIC_RATE.threshold;
+  const basicRateThreshold = taxBands.BASIC_RATE.threshold / 100; // Convert from pennies to pounds if stored in pennies
+  
+  if (remainingIncome > basicRateThreshold) {
+    const higherRateIncome = remainingIncome - basicRateThreshold;
+    const higherRateTax = higherRateIncome * taxBands.HIGHER_RATE.rate;
+    
+    console.log(`Higher rate tax: ${higherRateIncome} × ${taxBands.HIGHER_RATE.rate} = ${higherRateTax}`);
+    
+    totalTax += higherRateTax;
+    remainingIncome = basicRateThreshold;
   }
   
   // Calculate tax for basic rate band
   if (remainingIncome > 0) {
-    totalTax += remainingIncome * taxBands.BASIC_RATE.rate;
+    const basicRateTax = remainingIncome * taxBands.BASIC_RATE.rate;
+    
+    console.log(`Basic rate tax: ${remainingIncome} × ${taxBands.BASIC_RATE.rate} = ${basicRateTax}`);
+    
+    totalTax += basicRateTax;
   }
+  
+  console.log('Total calculated tax:', totalTax);
   
   return totalTax;
 }

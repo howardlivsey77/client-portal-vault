@@ -36,6 +36,8 @@ export function usePayrollDatabase(payPeriod: PayPeriod) {
       const taxYear = `${payPeriod.year}/${(payPeriod.year + 1).toString().substring(2)}`;
       const taxPeriod = payPeriod.periodNumber;
       
+      console.log(`Processing payroll for tax year: ${taxYear}, period: ${taxPeriod}`);
+      
       // Get previous period's YTD values
       const { data: previousPeriods, error: fetchError } = await supabase
         .from('payroll_results')
@@ -58,14 +60,22 @@ export function usePayrollDatabase(payPeriod: PayPeriod) {
       const grossPayYTD = previousYTD ? previousYTD.gross_pay_ytd + Math.round(result.grossPay * 100) : Math.round(result.grossPay * 100);
       const taxablePayYTD = previousYTD ? previousYTD.taxable_pay_ytd + Math.round(taxablePay * 100) : Math.round(taxablePay * 100);
       
+      console.log(`YTD values: Gross Pay = ${grossPayYTD/100}, Taxable Pay = ${taxablePayYTD/100}`);
+      
       // Calculate total income tax based on YTD taxable pay
       const totalTaxDueYTD = await calculateIncomeTaxFromYTDAsync(taxablePayYTD / 100, result.taxCode, taxYear);
+      
+      console.log(`Total tax due YTD: ${totalTaxDueYTD}`);
       
       // Previous tax paid YTD or 0 if first period
       const previousTaxPaidYTD = previousYTD ? previousYTD.income_tax_ytd : 0;
       
+      console.log(`Previous tax paid YTD: ${previousTaxPaidYTD/100}`);
+      
       // This period's tax is the difference between total tax due and tax already paid
       const incomeTaxThisPeriod = Math.round((totalTaxDueYTD - (previousTaxPaidYTD / 100)) * 100);
+      
+      console.log(`Income tax this period: ${incomeTaxThisPeriod/100}`);
       
       // New YTD tax is previous YTD + this period
       const incomeTaxYTD = previousYTD ? previousYTD.income_tax_ytd + incomeTaxThisPeriod : incomeTaxThisPeriod;

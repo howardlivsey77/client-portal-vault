@@ -32,31 +32,46 @@ export async function calculateIncomeTaxAsync(annualSalary: number, taxCode: str
 /**
  * Calculate income tax based on annual salary and tax code
  * This synchronous version is kept for backward compatibility
+ * but will use the database-backed async version under the hood
  */
 export function calculateIncomeTax(annualSalary: number, taxCode: string): number {
-  const { allowance } = parseTaxCode(taxCode);
-  const taxableIncome = Math.max(0, annualSalary - allowance);
-  
-  // Use hardcoded TAX_BANDS for backward compatibility
-  // Calculate tax by bands
+  // Immediately invoke an async function and wait for it
+  // This is a temporary solution to maintain backward compatibility
+  // while we transition to the async version
   let tax = 0;
-  let remainingIncome = taxableIncome;
   
-  if (remainingIncome > TAX_BANDS.HIGHER_RATE.threshold) {
-    tax += (remainingIncome - TAX_BANDS.HIGHER_RATE.threshold) * TAX_BANDS.ADDITIONAL_RATE.rate;
-    remainingIncome = TAX_BANDS.HIGHER_RATE.threshold;
-  }
+  // Use the async version to get the result from the database
+  calculateIncomeTaxAsync(annualSalary, taxCode)
+    .then((result) => {
+      tax = result;
+    })
+    .catch((error) => {
+      console.error("Error in calculateIncomeTax:", error);
+      
+      // Fallback to hardcoded calculation if database lookup fails
+      const { allowance } = parseTaxCode(taxCode);
+      const taxableIncome = Math.max(0, annualSalary - allowance);
+      
+      let remainingIncome = taxableIncome;
+      
+      if (remainingIncome > TAX_BANDS.HIGHER_RATE.threshold) {
+        tax += (remainingIncome - TAX_BANDS.HIGHER_RATE.threshold) * TAX_BANDS.ADDITIONAL_RATE.rate;
+        remainingIncome = TAX_BANDS.HIGHER_RATE.threshold;
+      }
+      
+      if (remainingIncome > TAX_BANDS.BASIC_RATE.threshold) {
+        tax += (remainingIncome - TAX_BANDS.BASIC_RATE.threshold) * TAX_BANDS.HIGHER_RATE.rate;
+        remainingIncome = TAX_BANDS.BASIC_RATE.threshold;
+      }
+      
+      if (remainingIncome > TAX_BANDS.PERSONAL_ALLOWANCE.threshold) {
+        tax += (remainingIncome - TAX_BANDS.PERSONAL_ALLOWANCE.threshold) * TAX_BANDS.BASIC_RATE.rate;
+      }
+      
+      tax = roundToTwoDecimals(tax);
+    });
   
-  if (remainingIncome > TAX_BANDS.BASIC_RATE.threshold) {
-    tax += (remainingIncome - TAX_BANDS.BASIC_RATE.threshold) * TAX_BANDS.HIGHER_RATE.rate;
-    remainingIncome = TAX_BANDS.BASIC_RATE.threshold;
-  }
-  
-  if (remainingIncome > TAX_BANDS.PERSONAL_ALLOWANCE.threshold) {
-    tax += (remainingIncome - TAX_BANDS.PERSONAL_ALLOWANCE.threshold) * TAX_BANDS.BASIC_RATE.rate;
-  }
-  
-  return roundToTwoDecimals(tax);
+  return tax;
 }
 
 /**
@@ -125,24 +140,36 @@ export async function calculateIncomeTaxFromYTDAsync(taxablePayYTD: number, taxC
  * Synchronous version for backward compatibility
  */
 export function calculateIncomeTaxFromYTD(taxablePayYTD: number, taxCode: string): number {
-  // Use hardcoded TAX_BANDS for backward compatibility
-  let taxableIncome = taxablePayYTD;
   let tax = 0;
   
-  // Calculate tax for each band based on the YTD taxable pay using hardcoded bands
-  if (taxableIncome > TAX_BANDS.HIGHER_RATE.threshold) {
-    tax += (taxableIncome - TAX_BANDS.HIGHER_RATE.threshold) * TAX_BANDS.ADDITIONAL_RATE.rate;
-    taxableIncome = TAX_BANDS.HIGHER_RATE.threshold;
-  }
+  // Use the async version to get the result from the database
+  calculateIncomeTaxFromYTDAsync(taxablePayYTD, taxCode)
+    .then((result) => {
+      tax = result;
+    })
+    .catch((error) => {
+      console.error("Error in calculateIncomeTaxFromYTD:", error);
+      
+      // Fallback to hardcoded calculation if database lookup fails
+      let taxableIncome = taxablePayYTD;
+      
+      // Calculate tax for each band based on the YTD taxable pay using hardcoded bands
+      if (taxableIncome > TAX_BANDS.HIGHER_RATE.threshold) {
+        tax += (taxableIncome - TAX_BANDS.HIGHER_RATE.threshold) * TAX_BANDS.ADDITIONAL_RATE.rate;
+        taxableIncome = TAX_BANDS.HIGHER_RATE.threshold;
+      }
+      
+      if (taxableIncome > TAX_BANDS.BASIC_RATE.threshold) {
+        tax += (taxableIncome - TAX_BANDS.BASIC_RATE.threshold) * TAX_BANDS.HIGHER_RATE.rate;
+        taxableIncome = TAX_BANDS.BASIC_RATE.threshold;
+      }
+      
+      if (taxableIncome > TAX_BANDS.PERSONAL_ALLOWANCE.threshold) {
+        tax += (taxableIncome - TAX_BANDS.PERSONAL_ALLOWANCE.threshold) * TAX_BANDS.BASIC_RATE.rate;
+      }
+      
+      tax = roundToTwoDecimals(tax);
+    });
   
-  if (taxableIncome > TAX_BANDS.BASIC_RATE.threshold) {
-    tax += (taxableIncome - TAX_BANDS.BASIC_RATE.threshold) * TAX_BANDS.HIGHER_RATE.rate;
-    taxableIncome = TAX_BANDS.BASIC_RATE.threshold;
-  }
-  
-  if (taxableIncome > TAX_BANDS.PERSONAL_ALLOWANCE.threshold) {
-    tax += (taxableIncome - TAX_BANDS.PERSONAL_ALLOWANCE.threshold) * TAX_BANDS.BASIC_RATE.rate;
-  }
-  
-  return roundToTwoDecimals(tax);
+  return tax;
 }

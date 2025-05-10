@@ -1,5 +1,6 @@
+
 import { roundToTwoDecimals } from "@/lib/formatters";
-import { calculateMonthlyIncomeTax } from "./calculations/income-tax";
+import { calculateMonthlyIncomeTaxAsync } from "./calculations/income-tax";
 import { calculateNationalInsurance } from "./calculations/national-insurance";
 import { calculateStudentLoan } from "./calculations/student-loan";
 import { calculatePension } from "./calculations/pension";
@@ -9,7 +10,7 @@ import { parseTaxCode } from "./utils/tax-code-utils";
 /**
  * Main function to calculate monthly payroll
  */
-export function calculateMonthlyPayroll(details: PayrollDetails): PayrollResult {
+export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<PayrollResult> {
   const {
     employeeId,
     employeeName,
@@ -23,12 +24,16 @@ export function calculateMonthlyPayroll(details: PayrollDetails): PayrollResult 
     additionalEarnings = []
   } = details;
   
+  // Tax year in format YYYY/YY
+  const currentYear = new Date().getFullYear();
+  const taxYear = `${currentYear}/${(currentYear + 1).toString().substring(2)}`;
+  
   // Calculate earnings
   const totalAdditionalEarnings = additionalEarnings?.reduce((sum, item) => sum + item.amount, 0) || 0;
   const grossPay = monthlySalary + totalAdditionalEarnings;
   
-  // Calculate deductions with enhanced free pay calculation
-  const incomeTaxResult = calculateMonthlyIncomeTax(grossPay, taxCode);
+  // Calculate deductions using enhanced async tax calculation from database
+  const incomeTaxResult = await calculateMonthlyIncomeTaxAsync(grossPay, taxCode, taxYear);
   const incomeTax = incomeTaxResult.monthlyTax;
   const freePay = incomeTaxResult.freePay;
   

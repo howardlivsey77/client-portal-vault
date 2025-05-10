@@ -16,10 +16,8 @@ export function usePayrollResult() {
   const calculatePayroll = async (payrollDetails: PayrollFormValues) => {
     try {
       setIsCalculating(true);
-      const result = calculateMonthlyPayroll(payrollDetails);
-      
-      // Calculate taxable pay
-      result.taxablePay = result.grossPay - result.freePay;
+      // Use the async version of calculateMonthlyPayroll
+      const result = await calculateMonthlyPayroll(payrollDetails);
       
       setCalculationResult(result);
       setIsCalculating(false);
