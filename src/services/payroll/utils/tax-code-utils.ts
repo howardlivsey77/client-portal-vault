@@ -57,8 +57,8 @@ export function calculateMonthlyFreePayFromTaxCode(taxCode: string): {
     // Step 2: Calculate annual value of remainder
     const annualValueOfRemainder = (remainder * 10) + 9;
     
-    // Step 3: Calculate monthly value of remainder
-    const monthlyValueOfRemainder = annualValueOfRemainder / 12;
+    // Step 3: Calculate monthly value of remainder - NOW ROUNDED UP to nearest penny
+    const monthlyValueOfRemainder = Math.ceil((annualValueOfRemainder / 12) * 100) / 100;
     
     // Step 4: Calculate free pay code
     const freePayCode = quotient * ((500 * 10) / 12);
@@ -82,14 +82,15 @@ export function calculateMonthlyFreePayFromTaxCode(taxCode: string): {
     // Step 1: Calculate annual value
     const annualValue = (numericPart * 10) + 9;
     
-    // Step 2: Calculate monthly value
-    monthlyFreePay = annualValue / 12;
+    // Step 2: Calculate monthly value - NOW ROUNDED UP to nearest penny
+    const monthlyValueOfRemainder = Math.ceil((annualValue / 12) * 100) / 100;
+    monthlyFreePay = monthlyValueOfRemainder;
     
     // Store breakdown for transparency
     breakdown = {
       numericPart,
       annualValueOfRemainder: annualValue,
-      monthlyValueOfRemainder: monthlyFreePay,
+      monthlyValueOfRemainder,
       isOver500: false
     };
   }
