@@ -37,6 +37,9 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       nicEmployeeYTD 
     } = ytdResult.data;
     
+    console.log(`Prepared taxable pay (rounded down): ${taxablePay}`);
+    console.log(`Income tax this period (from YTD calc): ${incomeTaxThisPeriod/100}`);
+    
     // Data to save to the database
     const payrollData = {
       employee_id: result.employeeId,
@@ -78,7 +81,13 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       nic_employee_ytd: nicEmployeeYTD
     };
     
-    return { success: true, payrollData, taxYear, taxPeriod };
+    return { 
+      success: true, 
+      payrollData, 
+      taxYear, 
+      taxPeriod,
+      ytdData: ytdResult.data 
+    };
   } catch (error) {
     console.error("Error preparing payroll data:", error);
     return { 

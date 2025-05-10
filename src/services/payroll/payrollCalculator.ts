@@ -46,6 +46,7 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   
   // Calculate taxable pay and round down to the nearest pound
   const taxablePay = roundDownToNearestPound(grossPay - freePay);
+  console.log(`Original calculation - Gross pay: ${grossPay}, Free pay: ${freePay}, Taxable pay (rounded down): ${taxablePay}`);
   
   const nationalInsurance = calculateNationalInsurance(grossPay);
   const studentLoan = calculateStudentLoan(grossPay, studentLoanPlan);
@@ -58,6 +59,8 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   const totalDeductions = incomeTax + nationalInsurance + studentLoan + pensionContribution + totalAdditionalDeductions;
   const totalAllowances = totalAdditionalAllowances;
   const netPay = grossPay - totalDeductions + totalAllowances;
+  
+  console.log(`Initial calculation results - Income tax: ${incomeTax}, Taxable pay: ${taxablePay}, NI: ${nationalInsurance}`);
   
   return {
     employeeId,

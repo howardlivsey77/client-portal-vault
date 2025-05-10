@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { PayrollForm } from '@/components/payroll/calculator/PayrollForm';
 import { PayrollCalculatorActions } from '@/components/payroll/calculator/PayrollCalculatorActions';
@@ -45,6 +46,14 @@ export const PayrollCalculator = ({ employee, payPeriod }: PayrollCalculatorProp
     }
   };
 
+  const handleCalculate = async (values: PayrollFormValues) => {
+    const result = await calculatePayroll(values);
+    if (result) {
+      console.log("Final calculation result to display:", result);
+      setShowResults(true);
+    }
+  };
+
   // Format the payPeriod description for display
   const payPeriodDisplay = `Period ${payPeriod.periodNumber}: ${payPeriod.description}`;
 
@@ -60,13 +69,7 @@ export const PayrollCalculator = ({ employee, payPeriod }: PayrollCalculatorProp
           formValues={formValues}
           onChange={setFormValues}
           payPeriod={payPeriod}
-          onCalculate={(values) => {
-            calculatePayroll(values).then((result) => {
-              if (result) {
-                setShowResults(true);
-              }
-            });
-          }}
+          onCalculate={handleCalculate}
           isCalculating={isCalculating}
         />
       )}

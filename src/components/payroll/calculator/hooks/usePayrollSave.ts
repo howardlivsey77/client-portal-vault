@@ -19,7 +19,7 @@ export function usePayrollSave(payPeriod: PayPeriod) {
   const savePayrollResult = async (result: PayrollResult) => {
     try {
       setIsSaving(true);
-      const { success, message, error } = await savePayrollResultToDatabase(result, payPeriod);
+      const { success, message, error, updatedResult } = await savePayrollResultToDatabase(result, payPeriod);
       
       if (success) {
         toast({
@@ -27,14 +27,16 @@ export function usePayrollSave(payPeriod: PayPeriod) {
           description: `Payroll calculation for ${payPeriod.description} has been saved.`,
           variant: "default"
         });
-        return true;
+        
+        // Return the updated result that includes the database values
+        return { success: true, updatedResult };
       } else {
         toast({
           title: "Save Error",
           description: error || "There was an error saving the payroll result to the database.",
           variant: "destructive"
         });
-        return false;
+        return { success: false, updatedResult: null };
       }
     } finally {
       setIsSaving(false);

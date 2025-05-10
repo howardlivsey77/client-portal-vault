@@ -28,14 +28,26 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
    * Calculate payroll and save to database
    */
   const calculatePayroll = async (payrollDetails: PayrollFormValues) => {
-    const result = await calculatePayrollOnly(payrollDetails);
+    // First calculate the result
+    const initialResult = await calculatePayrollOnly(payrollDetails);
     
-    if (result) {
+    if (initialResult) {
+      console.log("Initial calculation result:", initialResult);
+      
       // Save the result to the database
-      await savePayrollResult(result);
+      const { success, updatedResult } = await savePayrollResult(initialResult);
+      
+      if (success && updatedResult) {
+        // Important: Update the calculation result with the values from the database
+        console.log("Updated result from database:", updatedResult);
+        setCalculationResult(updatedResult);
+        return updatedResult;
+      }
+      
+      return initialResult;
     }
     
-    return result;
+    return null;
   };
 
   return {
