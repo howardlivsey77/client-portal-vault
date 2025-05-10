@@ -10,6 +10,7 @@ export {
 export {
   calculateMonthlyPayroll,
   calculateIncomeTax,
+  calculateMonthlyIncomeTax,
   calculateNationalInsurance,
   calculateStudentLoan,
   calculatePension,
@@ -23,6 +24,9 @@ export type {
   PayrollDetails,
   PayrollResult
 } from './types';
+
+// Export free pay calculation utility
+export { calculateMonthlyFreePayFromTaxCode } from './utils/tax-code-utils';
 
 // Export financial year utilities
 export {

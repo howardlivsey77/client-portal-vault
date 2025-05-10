@@ -5,6 +5,7 @@ import { calculateNationalInsurance } from "./calculations/national-insurance";
 import { calculateStudentLoan } from "./calculations/student-loan";
 import { calculatePension } from "./calculations/pension";
 import { PayrollDetails, PayrollResult } from "./types";
+import { parseTaxCode } from "./utils/tax-code-utils";
 
 /**
  * Main function to calculate monthly payroll
@@ -27,8 +28,11 @@ export function calculateMonthlyPayroll(details: PayrollDetails): PayrollResult 
   const totalAdditionalEarnings = additionalEarnings?.reduce((sum, item) => sum + item.amount, 0) || 0;
   const grossPay = monthlySalary + totalAdditionalEarnings;
   
-  // Calculate deductions
-  const incomeTax = calculateMonthlyIncomeTax(grossPay, taxCode);
+  // Calculate deductions with enhanced free pay calculation
+  const incomeTaxResult = calculateMonthlyIncomeTax(grossPay, taxCode);
+  const incomeTax = incomeTaxResult.monthlyTax;
+  const freePay = incomeTaxResult.freePay;
+  
   const nationalInsurance = calculateNationalInsurance(grossPay);
   const studentLoan = calculateStudentLoan(grossPay, studentLoanPlan);
   const pensionContribution = calculatePension(grossPay, pensionPercentage);
@@ -58,7 +62,9 @@ export function calculateMonthlyPayroll(details: PayrollDetails): PayrollResult 
     additionalEarnings,
     totalDeductions: roundToTwoDecimals(totalDeductions),
     totalAllowances: roundToTwoDecimals(totalAllowances),
-    netPay: roundToTwoDecimals(netPay)
+    netPay: roundToTwoDecimals(netPay),
+    freePay: roundToTwoDecimals(freePay),
+    taxCode: taxCode
   };
 }
 

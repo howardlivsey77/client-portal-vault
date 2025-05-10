@@ -34,4 +34,7 @@ export interface PayrollResult {
   totalDeductions: number;
   totalAllowances: number;
   netPay: number;
+  // Add free pay (tax-free allowance) information
+  freePay: number;
+  taxCode: string;
 }
