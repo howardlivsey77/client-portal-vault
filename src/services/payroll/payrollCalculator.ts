@@ -1,145 +1,72 @@
 
 import { roundToTwoDecimals } from "@/lib/formatters";
-import { PayrollDetails, PayrollResult, PreviousPeriodData } from "./types";
+import { calculateMonthlyIncomeTax } from "./calculations/income-tax";
 import { calculateNationalInsurance } from "./calculations/national-insurance";
-import { calculatePension } from "./calculations/pension";
 import { calculateStudentLoan } from "./calculations/student-loan";
-import { calculateMonthlyIncomeTaxSync } from "./calculations/income-tax-sync";
-import { parseTaxCode } from "./utils/tax-code-utils";
-import { getEmployeeYTDData } from "./utils/payroll-data-service";
+import { calculatePension } from "./calculations/pension";
+import { PayrollDetails, PayrollResult } from "./types";
 
 /**
- * Calculate monthly payroll including tax, NI, and other deductions
+ * Main function to calculate monthly payroll
  */
-export async function calculateMonthlyPayroll(
-  details: PayrollDetails
-): Promise<PayrollResult> {
-  try {
-    // Set default values for missing fields
-    const monthlySalary = details.monthlySalary || 0;
-    const taxCode = details.taxCode || '1257L';
-    const taxRegion = details.taxRegion || 'UK';
-    const pensionPercentage = details.pensionPercentage || 0;
-    const additionalEarnings = details.additionalEarnings || [];
-    const additionalDeductions = details.additionalDeductions || [];
-    const additionalAllowances = details.additionalAllowances || [];
-    
-    // Calculate gross pay (salary + additional earnings)
-    const additionalEarningsTotal = additionalEarnings.reduce(
-      (sum, item) => sum + item.amount, 0
-    );
-    
-    const grossPay = monthlySalary + additionalEarningsTotal;
-    
-    // Get YTD data if available
-    let ytdData: PreviousPeriodData | null = null;
-    try {
-      if (details.employeeId) {
-        ytdData = await getEmployeeYTDData(
-          details.employeeId, 
-          details.taxYear || '2025-2026'
-        );
-      }
-    } catch (error) {
-      console.error("Error getting YTD data:", error);
-    }
-    
-    // Calculate tax
-    const monthlyTax = calculateMonthlyIncomeTaxSync(
-      grossPay,
-      taxCode,
-      taxRegion as string
-    );
-    
-    // Calculate NI contributions
-    const niContribution = calculateNationalInsurance(grossPay, details.nicCode || 'A');
-    
-    // Calculate pension contribution
-    const pensionContribution = calculatePension(grossPay, pensionPercentage);
-    
-    // Calculate student loan repayment
-    const studentLoanPlan = details.studentLoanPlan !== undefined ? details.studentLoanPlan : null;
-    const studentLoanRepayment = calculateStudentLoan(
-      grossPay, 
-      studentLoanPlan
-    );
-    
-    // Parse tax code to get tax-free allowance
-    const { monthlyAllowance } = parseTaxCode(taxCode);
-    const taxFreeAmount = monthlyAllowance;
-    
-    // Calculate taxable pay
-    const taxablePay = Math.max(0, grossPay - taxFreeAmount);
-    
-    // Sum all additional deductions
-    const additionalDeductionsTotal = additionalDeductions.reduce(
-      (sum, item) => sum + item.amount, 0
-    );
-    
-    // Sum all additional allowances 
-    const totalAllowances = additionalAllowances.reduce(
-      (sum, item) => sum + item.amount, 0
-    );
-    
-    // Calculate total deductions
-    const totalDeductions = monthlyTax + niContribution + 
-      studentLoanRepayment + pensionContribution + additionalDeductionsTotal;
-    
-    // Calculate net pay
-    const netPay = grossPay - totalDeductions;
-    
-    // Build YTD values
-    let grossPayYTD = grossPay;
-    let taxablePayYTD = taxablePay;
-    let incomeTaxYTD = monthlyTax;
-    let nationalInsuranceYTD = niContribution;
-    let studentLoanYTD = studentLoanRepayment;
-    
-    // Add YTD data if available
-    if (ytdData) {
-      grossPayYTD = ytdData.grossPayYTD + grossPay;
-      taxablePayYTD = ytdData.taxablePayYTD + taxablePay;
-      incomeTaxYTD = ytdData.incomeTaxYTD + monthlyTax;
-      nationalInsuranceYTD = ytdData.nationalInsuranceYTD + niContribution;
-      studentLoanYTD = ytdData.studentLoanYTD + studentLoanRepayment;
-    }
-    
-    return {
-      employeeId: details.employeeId,
-      employeeName: details.employeeName,
-      payrollId: details.payrollId || '',
-      monthlySalary,
-      grossPay,
-      taxCode,
-      taxRegion,
-      taxYear: details.taxYear || '2025-2026',
-      taxPeriod: details.taxPeriod || 1,
-      taxablePay,
-      taxFreeAmount,
-      incomeTax: monthlyTax,
-      nationalInsurance: niContribution,
-      nicCode: details.nicCode || 'A',
-      studentLoan: studentLoanRepayment,
-      studentLoanPlan: details.studentLoanPlan,
-      pensionContribution,
-      pensionPercentage,
-      totalDeductions,
-      netPay,
-      additionalEarnings,
-      additionalDeductions,
-      additionalAllowances,
-      totalAllowances,
-      grossPayYTD,
-      taxablePayYTD,
-      incomeTaxYTD,
-      nationalInsuranceYTD,
-      studentLoanYTD
-    };
-  } catch (error) {
-    console.error("Error in calculateMonthlyPayroll:", error);
-    throw error;
-  }
+export function calculateMonthlyPayroll(details: PayrollDetails): PayrollResult {
+  const {
+    employeeId,
+    employeeName,
+    payrollId,
+    monthlySalary,
+    taxCode,
+    pensionPercentage = 0,
+    studentLoanPlan = null,
+    additionalDeductions = [],
+    additionalAllowances = [],
+    additionalEarnings = []
+  } = details;
+  
+  // Calculate earnings
+  const totalAdditionalEarnings = additionalEarnings?.reduce((sum, item) => sum + item.amount, 0) || 0;
+  const grossPay = monthlySalary + totalAdditionalEarnings;
+  
+  // Calculate deductions
+  const incomeTax = calculateMonthlyIncomeTax(grossPay, taxCode);
+  const nationalInsurance = calculateNationalInsurance(grossPay);
+  const studentLoan = calculateStudentLoan(grossPay, studentLoanPlan);
+  const pensionContribution = calculatePension(grossPay, pensionPercentage);
+  
+  // Calculate totals
+  const totalAdditionalDeductions = additionalDeductions.reduce((sum, item) => sum + item.amount, 0);
+  const totalAdditionalAllowances = additionalAllowances.reduce((sum, item) => sum + item.amount, 0);
+  
+  const totalDeductions = incomeTax + nationalInsurance + studentLoan + pensionContribution + totalAdditionalDeductions;
+  const totalAllowances = totalAdditionalAllowances;
+  const netPay = grossPay - totalDeductions + totalAllowances;
+  
+  return {
+    employeeId,
+    employeeName,
+    payrollId,
+    monthlySalary,
+    grossPay: roundToTwoDecimals(grossPay),
+    incomeTax: roundToTwoDecimals(incomeTax),
+    nationalInsurance: roundToTwoDecimals(nationalInsurance),
+    studentLoan: roundToTwoDecimals(studentLoan),
+    studentLoanPlan,
+    pensionContribution: roundToTwoDecimals(pensionContribution),
+    pensionPercentage,
+    additionalDeductions,
+    additionalAllowances,
+    additionalEarnings,
+    totalDeductions: roundToTwoDecimals(totalDeductions),
+    totalAllowances: roundToTwoDecimals(totalAllowances),
+    netPay: roundToTwoDecimals(netPay)
+  };
 }
 
-// Re-export the PayrollResult type using the correct TypeScript syntax
-export type { PayrollResult };
+// Re-export all the functions we need for backward compatibility
+export * from "./calculations/income-tax";
+export * from "./calculations/national-insurance";
+export * from "./calculations/student-loan";
+export * from "./calculations/pension";
+export * from "./utils/tax-code-utils";
+export * from "./constants/tax-constants";
+export * from "./types";

@@ -4,49 +4,33 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Save } from "lucide-react";
-import { calculateMonthlyPayroll } from "@/services/payroll/payrollCalculator";
-import type { PayrollResult } from "@/services/payroll/types";
-import { savePayrollResult } from "@/services/payroll/savePayrollResult";
+import { Download } from "lucide-react";
+import { calculateMonthlyPayroll, PayrollResult } from "@/services/payroll/payrollCalculator";
 import { generatePayslip } from "@/utils/payslipGenerator";
 import { PayrollForm } from "./PayrollForm";
 import { PayrollResults } from "./PayrollResults";
 import { PayrollCalculatorProps, PayrollFormValues } from "./types";
-import { getTaxYear } from "@/utils/taxYearUtils";
 
 export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
   const { toast } = useToast();
   const [selectedTab, setSelectedTab] = useState<string>("calculator");
-  
-  // Get current tax year and format tax period
-  const currentTaxYear = getTaxYear();
-  // Set tax period to 1 (April) for 2025-2026 tax year
-  const currentTaxPeriod = 1; // Fixed to period 1 (April)
-  
   const [payrollDetails, setPayrollDetails] = useState<PayrollFormValues>({
     employeeId: employee?.id || '',
     employeeName: employee ? `${employee.first_name} ${employee.last_name}` : '',
     payrollId: employee?.payroll_id || '',
-    monthlySalary: employee?.monthly_salary || 0,
-    taxCode: employee?.tax_code || '1257L', // Standard tax code
-    taxRegion: 'UK', // Default to UK/England
+    monthlySalary: 0,
+    taxCode: '1257L', // Standard tax code
     pensionPercentage: 5,
-    studentLoanPlan: employee?.student_loan_plan || null,
+    studentLoanPlan: null,
     additionalDeductions: [],
     additionalAllowances: [],
-    additionalEarnings: [],
-    nicCode: employee?.nic_code || 'A',
-    taxYear: currentTaxYear,
-    taxPeriod: currentTaxPeriod,
-    useEmergencyTax: employee?.week_one_month_one || false,
-    isNewEmployee: false
+    additionalEarnings: []
   });
   
   const [calculationResult, setCalculationResult] = useState<PayrollResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [payPeriod, setPayPeriod] = useState<string>(
-    "April 2025 (Period 1)" // Default to April 2025 (Period 1)
+    new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
   );
   const [autoCalculate, setAutoCalculate] = useState<boolean>(true);
 
@@ -54,61 +38,18 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
   useEffect(() => {
     if (autoCalculate && payrollDetails.monthlySalary > 0 && payrollDetails.employeeName) {
       try {
-        const calculatePayroll = async () => {
-          // Convert AdditionalItem to required format for PayrollDetails
-          const convertedDetails = {
-            ...payrollDetails,
-            additionalEarnings: payrollDetails.additionalEarnings.map(item => ({
-              id: item.id || `earning-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              description: item.description,
-              amount: item.amount
-            })),
-            additionalDeductions: payrollDetails.additionalDeductions.map(item => ({
-              id: item.id || `deduction-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              description: item.description,
-              amount: item.amount  
-            })),
-            additionalAllowances: payrollDetails.additionalAllowances.map(item => ({
-              id: item.id || `allowance-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              description: item.description,
-              amount: item.amount
-            }))
-          };
-          
-          const result = await calculateMonthlyPayroll(convertedDetails);
-          setCalculationResult(result);
-        };
-        calculatePayroll();
+        const result = calculateMonthlyPayroll(payrollDetails);
+        setCalculationResult(result);
       } catch (error) {
         console.error("Auto payroll calculation error:", error);
       }
     }
   }, [payrollDetails, autoCalculate]);
 
-  const handleCalculatePayroll = async () => {
+  const handleCalculatePayroll = () => {
     try {
       setIsCalculating(true);
-      // Convert AdditionalItem to required format for PayrollDetails
-      const convertedDetails = {
-        ...payrollDetails,
-        additionalEarnings: payrollDetails.additionalEarnings.map(item => ({
-          id: item.id || `earning-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          description: item.description,
-          amount: item.amount
-        })),
-        additionalDeductions: payrollDetails.additionalDeductions.map(item => ({
-          id: item.id || `deduction-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          description: item.description,
-          amount: item.amount  
-        })),
-        additionalAllowances: payrollDetails.additionalAllowances.map(item => ({
-          id: item.id || `allowance-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          description: item.description,
-          amount: item.amount
-        }))
-      };
-      
-      const result = await calculateMonthlyPayroll(convertedDetails);
+      const result = calculateMonthlyPayroll(payrollDetails);
       setCalculationResult(result);
       setIsCalculating(false);
       
@@ -146,47 +87,12 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
     }
   };
 
-  const handleSavePayrollResult = async () => {
-    if (!calculationResult) return;
-    
-    try {
-      setIsSaving(true);
-      
-      const result = await savePayrollResult(calculationResult, payPeriod);
-      
-      if (result.success) {
-        toast({
-          title: "Payroll Saved",
-          description: "Payroll result has been saved to the database."
-        });
-      } else {
-        toast({
-          title: "Save Error",
-          description: result.message,
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error("Error saving payroll result:", error);
-      toast({
-        title: "Save Error",
-        description: "There was an error saving the payroll result.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   return (
     <Card className="w-full">
       <CardHeader>
         <CardTitle>UK Payroll Calculator</CardTitle>
         <CardDescription>
-          {employee ? 
-            `Calculate payroll for ${employee.first_name} ${employee.last_name} (${currentTaxYear} Tax Year)` : 
-            `Calculate monthly payroll including tax, NI, and other deductions - ${currentTaxYear} Tax Year`
-          }
+          {employee ? `Calculate payroll for ${employee.first_name} ${employee.last_name}` : 'Calculate monthly payroll including tax, NI, and other deductions'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -231,23 +137,13 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
         )}
         
         {calculationResult && selectedTab === "result" && (
-          <div className="flex gap-2">
-            <Button 
-              onClick={handleSavePayrollResult}
-              variant="secondary"
-              disabled={isSaving}
-            >
-              <Save className="mr-2 h-4 w-4" />
-              {isSaving ? "Saving..." : "Save Result"}
-            </Button>
-            <Button 
-              onClick={handleDownloadPayslip}
-              variant="secondary"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Download Payslip
-            </Button>
-          </div>
+          <Button 
+            onClick={handleDownloadPayslip}
+            variant="secondary"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Download Payslip
+          </Button>
         )}
       </CardFooter>
     </Card>

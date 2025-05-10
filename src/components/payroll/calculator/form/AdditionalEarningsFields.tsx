@@ -4,11 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, X } from "lucide-react";
-import { AdditionalItem } from "../types";
+
+interface EarningItem {
+  description: string;
+  amount: number;
+}
 
 interface AdditionalEarningsFieldsProps {
-  additionalEarnings: AdditionalItem[];
-  onEarningsChange: (earnings: AdditionalItem[]) => void;
+  additionalEarnings: EarningItem[];
+  onEarningsChange: (earnings: EarningItem[]) => void;
 }
 
 export function AdditionalEarningsFields({ 
@@ -19,11 +23,7 @@ export function AdditionalEarningsFields({
   const addEarning = () => {
     const newEarnings = [
       ...additionalEarnings, 
-      { 
-        id: `earning-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        description: '', 
-        amount: 0 
-      }
+      { description: '', amount: 0 }
     ];
     onEarningsChange(newEarnings);
   };

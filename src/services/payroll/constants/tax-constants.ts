@@ -1,7 +1,6 @@
 
 /**
- * This file is kept for backward compatibility.
- * Consider migrating to use database-driven constants from tax-constants-service.ts
+ * UK Tax constants for 2023-2024
  */
 
 // Basic tax rate bands for 2023-2024

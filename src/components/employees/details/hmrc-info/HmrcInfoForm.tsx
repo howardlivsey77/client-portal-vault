@@ -94,7 +94,7 @@ export const HmrcInfoForm = ({
                 <FormLabel>NIC Code</FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  value={field.value || ""}
+                  value={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>

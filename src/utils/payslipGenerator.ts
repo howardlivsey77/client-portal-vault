@@ -1,132 +1,129 @@
 
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import { PayrollResult } from "@/services/payroll/types";
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { PayrollResult } from '@/services/payroll/types';
+import { formatCurrency, formatDate } from '@/lib/formatters';
 
 /**
- * Generate a PDF payslip for an employee
+ * Generate a PDF payslip from the payroll calculation data
  */
-export function generatePayslip(
-  payrollData: PayrollResult, 
-  payPeriod: string,
-  filename: string
-) {
+export const generatePayslip = (payrollData: PayrollResult, period: string, filename = 'payslip.pdf') => {
+  // Create a new PDF document
   const doc = new jsPDF();
-  doc.setFont("helvetica");
   
-  // Add company letterhead
-  doc.setFontSize(16);
-  doc.text("UK PAYROLL SYSTEM", 105, 20, { align: "center" });
+  // Add company header (placeholder)
+  doc.setFontSize(18);
+  doc.text('COMPANY NAME', 105, 20, { align: 'center' });
+  doc.setFontSize(12);
+  doc.text('Payslip', 105, 28, { align: 'center' });
   
-  // Add payslip title
-  doc.setFontSize(14);
-  doc.text(`PAYSLIP - ${payPeriod}`, 105, 30, { align: "center" });
-  
-  // Add horizontal divider
-  doc.setDrawColor(200, 200, 200);
-  doc.line(20, 32, 190, 32);
-  
-  // Add employee information
+  // Employee details section
   doc.setFontSize(11);
-  doc.text("Employee:", 20, 40);
-  doc.setFont("helvetica", "bold");
-  doc.text(payrollData.employeeName, 55, 40);
-  doc.setFont("helvetica", "normal");
-  
+  doc.text(`Employee: ${payrollData.employeeName}`, 14, 40);
   if (payrollData.payrollId) {
-    doc.text("Employee ID:", 20, 47);
-    doc.setFont("helvetica", "bold");
-    doc.text(payrollData.payrollId, 55, 47);
-    doc.setFont("helvetica", "normal");
+    doc.text(`Payroll ID: ${payrollData.payrollId}`, 14, 46);
+  }
+  doc.text(`Pay Period: ${period}`, 14, 52);
+  
+  // Summary info on the right
+  doc.text(`Date: ${formatDate(new Date())}`, 140, 40);
+  doc.text(`Gross Pay: ${formatCurrency(payrollData.grossPay)}`, 140, 46);
+  doc.text(`Net Pay: ${formatCurrency(payrollData.netPay)}`, 140, 52);
+  
+  // Create earnings table
+  doc.setFontSize(12);
+  doc.text('Earnings', 14, 65);
+  
+  autoTable(doc, {
+    startY: 68,
+    head: [['Description', 'Amount']],
+    body: [
+      ['Basic Salary', formatCurrency(payrollData.grossPay)]
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [220, 220, 220], textColor: [0, 0, 0] },
+    columnStyles: {
+      1: { halign: 'right' }
+    }
+  });
+  
+  // Create deductions table
+  const deductionsY = (doc as any).lastAutoTable.finalY + 10;
+  doc.text('Deductions', 14, deductionsY);
+  
+  const deductionsData = [
+    ['Income Tax', formatCurrency(payrollData.incomeTax)],
+    ['National Insurance', formatCurrency(payrollData.nationalInsurance)]
+  ];
+  
+  if (payrollData.pensionContribution > 0) {
+    deductionsData.push(['Pension Contribution', formatCurrency(payrollData.pensionContribution)]);
   }
   
-  // Right side info
-  doc.text("Tax Code:", 120, 40);
-  doc.setFont("helvetica", "bold");
-  doc.text(payrollData.taxCode, 155, 40);
-  doc.setFont("helvetica", "normal");
+  if (payrollData.studentLoan > 0) {
+    deductionsData.push(['Student Loan', formatCurrency(payrollData.studentLoan)]);
+  }
   
-  doc.text("Tax Period:", 120, 47);
-  doc.setFont("helvetica", "bold");
-  doc.text(`${payrollData.taxPeriod || 1} (${payrollData.taxYear || '2025-2026'})`, 155, 47);
-  doc.setFont("helvetica", "normal");
-  
-  // Add horizontal divider
-  doc.line(20, 52, 190, 52);
-  
-  // Payments table
-  autoTable(doc, {
-    startY: 55,
-    head: [['Payments', 'Amount', 'YTD']],
-    body: [
-      ['Basic Salary', `£${payrollData.monthlySalary.toFixed(2)}`, `£${(payrollData.grossPayYTD || 0).toFixed(2)}`],
-      ...(payrollData.additionalEarnings.map(earning => 
-        [earning.description, `£${earning.amount.toFixed(2)}`, '']
-      )),
-      ['Total Gross Pay', `£${payrollData.grossPay.toFixed(2)}`, `£${(payrollData.grossPayYTD || 0).toFixed(2)}`]
-    ],
-    headStyles: { fillColor: [70, 70, 70] },
-    styles: { textColor: [0, 0, 0] },
-    columnStyles: {
-      0: { cellWidth: 90 },
-      1: { cellWidth: 40, halign: 'right' },
-      2: { cellWidth: 40, halign: 'right' }
-    },
-    alternateRowStyles: { fillColor: [240, 240, 240] },
-    margin: { top: 55, left: 20, right: 20 }
+  payrollData.additionalDeductions.forEach(deduction => {
+    deductionsData.push([deduction.description, formatCurrency(deduction.amount)]);
   });
   
-  // Get position after the first table
-  const finalY = (doc as any).lastAutoTable.finalY;
-  
-  // Deductions table
   autoTable(doc, {
-    startY: finalY + 10,
-    head: [['Deductions', 'Amount', 'YTD']],
-    body: [
-      ['Income Tax', `£${payrollData.incomeTax.toFixed(2)}`, `£${(payrollData.incomeTaxYTD || 0).toFixed(2)}`],
-      ['National Insurance', `£${payrollData.nationalInsurance.toFixed(2)}`, `£${(payrollData.nationalInsuranceYTD || 0).toFixed(2)}`],
-      ...(payrollData.studentLoan > 0 ? [['Student Loan', `£${payrollData.studentLoan.toFixed(2)}`, '']] : []),
-      ...(payrollData.pensionContribution > 0 ? [['Pension', `£${payrollData.pensionContribution.toFixed(2)}`, '']] : []),
-      ...(payrollData.additionalDeductions.map(deduction => 
-        [deduction.description, `£${deduction.amount.toFixed(2)}`, '']
-      )),
-      ['Total Deductions', `£${payrollData.totalDeductions.toFixed(2)}`, '']
-    ],
-    headStyles: { fillColor: [70, 70, 70] },
-    styles: { textColor: [0, 0, 0] },
+    startY: deductionsY + 3,
+    head: [['Description', 'Amount']],
+    body: deductionsData,
+    theme: 'grid',
+    headStyles: { fillColor: [220, 220, 220], textColor: [0, 0, 0] },
     columnStyles: {
-      0: { cellWidth: 90 },
-      1: { cellWidth: 40, halign: 'right' },
-      2: { cellWidth: 40, halign: 'right' }
-    },
-    alternateRowStyles: { fillColor: [240, 240, 240] },
-    margin: { top: 55, left: 20, right: 20 }
+      1: { halign: 'right' }
+    }
   });
   
-  // Get position after the second table
-  const finalY2 = (doc as any).lastAutoTable.finalY;
+  // Create allowances table if there are any
+  if (payrollData.additionalAllowances.length > 0) {
+    const allowancesY = (doc as any).lastAutoTable.finalY + 10;
+    doc.text('Allowances', 14, allowancesY);
+    
+    const allowancesData = payrollData.additionalAllowances.map(allowance => [
+      allowance.description, formatCurrency(allowance.amount)
+    ]);
+    
+    autoTable(doc, {
+      startY: allowancesY + 3,
+      head: [['Description', 'Amount']],
+      body: allowancesData,
+      theme: 'grid',
+      headStyles: { fillColor: [220, 220, 220], textColor: [0, 0, 0] },
+      columnStyles: {
+        1: { halign: 'right' }
+      }
+    });
+  }
   
-  // Net pay table
+  // Create summary table
+  const summaryY = (doc as any).lastAutoTable.finalY + 10;
+  
   autoTable(doc, {
-    startY: finalY2 + 10,
+    startY: summaryY,
     body: [
-      ['Net Pay', `£${payrollData.netPay.toFixed(2)}`]
+      ['Gross Pay', formatCurrency(payrollData.grossPay)],
+      ['Total Deductions', formatCurrency(payrollData.totalDeductions)],
+      ['Total Allowances', formatCurrency(payrollData.totalAllowances)],
+      ['Net Pay', formatCurrency(payrollData.netPay)]
     ],
-    styles: { textColor: [0, 0, 0], fontSize: 12, fontStyle: 'bold' },
+    theme: 'grid',
     columnStyles: {
-      0: { cellWidth: 90 },
-      1: { cellWidth: 40, halign: 'right' }
+      0: { fontStyle: 'bold' },
+      1: { halign: 'right' }
     },
-    bodyStyles: { fillColor: [220, 220, 220] },
-    margin: { top: 55, left: 20, right: 20 }
+    bodyStyles: { fontSize: 11 },
+    styles: { cellPadding: 4 },
   });
   
-  // Add footer
+  // Add footer note
   doc.setFontSize(8);
-  doc.setTextColor(100, 100, 100);
-  doc.text("This payslip was generated automatically. Not valid as an official document unless signed.", 105, 280, { align: "center" });
+  doc.text('This payslip was generated automatically and does not require a signature.', 105, doc.internal.pageSize.height - 10, { align: 'center' });
   
   // Save the PDF
   doc.save(filename);
-}
+};
