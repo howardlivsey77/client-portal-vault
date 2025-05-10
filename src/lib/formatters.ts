@@ -38,3 +38,18 @@ export function formatPounds(value: number | null | undefined): string {
   const rounded = roundToTwoDecimals(value);
   return rounded.toFixed(2);
 }
+
+/**
+ * Returns the name of the month for a given month number (1-12)
+ */
+export function getMonthName(monthNumber: number): string {
+  const months = [
+    'January', 'February', 'March', 'April', 
+    'May', 'June', 'July', 'August', 
+    'September', 'October', 'November', 'December'
+  ];
+  
+  // Adjust for 1-based month numbers
+  const index = ((monthNumber - 1) % 12 + 12) % 12; // Ensure it's always in range 0-11
+  return months[index];
+}
