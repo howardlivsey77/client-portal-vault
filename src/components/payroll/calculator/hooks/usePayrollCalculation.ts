@@ -4,7 +4,7 @@ import { PayrollFormValues } from "../types";
 import { PayrollResult } from "@/services/payroll/types";
 import { PayPeriod } from "@/services/payroll/utils/financial-year-utils";
 import { usePayrollResult } from './usePayrollResult';
-import { usePayrollDatabase } from './usePayrollDatabase';
+import { usePayrollSave } from './usePayrollSave';
 
 /**
  * Main hook that combines calculation and database operations for payroll
@@ -20,9 +20,9 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
   const {
     isSaving,
     isClearing,
-    savePayrollResultToDatabase,
-    clearPayrollResults
-  } = usePayrollDatabase(payPeriod);
+    savePayrollResult,
+    clearPayrollResultsFromDB
+  } = usePayrollSave(payPeriod);
 
   /**
    * Calculate payroll and save to database
@@ -32,7 +32,7 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
     
     if (result) {
       // Save the result to the database
-      await savePayrollResultToDatabase(result);
+      await savePayrollResult(result);
     }
     
     return result;
@@ -44,7 +44,7 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
     isSaving,
     isClearing,
     calculatePayroll,
-    clearPayrollResults,
+    clearPayrollResults: clearPayrollResultsFromDB,
     setCalculationResult
   };
 }
