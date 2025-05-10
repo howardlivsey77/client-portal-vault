@@ -35,6 +35,12 @@ export function EmployeeInfoFields({
         monthlySalary = Number(((hourlyRate * hoursPerWeek) / 7 * 365 / 12).toFixed(2));
       }
 
+      // Convert student loan plan to the correct type (1, 2, 4, 5 or null)
+      const studentLoanPlan = employee.student_loan_plan === 1 ? 1 :
+                              employee.student_loan_plan === 2 ? 2 :
+                              employee.student_loan_plan === 4 ? 4 :
+                              employee.student_loan_plan === 5 ? 5 : null;
+
       onChange({
         ...formValues,
         employeeId: employee.id,
@@ -42,7 +48,7 @@ export function EmployeeInfoFields({
         payrollId: employee.payroll_id || '',
         monthlySalary: monthlySalary,
         taxCode: employee.tax_code || '1257L', // Use tax code from employee record
-        studentLoanPlan: employee.student_loan_plan || formValues.studentLoanPlan
+        studentLoanPlan: studentLoanPlan
       });
     }
   }, [employee, onChange]);

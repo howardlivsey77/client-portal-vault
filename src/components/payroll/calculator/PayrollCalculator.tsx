@@ -22,7 +22,7 @@ export function PayrollCalculator({ employee, payPeriod }: PayrollCalculatorProp
     monthlySalary: 0,
     taxCode: employee?.tax_code || '1257L', // Use employee's tax code if available, otherwise default
     pensionPercentage: 5,
-    studentLoanPlan: employee?.student_loan_plan || null,
+    studentLoanPlan: null,
     additionalDeductions: [],
     additionalAllowances: [],
     additionalEarnings: []
@@ -31,13 +31,19 @@ export function PayrollCalculator({ employee, payPeriod }: PayrollCalculatorProp
   // Update payroll details when employee changes
   useEffect(() => {
     if (employee) {
+      // Convert student loan plan to the correct type (1, 2, 4, 5 or null)
+      const studentLoanPlan = employee.student_loan_plan === 1 ? 1 :
+                              employee.student_loan_plan === 2 ? 2 :
+                              employee.student_loan_plan === 4 ? 4 :
+                              employee.student_loan_plan === 5 ? 5 : null;
+
       setPayrollDetails(prevDetails => ({
         ...prevDetails,
         employeeId: employee.id,
         employeeName: `${employee.first_name} ${employee.last_name}`,
         payrollId: employee.payroll_id || '',
         taxCode: employee.tax_code || '1257L', // Use employee's tax code with fallback
-        studentLoanPlan: employee.student_loan_plan || null
+        studentLoanPlan: studentLoanPlan
       }));
     }
   }, [employee]);

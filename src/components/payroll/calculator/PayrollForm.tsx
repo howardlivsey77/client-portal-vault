@@ -33,14 +33,6 @@ export function PayrollForm({
     });
   };
 
-  const handleNumberInputChange = (field: keyof PayrollFormValues, value: string) => {
-    const numValue = value === '' ? 0 : parseFloat(value);
-    
-    if (!isNaN(numValue)) {
-      handleInputChange(field, numValue);
-    }
-  };
-
   return (
     <div className="space-y-4">
       <Card className="bg-muted/30 border-dashed">
@@ -64,9 +56,9 @@ export function PayrollForm({
       />
       
       <FinancialDetailsFields
+        employee={employee}
         formValues={formValues}
         onInputChange={handleInputChange}
-        onNumberInputChange={handleNumberInputChange}
       />
       
       <AdditionalEarningsFields 
