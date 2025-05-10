@@ -52,7 +52,7 @@ export async function calculateMonthlyPayroll(
     );
     
     // Calculate NI contributions
-    const niContribution = calculateNationalInsurance(grossPay, details.nicCode);
+    const niContribution = calculateNationalInsurance(grossPay, details.nicCode || 'A');
     
     // Calculate pension contribution
     const pensionContribution = calculatePension(grossPay, pensionPercentage);
@@ -88,7 +88,7 @@ export async function calculateMonthlyPayroll(
     // Calculate net pay
     const netPay = grossPay - totalDeductions;
     
-    // Build YTD values - handle without Promises
+    // Build YTD values
     let grossPayYTD = grossPay;
     let taxablePayYTD = taxablePay;
     let incomeTaxYTD = monthlyTax;
@@ -141,4 +141,5 @@ export async function calculateMonthlyPayroll(
   }
 }
 
-export { PayrollResult };
+// Re-export the PayrollResult type using the correct TypeScript syntax
+export type { PayrollResult };

@@ -5,13 +5,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Save } from "lucide-react";
-import { calculateMonthlyPayroll, PayrollResult } from "@/services/payroll/payrollCalculator";
+import { calculateMonthlyPayroll } from "@/services/payroll/payrollCalculator";
+import type { PayrollResult } from "@/services/payroll/types";
 import { savePayrollResult } from "@/services/payroll/savePayrollResult";
 import { generatePayslip } from "@/utils/payslipGenerator";
 import { PayrollForm } from "./PayrollForm";
 import { PayrollResults } from "./PayrollResults";
 import { PayrollCalculatorProps, PayrollFormValues } from "./types";
-import { getTaxYear, getTaxPeriod, formatTaxPeriod } from "@/utils/taxYearUtils";
+import { getTaxYear } from "@/utils/taxYearUtils";
 
 export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
   const { toast } = useToast();
@@ -54,7 +55,27 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
     if (autoCalculate && payrollDetails.monthlySalary > 0 && payrollDetails.employeeName) {
       try {
         const calculatePayroll = async () => {
-          const result = await calculateMonthlyPayroll(payrollDetails);
+          // Convert AdditionalItem to required format for PayrollDetails
+          const convertedDetails = {
+            ...payrollDetails,
+            additionalEarnings: payrollDetails.additionalEarnings.map(item => ({
+              id: item.id || `earning-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              description: item.description,
+              amount: item.amount
+            })),
+            additionalDeductions: payrollDetails.additionalDeductions.map(item => ({
+              id: item.id || `deduction-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              description: item.description,
+              amount: item.amount  
+            })),
+            additionalAllowances: payrollDetails.additionalAllowances.map(item => ({
+              id: item.id || `allowance-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              description: item.description,
+              amount: item.amount
+            }))
+          };
+          
+          const result = await calculateMonthlyPayroll(convertedDetails);
           setCalculationResult(result);
         };
         calculatePayroll();
@@ -67,7 +88,27 @@ export function PayrollCalculator({ employee }: PayrollCalculatorProps) {
   const handleCalculatePayroll = async () => {
     try {
       setIsCalculating(true);
-      const result = await calculateMonthlyPayroll(payrollDetails);
+      // Convert AdditionalItem to required format for PayrollDetails
+      const convertedDetails = {
+        ...payrollDetails,
+        additionalEarnings: payrollDetails.additionalEarnings.map(item => ({
+          id: item.id || `earning-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          description: item.description,
+          amount: item.amount
+        })),
+        additionalDeductions: payrollDetails.additionalDeductions.map(item => ({
+          id: item.id || `deduction-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          description: item.description,
+          amount: item.amount  
+        })),
+        additionalAllowances: payrollDetails.additionalAllowances.map(item => ({
+          id: item.id || `allowance-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          description: item.description,
+          amount: item.amount
+        }))
+      };
+      
+      const result = await calculateMonthlyPayroll(convertedDetails);
       setCalculationResult(result);
       setIsCalculating(false);
       

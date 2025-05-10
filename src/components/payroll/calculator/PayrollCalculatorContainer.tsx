@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { calculateMonthlyPayroll } from "@/services/payroll/payrollCalculator";
-import { PayrollResult } from "@/services/payroll/types";
+import type { PayrollResult } from "@/services/payroll/types";
 import { savePayrollResult } from "@/services/payroll/savePayrollResult";
 import { generatePayslip } from "@/utils/payslipGenerator";
 import { PayrollForm } from "./PayrollForm";
