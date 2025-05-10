@@ -31,7 +31,8 @@ export {
   generatePayPeriodsForFinancialYear,
   getFinancialYearRange,
   CURRENT_FINANCIAL_YEAR,
-  CURRENT_PAY_PERIOD
+  CURRENT_PAY_PERIOD,
+  AVAILABLE_FINANCIAL_YEARS
 } from './utils/financial-year-utils';
 
 export type {

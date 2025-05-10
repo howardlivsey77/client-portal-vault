@@ -127,13 +127,11 @@ export function getFinancialYearRange(
   return years;
 }
 
-// Default to the current financial year for 2025
-export const CURRENT_FINANCIAL_YEAR = { 
-  startYear: 2025, 
-  endYear: 2026,
-  description: '2025/26',
-  periods: generatePayPeriodsForFinancialYear(2025)
-};
+// Generate financial years for selection (past 2 years, current year, and future 2 years)
+export const AVAILABLE_FINANCIAL_YEARS = getFinancialYearRange();
 
-// Set the current pay period to April 2025 (Period 1)
-export const CURRENT_PAY_PERIOD = CURRENT_FINANCIAL_YEAR.periods[0];
+// Default to the current financial year for 2025
+export const CURRENT_FINANCIAL_YEAR = getFinancialYearForDate(new Date());
+
+// Set the current pay period
+export const CURRENT_PAY_PERIOD = getCurrentPayPeriod(new Date());

@@ -10,6 +10,7 @@ import { FinancialDetailsFields } from "./form/FinancialDetailsFields";
 import { AdditionalEarningsFields } from "./form/AdditionalEarningsFields";
 import { PayPeriod } from "@/services/payroll/utils/financial-year-utils";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface PayrollFormProps {
   employee?: Employee | null;
@@ -42,11 +43,18 @@ export function PayrollForm({
 
   return (
     <div className="space-y-4">
-      <div className="mb-4">
-        <Badge variant="outline" className="text-sm">
-          Pay Period: {payPeriod.description}
-        </Badge>
-      </div>
+      <Card className="bg-muted/30 border-dashed">
+        <CardContent className="pt-4">
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-sm">
+              Financial Year: {`${payPeriod.year}/${(payPeriod.year + 1).toString().substring(2)}`}
+            </Badge>
+            <Badge className="text-sm">
+              Pay Period: {payPeriod.description}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
       
       <EmployeeInfoFields 
         employee={employee}

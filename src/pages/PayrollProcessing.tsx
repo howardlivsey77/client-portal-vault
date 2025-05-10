@@ -1,14 +1,46 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageContainer } from "@/components/layout/PageContainer";
 import { EmployeePayrollCalculator } from "@/components/payroll/EmployeePayrollCalculator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CURRENT_FINANCIAL_YEAR, CURRENT_PAY_PERIOD, PayPeriod } from "@/services/payroll/utils/financial-year-utils";
+import { 
+  AVAILABLE_FINANCIAL_YEARS, 
+  PayPeriod, 
+  FinancialYear,
+  CURRENT_FINANCIAL_YEAR,
+  CURRENT_PAY_PERIOD
+} from "@/services/payroll/utils/financial-year-utils";
 
 const PayrollProcessing = () => {
+  // State for financial year and pay period
+  const [selectedFinancialYear, setSelectedFinancialYear] = useState<FinancialYear>(CURRENT_FINANCIAL_YEAR);
   const [selectedPayPeriod, setSelectedPayPeriod] = useState<PayPeriod>(CURRENT_PAY_PERIOD);
+  
+  // Update the selected pay period when financial year changes
+  useEffect(() => {
+    // Select the first period of the new financial year by default
+    if (selectedFinancialYear.periods.length > 0) {
+      setSelectedPayPeriod(selectedFinancialYear.periods[0]);
+    }
+  }, [selectedFinancialYear]);
+
+  // Handle financial year change
+  const handleFinancialYearChange = (yearDescription: string) => {
+    const year = AVAILABLE_FINANCIAL_YEARS.find(y => y.description === yearDescription);
+    if (year) {
+      setSelectedFinancialYear(year);
+    }
+  };
+
+  // Handle pay period change
+  const handlePayPeriodChange = (periodNumber: string) => {
+    const period = selectedFinancialYear.periods.find(p => p.periodNumber === parseInt(periodNumber));
+    if (period) {
+      setSelectedPayPeriod(period);
+    }
+  };
 
   return (
     <PageContainer title="Payroll Processing">
@@ -16,29 +48,44 @@ const PayrollProcessing = () => {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">UK Payroll Processing</h1>
           
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-muted-foreground">Financial Year:</span>
-            <span className="font-medium">{CURRENT_FINANCIAL_YEAR.description}</span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Financial Year:</span>
+              <Select 
+                value={selectedFinancialYear.description} 
+                onValueChange={handleFinancialYearChange}
+              >
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Select year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {AVAILABLE_FINANCIAL_YEARS.map((year) => (
+                    <SelectItem key={year.description} value={year.description}>
+                      {year.description}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             
-            <span className="text-sm text-muted-foreground ml-4">Pay Period:</span>
-            <Select 
-              value={selectedPayPeriod.periodNumber.toString()} 
-              onValueChange={(value) => {
-                const period = CURRENT_FINANCIAL_YEAR.periods.find(p => p.periodNumber === parseInt(value));
-                if (period) setSelectedPayPeriod(period);
-              }}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select period" />
-              </SelectTrigger>
-              <SelectContent>
-                {CURRENT_FINANCIAL_YEAR.periods.map((period) => (
-                  <SelectItem key={period.periodNumber} value={period.periodNumber.toString()}>
-                    {period.description}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Pay Period:</span>
+              <Select 
+                value={selectedPayPeriod.periodNumber.toString()} 
+                onValueChange={handlePayPeriodChange}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select period" />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectedFinancialYear.periods.map((period) => (
+                    <SelectItem key={period.periodNumber} value={period.periodNumber.toString()}>
+                      {period.description}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         
