@@ -58,6 +58,7 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
       setIsSaving(true);
       
       const payrollPeriodDate = new Date(payPeriod.year, payPeriod.month - 1, 1);
+      const formattedPayrollPeriod = payrollPeriodDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
       
       // Calculate taxable pay
       const taxablePay = result.grossPay - result.freePay;
@@ -65,7 +66,7 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
       // Data to save to the database
       const payrollData = {
         employee_id: result.employeeId,
-        payroll_period: payrollPeriodDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+        payroll_period: formattedPayrollPeriod, // Format as YYYY-MM-DD
         tax_year: `${payPeriod.year}/${(payPeriod.year + 1).toString().substring(2)}`,
         tax_period: payPeriod.periodNumber,
         tax_code: result.taxCode,
@@ -103,23 +104,32 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
         nic_employee_ytd: Math.round(result.nationalInsurance * 100)
       };
       
+      console.log(`Checking for existing payroll record for employee ${result.employeeId} in period ${formattedPayrollPeriod}`);
+      
       // Check if a record already exists for this employee and pay period
-      const { data: existingRecord } = await supabase
+      const { data: existingRecord, error: fetchError } = await supabase
         .from('payroll_results')
         .select('id')
         .eq('employee_id', result.employeeId)
-        .eq('payroll_period', payrollData.payroll_period)
+        .eq('payroll_period', formattedPayrollPeriod)
         .maybeSingle();
+      
+      if (fetchError) {
+        console.error("Error checking for existing payroll record:", fetchError);
+        throw fetchError;
+      }
       
       let saveResponse;
       
       if (existingRecord) {
+        console.log(`Found existing record with ID ${existingRecord.id}, updating it.`);
         // Update existing record
         saveResponse = await supabase
           .from('payroll_results')
           .update(payrollData)
           .eq('id', existingRecord.id);
       } else {
+        console.log("No existing record found, creating a new one.");
         // Insert new record
         saveResponse = await supabase
           .from('payroll_results')
@@ -127,12 +137,25 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
       }
       
       if (saveResponse.error) {
+        console.error("Error saving payroll result:", saveResponse.error);
         throw saveResponse.error;
       }
+      
+      console.log("Payroll result saved successfully");
+      toast({
+        title: "Payroll Saved",
+        description: `Payroll calculation for ${payPeriod.description} has been saved.`,
+        variant: "default"
+      });
       
       return true;
     } catch (error) {
       console.error("Error saving payroll result:", error);
+      toast({
+        title: "Save Error",
+        description: "There was an error saving the payroll result to the database.",
+        variant: "destructive"
+      });
       return false;
     } finally {
       setIsSaving(false);
