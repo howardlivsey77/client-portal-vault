@@ -22,6 +22,7 @@ export interface PayrollResult {
   payrollId?: string;
   monthlySalary: number;
   grossPay: number;
+  taxablePay: number; // Added taxablePay field
   incomeTax: number;
   nationalInsurance: number;
   studentLoan: number;

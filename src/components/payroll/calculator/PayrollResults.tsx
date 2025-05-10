@@ -47,6 +47,8 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
           <div className="font-medium">{result.taxCode}</div>
           <div>Gross Pay:</div>
           <div className="font-medium">{formatCurrency(result.grossPay)}</div>
+          <div>Taxable Pay:</div>
+          <div className="font-medium">{formatCurrency(result.taxablePay)}</div>
           <div>Net Pay:</div>
           <div className="font-medium text-green-600">{formatCurrency(result.netPay)}</div>
           {result.studentLoanPlan && (
@@ -86,6 +88,8 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
           <div className="font-medium">{result.taxCode}</div>
           <div>Monthly Free Pay:</div>
           <div className="font-medium text-green-600">{formatCurrency(result.freePay)}</div>
+          <div>Taxable Pay:</div>
+          <div className="font-medium">{formatCurrency(result.taxablePay)}</div>
         </div>
         
         <Collapsible 
@@ -102,6 +106,9 @@ export function PayrollResults({ result, payPeriod }: PayrollResultsProps) {
           <CollapsibleContent className="bg-slate-50 dark:bg-slate-900 p-2 rounded mt-2">
             <p className="text-sm text-muted-foreground mb-2">
               The free pay amount is calculated based on the numeric part of your tax code.
+            </p>
+            <p className="text-sm text-muted-foreground mb-2">
+              Taxable Pay = Gross Pay - Free Pay = {formatCurrency(result.grossPay)} - {formatCurrency(result.freePay)} = {formatCurrency(result.taxablePay)}
             </p>
           </CollapsibleContent>
         </Collapsible>

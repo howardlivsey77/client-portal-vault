@@ -35,10 +35,11 @@ export function PayrollCalculator({ employee, payPeriod }: PayrollCalculatorProp
   useEffect(() => {
     if (employee) {
       // Convert student loan plan to the correct type (1, 2, 4, 5 or null)
-      const studentLoanPlan = employee.student_loan_plan === 1 ? 1 :
-                              employee.student_loan_plan === 2 ? 2 :
-                              employee.student_loan_plan === 4 ? 4 :
-                              employee.student_loan_plan === 5 ? 5 : null;
+      let studentLoanPlan = null;
+      if (employee.student_loan_plan === 1) studentLoanPlan = 1;
+      else if (employee.student_loan_plan === 2) studentLoanPlan = 2; 
+      else if (employee.student_loan_plan === 4) studentLoanPlan = 4;
+      else if (employee.student_loan_plan === 5) studentLoanPlan = 5;
 
       setPayrollDetails(prevDetails => ({
         ...prevDetails,
@@ -61,6 +62,8 @@ export function PayrollCalculator({ employee, payPeriod }: PayrollCalculatorProp
     if (autoCalculate && payrollDetails.monthlySalary > 0 && payrollDetails.employeeName) {
       try {
         const result = calculateMonthlyPayroll(payrollDetails);
+        // Calculate taxable pay
+        result.taxablePay = result.grossPay - result.freePay;
         setCalculationResult(result);
       } catch (error) {
         console.error("Auto payroll calculation error:", error);
@@ -79,6 +82,9 @@ export function PayrollCalculator({ employee, payPeriod }: PayrollCalculatorProp
       
       const payrollPeriodDate = new Date(payPeriod.year, payPeriod.month - 1, 1);
       
+      // Calculate taxable pay
+      const taxablePay = result.grossPay - result.freePay;
+      
       // Data to save to the database
       const payrollData = {
         employee_id: result.employeeId,
@@ -90,7 +96,7 @@ export function PayrollCalculator({ employee, payPeriod }: PayrollCalculatorProp
         
         // Financial values - convert to pence/pennies for storage
         gross_pay_this_period: Math.round(result.grossPay * 100),
-        taxable_pay_this_period: Math.round((result.grossPay - result.freePay) * 100),
+        taxable_pay_this_period: Math.round(taxablePay * 100),
         free_pay_this_period: Math.round(result.freePay * 100),
         income_tax_this_period: Math.round(result.incomeTax * 100),
         
@@ -115,7 +121,7 @@ export function PayrollCalculator({ employee, payPeriod }: PayrollCalculatorProp
         
         // Year-to-date values - would normally be cumulative, but we'll start fresh
         gross_pay_ytd: Math.round(result.grossPay * 100),
-        taxable_pay_ytd: Math.round((result.grossPay - result.freePay) * 100),
+        taxable_pay_ytd: Math.round(taxablePay * 100),
         income_tax_ytd: Math.round(result.incomeTax * 100),
         nic_employee_ytd: Math.round(result.nationalInsurance * 100)
       };
@@ -160,6 +166,10 @@ export function PayrollCalculator({ employee, payPeriod }: PayrollCalculatorProp
     try {
       setIsCalculating(true);
       const result = calculateMonthlyPayroll(payrollDetails);
+      
+      // Calculate taxable pay
+      result.taxablePay = result.grossPay - result.freePay;
+      
       setCalculationResult(result);
       
       // Save the result to the database

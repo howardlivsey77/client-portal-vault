@@ -33,6 +33,9 @@ export function calculateMonthlyPayroll(details: PayrollDetails): PayrollResult 
   const incomeTax = incomeTaxResult.monthlyTax;
   const freePay = incomeTaxResult.freePay;
   
+  // Calculate taxable pay
+  const taxablePay = grossPay - freePay;
+  
   const nationalInsurance = calculateNationalInsurance(grossPay);
   const studentLoan = calculateStudentLoan(grossPay, studentLoanPlan);
   const pensionContribution = calculatePension(grossPay, pensionPercentage);
@@ -51,6 +54,7 @@ export function calculateMonthlyPayroll(details: PayrollDetails): PayrollResult 
     payrollId,
     monthlySalary,
     grossPay: roundToTwoDecimals(grossPay),
+    taxablePay: roundToTwoDecimals(taxablePay),
     incomeTax: roundToTwoDecimals(incomeTax),
     nationalInsurance: roundToTwoDecimals(nationalInsurance),
     studentLoan: roundToTwoDecimals(studentLoan),
