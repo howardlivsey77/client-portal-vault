@@ -135,6 +135,57 @@ export type Database = {
         }
         Relationships: []
       }
+      nic_bands: {
+        Row: {
+          contribution_type: string
+          created_at: string
+          effective_from: string
+          effective_to: string | null
+          id: string
+          is_current: boolean
+          name: string
+          ni_class: string
+          rate: number
+          region: string
+          tax_year: string
+          threshold_from: number
+          threshold_to: number | null
+          updated_at: string
+        }
+        Insert: {
+          contribution_type?: string
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          is_current?: boolean
+          name: string
+          ni_class?: string
+          rate: number
+          region?: string
+          tax_year: string
+          threshold_from: number
+          threshold_to?: number | null
+          updated_at?: string
+        }
+        Update: {
+          contribution_type?: string
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          is_current?: boolean
+          name?: string
+          ni_class?: string
+          rate?: number
+          region?: string
+          tax_year?: string
+          threshold_from?: number
+          threshold_to?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payroll_constants: {
         Row: {
           category: string

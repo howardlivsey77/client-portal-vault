@@ -1,7 +1,7 @@
 
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { calculateMonthlyIncomeTaxAsync } from "./calculations/income-tax";
-import { calculateNationalInsurance } from "./calculations/national-insurance";
+import { calculateNationalInsurance, calculateNationalInsuranceAsync } from "./calculations/national-insurance";
 import { calculateStudentLoan } from "./calculations/student-loan";
 import { calculatePension } from "./calculations/pension";
 import { PayrollDetails, PayrollResult } from "./types";
@@ -48,7 +48,8 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   const taxablePay = roundDownToNearestPound(grossPay - freePay);
   console.log(`Original calculation - Gross pay: ${grossPay}, Free pay: ${freePay}, Taxable pay (rounded down): ${taxablePay}`);
   
-  const nationalInsurance = calculateNationalInsurance(grossPay);
+  // Use the new async method to calculate National Insurance
+  const nationalInsurance = await calculateNationalInsuranceAsync(grossPay, taxYear);
   const studentLoan = calculateStudentLoan(grossPay, studentLoanPlan);
   const pensionContribution = calculatePension(grossPay, pensionPercentage);
   
