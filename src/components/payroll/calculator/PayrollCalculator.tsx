@@ -7,6 +7,7 @@ import { usePayrollCalculation } from '@/components/payroll/calculator/hooks/use
 import { Employee } from '@/hooks/useEmployees';
 import { PayPeriod } from '@/services/payroll/utils/financial-year-utils';
 import { PayslipDownloader } from './PayslipDownloader';
+import { PayrollFormValues } from './types';
 
 interface PayrollCalculatorProps {
   employee: Employee;
@@ -23,6 +24,18 @@ export const PayrollCalculator = ({ employee, payPeriod }: PayrollCalculatorProp
     setCalculationResult 
   } = usePayrollCalculation(payPeriod);
   const [showResults, setShowResults] = useState(false);
+  const [formValues, setFormValues] = useState<PayrollFormValues>({
+    employeeId: employee.id,
+    employeeName: `${employee.first_name} ${employee.last_name}`,
+    payrollId: employee.payroll_id || undefined,
+    monthlySalary: employee.monthly_salary || 0,
+    taxCode: employee.tax_code || '1257L',
+    pensionPercentage: 0,
+    studentLoanPlan: employee.student_loan_plan as 1 | 2 | 4 | 5 | null,
+    additionalDeductions: [],
+    additionalAllowances: [],
+    additionalEarnings: []
+  });
 
   const handleClearResults = async () => {
     const success = await clearPayrollResults();
@@ -43,7 +56,10 @@ export const PayrollCalculator = ({ employee, payPeriod }: PayrollCalculatorProp
 
       {!showResults && (
         <PayrollForm 
-          employee={employee} 
+          employee={employee}
+          formValues={formValues}
+          onChange={setFormValues}
+          payPeriod={payPeriod}
           onCalculate={(values) => {
             calculatePayroll(values).then((result) => {
               if (result) {
@@ -64,13 +80,16 @@ export const PayrollCalculator = ({ employee, payPeriod }: PayrollCalculatorProp
           />
           
           <div className="flex justify-between items-center pt-4">
-            <PayrollCalculatorActions
-              onBack={() => setShowResults(false)}
-            />
+            <Button 
+              variant="outline" 
+              onClick={() => setShowResults(false)}
+            >
+              Back to Calculator
+            </Button>
             <PayslipDownloader 
+              calculationResult={calculationResult}
+              payPeriodDescription={payPeriodDisplay}
               employee={employee}
-              result={calculationResult}
-              payPeriod={payPeriodDisplay}
             />
           </div>
         </div>
@@ -78,3 +97,6 @@ export const PayrollCalculator = ({ employee, payPeriod }: PayrollCalculatorProp
     </div>
   );
 };
+
+// Import Button for the back button
+import { Button } from "@/components/ui/button";

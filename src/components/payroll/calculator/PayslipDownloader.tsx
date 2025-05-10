@@ -4,13 +4,15 @@ import { useToast } from "@/hooks/use-toast";
 import { Download } from "lucide-react";
 import { generatePayslip } from "@/utils/payslipGenerator";
 import { PayrollResult } from "@/services/payroll/types";
+import { Employee } from "@/types/employee-types";
 
 interface PayslipDownloaderProps {
   calculationResult: PayrollResult | null;
   payPeriodDescription: string;
+  employee?: Employee;  // Make employee optional to maintain backward compatibility
 }
 
-export function PayslipDownloader({ calculationResult, payPeriodDescription }: PayslipDownloaderProps) {
+export function PayslipDownloader({ calculationResult, payPeriodDescription, employee }: PayslipDownloaderProps) {
   const { toast } = useToast();
 
   const handleDownloadPayslip = () => {

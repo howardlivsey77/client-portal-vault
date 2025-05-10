@@ -14,16 +14,20 @@ import { Card, CardContent } from "@/components/ui/card";
 
 interface PayrollFormProps {
   employee?: Employee | null;
-  formValues: PayrollFormValues;
-  onChange: (values: PayrollFormValues) => void;
-  payPeriod: PayPeriod;
+  formValues?: PayrollFormValues;
+  onChange?: (values: PayrollFormValues) => void;
+  payPeriod?: PayPeriod;
+  onCalculate?: (values: PayrollFormValues) => void;  // Added onCalculate prop
+  isCalculating?: boolean;  // Added isCalculating prop
 }
 
 export function PayrollForm({ 
   employee, 
-  formValues, 
-  onChange, 
-  payPeriod 
+  formValues = {} as PayrollFormValues,  // Provide default to avoid undefined errors
+  onChange = () => {},  // Provide default to avoid undefined errors
+  payPeriod,
+  onCalculate,
+  isCalculating = false
 }: PayrollFormProps) {
   
   const handleInputChange = (field: keyof PayrollFormValues, value: any) => {
@@ -33,20 +37,29 @@ export function PayrollForm({
     });
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onCalculate) {
+      onCalculate(formValues);
+    }
+  };
+
   return (
-    <div className="space-y-4">
-      <Card className="bg-muted/30 border-dashed">
-        <CardContent className="pt-4">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-sm">
-              Financial Year: {`${payPeriod.year}/${(payPeriod.year + 1).toString().substring(2)}`}
-            </Badge>
-            <Badge className="text-sm">
-              Pay Period: {payPeriod.description}
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {payPeriod && (
+        <Card className="bg-muted/30 border-dashed">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-sm">
+                Financial Year: {`${payPeriod.year}/${(payPeriod.year + 1).toString().substring(2)}`}
+              </Badge>
+              <Badge className="text-sm">
+                Pay Period: {payPeriod.description}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       
       <EmployeeInfoFields 
         employee={employee}
@@ -62,9 +75,17 @@ export function PayrollForm({
       />
       
       <AdditionalEarningsFields 
-        additionalEarnings={formValues.additionalEarnings}
+        additionalEarnings={formValues.additionalEarnings || []}
         onEarningsChange={(newEarnings) => handleInputChange('additionalEarnings', newEarnings)}
       />
-    </div>
+
+      {onCalculate && (
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isCalculating}>
+            {isCalculating ? "Calculating..." : "Calculate Payroll"}
+          </Button>
+        </div>
+      )}
+    </form>
   );
 }

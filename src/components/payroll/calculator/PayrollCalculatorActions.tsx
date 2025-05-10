@@ -13,6 +13,7 @@ interface PayrollCalculatorActionsProps {
   calculationResult: PayrollResult | null;
   onCalculate: () => void;
   payPeriodDescription: string;
+  onBack?: () => void; // Added onBack prop
 }
 
 export function PayrollCalculatorActions({
@@ -23,8 +24,17 @@ export function PayrollCalculatorActions({
   payrollDetails,
   calculationResult,
   onCalculate,
-  payPeriodDescription
+  payPeriodDescription,
+  onBack
 }: PayrollCalculatorActionsProps) {
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      setSelectedTab("calculator");
+    }
+  };
+
   return (
     <div className="flex justify-between">
       {selectedTab === "calculator" ? (
@@ -37,7 +47,7 @@ export function PayrollCalculatorActions({
       ) : (
         <Button 
           variant="outline" 
-          onClick={() => setSelectedTab("calculator")}
+          onClick={handleBack}
         >
           Back to Calculator
         </Button>
