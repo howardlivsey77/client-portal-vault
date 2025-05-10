@@ -7,7 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 export interface TaxBand {
   id: string;
   name: string;
-  threshold: number; // in pennies
+  threshold_from: number; // in pennies
+  threshold_to: number | null; // in pennies
   rate: number; // decimal rate (e.g., 0.20 for 20%)
   region: string;
   taxYear: string;
@@ -20,18 +21,18 @@ export interface TaxBand {
  * Formatted tax bands for calculation
  */
 export interface FormattedTaxBands {
-  BASIC_RATE: { threshold: number; rate: number };
-  HIGHER_RATE: { threshold: number; rate: number };
-  ADDITIONAL_RATE: { threshold: number; rate: number };
+  BASIC_RATE: { threshold_from: number; threshold_to: number | null; rate: number };
+  HIGHER_RATE: { threshold_from: number; threshold_to: number | null; rate: number };
+  ADDITIONAL_RATE: { threshold_from: number; threshold_to: number | null; rate: number };
 }
 
 /**
  * Default tax bands for fallback (2025/26 tax year)
  */
 export const DEFAULT_TAX_BANDS: FormattedTaxBands = {
-  BASIC_RATE: { threshold: 0, rate: 0.20 },
-  HIGHER_RATE: { threshold: 37700 * 100, rate: 0.40 },
-  ADDITIONAL_RATE: { threshold: 125140 * 100, rate: 0.45 }
+  BASIC_RATE: { threshold_from: 0, threshold_to: 3770000, rate: 0.20 },
+  HIGHER_RATE: { threshold_from: 3770000, threshold_to: 12514000, rate: 0.40 },
+  ADDITIONAL_RATE: { threshold_from: 12514000, threshold_to: null, rate: 0.45 }
 };
 
 /**
@@ -78,7 +79,7 @@ export const fetchTaxBands = async (
       .from('tax_bands')
       .select('*')
       .eq('region', region)
-      .order('threshold', { ascending: true });
+      .order('threshold_from', { ascending: true });
     
     // Filter by tax year if provided
     if (taxYear) {
@@ -111,7 +112,8 @@ export const fetchTaxBands = async (
     const taxBands: TaxBand[] = data.map(band => ({
       id: band.id,
       name: band.name,
-      threshold: band.threshold,
+      threshold_from: band.threshold_from,
+      threshold_to: band.threshold_to,
       rate: Number(band.rate), // Convert from decimal to number
       region: band.region,
       taxYear: band.tax_year,
@@ -144,15 +146,27 @@ export const formatTaxBandsForCalculation = (taxBands: TaxBand[]): FormattedTaxB
   
   // Update with actual values if found
   if (basicRateBand) {
-    formatted.BASIC_RATE = { threshold: basicRateBand.threshold, rate: basicRateBand.rate };
+    formatted.BASIC_RATE = { 
+      threshold_from: basicRateBand.threshold_from, 
+      threshold_to: basicRateBand.threshold_to,
+      rate: basicRateBand.rate 
+    };
   }
   
   if (higherRateBand) {
-    formatted.HIGHER_RATE = { threshold: higherRateBand.threshold, rate: higherRateBand.rate };
+    formatted.HIGHER_RATE = { 
+      threshold_from: higherRateBand.threshold_from, 
+      threshold_to: higherRateBand.threshold_to,
+      rate: higherRateBand.rate 
+    };
   }
   
   if (additionalRateBand) {
-    formatted.ADDITIONAL_RATE = { threshold: additionalRateBand.threshold, rate: additionalRateBand.rate };
+    formatted.ADDITIONAL_RATE = { 
+      threshold_from: additionalRateBand.threshold_from, 
+      threshold_to: additionalRateBand.threshold_to,
+      rate: additionalRateBand.rate 
+    };
   }
   
   return formatted;

@@ -471,7 +471,8 @@ export type Database = {
           rate: number
           region: string
           tax_year: string
-          threshold: number
+          threshold_from: number
+          threshold_to: number | null
           updated_at: string
         }
         Insert: {
@@ -484,7 +485,8 @@ export type Database = {
           rate: number
           region?: string
           tax_year: string
-          threshold: number
+          threshold_from: number
+          threshold_to?: number | null
           updated_at?: string
         }
         Update: {
@@ -497,7 +499,8 @@ export type Database = {
           rate?: number
           region?: string
           tax_year?: string
-          threshold?: number
+          threshold_from?: number
+          threshold_to?: number | null
           updated_at?: string
         }
         Relationships: []

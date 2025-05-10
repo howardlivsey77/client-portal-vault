@@ -52,23 +52,31 @@ export function calculateIncomeTax(annualSalary: number, taxCode: string): numbe
       const { allowance } = parseTaxCode(taxCode);
       const taxableIncome = Math.max(0, annualSalary - allowance);
       
-      let remainingIncome = taxableIncome;
+      // Updated fallback calculation using the new tax bands structure
+      let fallbackTax = 0;
       
-      if (remainingIncome > TAX_BANDS.HIGHER_RATE.threshold) {
-        tax += (remainingIncome - TAX_BANDS.HIGHER_RATE.threshold) * TAX_BANDS.ADDITIONAL_RATE.rate;
-        remainingIncome = TAX_BANDS.HIGHER_RATE.threshold;
+      // Basic Rate tax (0 to 37,700)
+      const basicRateAmount = Math.min(taxableIncome, TAX_BANDS.HIGHER_RATE.threshold_from/100);
+      if (basicRateAmount > 0) {
+        fallbackTax += basicRateAmount * TAX_BANDS.BASIC_RATE.rate;
       }
       
-      if (remainingIncome > TAX_BANDS.BASIC_RATE.threshold) {
-        tax += (remainingIncome - TAX_BANDS.BASIC_RATE.threshold) * TAX_BANDS.HIGHER_RATE.rate;
-        remainingIncome = TAX_BANDS.BASIC_RATE.threshold;
+      // Higher Rate tax (37,700 to 125,140)
+      if (taxableIncome > TAX_BANDS.HIGHER_RATE.threshold_from/100) {
+        const higherRateAmount = Math.min(
+          taxableIncome - TAX_BANDS.HIGHER_RATE.threshold_from/100,
+          (TAX_BANDS.ADDITIONAL_RATE.threshold_from - TAX_BANDS.HIGHER_RATE.threshold_from)/100
+        );
+        fallbackTax += higherRateAmount * TAX_BANDS.HIGHER_RATE.rate;
       }
       
-      if (remainingIncome > TAX_BANDS.PERSONAL_ALLOWANCE.threshold) {
-        tax += (remainingIncome - TAX_BANDS.PERSONAL_ALLOWANCE.threshold) * TAX_BANDS.BASIC_RATE.rate;
+      // Additional Rate tax (over 125,140)
+      if (taxableIncome > TAX_BANDS.ADDITIONAL_RATE.threshold_from/100) {
+        const additionalRateAmount = taxableIncome - TAX_BANDS.ADDITIONAL_RATE.threshold_from/100;
+        fallbackTax += additionalRateAmount * TAX_BANDS.ADDITIONAL_RATE.rate;
       }
       
-      tax = roundToTwoDecimals(tax);
+      tax = roundToTwoDecimals(fallbackTax);
     });
   
   return tax;
@@ -150,25 +158,31 @@ export function calculateIncomeTaxFromYTD(taxablePayYTD: number, taxCode: string
     .catch((error) => {
       console.error("Error in calculateIncomeTaxFromYTD:", error);
       
-      // Fallback to hardcoded calculation if database lookup fails
-      let taxableIncome = taxablePayYTD;
+      // Fallback to hardcoded calculation using new structure
+      let fallbackTax = 0;
       
-      // Calculate tax for each band based on the YTD taxable pay using hardcoded bands
-      if (taxableIncome > TAX_BANDS.HIGHER_RATE.threshold) {
-        tax += (taxableIncome - TAX_BANDS.HIGHER_RATE.threshold) * TAX_BANDS.ADDITIONAL_RATE.rate;
-        taxableIncome = TAX_BANDS.HIGHER_RATE.threshold;
+      // Basic Rate tax (0 to 37,700)
+      const basicRateAmount = Math.min(taxablePayYTD, TAX_BANDS.HIGHER_RATE.threshold_from/100);
+      if (basicRateAmount > 0) {
+        fallbackTax += basicRateAmount * TAX_BANDS.BASIC_RATE.rate;
       }
       
-      if (taxableIncome > TAX_BANDS.BASIC_RATE.threshold) {
-        tax += (taxableIncome - TAX_BANDS.BASIC_RATE.threshold) * TAX_BANDS.HIGHER_RATE.rate;
-        taxableIncome = TAX_BANDS.BASIC_RATE.threshold;
+      // Higher Rate tax (37,700 to 125,140)
+      if (taxablePayYTD > TAX_BANDS.HIGHER_RATE.threshold_from/100) {
+        const higherRateAmount = Math.min(
+          taxablePayYTD - TAX_BANDS.HIGHER_RATE.threshold_from/100,
+          (TAX_BANDS.ADDITIONAL_RATE.threshold_from - TAX_BANDS.HIGHER_RATE.threshold_from)/100
+        );
+        fallbackTax += higherRateAmount * TAX_BANDS.HIGHER_RATE.rate;
       }
       
-      if (taxableIncome > TAX_BANDS.PERSONAL_ALLOWANCE.threshold) {
-        tax += (taxableIncome - TAX_BANDS.PERSONAL_ALLOWANCE.threshold) * TAX_BANDS.BASIC_RATE.rate;
+      // Additional Rate tax (over 125,140)
+      if (taxablePayYTD > TAX_BANDS.ADDITIONAL_RATE.threshold_from/100) {
+        const additionalRateAmount = taxablePayYTD - TAX_BANDS.ADDITIONAL_RATE.threshold_from/100;
+        fallbackTax += additionalRateAmount * TAX_BANDS.ADDITIONAL_RATE.rate;
       }
       
-      tax = roundToTwoDecimals(tax);
+      tax = roundToTwoDecimals(fallbackTax);
     });
   
   return tax;
