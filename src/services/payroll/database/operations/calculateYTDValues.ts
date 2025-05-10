@@ -5,6 +5,13 @@ import { PayrollResult } from "@/services/payroll/types";
 import { PayPeriod } from "@/services/payroll/utils/financial-year-utils";
 
 /**
+ * Round down to nearest pound for taxable pay
+ */
+function roundDownToNearestPound(amount: number): number {
+  return Math.floor(amount);
+}
+
+/**
  * Calculate Year-to-Date values for a payroll result
  */
 export async function calculateYTDValues(
@@ -36,8 +43,8 @@ export async function calculateYTDValues(
     // Previous YTD values or default to 0 if first period
     const previousYTD = previousPeriods && previousPeriods.length > 0 ? previousPeriods[0] : null;
     
-    // Calculate taxable pay
-    const taxablePay = result.grossPay - result.freePay;
+    // Calculate taxable pay and round down to nearest pound
+    const taxablePay = roundDownToNearestPound(result.grossPay - result.freePay);
     
     // Calculate YTD values
     const grossPayYTD = previousYTD ? previousYTD.gross_pay_ytd + Math.round(result.grossPay * 100) : Math.round(result.grossPay * 100);

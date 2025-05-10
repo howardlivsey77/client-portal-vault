@@ -8,6 +8,13 @@ import { PayrollDetails, PayrollResult } from "./types";
 import { parseTaxCode } from "./utils/tax-code-utils";
 
 /**
+ * Round down to nearest pound for taxable pay
+ */
+function roundDownToNearestPound(amount: number): number {
+  return Math.floor(amount);
+}
+
+/**
  * Main function to calculate monthly payroll
  */
 export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<PayrollResult> {
@@ -37,8 +44,8 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   const incomeTax = incomeTaxResult.monthlyTax;
   const freePay = incomeTaxResult.freePay;
   
-  // Calculate taxable pay
-  const taxablePay = grossPay - freePay;
+  // Calculate taxable pay and round down to the nearest pound
+  const taxablePay = roundDownToNearestPound(grossPay - freePay);
   
   const nationalInsurance = calculateNationalInsurance(grossPay);
   const studentLoan = calculateStudentLoan(grossPay, studentLoanPlan);
