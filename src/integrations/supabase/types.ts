@@ -460,6 +460,48 @@ export type Database = {
         }
         Relationships: []
       }
+      tax_bands: {
+        Row: {
+          created_at: string
+          effective_from: string
+          effective_to: string | null
+          id: string
+          is_current: boolean
+          name: string
+          rate: number
+          region: string
+          tax_year: string
+          threshold: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          is_current?: boolean
+          name: string
+          rate: number
+          region?: string
+          tax_year: string
+          threshold: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          is_current?: boolean
+          name?: string
+          rate?: number
+          region?: string
+          tax_year?: string
+          threshold?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       timesheet_entries: {
         Row: {
           actual_end: string | null

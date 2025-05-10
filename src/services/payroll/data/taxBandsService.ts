@@ -29,9 +29,9 @@ export interface FormattedTaxBands {
  * Default tax bands for fallback (2025/26 tax year)
  */
 export const DEFAULT_TAX_BANDS: FormattedTaxBands = {
-  BASIC_RATE: { threshold: 37700 * 100, rate: 0.20 },
-  HIGHER_RATE: { threshold: 125140 * 100, rate: 0.40 },
-  ADDITIONAL_RATE: { threshold: Infinity, rate: 0.45 }
+  BASIC_RATE: { threshold: 0, rate: 0.20 },
+  HIGHER_RATE: { threshold: 37700 * 100, rate: 0.40 },
+  ADDITIONAL_RATE: { threshold: 125140 * 100, rate: 0.45 }
 };
 
 /**
@@ -72,6 +72,8 @@ export const fetchTaxBands = async (
   }
   
   try {
+    // Using .from() with a string literal to work around TypeScript limitations
+    // since the tax_bands table was just created and isn't in the generated types yet
     let query = supabase
       .from('tax_bands')
       .select('*')
@@ -100,12 +102,17 @@ export const fetchTaxBands = async (
       return [];
     }
     
-    // Format the data
+    if (!data || data.length === 0) {
+      console.warn('No tax bands found in database, using defaults');
+      return [];
+    }
+    
+    // Format the data - use type assertion since the table isn't in the generated types
     const taxBands: TaxBand[] = data.map(band => ({
       id: band.id,
       name: band.name,
-      threshold: band.threshold, // Already in pennies
-      rate: band.rate,
+      threshold: band.threshold,
+      rate: Number(band.rate), // Convert from decimal to number
       region: band.region,
       taxYear: band.tax_year,
       effectiveFrom: new Date(band.effective_from),

@@ -1,6 +1,5 @@
-
 import { roundToTwoDecimals } from "@/lib/formatters";
-import { calculateMonthlyIncomeTax, calculateIncomeTaxFromYTD } from "./calculations/income-tax";
+import { calculateMonthlyIncomeTax } from "./calculations/income-tax";
 import { calculateNationalInsurance } from "./calculations/national-insurance";
 import { calculateStudentLoan } from "./calculations/student-loan";
 import { calculatePension } from "./calculations/pension";
