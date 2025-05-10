@@ -62,13 +62,17 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
       
       // Calculate taxable pay
       const taxablePay = result.grossPay - result.freePay;
+
+      // Tax year in format YYYY/YY
+      const taxYear = `${payPeriod.year}/${(payPeriod.year + 1).toString().substring(2)}`;
+      const taxPeriod = payPeriod.periodNumber;
       
       // Data to save to the database
       const payrollData = {
         employee_id: result.employeeId,
-        payroll_period: formattedPayrollPeriod, // Format as YYYY-MM-DD
-        tax_year: `${payPeriod.year}/${(payPeriod.year + 1).toString().substring(2)}`,
-        tax_period: payPeriod.periodNumber,
+        payroll_period: formattedPayrollPeriod,
+        tax_year: taxYear,
+        tax_period: taxPeriod,
         tax_code: result.taxCode,
         student_loan_plan: result.studentLoanPlan || null,
         
@@ -104,14 +108,16 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
         nic_employee_ytd: Math.round(result.nationalInsurance * 100)
       };
       
-      console.log(`Checking for existing payroll record for employee ${result.employeeId} in period ${formattedPayrollPeriod}`);
+      console.log(`Checking for existing payroll record for employee ${result.employeeId} in tax_year ${taxYear}, tax_period ${taxPeriod}`);
       
-      // Check if a record already exists for this employee and pay period
+      // Check if a record already exists for this employee, tax_year and tax_period
+      // This ensures only one entry per employee per tax period
       const { data: existingRecord, error: fetchError } = await supabase
         .from('payroll_results')
         .select('id')
         .eq('employee_id', result.employeeId)
-        .eq('payroll_period', formattedPayrollPeriod)
+        .eq('tax_year', taxYear)
+        .eq('tax_period', taxPeriod)
         .maybeSingle();
       
       if (fetchError) {
