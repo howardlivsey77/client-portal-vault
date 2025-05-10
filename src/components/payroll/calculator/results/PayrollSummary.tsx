@@ -1,65 +1,46 @@
 
 import { PayrollResult } from "@/services/payroll/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatCurrency } from "@/lib/formatters";
+import { Card, CardContent } from "@/components/ui/card";
 
-interface PayrollSummaryProps {
+export interface PayrollSummaryProps {
   result: PayrollResult;
-  showTaxYTD?: boolean;
+  payPeriod: string;
 }
 
-export function PayrollSummary({ result, showTaxYTD = false }: PayrollSummaryProps) {
+export function PayrollSummary({ result, payPeriod }: PayrollSummaryProps) {
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP'
+    }).format(value);
+  };
+
   return (
-    <Card className="mb-4">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Payroll Summary</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[70%]">Description</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-              {showTaxYTD && <TableHead className="text-right">YTD</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell>Total Gross Pay</TableCell>
-              <TableCell className="text-right">£{formatCurrency(result.grossPay)}</TableCell>
-              {showTaxYTD && (
-                <TableCell className="text-right">
-                  £{formatCurrency(result.grossPayYTD || result.grossPay)}
-                </TableCell>
-              )}
-            </TableRow>
-            <TableRow>
-              <TableCell>Tax-Free Amount</TableCell>
-              <TableCell className="text-right">£{formatCurrency(result.taxFreeAmount)}</TableCell>
-              {showTaxYTD && <TableCell className="text-right">-</TableCell>}
-            </TableRow>
-            <TableRow>
-              <TableCell>Taxable Pay</TableCell>
-              <TableCell className="text-right">£{formatCurrency(result.taxablePay)}</TableCell>
-              {showTaxYTD && (
-                <TableCell className="text-right">
-                  £{formatCurrency(result.taxablePayYTD || result.taxablePay)}
-                </TableCell>
-              )}
-            </TableRow>
-            <TableRow>
-              <TableCell>Total Deductions</TableCell>
-              <TableCell className="text-right">£{formatCurrency(result.totalDeductions)}</TableCell>
-              {showTaxYTD && <TableCell className="text-right">-</TableCell>}
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-bold">Net Pay</TableCell>
-              <TableCell className="text-right font-bold">£{formatCurrency(result.netPay)}</TableCell>
-              {showTaxYTD && <TableCell className="text-right">-</TableCell>}
-            </TableRow>
-          </TableBody>
-        </Table>
+    <Card className="mb-6">
+      <CardContent className="p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <h3 className="text-lg font-medium mb-2">Employee</h3>
+            <p className="font-bold text-xl">{result.employeeName}</p>
+            <p className="text-gray-600">
+              ID: {result.employeeId}
+              {result.payrollId && ` (Payroll: ${result.payrollId})`}
+            </p>
+            <p className="mt-1 text-sm text-gray-600">
+              Tax code: <span className="font-semibold">{result.taxCode}</span>
+            </p>
+          </div>
+
+          <div className="text-right">
+            <h3 className="text-lg font-medium mb-2">Pay Summary</h3>
+            <p className="font-bold text-xl">{formatCurrency(result.netPay)}</p>
+            <p className="text-gray-600">Net pay for {payPeriod}</p>
+            <p className="mt-1 text-sm text-gray-600">
+              Tax Year: <span className="font-semibold">{result.taxYear}</span> 
+              {result.taxPeriod && ` (Period ${result.taxPeriod})`}
+            </p>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

@@ -57,6 +57,11 @@ function convertToDbFormat(
   taxPeriod: number,
   freePay: number
 ) {
+  // Convert student loan plan to number or null for DB storage
+  const studentLoanPlan = result.studentLoanPlan !== null && result.studentLoanPlan !== undefined
+    ? result.studentLoanPlan
+    : null;
+
   return {
     employee_id: result.employeeId,
     payroll_period: periodDate.toISOString().split('T')[0], // YYYY-MM-DD format
@@ -88,7 +93,7 @@ function convertToDbFormat(
     earnings_above_st_this_period: 0,
     
     // Student loan
-    student_loan_plan: result.studentLoanPlan ? parseInt(result.studentLoanPlan) : null,
+    student_loan_plan: studentLoanPlan,
     student_loan_this_period: poundsToPence(result.studentLoan),
     
     // Pension

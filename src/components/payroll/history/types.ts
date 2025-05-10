@@ -20,4 +20,7 @@ export interface PayrollHistoryItem {
   income_tax_ytd?: number;
   nic_employee_ytd?: number;
   gross_pay_ytd?: number;
+  free_pay_this_period?: number;
+  nic_letter?: string;
+  student_loan_plan?: number | null;
 }

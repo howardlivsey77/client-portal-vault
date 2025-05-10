@@ -20,7 +20,7 @@ export function StudentLoanField({ studentLoanPlan, onInputChange }: StudentLoan
       <Select
         value={studentLoanPlan?.toString() || "none"}
         onValueChange={(value) => {
-          const planNumber = value !== "none" ? parseInt(value, 10) as number | null : null;
+          const planNumber = value !== "none" ? parseInt(value, 10) : null;
           onInputChange('studentLoanPlan', planNumber);
         }}
       >

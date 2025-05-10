@@ -48,7 +48,7 @@ export async function calculateMonthlyPayroll(
     const monthlyTax = calculateMonthlyIncomeTaxSync(
       grossPay,
       taxCode,
-      taxRegion
+      taxRegion as string
     );
     
     // Calculate NI contributions
@@ -88,7 +88,7 @@ export async function calculateMonthlyPayroll(
     // Calculate net pay
     const netPay = grossPay - totalDeductions;
     
-    // Build YTD values - handle properly without direct Promise operations
+    // Build YTD values - handle without Promises
     let grossPayYTD = grossPay;
     let taxablePayYTD = taxablePay;
     let incomeTaxYTD = monthlyTax;
@@ -140,3 +140,5 @@ export async function calculateMonthlyPayroll(
     throw error;
   }
 }
+
+export { PayrollResult };

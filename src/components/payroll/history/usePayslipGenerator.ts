@@ -27,7 +27,7 @@ export function usePayslipGenerator() {
         payrollId: item.id || '',
         taxCode: item.tax_code,
         taxRegion: 'UK',
-        taxFreeAmount: item.free_pay_this_period / 100,
+        taxFreeAmount: (item.free_pay_this_period || 0) / 100,
         nicCode: item.nic_letter || 'A',
         grossPay: item.gross_pay_this_period / 100,
         incomeTax: item.income_tax_this_period / 100,

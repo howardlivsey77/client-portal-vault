@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { calculateMonthlyPayroll, PayrollResult } from "@/services/payroll/payrollCalculator";
+import { calculateMonthlyPayroll } from "@/services/payroll/payrollCalculator";
+import { PayrollResult } from "@/services/payroll/types";
 import { savePayrollResult } from "@/services/payroll/savePayrollResult";
 import { generatePayslip } from "@/utils/payslipGenerator";
 import { PayrollForm } from "./PayrollForm";
@@ -51,7 +52,27 @@ export function PayrollCalculatorContainer({ employee }: PayrollCalculatorProps)
     if (autoCalculate && payrollDetails.monthlySalary > 0 && payrollDetails.employeeName) {
       try {
         const calculatePayroll = async () => {
-          const result = await calculateMonthlyPayroll(payrollDetails);
+          // Convert AdditionalItem to required format for PayrollDetails
+          const convertedDetails = {
+            ...payrollDetails,
+            additionalEarnings: payrollDetails.additionalEarnings.map(item => ({
+              id: item.id || `earning-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              description: item.description,
+              amount: item.amount
+            })),
+            additionalDeductions: payrollDetails.additionalDeductions.map(item => ({
+              id: item.id || `deduction-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              description: item.description,
+              amount: item.amount  
+            })),
+            additionalAllowances: payrollDetails.additionalAllowances.map(item => ({
+              id: item.id || `allowance-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              description: item.description,
+              amount: item.amount
+            }))
+          };
+          
+          const result = await calculateMonthlyPayroll(convertedDetails);
           setCalculationResult(result);
         };
         calculatePayroll();
@@ -64,7 +85,28 @@ export function PayrollCalculatorContainer({ employee }: PayrollCalculatorProps)
   const handleCalculatePayroll = async () => {
     try {
       setIsCalculating(true);
-      const result = await calculateMonthlyPayroll(payrollDetails);
+      
+      // Convert AdditionalItem to required format for PayrollDetails
+      const convertedDetails = {
+        ...payrollDetails,
+        additionalEarnings: payrollDetails.additionalEarnings.map(item => ({
+          id: item.id || `earning-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          description: item.description,
+          amount: item.amount
+        })),
+        additionalDeductions: payrollDetails.additionalDeductions.map(item => ({
+          id: item.id || `deduction-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          description: item.description,
+          amount: item.amount  
+        })),
+        additionalAllowances: payrollDetails.additionalAllowances.map(item => ({
+          id: item.id || `allowance-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          description: item.description,
+          amount: item.amount
+        }))
+      };
+      
+      const result = await calculateMonthlyPayroll(convertedDetails);
       setCalculationResult(result);
       setIsCalculating(false);
       
