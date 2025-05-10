@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { PayrollForm } from '@/components/payroll/calculator/PayrollForm';
 import { PayrollCalculatorActions } from '@/components/payroll/calculator/PayrollCalculatorActions';
@@ -8,6 +7,7 @@ import { Employee } from '@/hooks/useEmployees';
 import { PayPeriod } from '@/services/payroll/utils/financial-year-utils';
 import { PayslipDownloader } from './PayslipDownloader';
 import { PayrollFormValues } from './types';
+import { Button } from "@/components/ui/button";
 
 interface PayrollCalculatorProps {
   employee: Employee;
@@ -97,6 +97,3 @@ export const PayrollCalculator = ({ employee, payPeriod }: PayrollCalculatorProp
     </div>
   );
 };
-
-// Import Button for the back button
-import { Button } from "@/components/ui/button";
