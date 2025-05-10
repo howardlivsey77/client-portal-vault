@@ -11,9 +11,12 @@ import { PayrollForm } from "./PayrollForm";
 import { PayrollResults } from "./PayrollResults";
 import { PayrollCalculatorProps, PayrollFormValues } from "./types";
 import { PayPeriod } from "@/services/payroll/utils/financial-year-utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/providers/AuthProvider";
 
 export function PayrollCalculator({ employee, payPeriod }: PayrollCalculatorProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [selectedTab, setSelectedTab] = useState<string>("calculator");
   const [payrollDetails, setPayrollDetails] = useState<PayrollFormValues>({
     employeeId: employee?.id || '',
@@ -50,6 +53,7 @@ export function PayrollCalculator({ employee, payPeriod }: PayrollCalculatorProp
   
   const [calculationResult, setCalculationResult] = useState<any | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [autoCalculate, setAutoCalculate] = useState<boolean>(true);
 
   // Auto-calculate effect
@@ -64,15 +68,114 @@ export function PayrollCalculator({ employee, payPeriod }: PayrollCalculatorProp
     }
   }, [payrollDetails, autoCalculate]);
 
-  const handleCalculatePayroll = () => {
+  const savePayrollResultToDatabase = async (result: any) => {
+    if (!employee || !user) {
+      console.error("Missing employee or user data for saving payroll result");
+      return false;
+    }
+    
+    try {
+      setIsSaving(true);
+      
+      const payrollPeriodDate = new Date(payPeriod.year, payPeriod.month - 1, 1);
+      
+      // Data to save to the database
+      const payrollData = {
+        employee_id: result.employeeId,
+        payroll_period: payrollPeriodDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+        tax_year: `${payPeriod.year}/${(payPeriod.year + 1).toString().substring(2)}`,
+        tax_period: payPeriod.periodNumber,
+        tax_code: result.taxCode,
+        student_loan_plan: result.studentLoanPlan || null,
+        
+        // Financial values - convert to pence/pennies for storage
+        gross_pay_this_period: Math.round(result.grossPay * 100),
+        taxable_pay_this_period: Math.round((result.grossPay - result.freePay) * 100),
+        free_pay_this_period: Math.round(result.freePay * 100),
+        income_tax_this_period: Math.round(result.incomeTax * 100),
+        
+        pay_liable_to_nic_this_period: Math.round(result.grossPay * 100),
+        nic_employee_this_period: Math.round(result.nationalInsurance * 100),
+        nic_employer_this_period: 0, // Default to 0, update if available
+        nic_letter: 'A', // Default, update if available
+        
+        student_loan_this_period: Math.round(result.studentLoan * 100),
+        employee_pension_this_period: Math.round(result.pensionContribution * 100),
+        employer_pension_this_period: 0, // Default to 0, update if available
+        
+        // NI earnings bands - defaults
+        earnings_at_lel_this_period: 0,
+        earnings_lel_to_pt_this_period: 0,
+        earnings_pt_to_uel_this_period: 0,
+        earnings_above_st_this_period: 0,
+        earnings_above_uel_this_period: 0,
+        
+        // Net pay calculation
+        net_pay_this_period: Math.round(result.netPay * 100),
+        
+        // Year-to-date values - would normally be cumulative, but we'll start fresh
+        gross_pay_ytd: Math.round(result.grossPay * 100),
+        taxable_pay_ytd: Math.round((result.grossPay - result.freePay) * 100),
+        income_tax_ytd: Math.round(result.incomeTax * 100),
+        nic_employee_ytd: Math.round(result.nationalInsurance * 100)
+      };
+      
+      // Check if a record already exists for this employee and pay period
+      const { data: existingRecord } = await supabase
+        .from('payroll_results')
+        .select('id')
+        .eq('employee_id', result.employeeId)
+        .eq('payroll_period', payrollData.payroll_period)
+        .maybeSingle();
+      
+      let saveResponse;
+      
+      if (existingRecord) {
+        // Update existing record
+        saveResponse = await supabase
+          .from('payroll_results')
+          .update(payrollData)
+          .eq('id', existingRecord.id);
+      } else {
+        // Insert new record
+        saveResponse = await supabase
+          .from('payroll_results')
+          .insert(payrollData);
+      }
+      
+      if (saveResponse.error) {
+        throw saveResponse.error;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error saving payroll result:", error);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCalculatePayroll = async () => {
     try {
       setIsCalculating(true);
       const result = calculateMonthlyPayroll(payrollDetails);
       setCalculationResult(result);
-      setIsCalculating(false);
+      
+      // Save the result to the database
+      const saved = await savePayrollResultToDatabase(result);
+      
+      if (!saved) {
+        toast({
+          title: "Database Save Warning",
+          description: "Calculation completed but there was an issue saving to the database.",
+          variant: "destructive"
+        });
+      }
       
       // Switch to result tab
       setSelectedTab("result");
+      setIsCalculating(false);
     } catch (error) {
       console.error("Payroll calculation error:", error);
       toast({
@@ -143,9 +246,9 @@ export function PayrollCalculator({ employee, payPeriod }: PayrollCalculatorProp
         {selectedTab === "calculator" ? (
           <Button 
             onClick={handleCalculatePayroll} 
-            disabled={isCalculating || !payrollDetails.monthlySalary || !payrollDetails.employeeName}
+            disabled={isCalculating || isSaving || !payrollDetails.monthlySalary || !payrollDetails.employeeName}
           >
-            {isCalculating ? "Calculating..." : "Calculate Payroll"}
+            {isCalculating ? "Calculating..." : isSaving ? "Saving..." : "Calculate Payroll"}
           </Button>
         ) : (
           <Button 

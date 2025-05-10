@@ -1,142 +1,109 @@
+import { getMonthName } from "@/lib/formatters";
 
-/**
- * Utilities for handling UK financial years and pay periods
- */
+export interface PayPeriod {
+  year: number;
+  periodNumber: number;
+  description: string;
+  month: number; // Adding explicit month field
+}
 
-// Financial year constants
-export const MONTHS_IN_YEAR = 12;
-export const FIRST_MONTH_OF_FINANCIAL_YEAR = 3; // 0-based, so 3 = April
-
-// Pay period types
-export type PayPeriod = {
-  periodNumber: number; // 1-12
-  month: number; // 0-11 (JavaScript Date month)
+export interface FinancialYear {
   year: number;
   description: string;
-};
-
-export type FinancialYear = {
-  startYear: number;
-  endYear: number;
-  description: string;
   periods: PayPeriod[];
-};
+}
 
-/**
- * Get the financial year containing the specified date
- * @param date The date to get the financial year for
- * @returns The financial year object
- */
-export function getFinancialYearForDate(date: Date = new Date()): FinancialYear {
-  const month = date.getMonth();
+export const CURRENT_FINANCIAL_YEAR: FinancialYear = getFinancialYearForDate(new Date());
+export const CURRENT_PAY_PERIOD: PayPeriod = getCurrentPayPeriod(new Date());
+
+export const AVAILABLE_FINANCIAL_YEARS: FinancialYear[] = [
+  {
+    year: 2023,
+    description: '2023/2024',
+    periods: generatePayPeriodsForFinancialYear(2023)
+  },
+  {
+    year: 2024,
+    description: '2024/2025',
+    periods: generatePayPeriodsForFinancialYear(2024)
+  }
+];
+
+export function getFinancialYearForDate(date: Date): FinancialYear {
+  const month = date.getMonth() + 1; // JavaScript months are 0-indexed
   const year = date.getFullYear();
-  
-  // If we're in January-March, we're in the previous year's financial year
-  const startYear = month <= FIRST_MONTH_OF_FINANCIAL_YEAR ? year - 1 : year;
-  const endYear = startYear + 1;
-  
+
+  // Financial year starts in April
+  const financialYear = month >= 4 ? year : year - 1;
+
   return {
-    startYear,
-    endYear,
-    description: `${startYear}/${endYear.toString().substring(2)}`,
-    periods: generatePayPeriodsForFinancialYear(startYear),
+    year: financialYear,
+    description: `${financialYear}/${(financialYear + 1).toString().slice(-2)}`,
+    periods: generatePayPeriodsForFinancialYear(financialYear)
   };
 }
 
-/**
- * Get the current pay period
- * @param date The date to get the pay period for
- * @returns The current pay period
- */
-export function getCurrentPayPeriod(date: Date = new Date()): PayPeriod {
-  const month = date.getMonth();
+export function getCurrentPayPeriod(date: Date): PayPeriod {
+  const month = date.getMonth() + 1; // JavaScript months are 0-indexed
   const year = date.getFullYear();
   
-  // Determine which financial year we're in
-  const financialYear = getFinancialYearForDate(date);
+  // Determine the financial year
+  const financialYear = month >= 4 ? year : year - 1;
   
-  // Calculate the period number (1-12)
-  // April (month 3) is period 1, May is period 2, etc.
-  const periodNumber = month >= FIRST_MONTH_OF_FINANCIAL_YEAR
-    ? month - FIRST_MONTH_OF_FINANCIAL_YEAR + 1
-    : month + MONTHS_IN_YEAR - FIRST_MONTH_OF_FINANCIAL_YEAR + 1;
+  // Calculate the period number based on the month
+  let periodNumber = month - 3;
+  if (periodNumber <= 0) {
+    periodNumber += 12; // Adjust for months before April
+  }
+
+  const financialYearData = getFinancialYearForDate(date);
   
-  // Find the period in the financial year
-  return financialYear.periods.find(p => p.periodNumber === periodNumber) || generatePayPeriod(periodNumber, month, year);
+  // Find the pay period in the financial year
+  const payPeriod = financialYearData.periods.find(period => period.periodNumber === periodNumber);
+
+  if (!payPeriod) {
+    console.warn(`No pay period found for period number ${periodNumber} in ${financialYearData.description}.`);
+    return {
+      year: financialYear,
+      periodNumber: periodNumber,
+      description: `Unknown Period ${periodNumber}`,
+      month: month
+    };
+  }
+
+  return payPeriod;
 }
 
-/**
- * Generate all pay periods for a specific financial year
- * @param startYear The starting year of the financial year
- * @returns Array of pay periods for the financial year
- */
-export function generatePayPeriodsForFinancialYear(startYear: number): PayPeriod[] {
+export function generatePayPeriodsForFinancialYear(year: number): PayPeriod[] {
   const periods: PayPeriod[] = [];
   
-  // April (month 3) to March (month 2 of next year)
-  for (let i = 0; i < MONTHS_IN_YEAR; i++) {
-    // Fixed: removed the + 1 to ensure April is period 1
-    const month = (FIRST_MONTH_OF_FINANCIAL_YEAR + i) % MONTHS_IN_YEAR;
-    
-    // Fixed: Only January (0), February (1), and March (2) should be in the next year
-    // All other months (April through December) should be in the startYear
-    const year = month < FIRST_MONTH_OF_FINANCIAL_YEAR ? startYear + 1 : startYear;
-    
-    const periodNumber = i + 1;
-    
-    periods.push(generatePayPeriod(periodNumber, month, year));
+  // Tax year runs from April to March
+  // So April = Period 1, May = Period 2, etc.
+  for (let month = 4; month <= 12; month++) {
+    periods.push({
+      year,
+      periodNumber: month - 3, // April (month 4) is period 1
+      description: `${getMonthName(month)} ${year}`,
+      month
+    });
+  }
+  
+  for (let month = 1; month <= 3; month++) {
+    periods.push({
+      year,
+      periodNumber: month + 9, // January (month 1) is period 10
+      description: `${getMonthName(month)} ${year + 1}`,
+      month
+    });
   }
   
   return periods;
 }
 
-/**
- * Generate a pay period object
- */
-function generatePayPeriod(periodNumber: number, month: number, year: number): PayPeriod {
-  const date = new Date(year, month);
-  const monthName = date.toLocaleString('en-GB', { month: 'long' });
-  
-  return {
-    periodNumber,
-    month,
-    year,
-    description: `${periodNumber}. ${monthName} ${year}`,
-  };
+export function getFinancialYearRange(financialYear: FinancialYear): { startDate: Date, endDate: Date } {
+  const startYear = financialYear.year;
+  const startDate = new Date(startYear, 3, 6); // April is month 3 (zero-based index)
+  const endDate = new Date(startYear + 1, 2, 5);   // March is month 2
+
+  return { startDate, endDate };
 }
-
-/**
- * Get a list of financial years around the current one
- * @param currentYear The center year
- * @param yearsBack Number of years to go back
- * @param yearsForward Number of years to go forward
- * @returns Array of financial years
- */
-export function getFinancialYearRange(
-  currentYear: number = new Date().getFullYear(),
-  yearsBack: number = 2,
-  yearsForward: number = 2
-): FinancialYear[] {
-  const years: FinancialYear[] = [];
-  
-  for (let i = -yearsBack; i <= yearsForward; i++) {
-    const startYear = currentYear + i;
-    years.push({
-      startYear,
-      endYear: startYear + 1,
-      description: `${startYear}/${(startYear + 1).toString().substring(2)}`,
-      periods: generatePayPeriodsForFinancialYear(startYear),
-    });
-  }
-  
-  return years;
-}
-
-// Generate financial years for selection (past 2 years, current year, and future 2 years)
-export const AVAILABLE_FINANCIAL_YEARS = getFinancialYearRange();
-
-// Default to the current financial year for 2025
-export const CURRENT_FINANCIAL_YEAR = getFinancialYearForDate(new Date());
-
-// Set the current pay period
-export const CURRENT_PAY_PERIOD = getCurrentPayPeriod(new Date());
