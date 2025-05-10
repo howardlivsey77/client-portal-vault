@@ -57,7 +57,7 @@ export function getCurrentPayPeriod(date: Date = new Date()): PayPeriod {
   
   // Calculate the period number (1-12)
   // April (month 3) is period 1, May is period 2, etc.
-  const periodNumber = month >= FIRST_MONTH_OF_FINANCIAL_YEAR + 1
+  const periodNumber = month >= FIRST_MONTH_OF_FINANCIAL_YEAR
     ? month - FIRST_MONTH_OF_FINANCIAL_YEAR + 1
     : month + MONTHS_IN_YEAR - FIRST_MONTH_OF_FINANCIAL_YEAR + 1;
   
@@ -75,7 +75,8 @@ export function generatePayPeriodsForFinancialYear(startYear: number): PayPeriod
   
   // April (month 3) to March (month 2 of next year)
   for (let i = 0; i < MONTHS_IN_YEAR; i++) {
-    const month = (FIRST_MONTH_OF_FINANCIAL_YEAR + 1 + i) % MONTHS_IN_YEAR;
+    // Fixed: removed the + 1 to ensure April is period 1
+    const month = (FIRST_MONTH_OF_FINANCIAL_YEAR + i) % MONTHS_IN_YEAR;
     const year = month >= 0 && month <= FIRST_MONTH_OF_FINANCIAL_YEAR ? startYear + 1 : startYear;
     const periodNumber = i + 1;
     
