@@ -22,6 +22,5 @@ export {
 
 export type {
   PayrollDetails,
-  PayrollResult,
-  TaxCode
-} from './payrollCalculator';
+  PayrollResult
+} from './types';
