@@ -10,21 +10,38 @@ export {
 export {
   calculateMonthlyPayroll,
   calculateIncomeTax,
+  calculateIncomeTaxAsync,
   calculateIncomeTaxFromYTD,
+  calculateIncomeTaxFromYTDAsync,
   calculateMonthlyIncomeTax,
+  calculateMonthlyIncomeTaxAsync,
   calculateNationalInsurance,
   calculateStudentLoan,
   calculatePension,
   parseTaxCode,
   TAX_BANDS,
   NI_THRESHOLDS,
-  NI_RATES
+  NI_RATES,
+  getIncomeTaxBands,
+  clearTaxBandsCache
 } from './payrollCalculator';
 
 export type {
   PayrollDetails,
   PayrollResult
 } from './types';
+
+// Export tax bands service functions
+export {
+  fetchTaxBands,
+  formatTaxBandsForCalculation,
+  getTaxBandsForCalculation
+} from './data/taxBandsService';
+
+export type {
+  TaxBand,
+  FormattedTaxBands
+} from './data/taxBandsService';
 
 // Export free pay calculation utility
 export { calculateMonthlyFreePayFromTaxCode } from './utils/tax-code-utils';

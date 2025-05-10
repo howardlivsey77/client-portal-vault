@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { calculateMonthlyPayroll } from "@/services/payroll/payrollCalculator";
-import { calculateIncomeTaxFromYTD } from "@/services/payroll/calculations/income-tax";
+import { calculateIncomeTaxFromYTDAsync } from "@/services/payroll/calculations/income-tax";
 import { PayrollFormValues } from "../types";
 import { PayrollResult } from "@/services/payroll/types";
 import { PayPeriod } from "@/services/payroll/utils/financial-year-utils";
@@ -91,8 +91,8 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
       const grossPayYTD = previousYTD ? previousYTD.gross_pay_ytd + Math.round(result.grossPay * 100) : Math.round(result.grossPay * 100);
       const taxablePayYTD = previousYTD ? previousYTD.taxable_pay_ytd + Math.round(taxablePay * 100) : Math.round(taxablePay * 100);
       
-      // Calculate total income tax based on YTD taxable pay
-      const totalTaxDueYTD = calculateIncomeTaxFromYTD(taxablePayYTD / 100, result.taxCode);
+      // Calculate total income tax based on YTD taxable pay - now using async method
+      const totalTaxDueYTD = await calculateIncomeTaxFromYTDAsync(taxablePayYTD / 100, result.taxCode, taxYear);
       
       // Previous tax paid YTD or 0 if first period
       const previousTaxPaidYTD = previousYTD ? previousYTD.income_tax_ytd : 0;
