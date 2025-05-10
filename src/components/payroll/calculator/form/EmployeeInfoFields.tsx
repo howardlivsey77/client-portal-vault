@@ -41,6 +41,8 @@ export function EmployeeInfoFields({
         employeeName: `${employee.first_name} ${employee.last_name}`,
         payrollId: employee.payroll_id || '',
         monthlySalary: monthlySalary,
+        taxCode: employee.tax_code || '1257L', // Use tax code from employee record
+        studentLoanPlan: employee.student_loan_plan || formValues.studentLoanPlan
       });
     }
   }, [employee, onChange]);

@@ -20,13 +20,27 @@ export function PayrollCalculator({ employee, payPeriod }: PayrollCalculatorProp
     employeeName: employee ? `${employee.first_name} ${employee.last_name}` : '',
     payrollId: employee?.payroll_id || '',
     monthlySalary: 0,
-    taxCode: '1257L', // Standard tax code
+    taxCode: employee?.tax_code || '1257L', // Use employee's tax code if available, otherwise default
     pensionPercentage: 5,
-    studentLoanPlan: null,
+    studentLoanPlan: employee?.student_loan_plan || null,
     additionalDeductions: [],
     additionalAllowances: [],
     additionalEarnings: []
   });
+  
+  // Update payroll details when employee changes
+  useEffect(() => {
+    if (employee) {
+      setPayrollDetails(prevDetails => ({
+        ...prevDetails,
+        employeeId: employee.id,
+        employeeName: `${employee.first_name} ${employee.last_name}`,
+        payrollId: employee.payroll_id || '',
+        taxCode: employee.tax_code || '1257L', // Use employee's tax code with fallback
+        studentLoanPlan: employee.student_loan_plan || null
+      }));
+    }
+  }, [employee]);
   
   const [calculationResult, setCalculationResult] = useState<any | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
