@@ -10,6 +10,7 @@ export {
 export {
   calculateMonthlyPayroll,
   calculateIncomeTax,
+  calculateIncomeTaxFromYTD,
   calculateMonthlyIncomeTax,
   calculateNationalInsurance,
   calculateStudentLoan,

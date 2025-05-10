@@ -56,3 +56,30 @@ export function calculateMonthlyIncomeTax(monthlySalary: number, taxCode: string
     freePay: roundToTwoDecimals(monthlyFreePay)
   };
 }
+
+/**
+ * Calculate income tax based on YTD taxable pay
+ * This function calculates total tax due based on YTD taxable pay
+ */
+export function calculateIncomeTaxFromYTD(taxablePayYTD: number, taxCode: string): number {
+  const { allowance } = parseTaxCode(taxCode);
+  let taxableIncome = taxablePayYTD;
+  let tax = 0;
+  
+  // Calculate tax for each band based on the YTD taxable pay
+  if (taxableIncome > TAX_BANDS.HIGHER_RATE.threshold) {
+    tax += (taxableIncome - TAX_BANDS.HIGHER_RATE.threshold) * TAX_BANDS.ADDITIONAL_RATE.rate;
+    taxableIncome = TAX_BANDS.HIGHER_RATE.threshold;
+  }
+  
+  if (taxableIncome > TAX_BANDS.BASIC_RATE.threshold) {
+    tax += (taxableIncome - TAX_BANDS.BASIC_RATE.threshold) * TAX_BANDS.HIGHER_RATE.rate;
+    taxableIncome = TAX_BANDS.BASIC_RATE.threshold;
+  }
+  
+  if (taxableIncome > TAX_BANDS.PERSONAL_ALLOWANCE.threshold) {
+    tax += (taxableIncome - TAX_BANDS.PERSONAL_ALLOWANCE.threshold) * TAX_BANDS.BASIC_RATE.rate;
+  }
+  
+  return roundToTwoDecimals(tax);
+}

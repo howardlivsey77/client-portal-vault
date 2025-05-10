@@ -1,6 +1,8 @@
+
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { calculateMonthlyPayroll } from "@/services/payroll/payrollCalculator";
+import { calculateIncomeTaxFromYTD } from "@/services/payroll/calculations/income-tax";
 import { PayrollFormValues } from "../types";
 import { PayrollResult } from "@/services/payroll/types";
 import { PayPeriod } from "@/services/payroll/utils/financial-year-utils";
@@ -67,6 +69,43 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
       const taxYear = `${payPeriod.year}/${(payPeriod.year + 1).toString().substring(2)}`;
       const taxPeriod = payPeriod.periodNumber;
       
+      // Get previous period's YTD values (if any) for the same tax year
+      const { data: previousPeriods, error: fetchError } = await supabase
+        .from('payroll_results')
+        .select('*')
+        .eq('employee_id', result.employeeId)
+        .eq('tax_year', taxYear)
+        .lt('tax_period', taxPeriod)
+        .order('tax_period', { ascending: false })
+        .limit(1);
+      
+      if (fetchError) {
+        console.error("Error fetching previous periods:", fetchError);
+        throw fetchError;
+      }
+      
+      // Previous YTD values or default to 0 if first period
+      const previousYTD = previousPeriods && previousPeriods.length > 0 ? previousPeriods[0] : null;
+      
+      // Calculate YTD values
+      const grossPayYTD = previousYTD ? previousYTD.gross_pay_ytd + Math.round(result.grossPay * 100) : Math.round(result.grossPay * 100);
+      const taxablePayYTD = previousYTD ? previousYTD.taxable_pay_ytd + Math.round(taxablePay * 100) : Math.round(taxablePay * 100);
+      
+      // Calculate total income tax based on YTD taxable pay
+      const totalTaxDueYTD = calculateIncomeTaxFromYTD(taxablePayYTD / 100, result.taxCode);
+      
+      // Previous tax paid YTD or 0 if first period
+      const previousTaxPaidYTD = previousYTD ? previousYTD.income_tax_ytd : 0;
+      
+      // This period's tax is the difference between total tax due and tax already paid
+      const incomeTaxThisPeriod = Math.round((totalTaxDueYTD - (previousTaxPaidYTD / 100)) * 100);
+      
+      // New YTD tax is previous YTD + this period
+      const incomeTaxYTD = previousYTD ? previousYTD.income_tax_ytd + incomeTaxThisPeriod : incomeTaxThisPeriod;
+      
+      // National Insurance YTD
+      const nicEmployeeYTD = previousYTD ? previousYTD.nic_employee_ytd + Math.round(result.nationalInsurance * 100) : Math.round(result.nationalInsurance * 100);
+      
       // Data to save to the database
       const payrollData = {
         employee_id: result.employeeId,
@@ -80,7 +119,7 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
         gross_pay_this_period: Math.round(result.grossPay * 100),
         taxable_pay_this_period: Math.round(taxablePay * 100),
         free_pay_this_period: Math.round(result.freePay * 100),
-        income_tax_this_period: Math.round(result.incomeTax * 100),
+        income_tax_this_period: incomeTaxThisPeriod,
         
         pay_liable_to_nic_this_period: Math.round(result.grossPay * 100),
         nic_employee_this_period: Math.round(result.nationalInsurance * 100),
@@ -101,18 +140,18 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
         // Net pay calculation
         net_pay_this_period: Math.round(result.netPay * 100),
         
-        // Year-to-date values - would normally be cumulative, but we'll start fresh
-        gross_pay_ytd: Math.round(result.grossPay * 100),
-        taxable_pay_ytd: Math.round(taxablePay * 100),
-        income_tax_ytd: Math.round(result.incomeTax * 100),
-        nic_employee_ytd: Math.round(result.nationalInsurance * 100)
+        // Year-to-date values - updated based on previous periods + current
+        gross_pay_ytd: grossPayYTD,
+        taxable_pay_ytd: taxablePayYTD,
+        income_tax_ytd: incomeTaxYTD,
+        nic_employee_ytd: nicEmployeeYTD
       };
       
       console.log(`Checking for existing payroll record for employee ${result.employeeId} in tax_year ${taxYear}, tax_period ${taxPeriod}`);
       
       // Check if a record already exists for this employee, tax_year and tax_period
       // This ensures only one entry per employee per tax period
-      const { data: existingRecord, error: fetchError } = await supabase
+      const { data: existingRecord, error: fetchError2 } = await supabase
         .from('payroll_results')
         .select('id')
         .eq('employee_id', result.employeeId)
@@ -120,9 +159,9 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
         .eq('tax_period', taxPeriod)
         .maybeSingle();
       
-      if (fetchError) {
-        console.error("Error checking for existing payroll record:", fetchError);
-        throw fetchError;
+      if (fetchError2) {
+        console.error("Error checking for existing payroll record:", fetchError2);
+        throw fetchError2;
       }
       
       let saveResponse;
