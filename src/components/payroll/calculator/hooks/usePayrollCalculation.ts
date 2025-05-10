@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { calculateMonthlyPayroll } from "@/services/payroll/payrollCalculator";
@@ -12,6 +11,7 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
   const [calculationResult, setCalculationResult] = useState<PayrollResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   const calculatePayroll = async (payrollDetails: PayrollFormValues) => {
     try {
@@ -168,11 +168,52 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
     }
   };
 
+  const clearPayrollResults = async () => {
+    try {
+      setIsClearing(true);
+      
+      const { error } = await supabase
+        .from('payroll_results')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // This condition ensures we delete all records
+      
+      if (error) {
+        console.error("Error clearing payroll results:", error);
+        toast({
+          title: "Error",
+          description: "There was an error clearing the payroll results table.",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      toast({
+        title: "Success",
+        description: "All payroll results have been cleared.",
+        variant: "default"
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error in clearPayrollResults:", error);
+      toast({
+        title: "Error",
+        description: "There was an unexpected error clearing the payroll results table.",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
   return {
     calculationResult,
     isCalculating,
     isSaving,
+    isClearing,
     calculatePayroll,
+    clearPayrollResults,
     setCalculationResult
   };
 }
