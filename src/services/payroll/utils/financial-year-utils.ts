@@ -1,3 +1,4 @@
+
 import { getMonthName } from "@/lib/formatters";
 
 export interface PayPeriod {
@@ -16,18 +17,37 @@ export interface FinancialYear {
 export const CURRENT_FINANCIAL_YEAR: FinancialYear = getFinancialYearForDate(new Date());
 export const CURRENT_PAY_PERIOD: PayPeriod = getCurrentPayPeriod(new Date());
 
-export const AVAILABLE_FINANCIAL_YEARS: FinancialYear[] = [
-  {
-    year: 2023,
-    description: '2023/2024',
-    periods: generatePayPeriodsForFinancialYear(2023)
-  },
-  {
-    year: 2024,
-    description: '2024/2025',
-    periods: generatePayPeriodsForFinancialYear(2024)
+/**
+ * Dynamically generates a list of available financial years including the current year
+ * and surrounding years (2 years before and 2 years ahead)
+ */
+export const AVAILABLE_FINANCIAL_YEARS: FinancialYear[] = generateAvailableFinancialYears();
+
+/**
+ * Generate available financial years dynamically based on current date
+ * Includes current year, 2 years before and 2 years ahead
+ */
+function generateAvailableFinancialYears(yearsBeforeAfter: number = 2): FinancialYear[] {
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1; // JavaScript months are 0-indexed
+  
+  // Financial year starts in April
+  const currentFinancialYear = currentMonth >= 4 ? currentYear : currentYear - 1;
+  
+  const years: FinancialYear[] = [];
+  
+  // Generate financial years (current year, years before and years after)
+  for (let i = -yearsBeforeAfter; i <= yearsBeforeAfter; i++) {
+    const year = currentFinancialYear + i;
+    years.push({
+      year,
+      description: `${year}/${(year + 1).toString().slice(-2)}`,
+      periods: generatePayPeriodsForFinancialYear(year)
+    });
   }
-];
+  
+  return years;
+}
 
 export function getFinancialYearForDate(date: Date): FinancialYear {
   const month = date.getMonth() + 1; // JavaScript months are 0-indexed
