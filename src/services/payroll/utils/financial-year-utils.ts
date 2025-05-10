@@ -77,7 +77,11 @@ export function generatePayPeriodsForFinancialYear(startYear: number): PayPeriod
   for (let i = 0; i < MONTHS_IN_YEAR; i++) {
     // Fixed: removed the + 1 to ensure April is period 1
     const month = (FIRST_MONTH_OF_FINANCIAL_YEAR + i) % MONTHS_IN_YEAR;
-    const year = month >= 0 && month <= FIRST_MONTH_OF_FINANCIAL_YEAR ? startYear + 1 : startYear;
+    
+    // Fixed: Only January (0), February (1), and March (2) should be in the next year
+    // All other months (April through December) should be in the startYear
+    const year = month < FIRST_MONTH_OF_FINANCIAL_YEAR ? startYear + 1 : startYear;
+    
     const periodNumber = i + 1;
     
     periods.push(generatePayPeriod(periodNumber, month, year));
