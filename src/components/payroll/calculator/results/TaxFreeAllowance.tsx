@@ -7,12 +7,18 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ChevronDown, ChevronUp, Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-interface TaxFreeAllowanceProps {
-  result: PayrollResult;
+export interface TaxFreeAllowanceProps {
+  taxCode: string;
+  freePay: number;
+  result?: PayrollResult;
 }
 
-export function TaxFreeAllowance({ result }: TaxFreeAllowanceProps) {
+export function TaxFreeAllowance({ taxCode, freePay, result }: TaxFreeAllowanceProps) {
   const [showFreePayDetails, setShowFreePayDetails] = useState(false);
+  
+  // Use result if provided, otherwise fallback to individual props
+  const taxablePay = result?.taxablePay || 0;
+  const grossPay = result?.grossPay || 0;
   
   return (
     <div className="bg-muted p-4 rounded-md">
@@ -33,11 +39,11 @@ export function TaxFreeAllowance({ result }: TaxFreeAllowanceProps) {
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>Tax Code:</div>
-        <div className="font-medium">{result.taxCode}</div>
+        <div className="font-medium">{taxCode}</div>
         <div>Monthly Free Pay:</div>
-        <div className="font-medium text-green-600">{formatCurrency(result.freePay)}</div>
+        <div className="font-medium text-green-600">{formatCurrency(freePay)}</div>
         <div>Taxable Pay:</div>
-        <div className="font-medium">{formatCurrency(result.taxablePay)}</div>
+        <div className="font-medium">{formatCurrency(taxablePay)}</div>
       </div>
       
       <Collapsible 
@@ -56,7 +62,7 @@ export function TaxFreeAllowance({ result }: TaxFreeAllowanceProps) {
             The free pay amount is calculated based on the numeric part of your tax code.
           </p>
           <p className="text-sm text-muted-foreground mb-2">
-            Taxable Pay = Gross Pay - Free Pay = {formatCurrency(result.grossPay)} - {formatCurrency(result.freePay)} = {formatCurrency(result.taxablePay)}
+            Taxable Pay = Gross Pay - Free Pay = {formatCurrency(grossPay)} - {formatCurrency(freePay)} = {formatCurrency(taxablePay)}
           </p>
         </CollapsibleContent>
       </Collapsible>

@@ -32,7 +32,7 @@ export function PayrollResultsContainer({
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <PayrollSummary result={result} payPeriod={payPeriod} />
-            <TaxFreeAllowance taxCode={result.taxCode} freePay={result.freePay} />
+            <TaxFreeAllowance taxCode={result.taxCode} freePay={result.freePay} result={result} />
           </div>
 
           <div className="mt-10 space-y-8">
