@@ -64,32 +64,48 @@ export async function calculateNationalInsuranceAsync(monthlySalary: number, tax
     
     // If we successfully got bands from database, use those
     if (niBands && niBands.length > 0) {
+      console.log("Using NI bands from database:", niBands);
+      
       // First process employee bands
       const employeeBands = niBands.filter(band => band.contribution_type === 'Employee');
       
-      // Track earnings in each band
-      for (const band of employeeBands) {
-        const lowerBound = band.threshold_from / 100;
-        const upperBound = band.threshold_to ? band.threshold_to / 100 : Infinity;
+      // Find the LEL, PT, and UEL thresholds
+      const lelBand = employeeBands.find(band => band.name.includes('LEL') && !band.name.includes('to'));
+      const lelToPTBand = employeeBands.find(band => band.name.includes('LEL to PT'));
+      const ptToUELBand = employeeBands.find(band => band.name.includes('PT to UEL'));
+      const aboveUELBand = employeeBands.find(band => band.name.includes('Above UEL'));
+      
+      if (lelBand && lelToPTBand && ptToUELBand && aboveUELBand) {
+        // Convert from pennies to pounds
+        const lel = lelBand.threshold_to ? lelBand.threshold_to / 100 : lelBand.threshold_from / 100;
+        const pt = lelToPTBand.threshold_to ? lelToPTBand.threshold_to / 100 : ptToUELBand.threshold_from / 100;
+        const uel = ptToUELBand.threshold_to ? ptToUELBand.threshold_to / 100 : aboveUELBand.threshold_from / 100;
         
-        // Calculate the portion of salary that falls within this band
-        const amountInBand = Math.max(0, Math.min(monthlySalary, upperBound) - lowerBound);
+        console.log(`NI thresholds in pounds: LEL: ${lel}, PT: ${pt}, UEL: ${uel}`);
         
-        // Calculate NI contribution for this band
-        if (band.rate > 0) {
-          result.nationalInsurance += amountInBand * band.rate;
+        // Calculate earnings in each band
+        // LEL band
+        result.earningsAtLEL = Math.min(monthlySalary, lel);
+        
+        // LEL to PT band (this was missing/wrong before)
+        result.earningsLELtoPT = monthlySalary > lel ? Math.min(monthlySalary, pt) - lel : 0;
+        
+        // PT to UEL band
+        result.earningsPTtoUEL = monthlySalary > pt ? Math.min(monthlySalary, uel) - pt : 0;
+        
+        // Above UEL band
+        result.earningsAboveUEL = monthlySalary > uel ? monthlySalary - uel : 0;
+        
+        // Calculate NI contributions based on bands with rates
+        if (ptToUELBand.rate > 0) {
+          result.nationalInsurance += result.earningsPTtoUEL * ptToUELBand.rate;
         }
         
-        // Categorize earnings by band
-        if (band.name.includes('LEL') && !band.name.includes('to')) {
-          result.earningsAtLEL = amountInBand;
-        } else if (band.name.includes('LEL to PT')) {
-          result.earningsLELtoPT = amountInBand;
-        } else if (band.name.includes('PT to UEL')) {
-          result.earningsPTtoUEL = amountInBand;
-        } else if (band.name.includes('Above UEL')) {
-          result.earningsAboveUEL = amountInBand;
+        if (aboveUELBand.rate > 0) {
+          result.nationalInsurance += result.earningsAboveUEL * aboveUELBand.rate;
         }
+        
+        console.log(`Calculated earnings in each band: LEL: ${result.earningsAtLEL}, LEL to PT: ${result.earningsLELtoPT}, PT to UEL: ${result.earningsPTtoUEL}, Above UEL: ${result.earningsAboveUEL}`);
       }
       
       // Process employer bands to calculate earningsAboveST

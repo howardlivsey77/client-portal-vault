@@ -59,6 +59,15 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   const earningsAboveUEL = niResult.earningsAboveUEL;
   const earningsAboveST = niResult.earningsAboveST;
   
+  console.log(`NI calculation results:
+    - Earnings at LEL: ${earningsAtLEL}
+    - Earnings LEL to PT: ${earningsLELtoPT}
+    - Earnings PT to UEL: ${earningsPTtoUEL}
+    - Earnings above UEL: ${earningsAboveUEL}
+    - Earnings above ST: ${earningsAboveST}
+    - Total NI contribution: ${nationalInsurance}
+  `);
+  
   const studentLoan = calculateStudentLoan(grossPay, studentLoanPlan);
   const pensionContribution = calculatePension(grossPay, pensionPercentage);
   
