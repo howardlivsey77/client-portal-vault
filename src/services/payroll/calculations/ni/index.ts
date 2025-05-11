@@ -37,3 +37,4 @@ export function calculateNationalInsurance(monthlySalary: number): number {
 
 // Re-export everything needed for backwards compatibility
 export type { NICalculationResult } from './types';
+export { NationalInsuranceCalculator } from './services/NationalInsuranceCalculator';
