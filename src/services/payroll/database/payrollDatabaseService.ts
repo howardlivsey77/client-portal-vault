@@ -36,6 +36,13 @@ export async function savePayrollResultToDatabase(result: PayrollResult, payPeri
         studentLoan: roundToTwoDecimals(payrollData.student_loan_this_period / 100),
         pensionContribution: roundToTwoDecimals(payrollData.employee_pension_this_period / 100),
         
+        // Add the NI earnings band fields to ensure they're returned to the UI
+        earningsAtLEL: roundToTwoDecimals(payrollData.earnings_at_lel_this_period / 100),
+        earningsLELtoPT: roundToTwoDecimals(payrollData.earnings_lel_to_pt_this_period / 100),
+        earningsPTtoUEL: roundToTwoDecimals(payrollData.earnings_pt_to_uel_this_period / 100),
+        earningsAboveUEL: roundToTwoDecimals(payrollData.earnings_above_uel_this_period / 100),
+        earningsAboveST: roundToTwoDecimals(payrollData.earnings_above_st_this_period / 100),
+        
         // These shouldn't change, but included for clarity
         grossPay: roundToTwoDecimals(payrollData.gross_pay_this_period / 100),
         netPay: roundToTwoDecimals(payrollData.net_pay_this_period / 100)

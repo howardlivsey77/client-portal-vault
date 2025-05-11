@@ -125,6 +125,56 @@ export function AllowancesBreakdown({ result }: PayrollBreakdownProps) {
   );
 }
 
+export function NationalInsuranceBands({ result }: PayrollBreakdownProps) {
+  // Only show if we have values in at least one of these bands
+  const hasBandValues = result.earningsAtLEL > 0 || result.earningsLELtoPT > 0 || 
+                        result.earningsPTtoUEL > 0 || result.earningsAboveUEL > 0;
+
+  if (!hasBandValues) {
+    return null;
+  }
+
+  return (
+    <div className="mt-4">
+      <h4 className="text-sm font-medium mb-2">National Insurance Bands</h4>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Band</TableHead>
+            <TableHead className="text-right">Earnings</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {result.earningsAtLEL > 0 && (
+            <TableRow>
+              <TableCell>Earnings at LEL</TableCell>
+              <TableCell className="text-right">{formatCurrency(result.earningsAtLEL)}</TableCell>
+            </TableRow>
+          )}
+          {result.earningsLELtoPT > 0 && (
+            <TableRow>
+              <TableCell>LEL to Primary Threshold (PT)</TableCell>
+              <TableCell className="text-right">{formatCurrency(result.earningsLELtoPT)}</TableCell>
+            </TableRow>
+          )}
+          {result.earningsPTtoUEL > 0 && (
+            <TableRow>
+              <TableCell>PT to Upper Earnings Limit (UEL)</TableCell>
+              <TableCell className="text-right">{formatCurrency(result.earningsPTtoUEL)}</TableCell>
+            </TableRow>
+          )}
+          {result.earningsAboveUEL > 0 && (
+            <TableRow>
+              <TableCell>Above UEL</TableCell>
+              <TableCell className="text-right">{formatCurrency(result.earningsAboveUEL)}</TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
 export function NetPaySummary({ result }: PayrollBreakdownProps) {
   return (
     <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-md">

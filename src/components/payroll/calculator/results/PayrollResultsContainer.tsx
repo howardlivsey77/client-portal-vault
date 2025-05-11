@@ -1,12 +1,16 @@
 
-import { PayrollResult } from "@/services/payroll/types";
-import { PayrollSummary } from "./PayrollSummary";
-import { TaxFreeAllowance } from "./TaxFreeAllowance";
-import { GrossPayBreakdown, DeductionsBreakdown, AllowancesBreakdown, NetPaySummary } from "./PayrollBreakdown";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
-import { useState } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { PayrollSummary } from "./PayrollSummary";
+import { 
+  GrossPayBreakdown, 
+  DeductionsBreakdown, 
+  AllowancesBreakdown, 
+  NetPaySummary,
+  NationalInsuranceBands 
+} from "./PayrollBreakdown";
+import { TaxFreeAllowance } from "./TaxFreeAllowance";
+import { PayrollResult } from "@/services/payroll/types";
 
 interface PayrollResultsContainerProps {
   result: PayrollResult;
@@ -14,55 +18,53 @@ interface PayrollResultsContainerProps {
   onClearResults?: () => Promise<void>;
 }
 
-export function PayrollResultsContainer({ result, payPeriod, onClearResults }: PayrollResultsContainerProps) {
-  const [isClearing, setIsClearing] = useState(false);
-  const [clearError, setClearError] = useState<string | null>(null);
-
-  const handleClearResults = async () => {
-    if (!onClearResults) return;
-    
-    try {
-      setIsClearing(true);
-      setClearError(null);
-      await onClearResults();
-    } catch (error) {
-      console.error("Error clearing results:", error);
-      setClearError("Failed to clear payroll results. Please try again.");
-    } finally {
-      setIsClearing(false);
-    }
-  };
-
+export function PayrollResultsContainer({ 
+  result, 
+  payPeriod, 
+  onClearResults 
+}: PayrollResultsContainerProps) {
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Payroll Results</h3>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Payroll Results for {result.employeeName}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <PayrollSummary result={result} payPeriod={payPeriod} />
+            <TaxFreeAllowance taxCode={result.taxCode} freePay={result.freePay} />
+          </div>
+
+          <div className="mt-10 space-y-8">
+            <GrossPayBreakdown result={result} />
+
+            <div>
+              <h3 className="text-lg font-medium mb-4">Deductions and Allowances</h3>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                  <DeductionsBreakdown result={result} />
+                  <NationalInsuranceBands result={result} />
+                </div>
+                
+                <div>
+                  <AllowancesBreakdown result={result} />
+                </div>
+              </div>
+            </div>
+
+            <NetPaySummary result={result} />
+          </div>
+        </CardContent>
+        
         {onClearResults && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleClearResults}
-            disabled={isClearing}
-            className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
-          >
-            {isClearing ? "Clearing..." : "Clear All Results"}
-            {!isClearing && <Trash2 className="ml-2 h-4 w-4" />}
-          </Button>
+          <CardFooter className="flex justify-between">
+            <Button variant="outline" onClick={onClearResults}>
+              Clear Results
+            </Button>
+          </CardFooter>
         )}
-      </div>
-
-      {clearError && (
-        <Alert variant="destructive">
-          <AlertDescription>{clearError}</AlertDescription>
-        </Alert>
-      )}
-
-      <PayrollSummary result={result} payPeriod={payPeriod} />
-      <TaxFreeAllowance result={result} />
-      <GrossPayBreakdown result={result} />
-      <DeductionsBreakdown result={result} />
-      <AllowancesBreakdown result={result} />
-      <NetPaySummary result={result} />
+      </Card>
     </div>
   );
 }
