@@ -22,7 +22,7 @@ export interface PayrollResult {
   payrollId?: string;
   monthlySalary: number;
   grossPay: number;
-  taxablePay: number; // Added taxablePay field
+  taxablePay: number; 
   incomeTax: number;
   nationalInsurance: number;
   studentLoan: number;
@@ -35,7 +35,12 @@ export interface PayrollResult {
   totalDeductions: number;
   totalAllowances: number;
   netPay: number;
-  // Add free pay (tax-free allowance) information
   freePay: number;
   taxCode: string;
+  // Add NI earnings band fields
+  earningsAtLEL: number;
+  earningsLELtoPT: number;
+  earningsPTtoUEL: number;
+  earningsAboveUEL: number;
+  earningsAboveST: number;
 }

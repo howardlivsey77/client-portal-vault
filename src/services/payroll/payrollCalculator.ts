@@ -1,7 +1,7 @@
 
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { calculateMonthlyIncomeTaxAsync } from "./calculations/income-tax";
-import { calculateNationalInsurance, calculateNationalInsuranceAsync } from "./calculations/national-insurance";
+import { calculateNationalInsurance, calculateNationalInsuranceAsync, NICalculationResult } from "./calculations/national-insurance";
 import { calculateStudentLoan } from "./calculations/student-loan";
 import { calculatePension } from "./calculations/pension";
 import { PayrollDetails, PayrollResult } from "./types";
@@ -48,8 +48,17 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   const taxablePay = roundDownToNearestPound(grossPay - freePay);
   console.log(`Original calculation - Gross pay: ${grossPay}, Free pay: ${freePay}, Taxable pay (rounded down): ${taxablePay}`);
   
-  // Use the new async method to calculate National Insurance
-  const nationalInsurance = await calculateNationalInsuranceAsync(grossPay, taxYear);
+  // Use the new async method to calculate National Insurance with detailed band breakdowns
+  const niResult: NICalculationResult = await calculateNationalInsuranceAsync(grossPay, taxYear);
+  const nationalInsurance = niResult.nationalInsurance;
+  
+  // Get earnings in each NI band
+  const earningsAtLEL = niResult.earningsAtLEL;
+  const earningsLELtoPT = niResult.earningsLELtoPT;
+  const earningsPTtoUEL = niResult.earningsPTtoUEL;
+  const earningsAboveUEL = niResult.earningsAboveUEL;
+  const earningsAboveST = niResult.earningsAboveST;
+  
   const studentLoan = calculateStudentLoan(grossPay, studentLoanPlan);
   const pensionContribution = calculatePension(grossPay, pensionPercentage);
   
@@ -62,6 +71,7 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   const netPay = grossPay - totalDeductions + totalAllowances;
   
   console.log(`Initial calculation results - Income tax: ${incomeTax}, Taxable pay: ${taxablePay}, NI: ${nationalInsurance}`);
+  console.log(`NI earnings bands - LEL: ${earningsAtLEL}, LEL to PT: ${earningsLELtoPT}, PT to UEL: ${earningsPTtoUEL}, Above UEL: ${earningsAboveUEL}, Above ST: ${earningsAboveST}`);
   
   return {
     employeeId,
@@ -83,7 +93,13 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     totalAllowances: roundToTwoDecimals(totalAllowances),
     netPay: roundToTwoDecimals(netPay),
     freePay: roundToTwoDecimals(freePay),
-    taxCode: taxCode
+    taxCode: taxCode,
+    // Add the NI earnings bands to the result
+    earningsAtLEL: roundToTwoDecimals(earningsAtLEL),
+    earningsLELtoPT: roundToTwoDecimals(earningsLELtoPT),
+    earningsPTtoUEL: roundToTwoDecimals(earningsPTtoUEL),
+    earningsAboveUEL: roundToTwoDecimals(earningsAboveUEL),
+    earningsAboveST: roundToTwoDecimals(earningsAboveST)
   };
 }
 

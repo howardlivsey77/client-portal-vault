@@ -40,6 +40,15 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
     console.log(`Prepared taxable pay (rounded down): ${taxablePay}`);
     console.log(`Income tax this period (from YTD calc): ${incomeTaxThisPeriod/100}`);
     
+    // Convert earnings band values to pennies for database storage
+    const earningsAtLEL = Math.round(result.earningsAtLEL * 100);
+    const earningsLELtoPT = Math.round(result.earningsLELtoPT * 100);
+    const earningsPTtoUEL = Math.round(result.earningsPTtoUEL * 100);
+    const earningsAboveUEL = Math.round(result.earningsAboveUEL * 100);
+    const earningsAboveST = Math.round(result.earningsAboveST * 100);
+    
+    console.log(`NI earnings bands in pennies - LEL: ${earningsAtLEL}, LEL to PT: ${earningsLELtoPT}, PT to UEL: ${earningsPTtoUEL}, Above UEL: ${earningsAboveUEL}, Above ST: ${earningsAboveST}`);
+    
     // Data to save to the database
     const payrollData = {
       employee_id: result.employeeId,
@@ -64,12 +73,12 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       employee_pension_this_period: Math.round(result.pensionContribution * 100),
       employer_pension_this_period: 0, // Default to 0, update if available
       
-      // NI earnings bands - defaults
-      earnings_at_lel_this_period: 0,
-      earnings_lel_to_pt_this_period: 0,
-      earnings_pt_to_uel_this_period: 0,
-      earnings_above_st_this_period: 0,
-      earnings_above_uel_this_period: 0,
+      // NI earnings bands
+      earnings_at_lel_this_period: earningsAtLEL,
+      earnings_lel_to_pt_this_period: earningsLELtoPT,
+      earnings_pt_to_uel_this_period: earningsPTtoUEL,
+      earnings_above_uel_this_period: earningsAboveUEL,
+      earnings_above_st_this_period: earningsAboveST,
       
       // Net pay calculation
       net_pay_this_period: Math.round(result.netPay * 100),

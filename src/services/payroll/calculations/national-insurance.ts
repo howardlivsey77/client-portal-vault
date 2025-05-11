@@ -11,6 +11,15 @@ interface NICBand {
   contribution_type: string;
 }
 
+export interface NICalculationResult {
+  nationalInsurance: number;
+  earningsAtLEL: number;
+  earningsLELtoPT: number;
+  earningsPTtoUEL: number;
+  earningsAboveUEL: number;
+  earningsAboveST: number;
+}
+
 /**
  * Fetch NI bands from the database
  */
@@ -20,7 +29,6 @@ async function fetchNIBands(taxYear: string = '2025/26'): Promise<NICBand[]> {
       .from('nic_bands')
       .select('name, threshold_from, threshold_to, rate, contribution_type')
       .eq('tax_year', taxYear)
-      .eq('contribution_type', 'Employee')
       .order('threshold_from', { ascending: true });
       
     if (error) {
@@ -39,38 +47,86 @@ async function fetchNIBands(taxYear: string = '2025/26'): Promise<NICBand[]> {
 /**
  * Calculate National Insurance contributions using database values when available
  */
-export async function calculateNationalInsuranceAsync(monthlySalary: number, taxYear: string = '2025/26'): Promise<number> {
+export async function calculateNationalInsuranceAsync(monthlySalary: number, taxYear: string = '2025/26'): Promise<NICalculationResult> {
   try {
     // Fetch NI bands from the database
     const niBands = await fetchNIBands(taxYear);
     
+    // Initialize result with zeros
+    const result: NICalculationResult = {
+      nationalInsurance: 0,
+      earningsAtLEL: 0,
+      earningsLELtoPT: 0,
+      earningsPTtoUEL: 0,
+      earningsAboveUEL: 0,
+      earningsAboveST: 0
+    };
+    
     // If we successfully got bands from database, use those
     if (niBands && niBands.length > 0) {
-      let ni = 0;
+      // First process employee bands
+      const employeeBands = niBands.filter(band => band.contribution_type === 'Employee');
       
-      for (const band of niBands) {
-        if (band.rate > 0 && monthlySalary > band.threshold_from / 100) {
-          // Calculate the portion of salary that falls within this band
-          const lowerBound = band.threshold_from / 100;
-          const upperBound = band.threshold_to ? band.threshold_to / 100 : Infinity;
-          
-          const amountInBand = Math.min(monthlySalary, upperBound) - lowerBound;
-          
-          if (amountInBand > 0) {
-            ni += amountInBand * band.rate;
-          }
+      // Track earnings in each band
+      for (const band of employeeBands) {
+        const lowerBound = band.threshold_from / 100;
+        const upperBound = band.threshold_to ? band.threshold_to / 100 : Infinity;
+        
+        // Calculate the portion of salary that falls within this band
+        const amountInBand = Math.max(0, Math.min(monthlySalary, upperBound) - lowerBound);
+        
+        // Calculate NI contribution for this band
+        if (band.rate > 0) {
+          result.nationalInsurance += amountInBand * band.rate;
+        }
+        
+        // Categorize earnings by band
+        if (band.name.includes('LEL') && !band.name.includes('to')) {
+          result.earningsAtLEL = amountInBand;
+        } else if (band.name.includes('LEL to PT')) {
+          result.earningsLELtoPT = amountInBand;
+        } else if (band.name.includes('PT to UEL')) {
+          result.earningsPTtoUEL = amountInBand;
+        } else if (band.name.includes('Above UEL')) {
+          result.earningsAboveUEL = amountInBand;
         }
       }
       
-      return roundToTwoDecimals(ni);
+      // Process employer bands to calculate earningsAboveST
+      const employerBands = niBands.filter(band => band.contribution_type === 'Employer');
+      const stBand = employerBands.find(band => band.name.includes('Above ST'));
+      
+      if (stBand) {
+        const stThreshold = stBand.threshold_from / 100;
+        result.earningsAboveST = Math.max(0, monthlySalary - stThreshold);
+      }
+      
+      result.nationalInsurance = roundToTwoDecimals(result.nationalInsurance);
+      return result;
     }
     
     // Fall back to constants-based calculation if DB fetch fails
-    return calculateNationalInsurance(monthlySalary);
+    const fallbackResult = calculateNationalInsurance(monthlySalary);
+    return {
+      nationalInsurance: fallbackResult,
+      earningsAtLEL: 0, // We don't have detailed band information in the fallback
+      earningsLELtoPT: 0,
+      earningsPTtoUEL: 0,
+      earningsAboveUEL: 0,
+      earningsAboveST: 0
+    };
   } catch (error) {
     console.error("Error in calculateNationalInsuranceAsync:", error);
     // Fall back to constants-based calculation
-    return calculateNationalInsurance(monthlySalary);
+    const fallbackResult = calculateNationalInsurance(monthlySalary);
+    return {
+      nationalInsurance: fallbackResult,
+      earningsAtLEL: 0,
+      earningsLELtoPT: 0,
+      earningsPTtoUEL: 0,
+      earningsAboveUEL: 0,
+      earningsAboveST: 0
+    };
   }
 }
 
