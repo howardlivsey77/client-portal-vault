@@ -86,14 +86,16 @@ export async function calculateNationalInsuranceAsync(monthlySalary: number, tax
         const uel = ptToUELBand.threshold_to ? ptToUELBand.threshold_to / 100 : aboveUELBand.threshold_from / 100;
         
         console.log(`[NI DEBUG] NI thresholds in pounds: LEL: £${lel}, PT: £${pt}, UEL: £${uel}`);
-        console.log(`[NI DEBUG] Monthly salary: £${monthlySalary}, PT threshold: £${pt}`);
+        console.log(`[NI DEBUG] Monthly salary: £${monthlySalary}`);
+        console.log(`[NI DEBUG] Is salary above LEL? ${monthlySalary > lel ? 'YES' : 'NO'}`);
         console.log(`[NI DEBUG] Is salary above PT? ${monthlySalary > pt ? 'YES' : 'NO'}`);
+        console.log(`[NI DEBUG] Is salary above UEL? ${monthlySalary > uel ? 'YES' : 'NO'}`);
         
         // Calculate earnings in each band
         // LEL band
         result.earningsAtLEL = Math.min(monthlySalary, lel);
         
-        // LEL to PT band (this was missing/wrong before)
+        // LEL to PT band
         result.earningsLELtoPT = monthlySalary > lel ? Math.min(monthlySalary, pt) - lel : 0;
         
         // PT to UEL band
@@ -103,20 +105,30 @@ export async function calculateNationalInsuranceAsync(monthlySalary: number, tax
         result.earningsAboveUEL = monthlySalary > uel ? monthlySalary - uel : 0;
         
         // Calculate NI contributions based on bands with rates
-        if (ptToUELBand.rate > 0 && result.earningsPTtoUEL > 0) {
-          const ptToUELContribution = result.earningsPTtoUEL * ptToUELBand.rate;
-          console.log(`[NI DEBUG] PT to UEL contribution: £${ptToUELContribution} (£${result.earningsPTtoUEL} × ${ptToUELBand.rate})`);
+        // PT to UEL contribution (12% in 2023/24)
+        if (result.earningsPTtoUEL > 0) {
+          // Get the rate from the band data
+          const ptToUELRate = ptToUELBand.rate;
+          console.log(`[NI DEBUG] PT to UEL rate: ${ptToUELRate} for earnings: £${result.earningsPTtoUEL}`);
+          
+          const ptToUELContribution = result.earningsPTtoUEL * ptToUELRate;
+          console.log(`[NI DEBUG] PT to UEL contribution calculation: £${result.earningsPTtoUEL} × ${ptToUELRate} = £${ptToUELContribution}`);
           result.nationalInsurance += ptToUELContribution;
         } else {
-          console.log(`[NI DEBUG] No contribution for PT to UEL band - rate: ${ptToUELBand.rate}, earnings: £${result.earningsPTtoUEL}`);
+          console.log(`[NI DEBUG] No contribution for PT to UEL band - earnings: £${result.earningsPTtoUEL}`);
         }
         
-        if (aboveUELBand.rate > 0 && result.earningsAboveUEL > 0) {
-          const aboveUELContribution = result.earningsAboveUEL * aboveUELBand.rate;
-          console.log(`[NI DEBUG] Above UEL contribution: £${aboveUELContribution} (£${result.earningsAboveUEL} × ${aboveUELBand.rate})`);
+        // Above UEL contribution (2% in 2023/24)
+        if (result.earningsAboveUEL > 0) {
+          // Get the rate from the band data
+          const aboveUELRate = aboveUELBand.rate;
+          console.log(`[NI DEBUG] Above UEL rate: ${aboveUELRate} for earnings: £${result.earningsAboveUEL}`);
+          
+          const aboveUELContribution = result.earningsAboveUEL * aboveUELRate;
+          console.log(`[NI DEBUG] Above UEL contribution calculation: £${result.earningsAboveUEL} × ${aboveUELRate} = £${aboveUELContribution}`);
           result.nationalInsurance += aboveUELContribution;
         } else {
-          console.log(`[NI DEBUG] No contribution for Above UEL band - rate: ${aboveUELBand.rate}, earnings: £${result.earningsAboveUEL}`);
+          console.log(`[NI DEBUG] No contribution for Above UEL band - earnings: £${result.earningsAboveUEL}`);
         }
         
         console.log(`[NI DEBUG] Calculated earnings in each band: 
@@ -136,6 +148,7 @@ export async function calculateNationalInsuranceAsync(monthlySalary: number, tax
       if (stBand) {
         const stThreshold = stBand.threshold_from / 100;
         result.earningsAboveST = Math.max(0, monthlySalary - stThreshold);
+        console.log(`[NI DEBUG] Secondary Threshold: £${stThreshold}, Earnings above ST: £${result.earningsAboveST}`);
       }
       
       result.nationalInsurance = roundToTwoDecimals(result.nationalInsurance);
@@ -143,33 +156,63 @@ export async function calculateNationalInsuranceAsync(monthlySalary: number, tax
       return result;
     } else {
       console.log("[NI DEBUG] No NI bands from database, using fallback constants-based calculation");
+      return calculateNationalInsuranceFallback(monthlySalary);
     }
-    
-    // Fall back to constants-based calculation if DB fetch fails
-    const fallbackResult = calculateNationalInsurance(monthlySalary);
-    console.log(`[NI DEBUG] Fallback calculation result: £${fallbackResult}`);
-    return {
-      nationalInsurance: fallbackResult,
-      earningsAtLEL: 0, // We don't have detailed band information in the fallback
-      earningsLELtoPT: 0,
-      earningsPTtoUEL: 0,
-      earningsAboveUEL: 0,
-      earningsAboveST: 0
-    };
   } catch (error) {
     console.error("[NI DEBUG] Error in calculateNationalInsuranceAsync:", error);
     // Fall back to constants-based calculation
-    const fallbackResult = calculateNationalInsurance(monthlySalary);
-    console.log(`[NI DEBUG] Fallback calculation after error: £${fallbackResult}`);
-    return {
-      nationalInsurance: fallbackResult,
-      earningsAtLEL: 0,
-      earningsLELtoPT: 0,
-      earningsPTtoUEL: 0,
-      earningsAboveUEL: 0,
-      earningsAboveST: 0
-    };
+    return calculateNationalInsuranceFallback(monthlySalary);
   }
+}
+
+/**
+ * Fallback calculation using constants when database values are not available
+ */
+function calculateNationalInsuranceFallback(monthlySalary: number): NICalculationResult {
+  console.log(`[NI DEBUG] Using fallback NI calculation for salary: £${monthlySalary}`);
+  
+  const primaryThreshold = NI_THRESHOLDS.PRIMARY_THRESHOLD.monthly;
+  const lowerEarningsLimit = NI_THRESHOLDS.LOWER_EARNINGS_LIMIT.monthly;
+  const upperLimit = NI_THRESHOLDS.UPPER_EARNINGS_LIMIT.monthly;
+  const secondaryThreshold = NI_THRESHOLDS.SECONDARY_THRESHOLD.monthly;
+  
+  console.log(`[NI DEBUG] Fallback thresholds - LEL: £${lowerEarningsLimit}, PT: £${primaryThreshold}, UEL: £${upperLimit}, ST: £${secondaryThreshold}`);
+  
+  const result: NICalculationResult = {
+    nationalInsurance: 0,
+    earningsAtLEL: Math.min(monthlySalary, lowerEarningsLimit),
+    earningsLELtoPT: monthlySalary > lowerEarningsLimit ? Math.min(monthlySalary, primaryThreshold) - lowerEarningsLimit : 0,
+    earningsPTtoUEL: monthlySalary > primaryThreshold ? Math.min(monthlySalary, upperLimit) - primaryThreshold : 0,
+    earningsAboveUEL: monthlySalary > upperLimit ? monthlySalary - upperLimit : 0,
+    earningsAboveST: monthlySalary > secondaryThreshold ? monthlySalary - secondaryThreshold : 0
+  };
+  
+  console.log(`[NI DEBUG] Earnings bands from fallback calculation:
+    - LEL: £${result.earningsAtLEL}
+    - LEL to PT: £${result.earningsLELtoPT}
+    - PT to UEL: £${result.earningsPTtoUEL}
+    - Above UEL: £${result.earningsAboveUEL}
+    - Above ST: ${result.earningsAboveST}
+  `);
+  
+  // Calculate NI - Main rate (12%) between PT and UEL
+  if (result.earningsPTtoUEL > 0) {
+    const mainRateContribution = result.earningsPTtoUEL * NI_RATES.MAIN_RATE;
+    console.log(`[NI DEBUG] Main rate contribution: £${mainRateContribution} (£${result.earningsPTtoUEL} × ${NI_RATES.MAIN_RATE})`);
+    result.nationalInsurance += mainRateContribution;
+  }
+  
+  // Higher rate (2%) above UEL
+  if (result.earningsAboveUEL > 0) {
+    const higherRateContribution = result.earningsAboveUEL * NI_RATES.HIGHER_RATE;
+    console.log(`[NI DEBUG] Higher rate contribution: £${higherRateContribution} (£${result.earningsAboveUEL} × ${NI_RATES.HIGHER_RATE})`);
+    result.nationalInsurance += higherRateContribution;
+  }
+  
+  result.nationalInsurance = roundToTwoDecimals(result.nationalInsurance);
+  console.log(`[NI DEBUG] Total fallback NI: £${result.nationalInsurance}`);
+  
+  return result;
 }
 
 /**
@@ -177,32 +220,6 @@ export async function calculateNationalInsuranceAsync(monthlySalary: number, tax
  * (Legacy method, kept for fallback)
  */
 export function calculateNationalInsurance(monthlySalary: number): number {
-  const primaryThreshold = NI_THRESHOLDS.PRIMARY_THRESHOLD.monthly;
-  const upperLimit = NI_THRESHOLDS.UPPER_EARNINGS_LIMIT.monthly;
-  
-  console.log(`[NI DEBUG] Fallback calculation with constants - PT: £${primaryThreshold}, UEL: £${upperLimit}`);
-  console.log(`[NI DEBUG] Salary: £${monthlySalary}, Is above PT? ${monthlySalary > primaryThreshold ? 'YES' : 'NO'}`);
-  
-  let ni = 0;
-  
-  // Main rate between primary threshold and upper earnings limit
-  if (monthlySalary > primaryThreshold) {
-    const mainRatePortion = Math.min(monthlySalary, upperLimit) - primaryThreshold;
-    const mainRateNI = mainRatePortion * NI_RATES.MAIN_RATE;
-    console.log(`[NI DEBUG] Main rate contribution: £${mainRateNI} (£${mainRatePortion} × ${NI_RATES.MAIN_RATE})`);
-    ni += mainRateNI;
-    
-    // Higher rate above upper earnings limit
-    if (monthlySalary > upperLimit) {
-      const higherRatePortion = monthlySalary - upperLimit;
-      const higherRateNI = higherRatePortion * NI_RATES.HIGHER_RATE;
-      console.log(`[NI DEBUG] Higher rate contribution: £${higherRateNI} (£${higherRatePortion} × ${NI_RATES.HIGHER_RATE})`);
-      ni += higherRateNI;
-    }
-  } else {
-    console.log(`[NI DEBUG] No NI contribution as salary is below primary threshold`);
-  }
-  
-  console.log(`[NI DEBUG] Total fallback NI: £${ni}`);
-  return roundToTwoDecimals(ni);
+  const niResult = calculateNationalInsuranceFallback(monthlySalary);
+  return niResult.nationalInsurance;
 }

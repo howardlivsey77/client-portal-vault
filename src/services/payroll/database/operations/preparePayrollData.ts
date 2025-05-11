@@ -59,6 +59,15 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
     const earningsAboveUEL = Math.max(0, result.earningsAboveUEL || 0);
     const earningsAboveST = Math.max(0, result.earningsAboveST || 0);
     
+    console.log(`[PREPARE] Validated NI values:
+      - NI: £${niValue} (original: £${result.nationalInsurance})
+      - LEL: £${earningsAtLEL} (original: £${result.earningsAtLEL})
+      - LEL to PT: £${earningsLELtoPT} (original: £${result.earningsLELtoPT})
+      - PT to UEL: £${earningsPTtoUEL} (original: £${result.earningsPTtoUEL})
+      - Above UEL: £${earningsAboveUEL} (original: £${result.earningsAboveUEL})
+      - Above ST: £${earningsAboveST} (original: £${result.earningsAboveST})
+    `);
+    
     // Convert earnings band values to pennies for database storage
     const earningsAtLELPennies = Math.round(earningsAtLEL * 100);
     const earningsLELtoPTPennies = Math.round(earningsLELtoPT * 100);
@@ -67,7 +76,8 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
     const earningsAboveSTPennies = Math.round(earningsAboveST * 100);
     const nicEmployeeThisPeriodPennies = Math.round(niValue * 100);
     
-    console.log(`[PREPARE] NI earnings bands in pennies: 
+    // Verify NI values before saving - This is critical for debugging
+    console.log(`[PREPARE] NI values in pennies for database: 
       - NI Employee: ${nicEmployeeThisPeriodPennies} pennies (£${nicEmployeeThisPeriodPennies/100})
       - LEL: ${earningsAtLELPennies} pennies (£${earningsAtLELPennies/100})
       - LEL to PT: ${earningsLELtoPTPennies} pennies (£${earningsLELtoPTPennies/100})
@@ -75,6 +85,9 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       - Above UEL: ${earningsAboveUELPennies} pennies (£${earningsAboveUELPennies/100})
       - Above ST: ${earningsAboveSTPennies} pennies (£${earningsAboveSTPennies/100})
     `);
+    
+    // Full salary info for NI eligibility check
+    console.log(`[PREPARE] Full salary info for ${result.employeeName}: £${result.monthlySalary} monthly, £${result.grossPay} gross pay`);
     
     // Data to save to the database
     const payrollData = {
@@ -117,7 +130,7 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       nic_employee_ytd: nicEmployeeYTD
     };
     
-    console.log(`[PREPARE] Final payroll data prepared successfully`);
+    console.log(`[PREPARE] Final payroll data prepared successfully:`, payrollData);
     
     return { 
       success: true, 

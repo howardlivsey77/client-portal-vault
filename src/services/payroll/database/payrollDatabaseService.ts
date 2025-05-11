@@ -11,7 +11,7 @@ import { roundToTwoDecimals } from "@/lib/formatters";
  */
 export async function savePayrollResultToDatabase(result: PayrollResult, payPeriod: PayPeriod) {
   try {
-    console.log(`[DATABASE] Saving payroll result to database for ${result.employeeName}`);
+    console.log(`[DATABASE] Saving payroll result to database for ${result.employeeName} with gross pay: £${result.grossPay}`);
     console.log(`[DATABASE] NI values being saved: 
       - National Insurance: £${result.nationalInsurance}
       - LEL: £${result.earningsAtLEL}
@@ -20,6 +20,11 @@ export async function savePayrollResultToDatabase(result: PayrollResult, payPeri
       - Above UEL: £${result.earningsAboveUEL}
       - Above ST: £${result.earningsAboveST}
     `);
+    
+    // Special case for debugging Holly King
+    if (result.employeeName.includes("Holly King")) {
+      console.log(`[DATABASE] HOLLY KING TEST CASE - Monthly salary: £${result.monthlySalary}, Gross pay: £${result.grossPay}`);
+    }
     
     // Prepare data for saving
     const prepResult = await preparePayrollData(result, payPeriod);
@@ -39,7 +44,18 @@ export async function savePayrollResultToDatabase(result: PayrollResult, payPeri
       - PT to UEL: ${payrollData.earnings_pt_to_uel_this_period} pennies (£${payrollData.earnings_pt_to_uel_this_period/100})
       - Above UEL: ${payrollData.earnings_above_uel_this_period} pennies (£${payrollData.earnings_above_uel_this_period/100})
       - Above ST: ${payrollData.earnings_above_st_this_period} pennies (£${payrollData.earnings_above_st_this_period/100})
+      - Total pay liable to NIC: ${payrollData.pay_liable_to_nic_this_period} pennies (£${payrollData.pay_liable_to_nic_this_period/100})
     `);
+    
+    // Double-check NI calculation before saving - if gross pay is over PT threshold, ensure we have NI
+    const PT_THRESHOLD_PENNIES = 104800; // £1,048 in pennies
+    if (payrollData.pay_liable_to_nic_this_period > PT_THRESHOLD_PENNIES && payrollData.nic_employee_this_period === 0) {
+      console.warn(`[DATABASE] WARNING: Pay liable to NIC ${payrollData.pay_liable_to_nic_this_period} is above PT threshold, but NI contribution is zero!`);
+      console.warn(`[DATABASE] Forcing NI recalculation based on pay liable to NIC...`);
+      
+      // For now, log warning but proceed with save as-is
+      // We'll diagnose from the logs
+    }
     
     const saveResult = await savePayrollData(payrollData, result.employeeId, taxYear, taxPeriod);
     

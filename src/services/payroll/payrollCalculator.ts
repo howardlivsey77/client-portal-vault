@@ -52,7 +52,13 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   const taxablePay = roundDownToNearestPound(grossPay - freePay);
   console.log(`[PAYROLL] Original calculation - Gross pay: £${grossPay}, Free pay: £${freePay}, Taxable pay (rounded down): £${taxablePay}`);
   
-  // Use the new async method to calculate National Insurance with detailed band breakdowns
+  // Special case for debugging Holly King
+  const isHollyKing = employeeName.includes("Holly King");
+  if (isHollyKing) {
+    console.log(`[PAYROLL] HOLLY KING TEST CASE - Monthly salary: £${monthlySalary}, Gross pay: £${grossPay}`);
+  }
+  
+  // Use the async method to calculate National Insurance with detailed band breakdowns
   console.log(`[PAYROLL] Calculating National Insurance for gross pay: £${grossPay}`);
   const niResult: NICalculationResult = await calculateNationalInsuranceAsync(grossPay, taxYear);
   const nationalInsurance = niResult.nationalInsurance;
