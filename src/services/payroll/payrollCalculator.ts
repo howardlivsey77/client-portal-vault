@@ -1,4 +1,3 @@
-
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { calculateMonthlyIncomeTaxAsync } from "./calculations/income-tax";
 import { calculateNationalInsurance, calculateNationalInsuranceAsync, NICalculationResult } from "./calculations/national-insurance";
@@ -6,6 +5,7 @@ import { calculateStudentLoan } from "./calculations/student-loan";
 import { calculatePension } from "./calculations/pension";
 import { PayrollDetails, PayrollResult } from "./types";
 import { parseTaxCode } from "./utils/tax-code-utils";
+import { NationalInsuranceCalculator } from "./calculations/ni/services/NationalInsuranceCalculator";
 
 /**
  * Round down to nearest pound for taxable pay
@@ -58,9 +58,10 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     console.log(`[PAYROLL] HOLLY KING TEST CASE - Monthly salary: £${monthlySalary}, Gross pay: £${grossPay}`);
   }
   
-  // Use the async method to calculate National Insurance with detailed band breakdowns
+  // Use the NI calculator service for National Insurance calculations
   console.log(`[PAYROLL] Calculating National Insurance for gross pay: £${grossPay}`);
-  const niResult: NICalculationResult = await calculateNationalInsuranceAsync(grossPay, taxYear);
+  const niCalculator = new NationalInsuranceCalculator(taxYear, true);
+  const niResult: NICalculationResult = await niCalculator.calculate(grossPay);
   const nationalInsurance = niResult.nationalInsurance;
   
   // Get earnings in each NI band

@@ -3,40 +3,22 @@ import { NICalculationResult } from "./types";
 import { fetchNIBands } from "./database";
 import { calculateFromBands, calculateNationalInsuranceFallback } from "./calculation-utils";
 import { roundToTwoDecimals } from "@/lib/formatters";
+import { NationalInsuranceCalculator } from "./services/NationalInsuranceCalculator";
+
+// Create a singleton instance for the current tax year
+const niCalculator = new NationalInsuranceCalculator('2025/26', true);
 
 /**
  * Calculate National Insurance contributions using database values when available
+ * Uses the new NationalInsuranceCalculator service
  */
 export async function calculateNationalInsuranceAsync(monthlySalary: number, taxYear: string = '2025/26'): Promise<NICalculationResult> {
   try {
-    console.log(`[NI DEBUG] Calculating NI for monthly salary: £${monthlySalary}`);
+    console.log(`[NI DEBUG] Calculating NI for monthly salary: £${monthlySalary} using NI calculator service`);
     
-    // Special case for debugging Holly King
-    const isHollyKingDebugging = monthlySalary === 2302.43;
-    if (isHollyKingDebugging) {
-      console.log(`[NI DEBUG] HOLLY KING TEST CASE detected with salary £${monthlySalary}`);
-    }
-    
-    // Fetch NI bands from the database
-    const niBands = await fetchNIBands(taxYear);
-    
-    // If we successfully got bands from database, use those
-    if (niBands && niBands.length > 0) {
-      const result = calculateFromBands(monthlySalary, niBands);
-      
-      if (result) {
-        // Extra validation for Holly King test case
-        if (isHollyKingDebugging && result.nationalInsurance === 0 && monthlySalary > 1048) {
-          console.error(`[NI DEBUG] ERROR: Holly King has salary above PT (£${monthlySalary} > £1048) but NI is zero!`);
-          console.log("[NI DEBUG] Forcing fallback calculation for Holly King as a safety measure");
-          return calculateNationalInsuranceFallback(monthlySalary);
-        }
-        return result;
-      }
-    }
-    
-    console.log("[NI DEBUG] No NI bands from database, using fallback constants-based calculation");
-    return calculateNationalInsuranceFallback(monthlySalary);
+    // Use the NI calculator service
+    const calculator = new NationalInsuranceCalculator(taxYear, true);
+    return await calculator.calculate(monthlySalary);
   } catch (error) {
     console.error("[NI DEBUG] Error in calculateNationalInsuranceAsync:", error);
     // Fall back to constants-based calculation

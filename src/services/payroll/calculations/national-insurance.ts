@@ -7,5 +7,6 @@
 export { 
   calculateNationalInsuranceAsync,
   calculateNationalInsurance,
-  type NICalculationResult
+  type NICalculationResult,
+  NationalInsuranceCalculator
 } from './ni/index';
