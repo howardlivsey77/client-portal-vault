@@ -31,6 +31,8 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     additionalEarnings = []
   } = details;
   
+  console.log(`[PAYROLL] Starting calculation for ${employeeName}, monthly salary: £${monthlySalary}`);
+  
   // Tax year in format YYYY/YY
   const currentYear = new Date().getFullYear();
   const taxYear = `${currentYear}/${(currentYear + 1).toString().substring(2)}`;
@@ -38,17 +40,20 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   // Calculate earnings
   const totalAdditionalEarnings = additionalEarnings?.reduce((sum, item) => sum + item.amount, 0) || 0;
   const grossPay = monthlySalary + totalAdditionalEarnings;
+  console.log(`[PAYROLL] Gross pay: £${grossPay} (Salary: £${monthlySalary} + Additional: £${totalAdditionalEarnings})`);
   
   // Calculate deductions using enhanced async tax calculation from database
   const incomeTaxResult = await calculateMonthlyIncomeTaxAsync(grossPay, taxCode, taxYear);
   const incomeTax = incomeTaxResult.monthlyTax;
   const freePay = incomeTaxResult.freePay;
+  console.log(`[PAYROLL] Income tax: £${incomeTax}, Free pay: £${freePay}`);
   
   // Calculate taxable pay and round down to the nearest pound
   const taxablePay = roundDownToNearestPound(grossPay - freePay);
-  console.log(`Original calculation - Gross pay: ${grossPay}, Free pay: ${freePay}, Taxable pay (rounded down): ${taxablePay}`);
+  console.log(`[PAYROLL] Original calculation - Gross pay: £${grossPay}, Free pay: £${freePay}, Taxable pay (rounded down): £${taxablePay}`);
   
   // Use the new async method to calculate National Insurance with detailed band breakdowns
+  console.log(`[PAYROLL] Calculating National Insurance for gross pay: £${grossPay}`);
   const niResult: NICalculationResult = await calculateNationalInsuranceAsync(grossPay, taxYear);
   const nationalInsurance = niResult.nationalInsurance;
   
@@ -59,17 +64,18 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   const earningsAboveUEL = niResult.earningsAboveUEL;
   const earningsAboveST = niResult.earningsAboveST;
   
-  console.log(`NI calculation results:
-    - Earnings at LEL: ${earningsAtLEL}
-    - Earnings LEL to PT: ${earningsLELtoPT}
-    - Earnings PT to UEL: ${earningsPTtoUEL}
-    - Earnings above UEL: ${earningsAboveUEL}
-    - Earnings above ST: ${earningsAboveST}
-    - Total NI contribution: ${nationalInsurance}
+  console.log(`[PAYROLL] NI calculation results:
+    - Earnings at LEL: £${earningsAtLEL}
+    - Earnings LEL to PT: £${earningsLELtoPT}
+    - Earnings PT to UEL: £${earningsPTtoUEL}
+    - Earnings above UEL: £${earningsAboveUEL}
+    - Earnings above ST: £${earningsAboveST}
+    - Total NI contribution: £${nationalInsurance}
   `);
   
   const studentLoan = calculateStudentLoan(grossPay, studentLoanPlan);
   const pensionContribution = calculatePension(grossPay, pensionPercentage);
+  console.log(`[PAYROLL] Student loan: £${studentLoan}, Pension contribution: £${pensionContribution}`);
   
   // Calculate totals
   const totalAdditionalDeductions = additionalDeductions.reduce((sum, item) => sum + item.amount, 0);
@@ -79,10 +85,11 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   const totalAllowances = totalAdditionalAllowances;
   const netPay = grossPay - totalDeductions + totalAllowances;
   
-  console.log(`Initial calculation results - Income tax: ${incomeTax}, Taxable pay: ${taxablePay}, NI: ${nationalInsurance}`);
-  console.log(`NI earnings bands - LEL: ${earningsAtLEL}, LEL to PT: ${earningsLELtoPT}, PT to UEL: ${earningsPTtoUEL}, Above UEL: ${earningsAboveUEL}, Above ST: ${earningsAboveST}`);
+  console.log(`[PAYROLL] Initial calculation results - Income tax: £${incomeTax}, Taxable pay: £${taxablePay}, NI: £${nationalInsurance}`);
+  console.log(`[PAYROLL] NI earnings bands - LEL: £${earningsAtLEL}, LEL to PT: £${earningsLELtoPT}, PT to UEL: £${earningsPTtoUEL}, Above UEL: £${earningsAboveUEL}, Above ST: £${earningsAboveST}`);
+  console.log(`[PAYROLL] Final net pay: £${netPay}`);
   
-  return {
+  const result = {
     employeeId,
     employeeName,
     payrollId,
@@ -110,6 +117,9 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     earningsAboveUEL: roundToTwoDecimals(earningsAboveUEL),
     earningsAboveST: roundToTwoDecimals(earningsAboveST)
   };
+  
+  console.log(`[PAYROLL] Final calculation result:`, result);
+  return result;
 }
 
 // Re-export all the functions we need for backward compatibility

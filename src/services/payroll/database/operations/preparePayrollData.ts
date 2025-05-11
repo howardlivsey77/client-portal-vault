@@ -12,6 +12,16 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       return { success: false, error: "Missing employee ID for saving payroll result" };
     }
     
+    console.log(`[PREPARE] Preparing payroll data for database storage for ${result.employeeName}`);
+    console.log(`[PREPARE] NI values to convert to pennies: 
+      - NI: £${result.nationalInsurance}
+      - LEL: £${result.earningsAtLEL}
+      - LEL to PT: £${result.earningsLELtoPT}
+      - PT to UEL: £${result.earningsPTtoUEL}
+      - Above UEL: £${result.earningsAboveUEL}
+      - Above ST: £${result.earningsAboveST}
+    `);
+    
     const payrollPeriodDate = new Date(payPeriod.year, payPeriod.month - 1, 1);
     const formattedPayrollPeriod = payrollPeriodDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
     
@@ -19,12 +29,13 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
     const taxYear = `${payPeriod.year}/${(payPeriod.year + 1).toString().substring(2)}`;
     const taxPeriod = payPeriod.periodNumber;
     
-    console.log(`Processing payroll for tax year: ${taxYear}, period: ${taxPeriod}`);
+    console.log(`[PREPARE] Processing payroll for tax year: ${taxYear}, period: ${taxPeriod}`);
     
     // Get YTD values
     const ytdResult = await calculateYTDValues(result, payPeriod, taxYear, taxPeriod);
     
     if (!ytdResult.success) {
+      console.error(`[PREPARE] Error calculating YTD values: ${ytdResult.error}`);
       return { success: false, error: ytdResult.error };
     }
     
@@ -37,17 +48,33 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       nicEmployeeYTD 
     } = ytdResult.data;
     
-    console.log(`Prepared taxable pay (rounded down): ${taxablePay}`);
-    console.log(`Income tax this period (from YTD calc): ${incomeTaxThisPeriod/100}`);
+    console.log(`[PREPARE] Prepared taxable pay (rounded down): £${taxablePay}`);
+    console.log(`[PREPARE] Income tax this period (from YTD calc): £${incomeTaxThisPeriod/100}`);
+    
+    // Ensure we have valid values for all NI fields
+    const niValue = Math.max(0, result.nationalInsurance || 0);
+    const earningsAtLEL = Math.max(0, result.earningsAtLEL || 0);
+    const earningsLELtoPT = Math.max(0, result.earningsLELtoPT || 0);
+    const earningsPTtoUEL = Math.max(0, result.earningsPTtoUEL || 0);
+    const earningsAboveUEL = Math.max(0, result.earningsAboveUEL || 0);
+    const earningsAboveST = Math.max(0, result.earningsAboveST || 0);
     
     // Convert earnings band values to pennies for database storage
-    const earningsAtLEL = Math.round(result.earningsAtLEL * 100);
-    const earningsLELtoPT = Math.round(result.earningsLELtoPT * 100);
-    const earningsPTtoUEL = Math.round(result.earningsPTtoUEL * 100);
-    const earningsAboveUEL = Math.round(result.earningsAboveUEL * 100);
-    const earningsAboveST = Math.round(result.earningsAboveST * 100);
+    const earningsAtLELPennies = Math.round(earningsAtLEL * 100);
+    const earningsLELtoPTPennies = Math.round(earningsLELtoPT * 100);
+    const earningsPTtoUELPennies = Math.round(earningsPTtoUEL * 100);
+    const earningsAboveUELPennies = Math.round(earningsAboveUEL * 100);
+    const earningsAboveSTPennies = Math.round(earningsAboveST * 100);
+    const nicEmployeeThisPeriodPennies = Math.round(niValue * 100);
     
-    console.log(`NI earnings bands in pennies - LEL: ${earningsAtLEL}, LEL to PT: ${earningsLELtoPT}, PT to UEL: ${earningsPTtoUEL}, Above UEL: ${earningsAboveUEL}, Above ST: ${earningsAboveST}`);
+    console.log(`[PREPARE] NI earnings bands in pennies: 
+      - NI Employee: ${nicEmployeeThisPeriodPennies} pennies (£${nicEmployeeThisPeriodPennies/100})
+      - LEL: ${earningsAtLELPennies} pennies (£${earningsAtLELPennies/100})
+      - LEL to PT: ${earningsLELtoPTPennies} pennies (£${earningsLELtoPTPennies/100})
+      - PT to UEL: ${earningsPTtoUELPennies} pennies (£${earningsPTtoUELPennies/100})
+      - Above UEL: ${earningsAboveUELPennies} pennies (£${earningsAboveUELPennies/100})
+      - Above ST: ${earningsAboveSTPennies} pennies (£${earningsAboveSTPennies/100})
+    `);
     
     // Data to save to the database
     const payrollData = {
@@ -65,7 +92,7 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       income_tax_this_period: incomeTaxThisPeriod,
       
       pay_liable_to_nic_this_period: Math.round(result.grossPay * 100),
-      nic_employee_this_period: Math.round(result.nationalInsurance * 100),
+      nic_employee_this_period: nicEmployeeThisPeriodPennies,
       nic_employer_this_period: 0, // Default to 0, update if available
       nic_letter: 'A', // Default, update if available
       
@@ -73,12 +100,12 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       employee_pension_this_period: Math.round(result.pensionContribution * 100),
       employer_pension_this_period: 0, // Default to 0, update if available
       
-      // NI earnings bands
-      earnings_at_lel_this_period: earningsAtLEL,
-      earnings_lel_to_pt_this_period: earningsLELtoPT,
-      earnings_pt_to_uel_this_period: earningsPTtoUEL,
-      earnings_above_uel_this_period: earningsAboveUEL,
-      earnings_above_st_this_period: earningsAboveST,
+      // NI earnings bands - ensure values are always positive
+      earnings_at_lel_this_period: earningsAtLELPennies,
+      earnings_lel_to_pt_this_period: earningsLELtoPTPennies,
+      earnings_pt_to_uel_this_period: earningsPTtoUELPennies,
+      earnings_above_uel_this_period: earningsAboveUELPennies,
+      earnings_above_st_this_period: earningsAboveSTPennies,
       
       // Net pay calculation
       net_pay_this_period: Math.round(result.netPay * 100),
@@ -90,6 +117,8 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       nic_employee_ytd: nicEmployeeYTD
     };
     
+    console.log(`[PREPARE] Final payroll data prepared successfully`);
+    
     return { 
       success: true, 
       payrollData, 
@@ -98,7 +127,7 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       ytdData: ytdResult.data 
     };
   } catch (error) {
-    console.error("Error preparing payroll data:", error);
+    console.error("[PREPARE] Error preparing payroll data:", error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : String(error)
