@@ -1,3 +1,4 @@
+
 /**
  * UK Tax constants for 2023-2024
  */
@@ -12,8 +13,10 @@ export const TAX_BANDS = {
 
 // National Insurance contribution thresholds and rates for 2023-2024
 export const NI_THRESHOLDS = {
+  LOWER_EARNINGS_LIMIT: { weekly: 145, monthly: 628, annual: 7540 }, // Added missing property
   PRIMARY_THRESHOLD: { weekly: 242, monthly: 1048, annual: 12570 },
-  UPPER_EARNINGS_LIMIT: { weekly: 967, monthly: 4189, annual: 50270 }
+  UPPER_EARNINGS_LIMIT: { weekly: 967, monthly: 4189, annual: 50270 },
+  SECONDARY_THRESHOLD: { weekly: 175, monthly: 758, annual: 9100 } // Added missing property
 };
 
 export const NI_RATES = {
