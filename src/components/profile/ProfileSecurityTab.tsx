@@ -19,6 +19,7 @@ export const ProfileSecurityTab = () => {
   const [secret, setSecret] = useState<string | null>(null);
   const [otp, setOtp] = useState("");
   const [has2fa, setHas2fa] = useState(false);
+  const [existingFactorId, setExistingFactorId] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -33,6 +34,12 @@ export const ProfileSecurityTab = () => {
         if (error) throw error;
         
         const totpFactor = data.all.find(factor => factor.factor_type === 'totp');
+        
+        // If a factor exists, store its ID for future operations
+        if (totpFactor) {
+          setExistingFactorId(totpFactor.id);
+        }
+        
         setHas2fa(totpFactor?.status === 'verified');
       } catch (error: any) {
         console.error("Error checking MFA status:", error);
@@ -51,13 +58,22 @@ export const ProfileSecurityTab = () => {
 
   const handleEnrollMfa = async () => {
     try {
+      // If there's an unverified factor, we need to unenroll it first
+      if (existingFactorId && !has2fa) {
+        await handleUnenrollExistingFactor(existingFactorId);
+      }
+      
       setEnrolling(true);
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
+        // Adding a friendly name to avoid duplicate errors
+        issuer: 'YourApp',
+        friendlyName: `${user?.email || 'user'}-totp`,
       });
       
       if (error) throw error;
       
+      setExistingFactorId(data.id);
       setQrCode(data.totp.qr_code);
       setSecret(data.totp.secret);
     } catch (error: any) {
@@ -72,19 +88,44 @@ export const ProfileSecurityTab = () => {
     }
   };
 
+  // Helper function to unenroll an existing factor
+  const handleUnenrollExistingFactor = async (factorId: string) => {
+    try {
+      const { error } = await supabase.auth.mfa.unenroll({
+        factorId: factorId,
+      });
+      
+      if (error) throw error;
+      
+      setExistingFactorId(null);
+    } catch (error: any) {
+      console.error("Error unenrolling existing MFA:", error);
+      throw error; // Propagate the error to the caller
+    }
+  };
+
   const handleVerifyMfa = async () => {
+    if (!existingFactorId) {
+      toast({
+        title: "Error",
+        description: "No 2FA factor found to verify",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       setVerifying(true);
       // First create a challenge
       const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
-        factorId: 'totp',
+        factorId: existingFactorId,
       });
       
       if (challengeError) throw challengeError;
       
       // Then verify with the challenge ID
       const { error: verifyError } = await supabase.auth.mfa.verify({
-        factorId: challengeData.id,
+        factorId: existingFactorId,
         challengeId: challengeData.id,
         code: otp,
       });
@@ -113,20 +154,26 @@ export const ProfileSecurityTab = () => {
   };
 
   const handleUnenrollMfa = async () => {
+    if (!existingFactorId) {
+      toast({
+        title: "Error",
+        description: "No 2FA factor found to disable",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       setUnenrolling(true);
-      const { data: factors } = await supabase.auth.mfa.listFactors();
-      const totpFactor = factors.all.find(factor => factor.factor_type === 'totp');
-      
-      if (!totpFactor) throw new Error("No 2FA factor found");
       
       const { error } = await supabase.auth.mfa.unenroll({
-        factorId: totpFactor.id,
+        factorId: existingFactorId,
       });
       
       if (error) throw error;
       
       setHas2fa(false);
+      setExistingFactorId(null);
       toast({
         title: "Success",
         description: "Two-factor authentication has been disabled",
