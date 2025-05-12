@@ -14,6 +14,7 @@ import TimesheetSettings from "./pages/TimesheetSettings";
 import Notifications from "./pages/Notifications";
 import PayrollProcessing from "./pages/PayrollProcessing";
 import Security from "./pages/Security";
+import Profile from "./pages/Profile";
 import CompanySettings from "./features/company-settings/CompanySettings";
 import NotFound from "./pages/NotFound";
 import AuthProvider from "./providers/AuthProvider";
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               <Route path="/payroll-processing" element={<ProtectedRoute><PayrollProcessing /></ProtectedRoute>} />
               <Route path="/security" element={<ProtectedRoute><Security /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               
               {/* Company Settings Routes */}
               <Route path="/settings/company/general" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />

@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Shield } from "lucide-react";
+import { Shield, UserCog } from "lucide-react";
 import { Link, Location } from "react-router-dom";
 import { CompanySettingsMenu } from "./CompanySettingsMenu";
 
@@ -15,6 +15,21 @@ export function SidebarFooterNavigation({ location, expandedAccordion, onAccordi
     <div className="mt-auto">
       <div className="px-4 py-2">
         <CompanySettingsMenu />
+      </div>
+
+      <div className="px-4 py-2">
+        <Button
+          variant="ghost"
+          className={`monday-sidebar-item w-full justify-start ${
+            location.pathname === "/profile" ? "bg-muted" : ""
+          }`}
+          asChild
+        >
+          <Link to="/profile" className="flex items-center">
+            <UserCog className="h-4 w-4 mr-2" />
+            Profile
+          </Link>
+        </Button>
       </div>
 
       <div className="px-4 py-2">
