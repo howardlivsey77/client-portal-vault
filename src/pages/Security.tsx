@@ -67,9 +67,9 @@ const Security = () => {
       setEnrolling(true);
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
-        // Adding a friendly name to avoid duplicate errors
-        issuer: 'YourApp',
-        friendlyName: `${user?.email || 'user'}-totp`,
+        // Use a shorter app name and include only the first part of email
+        issuer: 'App',
+        friendlyName: user?.email?.split('@')[0] || 'user',
       });
       
       if (error) throw error;
@@ -240,7 +240,12 @@ const Security = () => {
                     Use an authenticator app like Google Authenticator, Microsoft Authenticator, or Authy to scan this QR code.
                   </p>
                   <div className="flex justify-center mb-4">
-                    <QRCodeSVG value={qrCode} size={200} />
+                    {/* Use errorCorrection="H" for better error tolerance */}
+                    <QRCodeSVG 
+                      value={qrCode} 
+                      size={200} 
+                      level="H" /* Higher error correction */
+                    />
                   </div>
                 </div>
 
