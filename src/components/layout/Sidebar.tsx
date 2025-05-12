@@ -1,9 +1,15 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { File, FileText, Home, Settings, Users, CheckSquare, ChartBar, Receipt, Clock, BanknoteIcon } from "lucide-react";
+import { File, FileText, Home, Settings, Users, CheckSquare, ChartBar, Receipt, Clock, BanknoteIcon, Building } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -14,6 +20,7 @@ export function Sidebar({
 }: SidebarProps) {
   const location = useLocation();
   const [showSettingsSubmenu, setShowSettingsSubmenu] = useState(false);
+  const [expandedAccordion, setExpandedAccordion] = useState<string | null>(null);
 
   // Function to check if a tab is active based on URL query parameters
   const isTabActive = (tab: string) => {
@@ -37,6 +44,10 @@ export function Sidebar({
 
   const toggleSettingsSubmenu = () => {
     setShowSettingsSubmenu(!showSettingsSubmenu);
+  };
+
+  const handleAccordionChange = (value: string) => {
+    setExpandedAccordion(expandedAccordion === value ? null : value);
   };
 
   return <aside className={cn("fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white transition-transform duration-300 ease-in-out lg:static", isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")}>
@@ -103,49 +114,98 @@ export function Sidebar({
             </Link>
           </Button>
           
-          <div className="relative">
-            <Button 
-              variant="ghost" 
-              className={cn(
-                "monday-sidebar-item w-full justify-between", 
-                (isRouteActive("/settings") || showSettingsSubmenu) && "bg-accent text-accent-foreground"
-              )}
-              onClick={toggleSettingsSubmenu}
-            >
-              <div className="flex items-center">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </div>
-              <svg 
-                className={cn("h-4 w-4 transition-transform", showSettingsSubmenu ? "rotate-180" : "")} 
-                xmlns="http://www.w3.org/2000/svg" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </Button>
-            
-            {showSettingsSubmenu && (
-              <div className="ml-6 mt-1 space-y-1 pl-2 border-l border-gray-200">
-                <Button 
-                  variant="ghost" 
-                  className={cn(
-                    "monday-sidebar-item w-full justify-start text-sm", 
-                    isRouteActive("/settings/timesheets") && "bg-accent text-accent-foreground"
-                  )} 
-                  asChild
-                >
-                  <Link to="/settings/timesheets">
-                    <Clock className="h-3 w-3 mr-2" />
-                    Timesheet Settings
-                  </Link>
-                </Button>
-                {/* Add more settings submenu items here as needed */}
-              </div>
-            )}
-          </div>
+          <Accordion
+            type="single"
+            collapsible
+            className="w-full"
+            value={expandedAccordion || undefined}
+            onValueChange={handleAccordionChange}
+          >
+            <AccordionItem value="settings" className="border-0">
+              <AccordionTrigger className={cn(
+                "monday-sidebar-item flex h-10 w-full items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-muted",
+                (isRouteActive("/settings") || expandedAccordion === "settings") && "bg-accent text-accent-foreground"
+              )}>
+                <div className="flex items-center">
+                  <Settings className="h-4 w-4 mr-2" />
+                  <span>Settings</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pb-0 pt-1">
+                <div className="ml-6 space-y-1 pl-2 border-l border-gray-200">
+                  <Button 
+                    variant="ghost" 
+                    className={cn(
+                      "monday-sidebar-item w-full justify-start text-sm", 
+                      isRouteActive("/settings/timesheets") && "bg-accent text-accent-foreground"
+                    )} 
+                    asChild
+                  >
+                    <Link to="/settings/timesheets">
+                      <Clock className="h-3 w-3 mr-2" />
+                      Timesheet Settings
+                    </Link>
+                  </Button>
+                  
+                  {/* Company Settings Section with nested accordion */}
+                  <Accordion
+                    type="single"
+                    collapsible
+                    className="w-full"
+                  >
+                    <AccordionItem value="company-settings" className="border-0">
+                      <AccordionTrigger className="monday-sidebar-item flex h-9 w-full items-center rounded-md px-3 py-1 text-sm font-medium hover:bg-muted">
+                        <div className="flex items-center">
+                          <Building className="h-3 w-3 mr-2" />
+                          <span>Company Settings</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-0 pt-1">
+                        <div className="ml-4 space-y-1 pl-2 border-l border-gray-200">
+                          <Button 
+                            variant="ghost" 
+                            className="monday-sidebar-item w-full justify-start text-xs py-1 h-7" 
+                            asChild
+                          >
+                            <Link to="/settings/company/general">
+                              General
+                            </Link>
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            className="monday-sidebar-item w-full justify-start text-xs py-1 h-7" 
+                            asChild
+                          >
+                            <Link to="/settings/company/holidays">
+                              Holidays
+                            </Link>
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            className="monday-sidebar-item w-full justify-start text-xs py-1 h-7" 
+                            asChild
+                          >
+                            <Link to="/settings/company/locations">
+                              Locations
+                            </Link>
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            className="monday-sidebar-item w-full justify-start text-xs py-1 h-7" 
+                            asChild
+                          >
+                            <Link to="/settings/company/departments">
+                              Departments
+                            </Link>
+                          </Button>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       </nav>
     </aside>;

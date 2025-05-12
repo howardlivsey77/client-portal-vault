@@ -13,6 +13,7 @@ import EmployeeDetails from "./pages/EmployeeDetails";
 import TimesheetSettings from "./pages/TimesheetSettings";
 import Notifications from "./pages/Notifications";
 import PayrollProcessing from "./pages/PayrollProcessing";
+import CompanySettings from "./pages/CompanySettings";
 import NotFound from "./pages/NotFound";
 import AuthProvider from "./providers/AuthProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -39,6 +40,13 @@ const App = () => (
               <Route path="/settings/timesheets" element={<ProtectedRoute><TimesheetSettings /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               <Route path="/payroll-processing" element={<ProtectedRoute><PayrollProcessing /></ProtectedRoute>} />
+              
+              {/* Company Settings Routes */}
+              <Route path="/settings/company/general" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
+              <Route path="/settings/company/holidays" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
+              <Route path="/settings/company/locations" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
+              <Route path="/settings/company/departments" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
+              
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
