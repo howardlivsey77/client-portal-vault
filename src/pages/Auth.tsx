@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -143,7 +142,8 @@ const Auth = () => {
         throw error;
       }
 
-      if (data?.session) {
+      // The response has changed - check if we have a valid response with the session
+      if (data) {
         toast({
           title: "Welcome back!",
           description: "You've been successfully logged in."
