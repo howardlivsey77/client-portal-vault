@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,23 +9,23 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { OTPVerification } from "@/components/auth/OTPVerification";
+
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [authInitialized, setAuthInitialized] = useState(false);
+  const [showOtpVerification, setShowOtpVerification] = useState(false);
+  const [factorId, setFactorId] = useState<string | null>(null);
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+
   useEffect(() => {
     // Check if user is already logged in
     const checkSession = async () => {
       try {
-        const {
-          data,
-          error
-        } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
         if (error) {
           console.error("Auth page - Error checking session:", error);
           setAuthInitialized(true);
@@ -45,9 +46,7 @@ const Auth = () => {
 
     // Set up auth change listener
     const {
-      data: {
-        subscription
-      }
+      data: { subscription }
     } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth page - Auth state changed:", event);
       if (session) {
@@ -59,17 +58,17 @@ const Auth = () => {
       subscription.unsubscribe();
     };
   }, [navigate]);
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       console.log("Attempting sign in with email:", email);
-      const {
-        error
-      } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
+
       if (error) {
         console.error("Sign in error:", error);
         toast({
@@ -77,8 +76,29 @@ const Auth = () => {
           description: error.message,
           variant: "destructive"
         });
+        setLoading(false);
         return;
       }
+
+      // Check if 2FA is enabled for the user
+      if (data?.session === null && data?.user !== null) {
+        // This means 2FA is required
+        console.log("2FA required for user");
+        const factors = data.user.factors;
+        
+        if (factors && factors.length > 0) {
+          // Get the TOTP factor
+          const totpFactor = factors.find(factor => factor.factor_type === 'totp');
+          if (totpFactor) {
+            setFactorId(totpFactor.id);
+            setShowOtpVerification(true);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
+      // If we get here, 2FA is not required or not set up
       toast({
         title: "Welcome back!",
         description: "You've been successfully logged in."
@@ -91,50 +111,126 @@ const Auth = () => {
         description: error.message || "An unknown error occurred",
         variant: "destructive"
       });
-    } finally {
       setLoading(false);
     }
   };
 
+  const handleVerifyOTP = async (otp: string) => {
+    if (!factorId) {
+      toast({
+        title: "Error",
+        description: "No authentication factor found",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        factorId,
+        code: otp,
+        type: 'totp'
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.session) {
+        toast({
+          title: "Welcome back!",
+          description: "You've been successfully logged in."
+        });
+        // Navigation will happen via the auth state change listener
+      }
+    } catch (error: any) {
+      console.error("OTP verification error:", error);
+      throw error;
+    }
+  };
+
+  const cancelOtpVerification = () => {
+    setShowOtpVerification(false);
+    setFactorId(null);
+    setPassword(""); // Clear password for security
+  };
+
   // Show loading indicator until we've checked the session
   if (!authInitialized) {
-    return <PageContainer>
+    return (
+      <PageContainer>
         <div className="flex items-center justify-center min-h-[70vh]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </PageContainer>;
+      </PageContainer>
+    );
   }
-  return <PageContainer>
+
+  return (
+    <PageContainer>
       <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto mt-16">
-        <Card className="w-full">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <img src="/lovable-uploads/3e0f0f1b-006e-4094-a7af-1a0b28bab13c.png" alt="Ramsay Brown Logo" className="h-28 md:h-32" />
-            </div>
-            <CardDescription className="text-lg text-inherit font-semibold">Payroll Management Portal </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSignIn}>
-            <CardContent className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} required className="bg-orange-100" />
+        {showOtpVerification ? (
+          <OTPVerification 
+            email={email}
+            onSubmit={handleVerifyOTP}
+            onCancel={cancelOtpVerification}
+          />
+        ) : (
+          <Card className="w-full">
+            <CardHeader className="text-center">
+              <div className="flex justify-center mb-4">
+                <img src="/lovable-uploads/3e0f0f1b-006e-4094-a7af-1a0b28bab13c.png" alt="Ramsay Brown Logo" className="h-28 md:h-32" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required className="bg-orange-100" />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button type="submit" disabled={loading} className="w-full text-gray-950 bg-amber-500 hover:bg-amber-400">
-                {loading ? <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Logging in...
-                  </> : "Login"}
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
+              <CardDescription className="text-lg text-inherit font-semibold">
+                Payroll Management Portal 
+              </CardDescription>
+            </CardHeader>
+            <form onSubmit={handleSignIn}>
+              <CardContent className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="your@email.com" 
+                    value={email} 
+                    onChange={e => setEmail(e.target.value)} 
+                    required 
+                    className="bg-orange-100" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    value={password} 
+                    onChange={e => setPassword(e.target.value)} 
+                    required 
+                    className="bg-orange-100" 
+                  />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  type="submit" 
+                  disabled={loading} 
+                  className="w-full text-gray-950 bg-amber-500 hover:bg-amber-400"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Logging in...
+                    </>
+                  ) : "Login"}
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+        )}
       </div>
-    </PageContainer>;
+    </PageContainer>
+  );
 };
+
 export default Auth;
