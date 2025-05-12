@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { X } from "lucide-react";
 
 // Define the company form type
 type CompanyFormValues = {
@@ -30,6 +30,21 @@ const CompanySettings = () => {
   const location = useLocation();
   const currentPath = location.pathname;
   const [isSaving, setIsSaving] = useState(false);
+  const [departments, setDepartments] = useState<string[]>([]);
+  const [newDepartment, setNewDepartment] = useState("");
+  
+  // Load departments from localStorage on component mount
+  useEffect(() => {
+    const savedDepartments = localStorage.getItem("companyDepartments");
+    if (savedDepartments) {
+      setDepartments(JSON.parse(savedDepartments));
+    }
+  }, []);
+
+  // Save departments to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("companyDepartments", JSON.stringify(departments));
+  }, [departments]);
   
   // Determine which section is active based on the URL
   const getActiveSectionFromPath = () => {
@@ -70,6 +85,28 @@ const CompanySettings = () => {
     console.log("Form submitted:", data);
   };
 
+  // Add new department
+  const handleAddDepartment = () => {
+    if (newDepartment.trim() === "") return;
+    
+    if (!departments.includes(newDepartment.trim())) {
+      const updatedDepartments = [...departments, newDepartment.trim()];
+      // Sort departments alphabetically
+      updatedDepartments.sort((a, b) => a.localeCompare(b));
+      setDepartments(updatedDepartments);
+      setNewDepartment("");
+      toast.success("Department added successfully");
+    } else {
+      toast.error("Department already exists");
+    }
+  };
+
+  // Remove department
+  const handleRemoveDepartment = (departmentToRemove: string) => {
+    setDepartments(departments.filter(dept => dept !== departmentToRemove));
+    toast.success("Department removed successfully");
+  };
+
   return (
     <PageContainer>
       <div className="py-6 px-4 sm:px-6 lg:px-8">
@@ -94,38 +131,36 @@ const CompanySettings = () => {
               <CardContent>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Company Name */}
-                      <FormField
-                        control={form.control}
-                        name="companyName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Company Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter company name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      {/* Trading As */}
-                      <FormField
-                        control={form.control}
-                        name="tradingAs"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Trading As (optional)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter trading name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
+                    {/* Company Name */}
+                    <FormField
+                      control={form.control}
+                      name="companyName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Company Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter company name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {/* Trading As */}
+                    <FormField
+                      control={form.control}
+                      name="tradingAs"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Trading As (optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter trading name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Address Line 1 */}
                       <FormField
@@ -351,10 +386,51 @@ const CompanySettings = () => {
                   Manage company departments and divisions
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Configure departments, divisions, and team structures.
-                </p>
+              <CardContent className="space-y-6">
+                <div className="flex items-end gap-4">
+                  <div className="flex-1">
+                    <FormLabel htmlFor="department-input">Add Department</FormLabel>
+                    <Input
+                      id="department-input"
+                      placeholder="Enter department name"
+                      value={newDepartment}
+                      onChange={(e) => setNewDepartment(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleAddDepartment}
+                    type="button"
+                  >
+                    Add
+                  </Button>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h3 className="text-lg font-medium mb-4">Department List</h3>
+                  
+                  {departments.length === 0 ? (
+                    <p className="text-muted-foreground">No departments added yet. Add your first department above.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {departments.map((dept, index) => (
+                        <div 
+                          key={index} 
+                          className="flex items-center justify-between p-3 bg-muted rounded-md"
+                        >
+                          <span>{dept}</span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleRemoveDepartment(dept)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
