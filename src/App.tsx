@@ -13,7 +13,7 @@ import EmployeeDetails from "./pages/EmployeeDetails";
 import TimesheetSettings from "./pages/TimesheetSettings";
 import Notifications from "./pages/Notifications";
 import PayrollProcessing from "./pages/PayrollProcessing";
-import CompanySettings from "./pages/CompanySettings";
+import CompanySettings from "./features/company-settings/CompanySettings";
 import NotFound from "./pages/NotFound";
 import AuthProvider from "./providers/AuthProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
