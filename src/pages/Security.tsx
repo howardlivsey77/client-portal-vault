@@ -8,7 +8,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ShieldCheck, ShieldX } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
-import { QRCodeSVG } from 'npm:qrcode.react';
+import { QRCodeSVG } from "qrcode.react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Security = () => {
@@ -33,7 +33,7 @@ const Security = () => {
         
         if (error) throw error;
         
-        const totpFactor = data.factors.find(factor => factor.factor_type === 'totp');
+        const totpFactor = data.all.find(factor => factor.factor_type === 'totp');
         setHas2fa(totpFactor?.status === 'verified');
       } catch (error: any) {
         console.error("Error checking MFA status:", error);
@@ -76,14 +76,17 @@ const Security = () => {
   const handleVerifyMfa = async () => {
     try {
       setVerifying(true);
-      const { data, error } = await supabase.auth.mfa.challenge({
+      // First create a challenge
+      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
         factorId: 'totp',
       });
       
-      if (error) throw error;
+      if (challengeError) throw challengeError;
       
+      // Then verify with the challenge ID
       const { error: verifyError } = await supabase.auth.mfa.verify({
-        factorId: data.id,
+        factorId: challengeData.id,
+        challengeId: challengeData.id,
         code: otp,
       });
       
@@ -114,7 +117,7 @@ const Security = () => {
     try {
       setUnenrolling(true);
       const { data: factors } = await supabase.auth.mfa.listFactors();
-      const totpFactor = factors.factors.find(factor => factor.factor_type === 'totp');
+      const totpFactor = factors.all.find(factor => factor.factor_type === 'totp');
       
       if (!totpFactor) throw new Error("No 2FA factor found");
       

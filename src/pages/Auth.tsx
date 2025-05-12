@@ -84,17 +84,16 @@ const Auth = () => {
       if (data?.session === null && data?.user !== null) {
         // This means 2FA is required
         console.log("2FA required for user");
-        const factors = data.user.factors;
         
-        if (factors && factors.length > 0) {
-          // Get the TOTP factor
-          const totpFactor = factors.find(factor => factor.factor_type === 'totp');
-          if (totpFactor) {
-            setFactorId(totpFactor.id);
-            setShowOtpVerification(true);
-            setLoading(false);
-            return;
-          }
+        // Get the TOTP factor
+        const { data: factorsData } = await supabase.auth.mfa.listFactors();
+        const totpFactor = factorsData.all.find(factor => factor.factor_type === 'totp');
+        
+        if (totpFactor) {
+          setFactorId(totpFactor.id);
+          setShowOtpVerification(true);
+          setLoading(false);
+          return;
         }
       }
 
@@ -126,10 +125,18 @@ const Auth = () => {
     }
 
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
+      // First create a challenge
+      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
         factorId,
+      });
+      
+      if (challengeError) throw challengeError;
+      
+      // Then verify with the challenge ID
+      const { data, error } = await supabase.auth.mfa.verify({
+        factorId,
+        challengeId: challengeData.id,
         code: otp,
-        type: 'totp'
       });
 
       if (error) {
