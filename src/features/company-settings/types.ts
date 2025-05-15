@@ -13,3 +13,17 @@ export type CompanyFormValues = {
   payeRef: string;
   accountsOfficeNumber: string;
 }
+
+export type EligibilityRule = {
+  id: string;
+  serviceMonthsFrom: number;
+  serviceMonthsTo: number;
+  companyPaidDays: number;
+  sicknessPay: 'SSP' | 'NoSSP' | 'FullPay' | 'HalfPay';
+}
+
+export type SicknessScheme = {
+  id: string;
+  name: string;
+  eligibilityRules: EligibilityRule[];
+}
