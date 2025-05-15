@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/co
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { OTPVerification } from "@/components/auth/OTPVerification";
+
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -183,7 +184,7 @@ const Auth = () => {
         {showOtpVerification ? <OTPVerification email={email} onSubmit={handleVerifyOTP} onCancel={cancelOtpVerification} /> : <Card className="w-full">
             <CardHeader className="text-center">
               <div className="flex justify-center mb-4">
-                <img src="/lovable-uploads/3fca6e51-90f5-44c9-ae11-38b6db5ee9a0.png" alt="Dootsons Logo" className="h-28 md:h-32" />
+                <img src="/lovable-uploads/88765623-01f7-44d0-8eca-60657594447c.png" alt="Dootsons Logo" className="h-28 md:h-32" />
               </div>
               <CardDescription className="text-lg text-inherit font-semibold">
                 Payroll Management Portal 
@@ -213,4 +214,5 @@ const Auth = () => {
       </div>
     </PageContainer>;
 };
+
 export default Auth;
