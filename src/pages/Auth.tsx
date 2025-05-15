@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +9,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/co
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { OTPVerification } from "@/components/auth/OTPVerification";
-
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,13 +17,17 @@ const Auth = () => {
   const [showOtpVerification, setShowOtpVerification] = useState(false);
   const [factorId, setFactorId] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   useEffect(() => {
     // Check if user is already logged in
     const checkSession = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        const {
+          data,
+          error
+        } = await supabase.auth.getSession();
         if (error) {
           console.error("Auth page - Error checking session:", error);
           setAuthInitialized(true);
@@ -46,7 +48,9 @@ const Auth = () => {
 
     // Set up auth change listener
     const {
-      data: { subscription }
+      data: {
+        subscription
+      }
     } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth page - Auth state changed:", event);
       if (session) {
@@ -58,17 +62,18 @@ const Auth = () => {
       subscription.unsubscribe();
     };
   }, [navigate]);
-
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       console.log("Attempting sign in with email:", email);
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const {
+        data,
+        error
+      } = await supabase.auth.signInWithPassword({
         email,
         password
       });
-
       if (error) {
         console.error("Sign in error:", error);
         toast({
@@ -84,11 +89,12 @@ const Auth = () => {
       if (data?.session === null && data?.user !== null) {
         // This means 2FA is required
         console.log("2FA required for user");
-        
+
         // Get the TOTP factor
-        const { data: factorsData } = await supabase.auth.mfa.listFactors();
+        const {
+          data: factorsData
+        } = await supabase.auth.mfa.listFactors();
         const totpFactor = factorsData.all.find(factor => factor.factor_type === 'totp');
-        
         if (totpFactor) {
           setFactorId(totpFactor.id);
           setShowOtpVerification(true);
@@ -113,7 +119,6 @@ const Auth = () => {
       setLoading(false);
     }
   };
-
   const handleVerifyOTP = async (otp: string) => {
     if (!factorId) {
       toast({
@@ -123,22 +128,25 @@ const Auth = () => {
       });
       return;
     }
-
     try {
       // First create a challenge
-      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
-        factorId,
+      const {
+        data: challengeData,
+        error: challengeError
+      } = await supabase.auth.mfa.challenge({
+        factorId
       });
-      
       if (challengeError) throw challengeError;
-      
+
       // Then verify with the challenge ID
-      const { data, error } = await supabase.auth.mfa.verify({
+      const {
+        data,
+        error
+      } = await supabase.auth.mfa.verify({
         factorId,
         challengeId: challengeData.id,
-        code: otp,
+        code: otp
       });
-
       if (error) {
         throw error;
       }
@@ -156,7 +164,6 @@ const Auth = () => {
       throw error;
     }
   };
-
   const cancelOtpVerification = () => {
     setShowOtpVerification(false);
     setFactorId(null);
@@ -165,26 +172,15 @@ const Auth = () => {
 
   // Show loading indicator until we've checked the session
   if (!authInitialized) {
-    return (
-      <PageContainer>
+    return <PageContainer>
         <div className="flex items-center justify-center min-h-[70vh]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </PageContainer>
-    );
+      </PageContainer>;
   }
-
-  return (
-    <PageContainer>
+  return <PageContainer>
       <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto mt-16">
-        {showOtpVerification ? (
-          <OTPVerification 
-            email={email}
-            onSubmit={handleVerifyOTP}
-            onCancel={cancelOtpVerification}
-          />
-        ) : (
-          <Card className="w-full">
+        {showOtpVerification ? <OTPVerification email={email} onSubmit={handleVerifyOTP} onCancel={cancelOtpVerification} /> : <Card className="w-full">
             <CardHeader className="text-center">
               <div className="flex justify-center mb-4">
                 <img src="/lovable-uploads/3fca6e51-90f5-44c9-ae11-38b6db5ee9a0.png" alt="Dootsons Logo" className="h-28 md:h-32" />
@@ -197,48 +193,24 @@ const Auth = () => {
               <CardContent className="space-y-4 pt-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="your@email.com" 
-                    value={email} 
-                    onChange={e => setEmail(e.target.value)} 
-                    required 
-                    className="bg-orange-100" 
-                  />
+                  <Input id="email" type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} required className="bg-orange-100" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    value={password} 
-                    onChange={e => setPassword(e.target.value)} 
-                    required 
-                    className="bg-orange-100" 
-                  />
+                  <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required className="bg-orange-100" />
                 </div>
               </CardContent>
               <CardFooter>
-                <Button 
-                  type="submit" 
-                  disabled={loading} 
-                  className="w-full text-gray-950 bg-amber-500 hover:bg-amber-400"
-                >
-                  {loading ? (
-                    <>
+                <Button type="submit" disabled={loading} className="w-full text-gray-950 bg-amber-500 hover:bg-amber-400">
+                  {loading ? <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Logging in...
-                    </>
-                  ) : "Login"}
+                    </> : "Login"}
                 </Button>
               </CardFooter>
             </form>
-          </Card>
-        )}
+          </Card>}
       </div>
-    </PageContainer>
-  );
+    </PageContainer>;
 };
-
 export default Auth;
