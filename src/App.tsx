@@ -47,7 +47,7 @@ const App = () => (
               
               {/* Company Settings Routes */}
               <Route path="/settings/company/general" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
-              <Route path="/settings/company/holidays" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
+              <Route path="/settings/company/sickness" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
               <Route path="/settings/company/locations" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
               <Route path="/settings/company/departments" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
               

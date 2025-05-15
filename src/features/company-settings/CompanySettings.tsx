@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GeneralSettingsTab from "./tabs/GeneralSettingsTab";
-import HolidaysSettingsTab from "./tabs/HolidaysSettingsTab";
+import SicknessSettingsTab from "./tabs/SicknessSettingsTab";
 import LocationsSettingsTab from "./tabs/LocationsSettingsTab";
 import DepartmentsSettingsTab from "./tabs/DepartmentsSettingsTab";
 
@@ -14,7 +14,7 @@ const CompanySettings = () => {
   
   // Determine which section is active based on the URL
   const getActiveSectionFromPath = () => {
-    if (currentPath.includes("/settings/company/holidays")) return "holidays";
+    if (currentPath.includes("/settings/company/sickness")) return "sickness";
     if (currentPath.includes("/settings/company/locations")) return "locations";
     if (currentPath.includes("/settings/company/departments")) return "departments";
     return "general"; // Default tab
@@ -28,7 +28,7 @@ const CompanySettings = () => {
         <Tabs defaultValue={getActiveSectionFromPath()} className="w-full">
           <TabsList>
             <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="holidays">Holidays</TabsTrigger>
+            <TabsTrigger value="sickness">Sickness</TabsTrigger>
             <TabsTrigger value="locations">Locations</TabsTrigger>
             <TabsTrigger value="departments">Departments</TabsTrigger>
           </TabsList>
@@ -37,8 +37,8 @@ const CompanySettings = () => {
             <GeneralSettingsTab />
           </TabsContent>
           
-          <TabsContent value="holidays">
-            <HolidaysSettingsTab />
+          <TabsContent value="sickness">
+            <SicknessSettingsTab />
           </TabsContent>
           
           <TabsContent value="locations">
