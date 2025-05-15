@@ -41,8 +41,8 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
       
       <div className="flex items-center">
         <img 
-          src="/lovable-uploads/3e0f0f1b-006e-4094-a7af-1a0b28bab13c.png" 
-          alt="Ramsay Brown Logo" 
+          src="/lovable-uploads/3fca6e51-90f5-44c9-ae11-38b6db5ee9a0.png" 
+          alt="Dootsons Logo" 
           className="h-14" 
         />
       </div>

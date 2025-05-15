@@ -37,8 +37,11 @@ export function Navbar({ toggleSidebar }: NavbarProps) {
             </Button>
           )}
           <Link to="/" className="flex items-center space-x-2">
-            <FileText className="h-6 w-6" />
-            <span className="font-bold">Document Vault</span>
+            <img 
+              src="/lovable-uploads/3fca6e51-90f5-44c9-ae11-38b6db5ee9a0.png" 
+              alt="Dootsons Logo" 
+              className="h-8" 
+            />
           </Link>
           
           <nav className="hidden md:flex gap-6">

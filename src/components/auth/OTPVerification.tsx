@@ -47,7 +47,7 @@ export const OTPVerification = ({ email, onSubmit, onCancel }: OTPVerificationPr
     <Card className="w-full">
       <CardHeader className="text-center">
         <div className="flex justify-center mb-4">
-          <img src="/lovable-uploads/3e0f0f1b-006e-4094-a7af-1a0b28bab13c.png" alt="Ramsay Brown Logo" className="h-28 md:h-32" />
+          <img src="/lovable-uploads/3fca6e51-90f5-44c9-ae11-38b6db5ee9a0.png" alt="Dootsons Logo" className="h-28 md:h-32" />
         </div>
         <CardDescription className="text-lg text-inherit font-semibold">
           Two-Factor Authentication
