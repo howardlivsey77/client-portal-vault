@@ -193,7 +193,7 @@ const Auth = () => {
               <CardContent className="space-y-4 pt-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} required className="bg-orange-100" />
+                  <Input id="email" type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} required className="bg-teal-100" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
