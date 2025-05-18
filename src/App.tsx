@@ -16,8 +16,10 @@ import PayrollProcessing from "./pages/PayrollProcessing";
 import Security from "./pages/Security";
 import Profile from "./pages/Profile";
 import CompanySettings from "./features/company-settings/CompanySettings";
+import CompanyManagement from "./pages/CompanyManagement";
 import NotFound from "./pages/NotFound";
 import AuthProvider from "./providers/AuthProvider";
+import CompanyProvider from "./providers/CompanyProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { NotificationsProvider } from "./components/notifications/NotificationsContext";
 
@@ -30,31 +32,36 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <NotificationsProvider>
-            <Routes>
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-              <Route path="/invites" element={<ProtectedRoute adminOnly={true}><InviteManagement /></ProtectedRoute>} />
-              <Route path="/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
-              <Route path="/employee/new" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
-              <Route path="/employee/:id" element={<ProtectedRoute><EmployeeDetails /></ProtectedRoute>} />
-              <Route path="/employee/edit/:id" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
-              <Route path="/settings/timesheets" element={<ProtectedRoute><TimesheetSettings /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-              <Route path="/payroll-processing" element={<ProtectedRoute><PayrollProcessing /></ProtectedRoute>} />
-              <Route path="/security" element={<ProtectedRoute><Security /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              
-              {/* Company Settings Routes */}
-              <Route path="/settings/company/general" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
-              <Route path="/settings/company/sickness" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
-              <Route path="/settings/company/locations" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
-              <Route path="/settings/company/departments" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
-              
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </NotificationsProvider>
+          <CompanyProvider>
+            <NotificationsProvider>
+              <Routes>
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/invites" element={<ProtectedRoute adminOnly={true}><InviteManagement /></ProtectedRoute>} />
+                <Route path="/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
+                <Route path="/employee/new" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
+                <Route path="/employee/:id" element={<ProtectedRoute><EmployeeDetails /></ProtectedRoute>} />
+                <Route path="/employee/edit/:id" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
+                <Route path="/settings/timesheets" element={<ProtectedRoute><TimesheetSettings /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                <Route path="/payroll-processing" element={<ProtectedRoute><PayrollProcessing /></ProtectedRoute>} />
+                <Route path="/security" element={<ProtectedRoute><Security /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                
+                {/* Company Settings Routes */}
+                <Route path="/settings/company/general" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
+                <Route path="/settings/company/sickness" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
+                <Route path="/settings/company/locations" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
+                <Route path="/settings/company/departments" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
+                
+                {/* Company Management Routes */}
+                <Route path="/settings/companies" element={<ProtectedRoute adminOnly={true}><CompanyManagement /></ProtectedRoute>} />
+                
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </NotificationsProvider>
+          </CompanyProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/co
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { OTPVerification } from "@/components/auth/OTPVerification";
+
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,17 +19,13 @@ const Auth = () => {
   const [showOtpVerification, setShowOtpVerification] = useState(false);
   const [factorId, setFactorId] = useState<string | null>(null);
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+
   useEffect(() => {
     // Check if user is already logged in
     const checkSession = async () => {
       try {
-        const {
-          data,
-          error
-        } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
         if (error) {
           console.error("Auth page - Error checking session:", error);
           setAuthInitialized(true);
@@ -47,11 +45,7 @@ const Auth = () => {
     checkSession();
 
     // Set up auth change listener
-    const {
-      data: {
-        subscription
-      }
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth page - Auth state changed:", event);
       if (session) {
         console.log("Auth page - User logged in, redirecting to home");
@@ -62,15 +56,13 @@ const Auth = () => {
       subscription.unsubscribe();
     };
   }, [navigate]);
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       console.log("Attempting sign in with email:", email);
-      const {
-        data,
-        error
-      } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
@@ -91,9 +83,7 @@ const Auth = () => {
         console.log("2FA required for user");
 
         // Get the TOTP factor
-        const {
-          data: factorsData
-        } = await supabase.auth.mfa.listFactors();
+        const { data: factorsData } = await supabase.auth.mfa.listFactors();
         const totpFactor = factorsData.all.find(factor => factor.factor_type === 'totp');
         if (totpFactor) {
           setFactorId(totpFactor.id);
@@ -101,6 +91,11 @@ const Auth = () => {
           setLoading(false);
           return;
         }
+      }
+
+      // Assign user to default company if they don't have any company access yet
+      if (data.user) {
+        await ensureCompanyAccess(data.user.id);
       }
 
       // If we get here, 2FA is not required or not set up
@@ -119,6 +114,45 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  // Function to make sure user has access to at least one company
+  const ensureCompanyAccess = async (userId: string) => {
+    try {
+      // Check if the user already has company access
+      const { data: accessData } = await supabase
+        .from('company_access')
+        .select('company_id')
+        .eq('user_id', userId);
+
+      // If user doesn't have any company access, assign to default company
+      if (!accessData || accessData.length === 0) {
+        // Get the default company (first one created)
+        const { data: defaultCompany } = await supabase
+          .from('companies')
+          .select('id')
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .single();
+
+        if (defaultCompany) {
+          // Assign user to default company with 'user' role
+          await supabase
+            .from('company_access')
+            .insert({
+              user_id: userId,
+              company_id: defaultCompany.id,
+              role: 'user'
+            });
+
+          console.log("User assigned to default company");
+        }
+      }
+    } catch (error) {
+      console.error("Error ensuring company access:", error);
+      // We don't stop the authentication flow if this fails
+    }
+  };
+
   const handleVerifyOTP = async (otp: string) => {
     if (!factorId) {
       toast({
@@ -130,19 +164,13 @@ const Auth = () => {
     }
     try {
       // First create a challenge
-      const {
-        data: challengeData,
-        error: challengeError
-      } = await supabase.auth.mfa.challenge({
+      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
         factorId
       });
       if (challengeError) throw challengeError;
 
       // Then verify with the challenge ID
-      const {
-        data,
-        error
-      } = await supabase.auth.mfa.verify({
+      const { data, error } = await supabase.auth.mfa.verify({
         factorId,
         challengeId: challengeData.id,
         code: otp
@@ -153,6 +181,11 @@ const Auth = () => {
 
       // The response has changed - check if we have a valid response with the session
       if (data) {
+        // Assign user to default company if needed
+        if (data.user) {
+          await ensureCompanyAccess(data.user.id);
+        }
+
         toast({
           title: "Welcome back!",
           description: "You've been successfully logged in."
@@ -164,6 +197,7 @@ const Auth = () => {
       throw error;
     }
   };
+
   const cancelOtpVerification = () => {
     setShowOtpVerification(false);
     setFactorId(null);
@@ -178,6 +212,7 @@ const Auth = () => {
         </div>
       </PageContainer>;
   }
+
   return <PageContainer>
       <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto mt-16">
         {showOtpVerification ? <OTPVerification email={email} onSubmit={handleVerifyOTP} onCancel={cancelOtpVerification} /> : <Card className="w-full">
@@ -213,4 +248,5 @@ const Auth = () => {
       </div>
     </PageContainer>;
 };
+
 export default Auth;

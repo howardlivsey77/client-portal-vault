@@ -1,140 +1,138 @@
 
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuTrigger,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/providers/AuthProvider";
-import { FileText, LogOut, Menu, Settings, User, UserPlus, Bell, BellDot } from "lucide-react";
-import { useNotifications } from "@/components/notifications/NotificationsContext";
-import { Badge } from "@/components/ui/badge";
+import { ChevronDown, Settings, LogOut, User } from "lucide-react";
+import CompanySelector from "./CompanySelector";
 
-interface NavbarProps {
-  toggleSidebar?: () => void;
-}
-
-export function Navbar({ toggleSidebar }: NavbarProps) {
+const Navbar = () => {
   const { user, isAdmin, signOut } = useAuth();
-  const { unreadCount, timesheetExceptionsCount } = useNotifications();
-  
-  const hasNotifications = unreadCount > 0 || timesheetExceptionsCount > 0;
-  
-  console.log("Navbar rendering - User:", user?.email, "Admin status:", isAdmin);
+  const location = useLocation();
+  const [currentPage, setCurrentPage] = useState("");
+
+  useEffect(() => {
+    // Extract the current page from location
+    const path = location.pathname;
+    if (path === "/") {
+      setCurrentPage("Dashboard");
+    } else if (path.startsWith("/employees")) {
+      setCurrentPage("Employees");
+    } else {
+      // Capitalize the first letter and remove hyphens
+      const page = path.split("/")[1];
+      setCurrentPage(
+        page.charAt(0).toUpperCase() + page.slice(1).replace(/-/g, " ")
+      );
+    }
+  }, [location]);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background">
-      <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-6">
-          {toggleSidebar && (
-            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="md:hidden">
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle sidebar</span>
-            </Button>
-          )}
-          <Link to="/" className="flex items-center space-x-2">
-            <img 
-              src="/lovable-uploads/3fca6e51-90f5-44c9-ae11-38b6db5ee9a0.png" 
-              alt="Dootsons Logo" 
-              className="h-8" 
-            />
-          </Link>
-          
-          <nav className="hidden md:flex gap-6">
-            {isAdmin === true && (
-              <Link to="/invites" className="text-sm font-medium transition-colors hover:text-primary">
-                Invitations
+    <nav className="bg-white shadow-sm">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between h-16">
+          <div className="flex">
+            <div className="flex-shrink-0 flex items-center">
+              <Link to="/">
+                <img
+                  className="h-10 w-auto"
+                  src="/lovable-uploads/3fca6e51-90f5-44c9-ae11-38b6db5ee9a0.png"
+                  alt="Dootsons"
+                />
               </Link>
-            )}
-          </nav>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {user && (
-            <Button variant="ghost" size="icon" asChild className="relative">
-              <Link to="/notifications">
-                {hasNotifications ? (
-                  <>
-                    <BellDot className="h-5 w-5 text-amber-500" />
-                    {(unreadCount + timesheetExceptionsCount > 0) && (
-                      <Badge 
-                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white rounded-full text-xs"
-                      >
-                        {unreadCount + timesheetExceptionsCount}
-                      </Badge>
-                    )}
-                  </>
-                ) : (
-                  <Bell className="h-5 w-5" />
-                )}
-                <span className="sr-only">Notifications</span>
+            </div>
+            <div className="hidden sm:ml-6 sm:flex sm:space-x-4">
+              <Link
+                to="/"
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  currentPage === "Dashboard"
+                    ? "border-teal-500 text-gray-900"
+                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                }`}
+              >
+                Dashboard
               </Link>
-            </Button>
-          )}
-          
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                    <User className="h-6 w-6" />
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.email}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {isAdmin === true ? "Administrator" : "User"}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/" className="w-full cursor-pointer">
-                    <FileText className="mr-2 h-4 w-4" />
-                    <span>Documents</span>
-                  </Link>
-                </DropdownMenuItem>
-                {isAdmin === true && (
+              <Link
+                to="/employees"
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  currentPage === "Employees"
+                    ? "border-teal-500 text-gray-900"
+                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                }`}
+              >
+                Employees
+              </Link>
+              <Link
+                to="/payroll-processing"
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  currentPage === "Payroll-processing"
+                    ? "border-teal-500 text-gray-900"
+                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                }`}
+              >
+                Payroll
+              </Link>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            {/* Company Selector - Only show when logged in */}
+            {user && <CompanySelector className="mr-2" />}
+            
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center">
+                    <User className="h-4 w-4 mr-2" />
+                    <span>{user.email}</span>
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuItem asChild>
-                    <Link to="/invites" className="w-full cursor-pointer">
-                      <UserPlus className="mr-2 h-4 w-4" />
-                      <span>Manage Invites</span>
-                    </Link>
+                    <Link to="/profile">Profile</Link>
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem asChild>
-                  <Link to="/employees" className="w-full cursor-pointer">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Employees</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" className="w-full cursor-pointer">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={signOut} className="cursor-pointer">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Button asChild variant="outline" size="sm">
-              <Link to="/auth">Log in</Link>
-            </Button>
-          )}
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings/company/general">Company Settings</Link>
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Admin</DropdownMenuLabel>
+                      <DropdownMenuItem asChild>
+                        <Link to="/settings/companies">Company Management</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/invites">Invitations</Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={signOut} className="text-red-500">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button asChild variant="outline">
+                <Link to="/auth">Login</Link>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
-    </header>
+    </nav>
   );
-}
+};
+
+export default Navbar;
