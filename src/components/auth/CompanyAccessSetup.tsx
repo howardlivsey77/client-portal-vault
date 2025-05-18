@@ -12,7 +12,8 @@ export const CompanyAccessSetup = () => {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
-  const { user } = useAuth();
+  const [manuallyCreatingAccess, setManuallyCreatingAccess] = useState(false);
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
 
   // Check if user already has company access
@@ -24,6 +25,7 @@ export const CompanyAccessSetup = () => {
       }
       
       try {
+        console.log("Checking company access for user:", user.id);
         const { data, error } = await supabase
           .from('company_access')
           .select('company_id')
@@ -32,8 +34,9 @@ export const CompanyAccessSetup = () => {
         if (error) {
           console.error("Error checking company access:", error);
         } else {
-          setHasAccess(data && data.length > 0);
-          console.log("User has company access:", data && data.length > 0);
+          const hasCompanyAccess = data && data.length > 0;
+          setHasAccess(hasCompanyAccess);
+          console.log("User has company access:", hasCompanyAccess, "Records found:", data?.length);
         }
       } catch (error) {
         console.error("Exception checking company access:", error);
@@ -57,6 +60,7 @@ export const CompanyAccessSetup = () => {
         if (error) {
           console.error("Error loading companies:", error);
         } else {
+          console.log("Companies loaded:", data?.length);
           setCompanies(data || []);
         }
       } catch (error) {
@@ -68,6 +72,50 @@ export const CompanyAccessSetup = () => {
       loadCompanies();
     }
   }, [hasAccess]);
+
+  // Handle manual company access creation for admins
+  const manuallyCreateAccess = async () => {
+    if (!user || companies.length === 0) return;
+    
+    setManuallyCreatingAccess(true);
+    try {
+      // Get the default company (first one created)
+      const defaultCompany = companies[0];
+      
+      console.log("Manually creating company access for admin user:", user.id, "to company:", defaultCompany.id);
+      
+      // Create company access with 'admin' role
+      const success = await createCompanyAccess(user.id, defaultCompany.id, 'admin');
+      
+      if (success) {
+        toast({
+          title: "Access Granted",
+          description: `You now have admin access to ${defaultCompany.name}`,
+        });
+        setHasAccess(true);
+        
+        // Reload the page after a short delay to refresh the company context
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 1500);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to set up manual company access",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error creating manual company access:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setManuallyCreatingAccess(false);
+    }
+  };
   
   // Setup company access for the current user
   const setupAccess = async (companyId: string) => {
@@ -88,6 +136,8 @@ export const CompanyAccessSetup = () => {
         });
         return;
       }
+      
+      console.log("Admin check result:", adminData);
       
       // Create company access with appropriate role
       const role = adminData ? 'admin' : 'user';
@@ -138,9 +188,31 @@ export const CompanyAccessSetup = () => {
       <h3 className="font-medium text-yellow-800 mb-2">No Company Access Detected</h3>
       <p className="text-yellow-700 mb-4">You need to be associated with at least one company to use the system.</p>
       
+      {isAdmin && (
+        <div className="mb-6">
+          <Button
+            onClick={manuallyCreateAccess}
+            className="w-full bg-blue-600 hover:bg-blue-700 mb-4"
+            disabled={manuallyCreatingAccess || companies.length === 0}
+          >
+            {manuallyCreatingAccess ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Creating Admin Access...
+              </>
+            ) : (
+              'Create Admin Access to Default Company'
+            )}
+          </Button>
+          <p className="text-xs text-yellow-600 italic">
+            As an admin user, you can create direct access to the default company.
+          </p>
+        </div>
+      )}
+      
       {companies.length > 0 ? (
         <div>
-          <p className="mb-2 text-sm text-yellow-700">Select a company to continue:</p>
+          <p className="mb-2 text-sm text-yellow-700">Or select a company to continue:</p>
           <div className="space-y-2">
             {companies.map(company => (
               <Button

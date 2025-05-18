@@ -77,6 +77,8 @@ export const ensureCompanyAccess = async (userId: string): Promise<void> => {
 // Function to manually create company access for a user
 export const createCompanyAccess = async (userId: string, companyId: string, role: string = 'user'): Promise<boolean> => {
   try {
+    console.log("Creating company access for user:", userId, "to company:", companyId, "with role:", role);
+    
     const { data, error } = await supabase
       .from('company_access')
       .insert({
@@ -90,7 +92,7 @@ export const createCompanyAccess = async (userId: string, companyId: string, rol
       return false;
     }
     
-    console.log("Company access created successfully", data);
+    console.log("Company access created successfully");
     return true;
   } catch (error) {
     console.error("Exception creating company access:", error);
