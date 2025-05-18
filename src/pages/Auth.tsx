@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/co
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { OTPVerification } from "@/components/auth/OTPVerification";
+
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -197,7 +198,7 @@ const Auth = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required className="bg-orange-100" />
+                  <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required className="bg-teal-100" />
                 </div>
               </CardContent>
               <CardFooter>
@@ -213,4 +214,5 @@ const Auth = () => {
       </div>
     </PageContainer>;
 };
+
 export default Auth;
