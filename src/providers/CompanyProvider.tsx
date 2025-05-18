@@ -89,7 +89,6 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
     if (!companyId) return;
 
     try {
-      // Explicitly select columns from companies table with table alias to avoid ambiguity
       const { data, error } = await supabase
         .from('companies')
         .select('id, name, trading_as, address_line1, address_line2, address_line3, address_line4, post_code, contact_name, contact_email, contact_phone, paye_ref, accounts_office_number, created_at, updated_at, created_by')
