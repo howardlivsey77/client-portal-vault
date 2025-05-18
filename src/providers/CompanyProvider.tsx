@@ -34,6 +34,7 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
   const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
   const [companies, setCompanies] = useState<CompanyWithRole[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { toast } = useToast();
 
   // Fetch user's accessible companies
   const fetchCompanies = async () => {
@@ -54,7 +55,7 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
 
       if (error) {
         console.error("Error fetching companies:", error);
-        useToast().toast({
+        toast({
           title: "Failed to load companies",
           description: error.message,
           variant: "destructive",
@@ -73,7 +74,7 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
 
     } catch (error: any) {
       console.error("Exception fetching companies:", error);
-      useToast().toast({
+      toast({
         title: "Error",
         description: "Failed to load companies",
         variant: "destructive",
@@ -91,8 +92,8 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
       // Explicitly select columns from companies table with table alias to avoid ambiguity
       const { data, error } = await supabase
         .from('companies')
-        .select('companies.id, companies.name, companies.trading_as, companies.address_line1, companies.address_line2, companies.address_line3, companies.address_line4, companies.post_code, companies.contact_name, companies.contact_email, companies.contact_phone, companies.paye_ref, companies.accounts_office_number, companies.created_at, companies.updated_at, companies.created_by')
-        .eq('companies.id', companyId)
+        .select('id, name, trading_as, address_line1, address_line2, address_line3, address_line4, post_code, contact_name, contact_email, contact_phone, paye_ref, accounts_office_number, created_at, updated_at, created_by')
+        .eq('id', companyId)
         .single();
 
       if (error) {
@@ -100,7 +101,8 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
         return;
       }
 
-      setCurrentCompany(data);
+      // Cast the data to Company type before setting state
+      setCurrentCompany(data as Company);
 
       // Store the last selected company in localStorage
       localStorage.setItem('lastSelectedCompany', companyId);
@@ -116,7 +118,7 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
     const companyExists = companies.some(company => company.id === companyId);
     
     if (!companyExists) {
-      useToast().toast({
+      toast({
         title: "Access Denied",
         description: "You don't have access to this company",
         variant: "destructive",
@@ -126,7 +128,7 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
 
     await fetchCompanyDetails(companyId);
     
-    useToast().toast({
+    toast({
       title: "Company Switched",
       description: `Now viewing ${currentCompany?.name || 'new company'}`,
     });
