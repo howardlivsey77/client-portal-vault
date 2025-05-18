@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/co
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { OTPVerification } from "@/components/auth/OTPVerification";
-
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -202,7 +201,7 @@ const Auth = () => {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button type="submit" disabled={loading} className="w-full text-gray-950 bg-amber-500 hover:bg-amber-400">
+                <Button type="submit" disabled={loading} className="w-full text-gray-950 bg-teal-500 hover:bg-teal-400">
                   {loading ? <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Logging in...
@@ -214,5 +213,4 @@ const Auth = () => {
       </div>
     </PageContainer>;
 };
-
 export default Auth;
