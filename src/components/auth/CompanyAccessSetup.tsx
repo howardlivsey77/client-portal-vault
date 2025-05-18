@@ -13,8 +13,38 @@ export const CompanyAccessSetup = () => {
   const [checking, setChecking] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [manuallyCreatingAccess, setManuallyCreatingAccess] = useState(false);
+  const [defaultCompany, setDefaultCompany] = useState<any>(null);
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
+
+  // Load default company
+  useEffect(() => {
+    const loadDefaultCompany = async () => {
+      try {
+        // Get the default company (first one created)
+        const { data: company, error } = await supabase
+          .from('companies')
+          .select('id, name')
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .single();
+          
+        if (error) {
+          console.error("Error loading default company:", error);
+          return null;
+        }
+        
+        console.log("Default company loaded:", company);
+        setDefaultCompany(company);
+        return company;
+      } catch (error) {
+        console.error("Exception loading default company:", error);
+        return null;
+      }
+    };
+    
+    loadDefaultCompany();
+  }, []);
 
   // Check if user already has company access
   useEffect(() => {
@@ -75,13 +105,10 @@ export const CompanyAccessSetup = () => {
 
   // Handle manual company access creation for admins
   const manuallyCreateAccess = async () => {
-    if (!user || companies.length === 0) return;
+    if (!user || !defaultCompany) return;
     
     setManuallyCreatingAccess(true);
     try {
-      // Get the default company (first one created)
-      const defaultCompany = companies[0];
-      
       console.log("Manually creating company access for admin user:", user.id, "to company:", defaultCompany.id);
       
       // Create company access with 'admin' role
@@ -179,6 +206,11 @@ export const CompanyAccessSetup = () => {
     return (
       <div className="p-4 bg-green-50 border border-green-200 rounded-md">
         <p className="text-green-800">You already have company access. Redirecting to dashboard...</p>
+        <div className="mt-4 flex justify-center">
+          <Button onClick={() => window.location.href = "/"}>
+            Go to Dashboard
+          </Button>
+        </div>
       </div>
     );
   }
@@ -188,12 +220,12 @@ export const CompanyAccessSetup = () => {
       <h3 className="font-medium text-yellow-800 mb-2">No Company Access Detected</h3>
       <p className="text-yellow-700 mb-4">You need to be associated with at least one company to use the system.</p>
       
-      {isAdmin && (
+      {isAdmin && defaultCompany && (
         <div className="mb-6">
           <Button
             onClick={manuallyCreateAccess}
             className="w-full bg-blue-600 hover:bg-blue-700 mb-4"
-            disabled={manuallyCreatingAccess || companies.length === 0}
+            disabled={manuallyCreatingAccess}
           >
             {manuallyCreatingAccess ? (
               <>
@@ -201,7 +233,7 @@ export const CompanyAccessSetup = () => {
                 Creating Admin Access...
               </>
             ) : (
-              'Create Admin Access to Default Company'
+              `Create Admin Access to ${defaultCompany.name}`
             )}
           </Button>
           <p className="text-xs text-yellow-600 italic">

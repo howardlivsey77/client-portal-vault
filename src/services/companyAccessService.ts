@@ -35,21 +35,24 @@ export const ensureCompanyAccess = async (userId: string): Promise<void> => {
       // Get the default company (first one created)
       const { data: defaultCompany, error: companyError } = await supabase
         .from('companies')
-        .select('id')
+        .select('id, name')
         .order('created_at', { ascending: true })
         .limit(1)
         .single();
 
       if (companyError) {
         console.error("Error getting default company:", companyError);
+        return;
       } else {
         console.log("Default company found:", defaultCompany);
       }
 
       if (defaultCompany) {
-        // Assign user to default company with 'user' role
+        // Assign user to default company with appropriate role
         // If the user is an admin, assign admin role
         const role = adminData ? 'admin' : 'user';
+        
+        console.log(`Assigning user ${userId} to default company ${defaultCompany.id} with role ${role}`);
         
         const { data: insertData, error: insertError } = await supabase
           .from('company_access')
@@ -67,6 +70,8 @@ export const ensureCompanyAccess = async (userId: string): Promise<void> => {
       } else {
         console.error("No default company found to assign user to");
       }
+    } else {
+      console.log(`User ${userId} already has company access, skipping assignment`);
     }
   } catch (error) {
     console.error("Error ensuring company access:", error);
@@ -79,6 +84,38 @@ export const createCompanyAccess = async (userId: string, companyId: string, rol
   try {
     console.log("Creating company access for user:", userId, "to company:", companyId, "with role:", role);
     
+    // First check if access already exists
+    const { data: existingAccess, error: checkError } = await supabase
+      .from('company_access')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('company_id', companyId);
+    
+    if (checkError) {
+      console.error("Error checking existing company access:", checkError);
+    } else if (existingAccess && existingAccess.length > 0) {
+      console.log("User already has access to this company. Updating role if needed.");
+      
+      // If role is different, update it
+      if (existingAccess[0].role !== role) {
+        const { error: updateError } = await supabase
+          .from('company_access')
+          .update({ role })
+          .eq('user_id', userId)
+          .eq('company_id', companyId);
+        
+        if (updateError) {
+          console.error("Error updating company access role:", updateError);
+          return false;
+        }
+        
+        console.log("Company access role updated successfully to:", role);
+      }
+      
+      return true;
+    }
+    
+    // Create new access record if one doesn't exist
     const { data, error } = await supabase
       .from('company_access')
       .insert({

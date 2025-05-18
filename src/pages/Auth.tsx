@@ -6,10 +6,38 @@ import { AuthContainer } from "@/components/auth/AuthContainer";
 import { ensureCompanyAccess } from "@/services/companyAccessService";
 import { CompanyAccessSetup } from "@/components/auth/CompanyAccessSetup";
 import { useAuth } from "@/providers/AuthProvider";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Auth = () => {
   const { authInitialized } = useAuthInitialization();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
+  const navigate = useNavigate();
+  
+  // If user has access, redirect to home
+  useEffect(() => {
+    if (user) {
+      const checkRedirect = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('company_access')
+            .select('company_id')
+            .eq('user_id', user.id);
+            
+          if (error) {
+            console.error("Error checking company access for redirect:", error);
+          } else if (data && data.length > 0) {
+            console.log("User has company access, redirecting to home");
+            navigate("/");
+          }
+        } catch (error) {
+          console.error("Exception checking company access for redirect:", error);
+        }
+      };
+      
+      checkRedirect();
+    }
+  }, [user, navigate]);
 
   // Show loading indicator until we've checked the session
   if (!authInitialized) {
