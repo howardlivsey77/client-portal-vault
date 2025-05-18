@@ -4,9 +4,12 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { useAuthInitialization } from "@/hooks/useAuthInitialization";
 import { AuthContainer } from "@/components/auth/AuthContainer";
 import { ensureCompanyAccess } from "@/services/companyAccessService";
+import { CompanyAccessSetup } from "@/components/auth/CompanyAccessSetup";
+import { useAuth } from "@/providers/AuthProvider";
 
 const Auth = () => {
   const { authInitialized } = useAuthInitialization();
+  const { user } = useAuth();
 
   // Show loading indicator until we've checked the session
   if (!authInitialized) {
@@ -18,7 +21,13 @@ const Auth = () => {
   }
 
   return <PageContainer>
-    <AuthContainer onSuccess={ensureCompanyAccess} />
+    {user ? (
+      <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto mt-16">
+        <CompanyAccessSetup />
+      </div>
+    ) : (
+      <AuthContainer onSuccess={ensureCompanyAccess} />
+    )}
   </PageContainer>;
 };
 
