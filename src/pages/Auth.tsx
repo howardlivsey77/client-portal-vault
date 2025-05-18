@@ -8,6 +8,7 @@ import { CompanyAccessSetup } from "@/components/auth/CompanyAccessSetup";
 import { useAuth } from "@/providers/AuthProvider";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client"; // Add this import
 
 const Auth = () => {
   const { authInitialized } = useAuthInitialization();
