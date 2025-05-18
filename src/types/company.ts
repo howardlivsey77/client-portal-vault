@@ -23,3 +23,4 @@ export type CompanyWithRole = {
   name: string;
   role: string;
 };
+

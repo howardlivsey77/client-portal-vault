@@ -46,7 +46,7 @@ export const useEmployeeTimesheet = (employeeId: string | null, weekStartDate: D
           
         if (error) throw error;
         
-        setEmployee(data as Employee);
+        setEmployee(data as unknown as Employee);
         
         // Fetch adjacent employee IDs for navigation
         await fetchAdjacentEmployees(data.last_name, data.first_name, data.id);
@@ -112,3 +112,4 @@ export const useEmployeeTimesheet = (employeeId: string | null, weekStartDate: D
     nextEmployeeId
   };
 };
+

@@ -28,6 +28,7 @@ export interface Employee {
   gender: string | null;
   work_pattern: string | null;
   monthly_salary: number | null;
+  company_id?: string | null; // Add company_id field from our new database structure
   
   // HMRC section fields
   tax_code: string | null;
@@ -52,3 +53,4 @@ export interface EmployeeDetailsHookReturn {
   fetchEmployeeData: () => Promise<void>;
   updateEmployeeField: (fieldName: string, value: any) => Promise<boolean>;
 }
+

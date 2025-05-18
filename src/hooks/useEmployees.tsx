@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -28,7 +29,7 @@ export const useEmployees = () => {
       console.log("Employees data retrieved:", data?.length || 0, "records");
       
       // Cast the data to ensure TypeScript recognizes work_pattern
-      const typedData = data as Employee[];
+      const typedData = data as unknown as Employee[];
       setEmployees(typedData || []);
     } catch (error: any) {
       console.error("Error in fetchEmployees:", error);
@@ -97,3 +98,4 @@ export const useEmployees = () => {
 };
 
 export type { Employee };
+

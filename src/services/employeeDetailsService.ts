@@ -15,7 +15,8 @@ export const fetchEmployeeById = async (employeeId: string): Promise<Employee> =
   if (error) throw error;
   
   console.log("Employee data retrieved:", data);
-  return data as Employee;
+  // Cast to Employee with all fields possibly undefined to match our type
+  return data as unknown as Employee;
 };
 
 export const updateEmployeeFieldById = async (
@@ -61,3 +62,4 @@ export const fetchEmployeeWithNavigation = async (employeeId: string): Promise<{
   
   return { employee, nextEmployeeId, prevEmployeeId };
 };
+
