@@ -3,7 +3,7 @@ import { createContext, useState, useEffect, useContext, ReactNode } from "react
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthProvider";
 import { Company, CompanyWithRole } from "@/types/company";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface CompanyContextType {
   currentCompany: Company | null;
@@ -54,7 +54,7 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
 
       if (error) {
         console.error("Error fetching companies:", error);
-        toast({
+        useToast().toast({
           title: "Failed to load companies",
           description: error.message,
           variant: "destructive",
@@ -73,7 +73,7 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
 
     } catch (error: any) {
       console.error("Exception fetching companies:", error);
-      toast({
+      useToast().toast({
         title: "Error",
         description: "Failed to load companies",
         variant: "destructive",
@@ -88,10 +88,11 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
     if (!companyId) return;
 
     try {
+      // Explicitly select columns from companies table with table alias to avoid ambiguity
       const { data, error } = await supabase
         .from('companies')
-        .select('*')
-        .eq('id', companyId)
+        .select('companies.id, companies.name, companies.trading_as, companies.address_line1, companies.address_line2, companies.address_line3, companies.address_line4, companies.post_code, companies.contact_name, companies.contact_email, companies.contact_phone, companies.paye_ref, companies.accounts_office_number, companies.created_at, companies.updated_at, companies.created_by')
+        .eq('companies.id', companyId)
         .single();
 
       if (error) {
@@ -115,7 +116,7 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
     const companyExists = companies.some(company => company.id === companyId);
     
     if (!companyExists) {
-      toast({
+      useToast().toast({
         title: "Access Denied",
         description: "You don't have access to this company",
         variant: "destructive",
@@ -125,7 +126,7 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
 
     await fetchCompanyDetails(companyId);
     
-    toast({
+    useToast().toast({
       title: "Company Switched",
       description: `Now viewing ${currentCompany?.name || 'new company'}`,
     });
