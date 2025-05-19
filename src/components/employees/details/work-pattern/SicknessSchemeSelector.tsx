@@ -30,7 +30,6 @@ export const SicknessSchemeSelector = ({
   const fetchSicknessSchemes = async () => {
     try {
       setLoading(true);
-      // Use explicit type assertion to handle the Supabase client issue
       const { data, error } = await supabase
         .from('sickness_schemes')
         .select('id, name, eligibility_rules');
@@ -44,7 +43,8 @@ export const SicknessSchemeSelector = ({
         const transformedData: SicknessScheme[] = data.map(item => ({
           id: item.id,
           name: item.name,
-          eligibilityRules: item.eligibility_rules
+          // Parse the JSON eligibility rules
+          eligibilityRules: item.eligibility_rules ? JSON.parse(item.eligibility_rules as string) : null
         }));
         setSchemes(transformedData);
       } else {

@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Edit, Table as TableIcon } from "lucide-react";
 import { SicknessSchemeForm } from "../components/SicknessSchemeForm";
-import { SicknessScheme, EligibilityRule } from "@/components/employees/details/work-pattern/types";
+import { SicknessScheme } from "../types";
+import { EligibilityRule } from "@/components/employees/details/work-pattern/types";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -28,7 +29,6 @@ const SicknessSettingsTab = () => {
   const fetchSicknessSchemes = async () => {
     try {
       setLoading(true);
-      // Use explicit type assertion for the Supabase client
       const { data, error } = await supabase
         .from('sickness_schemes')
         .select('id, name, eligibility_rules');
@@ -42,7 +42,8 @@ const SicknessSettingsTab = () => {
         const transformedData: SicknessScheme[] = data.map(item => ({
           id: item.id,
           name: item.name,
-          eligibilityRules: item.eligibility_rules
+          // Parse the JSON eligibility rules
+          eligibilityRules: item.eligibility_rules ? JSON.parse(item.eligibility_rules as string) : null
         }));
         setSchemes(transformedData);
       }
@@ -76,7 +77,8 @@ const SicknessSettingsTab = () => {
           .from('sickness_schemes')
           .update({ 
             name: scheme.name, 
-            eligibility_rules: scheme.eligibilityRules 
+            // Stringify the eligibility rules for storage
+            eligibility_rules: JSON.stringify(scheme.eligibilityRules) 
           })
           .eq('id', scheme.id);
           
@@ -93,7 +95,8 @@ const SicknessSettingsTab = () => {
           .from('sickness_schemes')
           .insert({ 
             name: scheme.name, 
-            eligibility_rules: scheme.eligibilityRules 
+            // Stringify the eligibility rules for storage
+            eligibility_rules: JSON.stringify(scheme.eligibilityRules)
           })
           .select();
           
@@ -103,7 +106,8 @@ const SicknessSettingsTab = () => {
           const newScheme: SicknessScheme = {
             id: data[0].id,
             name: data[0].name,
-            eligibilityRules: data[0].eligibility_rules
+            // Parse the eligibility rules
+            eligibilityRules: data[0].eligibility_rules ? JSON.parse(data[0].eligibility_rules as string) : null
           };
           setSchemes([...schemes, newScheme]);
           toast({

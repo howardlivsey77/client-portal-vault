@@ -21,7 +21,8 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { SicknessScheme, EligibilityRule } from "../types";
+import { SicknessScheme } from "../types";
+import { EligibilityRule } from "@/components/employees/details/work-pattern/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash } from "lucide-react";
 
