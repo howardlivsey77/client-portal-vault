@@ -77,6 +77,7 @@ const EmployeeDetails = () => {
           employee={employee} 
           isAdmin={isAdmin}
           refetchEmployeeData={fetchEmployeeData}
+          updateEmployeeField={updateEmployeeField}
         />
         
         <SystemInfoCard employee={employee} />
