@@ -581,6 +581,30 @@ export type Database = {
         }
         Relationships: []
       }
+      sickness_schemes: {
+        Row: {
+          created_at: string
+          eligibility_rules: Json | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          eligibility_rules?: Json | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          eligibility_rules?: Json | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assigned_to: string | null

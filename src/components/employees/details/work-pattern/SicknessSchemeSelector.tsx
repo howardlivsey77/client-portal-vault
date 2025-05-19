@@ -30,29 +30,36 @@ export const SicknessSchemeSelector = ({
   const fetchSicknessSchemes = async () => {
     try {
       setLoading(true);
+      // Use explicit type assertion to handle the Supabase client issue
       const { data, error } = await supabase
         .from('sickness_schemes')
-        .select('id, name');
+        .select('id, name, eligibility_rules');
       
       if (error) {
         throw error;
       }
       
       if (data && data.length > 0) {
-        setSchemes(data);
+        // Transform the data to match our SicknessScheme interface
+        const transformedData: SicknessScheme[] = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          eligibilityRules: item.eligibility_rules
+        }));
+        setSchemes(transformedData);
       } else {
         // Fallback to default schemes if none are found in the database
         setSchemes([
-          { id: "1", name: "Standard Sickness Scheme" },
-          { id: "2", name: "Extended Sickness Scheme" }
+          { id: "1", name: "Standard Sickness Scheme", eligibilityRules: [] },
+          { id: "2", name: "Extended Sickness Scheme", eligibilityRules: [] }
         ]);
       }
     } catch (error: any) {
       console.error("Error fetching sickness schemes:", error.message);
       // Use fallback schemes
       setSchemes([
-        { id: "1", name: "Standard Sickness Scheme" },
-        { id: "2", name: "Extended Sickness Scheme" }
+        { id: "1", name: "Standard Sickness Scheme", eligibilityRules: [] },
+        { id: "2", name: "Extended Sickness Scheme", eligibilityRules: [] }
       ]);
     } finally {
       setLoading(false);

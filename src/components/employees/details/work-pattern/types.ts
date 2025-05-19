@@ -19,4 +19,13 @@ export interface WorkPatternCardProps {
 export interface SicknessScheme {
   id: string;
   name: string;
+  eligibilityRules?: EligibilityRule[] | null;
+}
+
+export interface EligibilityRule {
+  id: string;
+  serviceMonthsFrom: number;
+  serviceMonthsTo: number | null;
+  companyPaidDays: number;
+  sicknessPay: string;
 }

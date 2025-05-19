@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Edit, Table as TableIcon } from "lucide-react";
 import { SicknessSchemeForm } from "../components/SicknessSchemeForm";
-import { SicknessScheme } from "../types";
+import { SicknessScheme, EligibilityRule } from "@/components/employees/details/work-pattern/types";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -28,16 +28,23 @@ const SicknessSettingsTab = () => {
   const fetchSicknessSchemes = async () => {
     try {
       setLoading(true);
+      // Use explicit type assertion for the Supabase client
       const { data, error } = await supabase
         .from('sickness_schemes')
-        .select('*');
+        .select('id, name, eligibility_rules');
       
       if (error) {
         throw error;
       }
       
       if (data) {
-        setSchemes(data);
+        // Transform the data to match our SicknessScheme interface
+        const transformedData: SicknessScheme[] = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          eligibilityRules: item.eligibility_rules
+        }));
+        setSchemes(transformedData);
       }
     } catch (error: any) {
       console.error("Error fetching sickness schemes:", error.message);
@@ -93,7 +100,12 @@ const SicknessSettingsTab = () => {
         if (error) throw error;
         
         if (data && data[0]) {
-          setSchemes([...schemes, data[0]]);
+          const newScheme: SicknessScheme = {
+            id: data[0].id,
+            name: data[0].name,
+            eligibilityRules: data[0].eligibility_rules
+          };
+          setSchemes([...schemes, newScheme]);
           toast({
             title: "Scheme added",
             description: `${scheme.name} has been added successfully.`
