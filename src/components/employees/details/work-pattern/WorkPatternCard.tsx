@@ -8,6 +8,8 @@ import { WorkPatternDialog } from "./WorkPatternDialog";
 import { WorkPatternDisplay } from "./WorkPatternDisplay";
 import { fetchWorkPatterns, saveWorkPatterns } from "./utils";
 import { defaultWorkPattern } from "@/types/employee";
+import { Separator } from "@/components/ui/separator";
+import { SicknessSchemeSelector } from "./SicknessSchemeSelector";
 
 export const WorkPatternCard = ({ 
   employee, 
@@ -94,7 +96,22 @@ export const WorkPatternCard = ({
         )}
       </CardHeader>
       <CardContent>
-        <WorkPatternDisplay workPattern={workPattern} />
+        <div className="space-y-6">
+          <WorkPatternDisplay workPattern={workPattern} />
+          
+          {updateEmployeeField && (
+            <>
+              <Separator className="my-4" />
+              
+              <SicknessSchemeSelector 
+                employeeId={employee.id}
+                currentSchemeId={employee.sickness_scheme_id || null}
+                isAdmin={isAdmin}
+                updateEmployeeField={updateEmployeeField}
+              />
+            </>
+          )}
+        </div>
       </CardContent>
 
       <WorkPatternDialog

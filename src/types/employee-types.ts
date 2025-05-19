@@ -29,6 +29,7 @@ export interface Employee {
   work_pattern: string | null;
   monthly_salary: number | null;
   company_id?: string | null; // Add company_id field from our new database structure
+  sickness_scheme_id?: string | null; // Add sickness scheme ID
   
   // HMRC section fields
   tax_code: string | null;

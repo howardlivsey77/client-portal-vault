@@ -15,3 +15,8 @@ export interface WorkPatternCardProps {
   refetchEmployeeData: () => Promise<void>;
   updateEmployeeField?: (fieldName: string, value: any) => Promise<boolean>;
 }
+
+export interface SicknessScheme {
+  id: string;
+  name: string;
+}
