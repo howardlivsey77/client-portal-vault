@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Card, 
   CardContent, 
@@ -13,20 +13,43 @@ import { Plus, Edit, Table as TableIcon } from "lucide-react";
 import { SicknessSchemeForm } from "../components/SicknessSchemeForm";
 import { SicknessScheme } from "../types";
 import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const SicknessSettingsTab = () => {
-  const [schemes, setSchemes] = useState<SicknessScheme[]>([
-    {
-      id: "1",
-      name: "Standard Sickness Scheme",
-      eligibilityRules: [
-        { id: "rule1", serviceMonthsFrom: 0, serviceMonthsTo: 6, companyPaidDays: 3, sicknessPay: "SSP" },
-        { id: "rule2", serviceMonthsFrom: 6, serviceMonthsTo: 12, companyPaidDays: 5, sicknessPay: "SSP" }
-      ]
-    }
-  ]);
+  const [schemes, setSchemes] = useState<SicknessScheme[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingScheme, setEditingScheme] = useState<SicknessScheme | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSicknessSchemes();
+  }, []);
+
+  const fetchSicknessSchemes = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('sickness_schemes')
+        .select('*');
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        setSchemes(data);
+      }
+    } catch (error: any) {
+      console.error("Error fetching sickness schemes:", error.message);
+      toast({
+        title: "Error loading schemes",
+        description: "There was a problem loading sickness schemes. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddScheme = () => {
     setEditingScheme(null);
@@ -38,27 +61,54 @@ const SicknessSettingsTab = () => {
     setIsFormOpen(true);
   };
 
-  const handleSaveScheme = (scheme: SicknessScheme) => {
-    if (editingScheme) {
-      // Update existing scheme
-      setSchemes(schemes.map(s => s.id === scheme.id ? scheme : s));
+  const handleSaveScheme = async (scheme: SicknessScheme) => {
+    try {
+      if (editingScheme) {
+        // Update existing scheme
+        const { error } = await supabase
+          .from('sickness_schemes')
+          .update({ 
+            name: scheme.name, 
+            eligibility_rules: scheme.eligibilityRules 
+          })
+          .eq('id', scheme.id);
+          
+        if (error) throw error;
+        
+        setSchemes(schemes.map(s => s.id === scheme.id ? scheme : s));
+        toast({
+          title: "Scheme updated",
+          description: `${scheme.name} has been updated successfully.`
+        });
+      } else {
+        // Add new scheme
+        const { data, error } = await supabase
+          .from('sickness_schemes')
+          .insert({ 
+            name: scheme.name, 
+            eligibility_rules: scheme.eligibilityRules 
+          })
+          .select();
+          
+        if (error) throw error;
+        
+        if (data && data[0]) {
+          setSchemes([...schemes, data[0]]);
+          toast({
+            title: "Scheme added",
+            description: `${scheme.name} has been added successfully.`
+          });
+        }
+      }
+      setIsFormOpen(false);
+    } catch (error: any) {
+      console.error("Error saving scheme:", error.message);
       toast({
-        title: "Scheme updated",
-        description: `${scheme.name} has been updated successfully.`
-      });
-    } else {
-      // Add new scheme
-      const newScheme = {
-        ...scheme,
-        id: `scheme-${Date.now()}`
-      };
-      setSchemes([...schemes, newScheme]);
-      toast({
-        title: "Scheme added",
-        description: `${newScheme.name} has been added successfully.`
+        title: "Error saving scheme",
+        description: "There was a problem saving the sickness scheme. Please try again.",
+        variant: "destructive"
       });
     }
-    setIsFormOpen(false);
   };
 
   const handleCancelForm = () => {
@@ -89,7 +139,11 @@ const SicknessSettingsTab = () => {
                 </Button>
               </div>
               
-              {schemes.length > 0 ? (
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-pulse text-muted-foreground">Loading schemes...</div>
+                </div>
+              ) : schemes.length > 0 ? (
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
@@ -103,7 +157,7 @@ const SicknessSettingsTab = () => {
                       {schemes.map((scheme) => (
                         <TableRow key={scheme.id}>
                           <TableCell className="font-medium">{scheme.name}</TableCell>
-                          <TableCell>{scheme.eligibilityRules.length}</TableCell>
+                          <TableCell>{scheme.eligibilityRules?.length || 0}</TableCell>
                           <TableCell>
                             <Button variant="ghost" size="sm" onClick={() => handleEditScheme(scheme)}>
                               <Edit className="h-4 w-4" />

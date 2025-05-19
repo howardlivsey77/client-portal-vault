@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { SicknessScheme } from "./types";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SicknessSchemeSelectorProps {
   employeeId: string;
@@ -23,13 +24,40 @@ export const SicknessSchemeSelector = ({
   const { toast } = useToast();
   
   useEffect(() => {
-    // In a real application, we would fetch the schemes from the API
-    // For now, we'll use mock data based on what we have in SicknessSettingsTab
-    setSchemes([
-      { id: "1", name: "Standard Sickness Scheme" },
-      { id: "2", name: "Extended Sickness Scheme" }
-    ]);
+    fetchSicknessSchemes();
   }, []);
+  
+  const fetchSicknessSchemes = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('sickness_schemes')
+        .select('id, name');
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data && data.length > 0) {
+        setSchemes(data);
+      } else {
+        // Fallback to default schemes if none are found in the database
+        setSchemes([
+          { id: "1", name: "Standard Sickness Scheme" },
+          { id: "2", name: "Extended Sickness Scheme" }
+        ]);
+      }
+    } catch (error: any) {
+      console.error("Error fetching sickness schemes:", error.message);
+      // Use fallback schemes
+      setSchemes([
+        { id: "1", name: "Standard Sickness Scheme" },
+        { id: "2", name: "Extended Sickness Scheme" }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const handleSchemeChange = async (schemeId: string) => {
     if (!isAdmin) return;
