@@ -29,7 +29,8 @@ export const HireDateField = ({ form, readOnly }: HireDateFieldProps) => {
                   variant={"outline"}
                   className={cn(
                     "w-full pl-3 text-left font-normal",
-                    !field.value && "text-muted-foreground"
+                    !field.value && "text-muted-foreground",
+                    readOnly && "bg-gray-50"
                   )}
                   disabled={readOnly}
                 >

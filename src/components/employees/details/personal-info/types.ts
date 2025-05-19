@@ -14,6 +14,7 @@ export interface PersonalInfoFormValues {
   gender: "Male" | "Female" | "Other" | "Prefer not to say" | null;
   payroll_id: string | null;
   date_of_birth: Date | null;
+  hire_date: Date;
   hours_per_week: number;
   hourly_rate: number;
   rate_2: number | null;

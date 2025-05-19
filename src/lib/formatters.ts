@@ -53,3 +53,52 @@ export function getMonthName(monthNumber: number): string {
   const index = ((monthNumber - 1) % 12 + 12) % 12; // Ensure it's always in range 0-11
   return months[index];
 }
+
+/**
+ * Calculates length of service from hire date to current date
+ * @param hireDate The employee's hire date
+ * @returns An object with years and months of service
+ */
+export function calculateLengthOfService(hireDate: string | Date): { years: number; months: number } {
+  const startDate = new Date(hireDate);
+  const currentDate = new Date();
+  
+  let years = currentDate.getFullYear() - startDate.getFullYear();
+  let months = currentDate.getMonth() - startDate.getMonth();
+  
+  // Adjust years and months if needed
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+  
+  // Adjust if the day of month hasn't been reached yet
+  if (currentDate.getDate() < startDate.getDate()) {
+    months--;
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+  }
+  
+  return { years, months };
+}
+
+/**
+ * Formats length of service as a string
+ * @param hireDate The employee's hire date
+ * @returns A formatted string showing length of service
+ */
+export function formatLengthOfService(hireDate: string | Date): string {
+  const { years, months } = calculateLengthOfService(hireDate);
+  
+  if (years === 0 && months === 0) return "Less than a month";
+  
+  const yearText = years === 1 ? "year" : "years";
+  const monthText = months === 1 ? "month" : "months";
+  
+  if (years === 0) return `${months} ${monthText}`;
+  if (months === 0) return `${years} ${yearText}`;
+  
+  return `${years} ${yearText}, ${months} ${monthText}`;
+}

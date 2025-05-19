@@ -33,7 +33,7 @@ export const PersonalInfoDateField = ({ control }: PersonalInfoDateFieldProps) =
                     )}
                   >
                     {field.value ? (
-                      format(field.value, "PP")
+                      format(field.value, "dd/MM/yyyy")
                     ) : (
                       <span>Pick a date</span>
                     )}
@@ -48,6 +48,7 @@ export const PersonalInfoDateField = ({ control }: PersonalInfoDateFieldProps) =
                   onSelect={field.onChange}
                   initialFocus
                   disabled={(date) => date > new Date()}
+                  className={cn("p-3 pointer-events-auto")}
                 />
               </PopoverContent>
             </Popover>

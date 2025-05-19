@@ -1,4 +1,5 @@
-import { formatCurrency, formatDate, roundToTwoDecimals } from "@/lib/formatters";
+
+import { formatCurrency, formatDate, formatLengthOfService, roundToTwoDecimals } from "@/lib/formatters";
 import { CalendarIcon } from "lucide-react";
 import { Employee } from "@/types/employeeDetails";
 
@@ -66,13 +67,31 @@ export const PersonalInfoDisplay = ({ employee }: PersonalInfoDisplayProps) => {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <div className="text-sm font-medium mb-2">Date of Birth</div>
+          <div className="p-2.5 bg-gray-50 rounded border border-gray-200 flex items-center justify-between">
+            {employee.date_of_birth ? formatDate(employee.date_of_birth) : "Not provided"}
+            <span className="text-gray-400">
+              <CalendarIcon className="h-4 w-4 opacity-50" />
+            </span>
+          </div>
+        </div>
+        <div>
+          <div className="text-sm font-medium mb-2">Hire Date</div>
+          <div className="p-2.5 bg-gray-50 rounded border border-gray-200 flex items-center justify-between">
+            {formatDate(employee.hire_date)}
+            <span className="text-gray-400">
+              <CalendarIcon className="h-4 w-4 opacity-50" />
+            </span>
+          </div>
+        </div>
+      </div>
+      
       <div>
-        <div className="text-sm font-medium mb-2">Date of Birth</div>
-        <div className="p-2.5 bg-gray-50 rounded border border-gray-200 flex items-center justify-between">
-          {employee.date_of_birth ? formatDate(employee.date_of_birth) : "Not provided"}
-          <span className="text-gray-400">
-            <CalendarIcon className="h-4 w-4 opacity-50" />
-          </span>
+        <div className="text-sm font-medium mb-2">Length of Service</div>
+        <div className="p-2.5 bg-gray-50 rounded border border-gray-200">
+          {formatLengthOfService(employee.hire_date)}
         </div>
       </div>
 
