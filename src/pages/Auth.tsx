@@ -8,7 +8,7 @@ import { CompanyAccessSetup } from "@/components/auth/CompanyAccessSetup";
 import { useAuth } from "@/providers/AuthProvider";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client"; // Add this import
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const { authInitialized } = useAuthInitialization();
@@ -42,22 +42,26 @@ const Auth = () => {
 
   // Show loading indicator until we've checked the session
   if (!authInitialized) {
-    return <PageContainer>
+    return (
+      <PageContainer>
         <div className="flex items-center justify-center min-h-[70vh]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </PageContainer>;
+      </PageContainer>
+    );
   }
 
-  return <PageContainer>
-    {user ? (
-      <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto mt-16">
-        <CompanyAccessSetup />
-      </div>
-    ) : (
-      <AuthContainer onSuccess={ensureCompanyAccess} />
-    )}
-  </PageContainer>;
+  return (
+    <PageContainer>
+      {user ? (
+        <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto mt-16">
+          <CompanyAccessSetup />
+        </div>
+      ) : (
+        <AuthContainer onSuccess={ensureCompanyAccess} />
+      )}
+    </PageContainer>
+  );
 };
 
 export default Auth;

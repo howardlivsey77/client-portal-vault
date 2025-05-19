@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,7 +106,6 @@ export const SignupForm = ({ onSuccess, onComplete }: SignupFormProps) => {
             value={email} 
             onChange={e => setEmail(e.target.value)} 
             required 
-            className="bg-teal-100" 
           />
         </div>
         <div className="space-y-2">
@@ -118,7 +116,6 @@ export const SignupForm = ({ onSuccess, onComplete }: SignupFormProps) => {
             placeholder="John Doe" 
             value={fullName} 
             onChange={e => setFullName(e.target.value)}
-            className="bg-teal-100" 
           />
         </div>
         <div className="space-y-2">
@@ -129,7 +126,6 @@ export const SignupForm = ({ onSuccess, onComplete }: SignupFormProps) => {
             value={password} 
             onChange={e => setPassword(e.target.value)} 
             required 
-            className="bg-teal-100" 
           />
         </div>
         <div className="space-y-2">
@@ -140,7 +136,6 @@ export const SignupForm = ({ onSuccess, onComplete }: SignupFormProps) => {
             value={confirmPassword} 
             onChange={e => setConfirmPassword(e.target.value)} 
             required 
-            className="bg-teal-100" 
           />
         </div>
       </CardContent>

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,7 +87,6 @@ export const LoginForm = ({ onSuccess, onOtpRequired }: LoginFormProps) => {
             value={email} 
             onChange={e => setEmail(e.target.value)} 
             required 
-            className="bg-teal-100" 
           />
         </div>
         <div className="space-y-2">
@@ -99,7 +97,6 @@ export const LoginForm = ({ onSuccess, onOtpRequired }: LoginFormProps) => {
             value={password} 
             onChange={e => setPassword(e.target.value)} 
             required 
-            className="bg-teal-100" 
           />
         </div>
       </CardContent>
