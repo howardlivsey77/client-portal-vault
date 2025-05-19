@@ -14,7 +14,7 @@ const GeneralSettingsTab = () => {
   // Initialize the form
   const form = useForm<CompanyFormValues>({
     defaultValues: {
-      companyName: "",
+      name: "",
       tradingAs: "",
       addressLine1: "",
       addressLine2: "",
@@ -56,7 +56,7 @@ const GeneralSettingsTab = () => {
             {/* Company Name */}
             <FormField
               control={form.control}
-              name="companyName"
+              name="name"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Company Name</FormLabel>
