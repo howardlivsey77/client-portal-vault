@@ -39,10 +39,8 @@ const SicknessSettingsTab = () => {
       toast.success(result.message);
       setIsFormOpen(false);
     } else {
-      toast({
-        title: "Error saving scheme",
-        description: result.message,
-        variant: "destructive"
+      toast.error("Error saving scheme", {
+        description: result.message
       });
     }
   };

@@ -32,10 +32,8 @@ export const useSicknessSchemes = () => {
       }
     } catch (error: any) {
       console.error("Error fetching sickness schemes:", error.message);
-      toast({
-        title: "Error loading schemes",
-        description: "There was a problem loading sickness schemes. Please try again.",
-        variant: "destructive"
+      toast.error("Error loading schemes", {
+        description: "There was a problem loading sickness schemes. Please try again."
       });
     } finally {
       setLoading(false);
