@@ -100,43 +100,51 @@ export const CompanyForm = ({
       } else {
         // Create new company
         const { data: userData } = await supabase.auth.getUser();
+        if (!userData.user) {
+          throw new Error("You must be logged in to create a company");
+        }
         
         // Add the user ID to the company data as the creator
         const companyData = {
           ...formData,
-          created_by: userData.user?.id
+          created_by: userData.user.id
         };
         
-        const { error } = await supabase
+        // Insert company and return the ID in a single operation
+        const { data: newCompany, error: insertError } = await supabase
           .from("companies")
-          .insert([companyData]);
+          .insert(companyData)
+          .select('id, name')
+          .single();
 
-        if (error) throw error;
+        if (insertError) throw insertError;
         
-        // After successfully creating a company, automatically create company access for the user
-        if (userData.user) {
-          const { error: accessError } = await supabase
-            .from("company_access")
-            .insert([{
-              user_id: userData.user.id,
-              company_id: (await supabase
-                .from("companies")
-                .select("id")
-                .eq("name", formData.name)
-                .limit(1)
-                .single()).data?.id,
-              role: "admin"  // Set the creator as an admin of the company
-            }]);
-            
-          if (accessError) {
-            console.error("Error creating company access:", accessError);
-          }
+        if (!newCompany) {
+          throw new Error("Failed to create company: no company ID returned");
         }
         
-        toast({
-          title: "Success",
-          description: "Company created successfully",
-        });
+        // Create company access for the user with the returned company ID
+        const { error: accessError } = await supabase
+          .from("company_access")
+          .insert({
+            user_id: userData.user.id,
+            company_id: newCompany.id,
+            role: "admin"  // Set the creator as an admin of the company
+          });
+            
+        if (accessError) {
+          console.error("Error creating company access:", accessError);
+          toast({
+            title: "Warning",
+            description: "Company created, but there was an issue setting up your access. Please contact support.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Success",
+            description: `Company "${newCompany.name}" created successfully`,
+          });
+        }
       }
 
       // Refresh data
@@ -318,7 +326,7 @@ export const CompanyForm = ({
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {company ? "Save Changes" : "Create Company"}
+              {loading ? "Saving..." : (company ? "Save Changes" : "Create Company")}
             </Button>
           </DialogFooter>
         </form>

@@ -1,5 +1,4 @@
-
-import { createContext, useState, useEffect, useContext, ReactNode } from "react";
+import { createContext, useState, useEffect, useContext, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthProvider";
 import { Company, CompanyWithRole } from "@/types/company";
@@ -37,7 +36,7 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
   const { toast } = useToast();
 
   // Fetch user's accessible companies
-  const fetchCompanies = async () => {
+  const fetchCompanies = useCallback(async () => {
     if (!user) {
       setCompanies([]);
       setCurrentCompany(null);
@@ -68,8 +67,16 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
       setCompanies(data || []);
 
       // If there's no current company selected but we have companies
-      if (!currentCompany && data && data.length > 0) {
-        await fetchCompanyDetails(data[0].id);
+      if ((!currentCompany || !companies.some(c => c.id === currentCompany.id)) && data && data.length > 0) {
+        // Try to restore last selected company if it's in the list
+        const lastCompanyId = localStorage.getItem('lastSelectedCompany');
+        
+        if (lastCompanyId && data.some(company => company.id === lastCompanyId)) {
+          await fetchCompanyDetails(lastCompanyId);
+        } else {
+          // Otherwise use the first available company
+          await fetchCompanyDetails(data[0].id);
+        }
       }
 
     } catch (error: any) {
@@ -82,7 +89,7 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, toast, currentCompany, companies]);
 
   // Fetch details for a specific company
   const fetchCompanyDetails = async (companyId: string) => {
@@ -127,27 +134,23 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
 
     await fetchCompanyDetails(companyId);
     
+    const companyName = companies.find(c => c.id === companyId)?.name || 'selected company';
+    
     toast({
       title: "Company Switched",
-      description: `Now viewing ${currentCompany?.name || 'new company'}`,
+      description: `Now viewing ${companyName}`,
     });
   };
 
   // Refresh the company list
-  const refreshCompanies = async () => {
+  const refreshCompanies = useCallback(async () => {
     await fetchCompanies();
-  };
+  }, [fetchCompanies]);
 
   // Initial load and when user changes
   useEffect(() => {
     fetchCompanies();
-    
-    // Try to restore last selected company
-    const lastCompanyId = localStorage.getItem('lastSelectedCompany');
-    if (lastCompanyId && user) {
-      fetchCompanyDetails(lastCompanyId);
-    }
-  }, [user]);
+  }, [user, fetchCompanies]);
 
   const value = {
     currentCompany,

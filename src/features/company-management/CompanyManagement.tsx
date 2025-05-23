@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { Building } from "lucide-react";
 import { CompanyHeader } from "./components/CompanyHeader";
 import { CompanyList } from "./components/CompanyList";
 import { CompanyForm } from "./components/CompanyForm";

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/providers/CompanyProvider";
@@ -11,7 +11,7 @@ export const useCompanyManagement = () => {
   const { toast } = useToast();
   const { refreshCompanies } = useCompany();
 
-  const fetchCompanies = async () => {
+  const fetchCompanies = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -31,10 +31,22 @@ export const useCompanyManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   const handleDeleteCompany = async (companyId: string) => {
     try {
+      // First, delete any company_access entries for this company
+      const { error: accessError } = await supabase
+        .from("company_access")
+        .delete()
+        .eq("company_id", companyId);
+        
+      if (accessError) {
+        console.error("Error deleting company access:", accessError);
+        // Continue anyway to try deleting the company
+      }
+      
+      // Then delete the company
       const { error } = await supabase
         .from("companies")
         .delete()
