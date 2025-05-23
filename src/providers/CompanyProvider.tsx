@@ -49,6 +49,8 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
       
       console.log("Fetching companies for user:", user.id);
       
+      let companiesData: CompanyWithRole[] = [];
+      
       // Try using the database function first
       const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_companies', {
         _user_id: user.id,
@@ -59,8 +61,6 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
         
         // Fallback: Manual query approach
         console.log("Attempting fallback query approach...");
-        
-        let fallbackData = [];
         
         if (isAdmin) {
           // Admin users get all companies
@@ -73,7 +73,7 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
             throw new Error(`Admin fallback failed: ${adminError.message}`);
           }
           
-          fallbackData = (allCompanies || []).map(company => ({
+          companiesData = (allCompanies || []).map(company => ({
             ...company,
             role: 'admin'
           }));
@@ -93,24 +93,24 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
             throw new Error(`User fallback failed: ${userError.message}`);
           }
           
-          fallbackData = (userCompanies || []).map(company => ({
+          companiesData = (userCompanies || []).map(company => ({
             id: company.id,
             name: company.name,
             role: company.company_access?.[0]?.role || 'user'
           }));
         }
         
-        console.log("Fallback query successful, companies found:", fallbackData.length);
-        setCompanies(fallbackData);
+        console.log("Fallback query successful, companies found:", companiesData.length);
       } else {
         // RPC function worked
         console.log("RPC function successful, companies found:", rpcData?.length || 0);
-        setCompanies(rpcData || []);
+        companiesData = rpcData || [];
       }
 
-      // Handle current company selection
-      const companiesData = rpcError ? companies : (rpcData || []);
+      // Set the companies data
+      setCompanies(companiesData);
       
+      // Handle current company selection
       if ((!currentCompany || !companiesData.some(c => c.id === currentCompany.id)) && companiesData.length > 0) {
         // Try to restore last selected company if it's in the list
         const lastCompanyId = localStorage.getItem('lastSelectedCompany');
@@ -137,7 +137,7 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
     } finally {
       setIsLoading(false);
     }
-  }, [user, isAdmin, toast, currentCompany, companies]);
+  }, [user, isAdmin, toast, currentCompany]);
 
   // Fetch details for a specific company
   const fetchCompanyDetails = async (companyId: string) => {
