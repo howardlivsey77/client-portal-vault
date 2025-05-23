@@ -12,6 +12,7 @@ import { DocumentsTab } from "@/components/dashboard/tabs/DocumentsTab";
 import { PayrollTab } from "@/components/dashboard/tabs/PayrollTab";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { TimesheetsTab } from "@/components/dashboard/tabs/TimesheetsTab";
+import { CompaniesTable } from "@/components/companies/CompaniesTable";
 
 const Index = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -26,7 +27,7 @@ const Index = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get("tab");
-    if (tabParam && ["overview", "documents", "tasks", "reports", "payroll", "timesheets"].includes(tabParam)) {
+    if (tabParam && ["overview", "companies", "documents", "tasks", "reports", "payroll", "timesheets"].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [location.search]);
@@ -49,6 +50,8 @@ const Index = () => {
     switch(activeTab) {
       case "overview":
         return <EmployeeDashboard />;
+      case "companies":
+        return <CompaniesTable />;
       case "documents":
         return (
           <DocumentsTab
