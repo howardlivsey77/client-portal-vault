@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Shield, UserCog } from "lucide-react";
 import { Link, Location } from "react-router-dom";
 import { CompanySettingsMenu } from "./CompanySettingsMenu";
-import { CompaniesMenu } from "./CompaniesMenu";
 
 interface SidebarFooterNavigationProps {
   location: Location;
@@ -14,10 +13,6 @@ interface SidebarFooterNavigationProps {
 export function SidebarFooterNavigation({ location, expandedAccordion, onAccordionChange }: SidebarFooterNavigationProps) {
   return (
     <div className="mt-auto">
-      <div className="px-4 py-2">
-        <CompaniesMenu />
-      </div>
-
       <div className="px-4 py-2">
         <CompanySettingsMenu />
       </div>

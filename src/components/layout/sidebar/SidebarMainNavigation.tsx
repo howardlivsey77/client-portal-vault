@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CheckSquare, ChartBar, Clock, FileText, Home, Receipt, Users } from "lucide-react";
 import { Link } from "react-router-dom";
+import { CompaniesMenu } from "./CompaniesMenu";
 
 interface SidebarMainNavigationProps {
   location: { pathname: string; search: string };
@@ -30,6 +31,10 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
 
   return (
     <div className="mt-2 space-y-1 px-2">
+      <div className="px-2 py-2">
+        <CompaniesMenu />
+      </div>
+      
       <Button 
         variant="ghost" 
         className={cn(
