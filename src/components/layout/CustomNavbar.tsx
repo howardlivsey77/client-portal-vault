@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -50,9 +49,11 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
         />
       </div>
       
-      {/* Company Selector - Centered */}
+      {/* Company Selector - Centered with half width */}
       <div className="flex-1 flex justify-center">
-        {user && <CompaniesMenu />}
+        <div className="w-1/2 max-w-md">
+          {user && <CompaniesMenu />}
+        </div>
       </div>
       
       <div className="flex items-center gap-2">
