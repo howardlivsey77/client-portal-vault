@@ -35,7 +35,7 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { toast } = useToast();
 
-  // Fetch user's accessible companies
+  // Fetch user's accessible companies with improved error handling
   const fetchCompanies = useCallback(async () => {
     if (!user) {
       setCompanies([]);
@@ -47,49 +47,97 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
     try {
       setIsLoading(true);
       
-      // Use the database function to get companies
-      const { data, error } = await supabase.rpc('get_user_companies', {
+      console.log("Fetching companies for user:", user.id);
+      
+      // Try using the database function first
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_companies', {
         _user_id: user.id,
       });
 
-      if (error) {
-        console.error("Error fetching companies:", error);
-        toast({
-          title: "Failed to load companies",
-          description: error.message,
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
+      if (rpcError) {
+        console.error("RPC function failed:", rpcError);
+        
+        // Fallback: Manual query approach
+        console.log("Attempting fallback query approach...");
+        
+        let fallbackData = [];
+        
+        if (isAdmin) {
+          // Admin users get all companies
+          const { data: allCompanies, error: adminError } = await supabase
+            .from('companies')
+            .select('id, name')
+            .order('name');
+            
+          if (adminError) {
+            throw new Error(`Admin fallback failed: ${adminError.message}`);
+          }
+          
+          fallbackData = (allCompanies || []).map(company => ({
+            ...company,
+            role: 'admin'
+          }));
+        } else {
+          // Regular users get only their accessible companies
+          const { data: userCompanies, error: userError } = await supabase
+            .from('companies')
+            .select(`
+              id, 
+              name,
+              company_access!inner(role)
+            `)
+            .eq('company_access.user_id', user.id)
+            .order('name');
+            
+          if (userError) {
+            throw new Error(`User fallback failed: ${userError.message}`);
+          }
+          
+          fallbackData = (userCompanies || []).map(company => ({
+            id: company.id,
+            name: company.name,
+            role: company.company_access?.[0]?.role || 'user'
+          }));
+        }
+        
+        console.log("Fallback query successful, companies found:", fallbackData.length);
+        setCompanies(fallbackData);
+      } else {
+        // RPC function worked
+        console.log("RPC function successful, companies found:", rpcData?.length || 0);
+        setCompanies(rpcData || []);
       }
 
-      // Set available companies
-      setCompanies(data || []);
-
-      // If there's no current company selected but we have companies
-      if ((!currentCompany || !companies.some(c => c.id === currentCompany.id)) && data && data.length > 0) {
+      // Handle current company selection
+      const companiesData = rpcError ? companies : (rpcData || []);
+      
+      if ((!currentCompany || !companiesData.some(c => c.id === currentCompany.id)) && companiesData.length > 0) {
         // Try to restore last selected company if it's in the list
         const lastCompanyId = localStorage.getItem('lastSelectedCompany');
         
-        if (lastCompanyId && data.some(company => company.id === lastCompanyId)) {
+        if (lastCompanyId && companiesData.some(company => company.id === lastCompanyId)) {
           await fetchCompanyDetails(lastCompanyId);
         } else {
           // Otherwise use the first available company
-          await fetchCompanyDetails(data[0].id);
+          await fetchCompanyDetails(companiesData[0].id);
         }
       }
 
     } catch (error: any) {
-      console.error("Exception fetching companies:", error);
+      console.error("Critical error fetching companies:", error);
       toast({
-        title: "Error",
-        description: "Failed to load companies",
+        title: "Error Loading Companies",
+        description: error.message || "Failed to load companies. Please try refreshing the page.",
         variant: "destructive",
       });
+      
+      // Set empty state on critical error
+      setCompanies([]);
+      setCurrentCompany(null);
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast, currentCompany, companies]);
+  }, [user, isAdmin, toast, currentCompany, companies]);
 
   // Fetch details for a specific company
   const fetchCompanyDetails = async (companyId: string) => {
