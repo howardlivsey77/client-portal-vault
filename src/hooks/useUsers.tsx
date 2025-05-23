@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -23,7 +22,8 @@ export const useUsers = () => {
       setError(null);
 
       console.log("Fetching profiles...");
-      // The RLS policy will automatically filter based on admin status
+      
+      // Try to fetch profiles with better error handling
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -31,33 +31,38 @@ export const useUsers = () => {
         
       if (error) {
         console.error("Profiles fetch error:", error);
-        throw error;
-      }
-      
-      console.log("Profiles data:", data);
-      setUsers(data || []);
-    } catch (error: any) {
-      console.error("Error fetching users:", error);
-      
-      // Handle permission errors gracefully
-      if (error.message && error.message.includes("permission denied")) {
-        setError("Permission denied: You don't have access to view users.");
-        toast({
-          title: "Error fetching users",
-          description: "Permission denied: You don't have access to view users.",
-          variant: "destructive"
-        });
-      } else {
-        setError(error.message || "An error occurred while fetching users.");
+        
+        // Check if it's a permission error or table doesn't exist
+        if (error.message.includes("relation") && error.message.includes("does not exist")) {
+          setError("Profiles table not found. Please contact your administrator.");
+        } else if (error.message.includes("permission denied")) {
+          setError("Permission denied: You don't have access to view users.");
+        } else {
+          setError(error.message || "An error occurred while fetching users.");
+        }
+        
         toast({
           title: "Error fetching users",
           description: error.message,
           variant: "destructive"
         });
+        
+        setUsers([]);
+        return;
       }
       
-      // Set empty users array in case of error
+      console.log("Profiles data:", data);
+      setUsers(data || []);
+    } catch (error: any) {
+      console.error("Exception fetching users:", error);
+      setError(error.message || "An unexpected error occurred.");
       setUsers([]);
+      
+      toast({
+        title: "Error fetching users",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }

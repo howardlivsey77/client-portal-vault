@@ -1,3 +1,4 @@
+
 import { createContext, useState, useEffect, useContext, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
@@ -37,12 +38,26 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   // Check admin status using the security definer function
   const checkAdminStatus = async (userId: string) => {
     try {
+      // First try the RPC function
       const { data, error } = await supabase
         .rpc('is_admin', { user_id: userId });
       
       if (error) {
-        console.error("Error checking admin status:", error);
-        return false;
+        console.error("Error checking admin status with RPC:", error);
+        
+        // Fallback: try direct query to profiles table
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', userId)
+          .single();
+        
+        if (profileError) {
+          console.error("Error checking admin status with direct query:", profileError);
+          return false;
+        }
+        
+        return !!profileData?.is_admin;
       }
       
       console.log("Admin check result:", data);
@@ -57,7 +72,6 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   const handleAuthChange = async (_event: string, newSession: Session | null) => {
     console.log("Auth state changed:", _event, "Session:", newSession?.user?.email);
     
-    // Avoid nested Supabase calls to prevent deadlocks
     setSession(newSession);
     setUser(newSession?.user ?? null);
     
