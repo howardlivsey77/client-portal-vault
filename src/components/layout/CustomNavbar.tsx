@@ -145,7 +145,6 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
               <DropdownMenuItem onClick={signOut} className="cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
-              </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
