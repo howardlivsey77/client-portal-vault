@@ -1,29 +1,19 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Building, ChevronDown, Settings, Plus } from "lucide-react";
+import { Building, ChevronDown } from "lucide-react";
 import { useCompany } from "@/providers/CompanyProvider";
 import { useAuth } from "@/providers/AuthProvider";
-import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 export function CompaniesMenu() {
   const { companies, currentCompany, switchCompany, isLoading } = useCompany();
   const { user } = useAuth();
-  const navigate = useNavigate();
-
-  const handleCompanySettings = (section?: string) => {
-    const basePath = "/settings/company";
-    const path = section ? `${basePath}/${section}` : `${basePath}/general`;
-    navigate(path);
-  };
 
   if (isLoading) {
     return (
@@ -51,7 +41,6 @@ export function CompaniesMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
-        <DropdownMenuLabel>Switch Company</DropdownMenuLabel>
         {companies.map((company) => (
           <DropdownMenuItem
             key={company.id}
@@ -67,50 +56,6 @@ export function CompaniesMenu() {
             )}
           </DropdownMenuItem>
         ))}
-        
-        {currentCompany && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Company Settings</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => handleCompanySettings("general")}
-              className="cursor-pointer"
-            >
-              <Settings className="h-3 w-3 mr-2" />
-              <span>General Settings</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleCompanySettings("sickness")}
-              className="cursor-pointer"
-            >
-              <Settings className="h-3 w-3 mr-2" />
-              <span>Sickness Settings</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleCompanySettings("locations")}
-              className="cursor-pointer"
-            >
-              <Settings className="h-3 w-3 mr-2" />
-              <span>Locations</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleCompanySettings("departments")}
-              className="cursor-pointer"
-            >
-              <Settings className="h-3 w-3 mr-2" />
-              <span>Departments</span>
-            </DropdownMenuItem>
-          </>
-        )}
-        
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => navigate("/settings/companies")}
-          className="cursor-pointer"
-        >
-          <Plus className="h-3 w-3 mr-2" />
-          <span>Manage Companies</span>
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
