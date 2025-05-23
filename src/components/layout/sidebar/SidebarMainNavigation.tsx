@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { CheckSquare, ChartBar, Clock, FileText, Home, Receipt, Users, Building } from "lucide-react";
+import { CheckSquare, ChartBar, Clock, FileText, Home, Receipt, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { CompaniesMenu } from "./CompaniesMenu";
 
@@ -46,20 +46,6 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
         <Link to={getTabUrl("overview")}>
           <Home className="h-4 w-4" />
           Dashboard
-        </Link>
-      </Button>
-      
-      <Button 
-        variant="ghost" 
-        className={cn(
-          "monday-sidebar-item w-full justify-start", 
-          isTabActive("companies") && "bg-accent text-accent-foreground"
-        )} 
-        asChild
-      >
-        <Link to={getTabUrl("companies")}>
-          <Building className="h-4 w-4" />
-          Companies
         </Link>
       </Button>
       
