@@ -2,7 +2,6 @@
 import { Button } from "@/components/ui/button";
 import { Shield, UserCog } from "lucide-react";
 import { Link, Location } from "react-router-dom";
-import { CompanySettingsMenu } from "./CompanySettingsMenu";
 
 interface SidebarFooterNavigationProps {
   location: Location;
@@ -10,13 +9,9 @@ interface SidebarFooterNavigationProps {
   onAccordionChange: (value: string) => void;
 }
 
-export function SidebarFooterNavigation({ location, expandedAccordion, onAccordionChange }: SidebarFooterNavigationProps) {
+export function SidebarFooterNavigation({ location }: SidebarFooterNavigationProps) {
   return (
     <div className="mt-auto">
-      <div className="px-4 py-2">
-        <CompanySettingsMenu />
-      </div>
-
       <div className="px-4 py-2">
         <Button
           variant="ghost"
