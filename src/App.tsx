@@ -16,7 +16,7 @@ import PayrollProcessing from "./pages/PayrollProcessing";
 import Security from "./pages/Security";
 import Profile from "./pages/Profile";
 import CompanySettings from "./features/company-settings/CompanySettings";
-import CompanyManagement from "./pages/CompanyManagement";
+import CompanyManagement from "./features/company-management/CompanyManagement";
 import NotFound from "./pages/NotFound";
 import AuthProvider from "./providers/AuthProvider";
 import CompanyProvider from "./providers/CompanyProvider";
