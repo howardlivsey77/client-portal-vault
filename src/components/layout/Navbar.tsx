@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
@@ -12,12 +12,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Settings, LogOut, User } from "lucide-react";
+import { ChevronDown, Settings, LogOut, User, Building, Plus } from "lucide-react";
 import CompanySelector from "./CompanySelector";
 
 const Navbar = () => {
   const { user, isAdmin, signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState("");
 
   useEffect(() => {
@@ -84,6 +85,19 @@ const Navbar = () => {
             </div>
           </div>
           <div className="flex items-center space-x-2">
+            {/* Add Company Quick Button */}
+            {user && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                onClick={() => navigate("/settings/companies")}
+              >
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                Add Company
+              </Button>
+            )}
+            
             {/* Company Selector - Only show when logged in */}
             {user && <CompanySelector className="mr-2" />}
             
@@ -92,7 +106,7 @@ const Navbar = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="flex items-center">
                     <User className="h-4 w-4 mr-2" />
-                    <span>{user.email}</span>
+                    <span className="hidden sm:inline">{user.email}</span>
                     <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -109,7 +123,10 @@ const Navbar = () => {
                       <DropdownMenuSeparator />
                       <DropdownMenuLabel>Admin</DropdownMenuLabel>
                       <DropdownMenuItem asChild>
-                        <Link to="/settings/companies">Company Management</Link>
+                        <Link to="/settings/companies">
+                          <Building className="mr-2 h-4 w-4" />
+                          Company Management
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link to="/invites">Invitations</Link>

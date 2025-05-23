@@ -2,8 +2,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, Bell, BellDot, User, Lock, LogOut } from 'lucide-react';
+import { Menu, Bell, BellDot, User, Lock, LogOut, Plus, Building } from 'lucide-react';
 import { useAuth } from "@/providers/AuthProvider";
+import { useNavigate } from 'react-router-dom';
 import { useNotifications } from "@/components/notifications/NotificationsContext";
 import {
   DropdownMenu,
@@ -22,8 +23,13 @@ interface NavbarProps {
 export function CustomNavbar({ toggleSidebar }: NavbarProps) {
   const { user, signOut } = useAuth();
   const { unreadCount, timesheetExceptionsCount } = useNotifications();
+  const navigate = useNavigate();
   
   const hasNotifications = unreadCount > 0 || timesheetExceptionsCount > 0;
+
+  const goToCompanyManagement = () => {
+    navigate("/settings/companies");
+  };
 
   return (
     <header className="sticky top-0 z-30 flex h-20 items-center gap-4 bg-white border-b px-4 sm:px-6 lg:px-8">
@@ -50,6 +56,20 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
       <div className="flex-1" />
       
       <div className="flex items-center gap-2">
+        {/* Add Company Button */}
+        {user && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+            onClick={goToCompanyManagement}
+          >
+            <Plus className="mr-1 h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Add Company</span>
+            <Building className="sm:hidden ml-1 h-3.5 w-3.5" />
+          </Button>
+        )}
+        
         {user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -130,6 +150,12 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link to="/settings/companies" className="w-full">
+                  <Building className="mr-2 h-4 w-4" />
+                  <span>Manage Companies</span>
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={signOut} className="cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>

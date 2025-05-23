@@ -5,11 +5,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Building, Plus } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface CompanySelectorProps {
   variant?: "default" | "outline" | "ghost";
@@ -22,6 +25,11 @@ const CompanySelector = ({
 }: CompanySelectorProps) => {
   const { currentCompany, companies, switchCompany, isLoading } = useCompany();
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const goToCompanyManagement = () => {
+    navigate("/settings/companies");
+  };
 
   if (isLoading) {
     return (
@@ -34,9 +42,13 @@ const CompanySelector = ({
 
   if (!companies || companies.length === 0) {
     return (
-      <Button variant={variant} className={cn("h-9 w-[180px]", className)} disabled>
-        <Building className="mr-2 h-4 w-4" />
-        No Companies
+      <Button 
+        variant="default" 
+        className={cn("h-9 w-auto bg-green-600 hover:bg-green-700", className)} 
+        onClick={goToCompanyManagement}
+      >
+        <Plus className="mr-2 h-4 w-4" />
+        Add Your First Company
       </Button>
     );
   }
@@ -55,6 +67,7 @@ const CompanySelector = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[200px]">
+        <DropdownMenuLabel>Select Company</DropdownMenuLabel>
         {companies.map((company) => (
           <DropdownMenuItem
             key={company.id}
@@ -69,12 +82,19 @@ const CompanySelector = ({
             )}
           </DropdownMenuItem>
         ))}
-        {/* Make company management available to all users */}
+        <DropdownMenuSeparator />
         <DropdownMenuItem
-          className="border-t mt-1 pt-1 cursor-pointer"
-          onClick={() => window.location.href = "/settings/companies"}
+          className="bg-green-50 hover:bg-green-100 text-green-700 font-medium cursor-pointer"
+          onClick={goToCompanyManagement}
         >
           <Plus className="mr-2 h-4 w-4" /> 
+          Add New Company
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="cursor-pointer"
+          onClick={goToCompanyManagement}
+        >
+          <Building className="mr-2 h-4 w-4" /> 
           Manage Companies
         </DropdownMenuItem>
       </DropdownMenuContent>
