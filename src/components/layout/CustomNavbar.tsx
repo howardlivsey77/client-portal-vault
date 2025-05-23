@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { CompaniesMenu } from "./sidebar/CompaniesMenu";
 
 interface NavbarProps {
   toggleSidebar?: () => void;
@@ -53,7 +54,10 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
         />
       </div>
       
-      <div className="flex-1" />
+      {/* Company Selector - Centered */}
+      <div className="flex-1 flex justify-center">
+        {user && <CompaniesMenu />}
+      </div>
       
       <div className="flex items-center gap-2">
         {/* Add Company Button */}
