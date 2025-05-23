@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useCompany } from "@/providers/CompanyProvider";
 import { useAuth } from "@/providers/AuthProvider";
+import { useNavigate } from "react-router-dom";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,12 +13,20 @@ import { CreateCompanyOption } from "@/components/auth/company-access/CreateComp
 export function CompaniesTable() {
   const { companies, currentCompany, switchCompany, isLoading } = useCompany();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateOption, setShowCreateOption] = useState(false);
 
   const filteredCompanies = companies.filter((company) =>
     company.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleCompanyClick = async (companyId: string) => {
+    // First switch to the company
+    await switchCompany(companyId);
+    // Then navigate to the company settings
+    navigate("/settings/company/general");
+  };
 
   if (isLoading) {
     return (
@@ -102,7 +111,7 @@ export function CompaniesTable() {
                   className={`cursor-pointer hover:bg-muted/50 ${
                     currentCompany?.id === company.id ? "bg-blue-50" : ""
                   }`}
-                  onClick={() => switchCompany(company.id)}
+                  onClick={() => handleCompanyClick(company.id)}
                 >
                   <TableCell className="font-mono text-sm">
                     {index + 1}
