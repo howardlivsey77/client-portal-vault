@@ -136,11 +136,39 @@ const CompanyManagement = () => {
         });
       } else {
         // Create new company
+        const { data: userData } = await supabase.auth.getUser();
+        
+        // Add the user ID to the company data as the creator
+        const companyData = {
+          ...formData,
+          created_by: userData.user?.id
+        };
+        
         const { error } = await supabase
           .from("companies")
-          .insert([formData]);
+          .insert([companyData]);
 
         if (error) throw error;
+        
+        // After successfully creating a company, automatically create company access for the user
+        if (userData.user) {
+          const { error: accessError } = await supabase
+            .from("company_access")
+            .insert([{
+              user_id: userData.user.id,
+              company_id: (await supabase
+                .from("companies")
+                .select("id")
+                .eq("name", formData.name)
+                .limit(1)
+                .single()).data?.id,
+              role: "admin"  // Set the creator as an admin of the company
+            }]);
+            
+          if (accessError) {
+            console.error("Error creating company access:", accessError);
+          }
+        }
         
         toast({
           title: "Success",

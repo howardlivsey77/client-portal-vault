@@ -54,8 +54,8 @@ const App = () => (
                 <Route path="/settings/company/locations" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
                 <Route path="/settings/company/departments" element={<ProtectedRoute><CompanySettings /></ProtectedRoute>} />
                 
-                {/* Company Management Routes */}
-                <Route path="/settings/companies" element={<ProtectedRoute adminOnly={true}><CompanyManagement /></ProtectedRoute>} />
+                {/* Company Management Route - allow all authenticated users */}
+                <Route path="/settings/companies" element={<ProtectedRoute><CompanyManagement /></ProtectedRoute>} />
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

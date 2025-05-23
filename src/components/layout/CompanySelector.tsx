@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Building } from "lucide-react";
+import { ChevronDown, Building, Plus } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +21,7 @@ const CompanySelector = ({
   className 
 }: CompanySelectorProps) => {
   const { currentCompany, companies, switchCompany, isLoading } = useCompany();
-  const { isAdmin } = useAuth();
+  const { user } = useAuth();
 
   if (isLoading) {
     return (
@@ -69,14 +69,14 @@ const CompanySelector = ({
             )}
           </DropdownMenuItem>
         ))}
-        {isAdmin && (
-          <DropdownMenuItem
-            className="border-t mt-1 pt-1 cursor-pointer"
-            onClick={() => window.location.href = "/settings/companies"}
-          >
-            Manage Companies
-          </DropdownMenuItem>
-        )}
+        {/* Make company management available to all users */}
+        <DropdownMenuItem
+          className="border-t mt-1 pt-1 cursor-pointer"
+          onClick={() => window.location.href = "/settings/companies"}
+        >
+          <Plus className="mr-2 h-4 w-4" /> 
+          Manage Companies
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
