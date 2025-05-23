@@ -1,19 +1,23 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Building, ChevronDown } from "lucide-react";
+import { Building, ChevronDown, Plus } from "lucide-react";
 import { useCompany } from "@/providers/CompanyProvider";
 import { useAuth } from "@/providers/AuthProvider";
+import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 export function CompaniesMenu() {
   const { companies, currentCompany, switchCompany, isLoading } = useCompany();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   if (isLoading) {
     return (
@@ -41,6 +45,7 @@ export function CompaniesMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
+        <DropdownMenuLabel>Switch Company</DropdownMenuLabel>
         {companies.map((company) => (
           <DropdownMenuItem
             key={company.id}
@@ -56,6 +61,15 @@ export function CompaniesMenu() {
             )}
           </DropdownMenuItem>
         ))}
+        
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => navigate("/settings/companies")}
+          className="cursor-pointer"
+        >
+          <Plus className="h-3 w-3 mr-2" />
+          <span>Manage Companies</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
