@@ -98,17 +98,19 @@ export const CompanyForm = ({
           description: "Company updated successfully",
         });
       } else {
-        // Create new company
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData.user) {
+        // Create new company - get user ID from auth instead of profiles table
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
           throw new Error("You must be logged in to create a company");
         }
         
         // Add the user ID to the company data as the creator
         const companyData = {
           ...formData,
-          created_by: userData.user.id
+          created_by: user.id
         };
+        
+        console.log("Creating company with data:", companyData);
         
         // Insert company and return the ID in a single operation
         const { data: newCompany, error: insertError } = await supabase
@@ -117,17 +119,22 @@ export const CompanyForm = ({
           .select('id, name')
           .single();
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error("Company insert error:", insertError);
+          throw insertError;
+        }
         
         if (!newCompany) {
           throw new Error("Failed to create company: no company ID returned");
         }
         
+        console.log("Company created successfully:", newCompany);
+        
         // Create company access for the user with the returned company ID
         const { error: accessError } = await supabase
           .from("company_access")
           .insert({
-            user_id: userData.user.id,
+            user_id: user.id,
             company_id: newCompany.id,
             role: "admin"  // Set the creator as an admin of the company
           });
@@ -140,6 +147,7 @@ export const CompanyForm = ({
             variant: "destructive",
           });
         } else {
+          console.log("Company access created successfully");
           toast({
             title: "Success",
             description: `Company "${newCompany.name}" created successfully`,
