@@ -1,3 +1,4 @@
+
 import { createContext, useState, useEffect, useContext, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthProvider";
@@ -51,16 +52,25 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
       
       let companiesData: CompanyWithRole[] = [];
       
-      // Try using the database function first
-      const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_companies', {
-        _user_id: user.id,
-      });
+      // Try using the database function first with better error handling
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_companies', {
+          _user_id: user.id,
+        });
 
-      if (rpcError) {
-        console.error("RPC function failed:", rpcError);
-        
-        // Fallback: Manual query approach
+        if (rpcError) {
+          console.warn("RPC function failed, attempting fallback:", rpcError.message);
+          throw new Error("RPC failed");
+        }
+
+        console.log("RPC function successful, companies found:", rpcData?.length || 0);
+        companiesData = rpcData || [];
+      } catch (rpcError) {
+        // Fallback: Manual query approach with authentication check
         console.log("Attempting fallback query approach...");
+        
+        // Wait a moment to ensure auth is fully established
+        await new Promise(resolve => setTimeout(resolve, 100));
         
         if (isAdmin) {
           // Admin users get all companies
@@ -70,13 +80,28 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
             .order('name');
             
           if (adminError) {
-            throw new Error(`Admin fallback failed: ${adminError.message}`);
+            console.error("Admin fallback failed:", adminError);
+            // Try one more time after a short delay
+            await new Promise(resolve => setTimeout(resolve, 500));
+            const { data: retryCompanies, error: retryError } = await supabase
+              .from('companies')
+              .select('id, name')
+              .order('name');
+              
+            if (retryError) {
+              throw new Error(`Admin access failed: ${retryError.message}`);
+            }
+            
+            companiesData = (retryCompanies || []).map(company => ({
+              ...company,
+              role: 'admin'
+            }));
+          } else {
+            companiesData = (allCompanies || []).map(company => ({
+              ...company,
+              role: 'admin'
+            }));
           }
-          
-          companiesData = (allCompanies || []).map(company => ({
-            ...company,
-            role: 'admin'
-          }));
         } else {
           // Regular users get only their accessible companies
           const { data: userCompanies, error: userError } = await supabase
@@ -90,21 +115,37 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
             .order('name');
             
           if (userError) {
-            throw new Error(`User fallback failed: ${userError.message}`);
+            console.error("User fallback failed:", userError);
+            // Try direct company_access query as last resort
+            const { data: accessData, error: accessError } = await supabase
+              .from('company_access')
+              .select(`
+                role,
+                companies(id, name)
+              `)
+              .eq('user_id', user.id);
+              
+            if (accessError) {
+              throw new Error(`User access failed: ${accessError.message}`);
+            }
+            
+            companiesData = (accessData || [])
+              .filter(item => item.companies)
+              .map(item => ({
+                id: item.companies.id,
+                name: item.companies.name,
+                role: item.role
+              }));
+          } else {
+            companiesData = (userCompanies || []).map(company => ({
+              id: company.id,
+              name: company.name,
+              role: company.company_access?.[0]?.role || 'user'
+            }));
           }
-          
-          companiesData = (userCompanies || []).map(company => ({
-            id: company.id,
-            name: company.name,
-            role: company.company_access?.[0]?.role || 'user'
-          }));
         }
         
         console.log("Fallback query successful, companies found:", companiesData.length);
-      } else {
-        // RPC function worked
-        console.log("RPC function successful, companies found:", rpcData?.length || 0);
-        companiesData = rpcData || [];
       }
 
       // Set the companies data
@@ -146,7 +187,7 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
     try {
       const { data, error } = await supabase
         .from('companies')
-        .select('id, name, trading_as, address_line1, address_line2, address_line3, address_line4, post_code, contact_name, contact_email, contact_phone, paye_ref, accounts_office_number, created_at, updated_at, created_by')
+        .select('*')
         .eq('id', companyId)
         .single();
 
@@ -155,10 +196,7 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
         return;
       }
 
-      // Cast the data to Company type before setting state
       setCurrentCompany(data as Company);
-
-      // Store the last selected company in localStorage
       localStorage.setItem('lastSelectedCompany', companyId);
 
     } catch (error) {
@@ -168,7 +206,6 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
 
   // Switch between companies
   const switchCompany = async (companyId: string) => {
-    // Check if this company is in the user's list
     const companyExists = companies.some(company => company.id === companyId);
     
     if (!companyExists) {

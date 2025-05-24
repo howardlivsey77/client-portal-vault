@@ -8,37 +8,57 @@ export const useAuthInitialization = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is already logged in
+    let mounted = true;
+    
+    // Check if user is already logged in with enhanced error handling
     const checkSession = async () => {
       try {
+        console.log("Auth page - Checking session...");
+        
         const { data, error } = await supabase.auth.getSession();
+        
         if (error) {
           console.error("Auth page - Error checking session:", error);
-          setAuthInitialized(true);
+          if (mounted) setAuthInitialized(true);
           return;
         }
-        console.log("Auth page - Session check:", data.session?.user?.email);
-        if (data.session) {
+        
+        console.log("Auth page - Session check result:", {
+          hasSession: !!data.session,
+          userEmail: data.session?.user?.email
+        });
+        
+        if (data.session && mounted) {
           console.log("Auth page - User already logged in, redirecting to home");
-          navigate("/");
+          // Wait a moment to ensure providers are ready
+          setTimeout(() => {
+            navigate("/");
+          }, 100);
         }
       } catch (error) {
         console.error("Auth page - Exception checking session:", error);
       } finally {
-        setAuthInitialized(true);
+        if (mounted) setAuthInitialized(true);
       }
     };
+    
     checkSession();
 
-    // Set up auth change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    // Set up auth change listener with better error handling
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth page - Auth state changed:", event);
-      if (session) {
+      
+      if (session && mounted) {
         console.log("Auth page - User logged in, redirecting to home");
-        navigate("/");
+        // Small delay to ensure all providers are ready
+        setTimeout(() => {
+          navigate("/");
+        }, 200);
       }
     });
+    
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [navigate]);

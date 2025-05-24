@@ -1,5 +1,4 @@
 
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { CompanyAccessCard } from "./company-access/CompanyAccessCard";
 import { CheckingAccess } from "./company-access/CheckingAccess";
@@ -13,7 +12,8 @@ export const CompanyAccessSetup = () => {
   const { isAdmin, user } = useAuth();
   const { companies, checking, hasAccess, defaultCompany } = useCompanyAccess();
 
-  if (checking) {
+  // Show checking state while auth or company access is being determined
+  if (checking || !user) {
     return <CheckingAccess />;
   }
   

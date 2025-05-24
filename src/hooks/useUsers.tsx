@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -21,9 +22,12 @@ export const useUsers = () => {
       setLoading(true);
       setError(null);
 
-      console.log("Fetching profiles...");
+      console.log("Fetching user profiles...");
       
-      // Try to fetch profiles with better error handling
+      // Wait a moment to ensure auth and database are ready
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Try to fetch profiles with enhanced error handling
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -32,26 +36,42 @@ export const useUsers = () => {
       if (error) {
         console.error("Profiles fetch error:", error);
         
-        // Check if it's a permission error or table doesn't exist
+        // Check for specific error types
         if (error.message.includes("relation") && error.message.includes("does not exist")) {
-          setError("Profiles table not found. Please contact your administrator.");
-        } else if (error.message.includes("permission denied")) {
-          setError("Permission denied: You don't have access to view users.");
+          setError("User profiles are not available. Please contact your administrator.");
+          toast({
+            title: "Database Setup Required",
+            description: "User profiles table needs to be configured. Please contact support.",
+            variant: "destructive"
+          });
+        } else if (error.message.includes("permission denied") || error.code === "42501") {
+          setError("Permission denied: You don't have access to view user profiles.");
+          toast({
+            title: "Access Restricted",
+            description: "You don't have permission to view user profiles.",
+            variant: "destructive"
+          });
+        } else if (error.message.includes("JWT")) {
+          setError("Authentication issue. Please try logging out and back in.");
+          toast({
+            title: "Authentication Error",
+            description: "Please try logging out and back in.",
+            variant: "destructive"
+          });
         } else {
           setError(error.message || "An error occurred while fetching users.");
+          toast({
+            title: "Error fetching users",
+            description: error.message,
+            variant: "destructive"
+          });
         }
-        
-        toast({
-          title: "Error fetching users",
-          description: error.message,
-          variant: "destructive"
-        });
         
         setUsers([]);
         return;
       }
       
-      console.log("Profiles data:", data);
+      console.log("Profiles data retrieved:", data?.length || 0, "records");
       setUsers(data || []);
     } catch (error: any) {
       console.error("Exception fetching users:", error);
@@ -72,6 +92,10 @@ export const useUsers = () => {
     setLoading(true);
     try {
       setError(null);
+      
+      // Wait to ensure auth is stable
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -79,7 +103,27 @@ export const useUsers = () => {
         })
         .eq("id", userId);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error updating role:", error);
+        
+        if (error.message && error.message.includes("permission denied")) {
+          setError("Permission denied: You don't have access to update user roles.");
+          toast({
+            title: "Permission Denied",
+            description: "You don't have access to update user roles.",
+            variant: "destructive"
+          });
+        } else {
+          setError(error.message || "An error occurred while updating user role.");
+          toast({
+            title: "Error updating role",
+            description: error.message,
+            variant: "destructive"
+          });
+        }
+        
+        return false;
+      }
       
       toast({
         title: "Role updated",
@@ -89,24 +133,13 @@ export const useUsers = () => {
       await fetchUsers();
       return true;
     } catch (error: any) {
-      console.error("Error updating role:", error);
-      
-      // Handle permission errors
-      if (error.message && error.message.includes("permission denied")) {
-        setError("Permission denied: You don't have access to update user roles.");
-        toast({
-          title: "Error updating role",
-          description: "Permission denied: You don't have access to update user roles.",
-          variant: "destructive"
-        });
-      } else {
-        setError(error.message || "An error occurred while updating user role.");
-        toast({
-          title: "Error updating role",
-          description: error.message,
-          variant: "destructive"
-        });
-      }
+      console.error("Exception updating role:", error);
+      setError(error.message || "An error occurred while updating user role.");
+      toast({
+        title: "Error updating role",
+        description: error.message,
+        variant: "destructive"
+      });
       
       return false;
     } finally {
@@ -115,7 +148,12 @@ export const useUsers = () => {
   };
   
   useEffect(() => {
-    fetchUsers();
+    // Delay initial fetch to ensure auth is ready
+    const timer = setTimeout(() => {
+      fetchUsers();
+    }, 200);
+    
+    return () => clearTimeout(timer);
   }, []);
   
   return {

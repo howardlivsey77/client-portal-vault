@@ -16,17 +16,20 @@ export const useCompanyAccess = () => {
   const [defaultCompany, setDefaultCompany] = useState<Company | null>(null);
   const { user } = useAuth();
 
-  // Load default company
+  // Load default company with error handling
   useEffect(() => {
     const loadDefaultCompany = async () => {
       try {
+        // Small delay to ensure database is ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // Get the default company (first one created)
         const { data: company, error } = await supabase
           .from('companies')
           .select('id, name')
           .order('created_at', { ascending: true })
           .limit(1)
-          .single();
+          .maybeSingle();
           
         if (error) {
           console.error("Error loading default company:", error);
@@ -42,10 +45,12 @@ export const useCompanyAccess = () => {
       }
     };
     
-    loadDefaultCompany();
-  }, []);
+    if (user) {
+      loadDefaultCompany();
+    }
+  }, [user]);
 
-  // Check if user already has company access
+  // Check if user already has company access with improved timing
   useEffect(() => {
     const checkCompanyAccess = async () => {
       if (!user) {
@@ -55,6 +60,10 @@ export const useCompanyAccess = () => {
       
       try {
         console.log("Checking company access for user:", user.id);
+        
+        // Wait to ensure auth is fully established
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
         const { data, error } = await supabase
           .from('company_access')
           .select('company_id')
@@ -62,6 +71,7 @@ export const useCompanyAccess = () => {
           
         if (error) {
           console.error("Error checking company access:", error);
+          // Don't treat this as a hard failure - user might just not have access yet
         } else {
           const hasCompanyAccess = data && data.length > 0;
           setHasAccess(hasCompanyAccess);
@@ -74,13 +84,24 @@ export const useCompanyAccess = () => {
       }
     };
     
-    checkCompanyAccess();
+    if (user) {
+      checkCompanyAccess();
+    } else {
+      setChecking(false);
+    }
   }, [user]);
   
-  // Load available companies
+  // Load available companies with better error handling
   useEffect(() => {
     const loadCompanies = async () => {
+      if (hasAccess) return; // Don't load if user already has access
+      
       try {
+        setLoading(true);
+        
+        // Wait to ensure database is ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const { data, error } = await supabase
           .from('companies')
           .select('id, name')
@@ -94,13 +115,15 @@ export const useCompanyAccess = () => {
         }
       } catch (error) {
         console.error("Exception loading companies:", error);
+      } finally {
+        setLoading(false);
       }
     };
     
-    if (!hasAccess) {
+    if (user && !checking) {
       loadCompanies();
     }
-  }, [hasAccess]);
+  }, [hasAccess, user, checking]);
 
   return {
     companies,
