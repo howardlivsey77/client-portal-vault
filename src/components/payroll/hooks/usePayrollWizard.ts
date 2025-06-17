@@ -114,8 +114,9 @@ export function usePayrollWizard() {
       description: `${finalEmployeeData.length} employees successfully mapped.`,
     });
     
-    // Advance to next step
-    setCurrentStep(currentStep + 1);
+    // Advance to the Upload Absences step (step 2)
+    console.log("Advancing to Upload Absences step (step 2)");
+    setCurrentStep(2);
   };
 
   const handleEmployeeMappingCancel = () => {
@@ -128,18 +129,23 @@ export function usePayrollWizard() {
   };
 
   const handleNext = async (onOpenChange: (open: boolean) => void) => {
+    console.log("HandleNext called - Current step:", currentStep);
+    
     // Check if we need to show employee mapping after summary step
     if (currentStep === 1 && matchingResults) {
       const needsMapping = matchingResults.fuzzyMatches.length > 0 || matchingResults.unmatchedEmployees.length > 0;
       if (needsMapping) {
+        console.log("Showing employee mapping dialog");
         setShowEmployeeMapping(true);
-        return; // Don't advance step yet
+        return; // Don't advance step yet - mapping completion will advance to step 2
       }
     }
     
-    const totalSteps = showEmployeeMapping ? 4 : 3; // Include mapping step if needed
+    // Total steps: Upload Extra Hours (0), Review Summary (1), Upload Absences (2)
+    const totalSteps = 3;
     
     if (currentStep < totalSteps - 1) {
+      console.log("Advancing to step:", currentStep + 1);
       setCurrentStep(currentStep + 1);
     } else {
       // Process all data and finish the wizard
@@ -188,6 +194,7 @@ export function usePayrollWizard() {
     }
     
     if (currentStep > 0) {
+      console.log("Going back to step:", currentStep - 1);
       setCurrentStep(currentStep - 1);
     }
   };
@@ -203,7 +210,8 @@ export function usePayrollWizard() {
       // Allow proceeding from the summary step if data is processed
       return processedData !== null;
     } else if (currentStep === 2) {
-      return uploadedFiles.absences !== null;
+      // Absences file is optional, so always allow proceeding
+      return true;
     }
     return true;
   };
