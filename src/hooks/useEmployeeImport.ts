@@ -59,9 +59,11 @@ export const useEmployeeImport = (onSuccess: () => void) => {
   
   // Apply mappings and generate preview data
   const applyMappings = (
-    transformData: (data: EmployeeData[], mappings: ColumnMapping[]) => EmployeeData[], 
+    transformData: (data: EmployeeData[], mappings: ColumnMapping[], isCSVFile?: boolean) => EmployeeData[], 
     saveMappings: (mappings: ColumnMapping[]) => void
   ) => {
+    // Note: We'll need to detect file type from the original file name
+    // For now, we'll pass false as default since the file type detection happens in FileUploader
     const transformedData = transformData(state.rawData, state.columnMappings);
     dispatch({ type: 'SET_PREVIEW', payload: transformedData });
     dispatch({ type: 'SET_SHOW_MAPPING_UI', payload: false });

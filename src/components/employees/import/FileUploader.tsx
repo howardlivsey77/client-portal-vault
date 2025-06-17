@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { readFileData, autoMapColumns, transformData } from "./ImportUtils";
+import { readFileData, autoMapColumns } from "./ImportUtils";
+import { transformData } from "./dataTransformUtils";
 import { EmployeeData, ColumnMapping } from "./ImportConstants";
 import { findExistingEmployees } from "@/hooks/import/employeeImportService";
 
@@ -47,12 +48,16 @@ export const FileUploader = ({
         return;
       }
 
+      // Detect if this is a CSV file
+      const isCSVFile = selectedFile.name.toLowerCase().endsWith('.csv');
+      console.log("File type detected - CSV:", isCSVFile);
+
       // Attempt automatic mapping
       const mappings = autoMapColumns(headers);
       console.log("Column mappings generated:", mappings);
 
-      // Transform the data based on mappings
-      const transformedData = transformData(data, mappings);
+      // Transform the data based on mappings and file type
+      const transformedData = transformData(data, mappings, isCSVFile);
       console.log("Transformed data:", transformedData);
       
       // Check for existing employees based on email or first name + last name
@@ -84,6 +89,8 @@ export const FileUploader = ({
       <p className="text-sm text-muted-foreground">
         File must contain columns for first name, last name, department.
         Additional fields like email, address, hourly rates, etc. can also be imported.
+        <br />
+        <strong>CSV files:</strong> Use DD/MM/YYYY format for dates (e.g., 22/04/2025 for April 22, 2025)
       </p>
     </div>
   );
