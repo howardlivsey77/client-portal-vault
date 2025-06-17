@@ -101,13 +101,20 @@ export const sicknessService = {
   // Calculate entitlements based on rule and work pattern
   async calculateEntitlements(rule: EligibilityRule, employeeId: string): Promise<{ fullPayDays: number; halfPayDays: number }> {
     try {
+      console.log('Calculating entitlements for employee:', employeeId, 'with rule:', rule);
+      
       // Fetch the employee's work pattern
       const workPattern = await fetchWorkPatterns(employeeId);
       const workingDaysPerWeek = calculateWorkingDaysPerWeek(workPattern);
+      
+      console.log('Work pattern retrieved:', workPattern);
+      console.log('Working days per week:', workingDaysPerWeek);
 
       // Calculate entitlements using correct formula
       const fullPayDays = convertEntitlementToDays(rule.fullPayAmount, rule.fullPayUnit, workingDaysPerWeek);
       const halfPayDays = convertEntitlementToDays(rule.halfPayAmount, rule.halfPayUnit, workingDaysPerWeek);
+
+      console.log('Calculated entitlements - Full pay:', fullPayDays, 'Half pay:', halfPayDays);
 
       return { fullPayDays, halfPayDays };
     } catch (error) {
@@ -125,18 +132,23 @@ export const sicknessService = {
     }
   },
 
-  // Create or update entitlement usage record
-  async createOrUpdateEntitlementUsage(
+  // Recalculate entitlement for existing employee
+  async recalculateExistingEntitlement(
     employeeId: string,
     companyId: string,
     schemeId: string | null,
     serviceMonths: number,
     rule: EligibilityRule | null
-  ): Promise<EntitlementUsage> {
+  ): Promise<EntitlementUsage | null> {
+    console.log('Recalculating entitlement for employee:', employeeId);
+    
     const currentYear = new Date().getFullYear();
     const periodStart = `${currentYear}-01-01`;
     const periodEnd = `${currentYear}-12-31`;
 
+    // Get existing record to preserve opening balance
+    const existing = await this.getEntitlementUsage(employeeId);
+    
     const entitlements = rule ? await this.calculateEntitlements(rule, employeeId) : { fullPayDays: 0, halfPayDays: 0 };
 
     const entitlementData = {
@@ -148,8 +160,15 @@ export const sicknessService = {
       full_pay_entitled_days: entitlements.fullPayDays,
       half_pay_entitled_days: entitlements.halfPayDays,
       current_service_months: serviceMonths,
-      current_rule_id: rule?.id || null
+      current_rule_id: rule?.id || null,
+      // Preserve existing opening balance data
+      opening_balance_full_pay: existing?.opening_balance_full_pay || 0,
+      opening_balance_half_pay: existing?.opening_balance_half_pay || 0,
+      opening_balance_date: existing?.opening_balance_date || null,
+      opening_balance_notes: existing?.opening_balance_notes || null
     };
+
+    console.log('Updating entitlement with data:', entitlementData);
 
     const { data, error } = await supabase
       .from('employee_sickness_entitlement_usage')
@@ -160,8 +179,24 @@ export const sicknessService = {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error updating entitlement:', error);
+      throw error;
+    }
+    
+    console.log('Entitlement updated successfully:', data);
     return data;
+  },
+
+  // Create or update entitlement usage record
+  async createOrUpdateEntitlementUsage(
+    employeeId: string,
+    companyId: string,
+    schemeId: string | null,
+    serviceMonths: number,
+    rule: EligibilityRule | null
+  ): Promise<EntitlementUsage> {
+    return this.recalculateExistingEntitlement(employeeId, companyId, schemeId, serviceMonths, rule);
   },
 
   // Set opening balance for an employee

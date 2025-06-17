@@ -31,6 +31,9 @@ export const useSicknessData = (
       // If no entitlement usage exists and employee has a scheme, create it
       if (!usage && sicknessScheme && employee.hire_date) {
         await createInitialEntitlementUsage();
+      } else if (usage && sicknessScheme && employee.hire_date) {
+        // Check if we need to recalculate existing entitlement
+        await recalculateIfNeeded(usage);
       }
     } catch (error: any) {
       toast({
@@ -45,6 +48,8 @@ export const useSicknessData = (
 
   const createInitialEntitlementUsage = async () => {
     if (!employee || !sicknessScheme) return;
+
+    console.log('Creating initial entitlement usage for employee:', employee.id);
 
     const serviceMonths = sicknessService.calculateServiceMonths(employee.hire_date);
     const applicableRule = sicknessService.findApplicableRule(
@@ -63,6 +68,43 @@ export const useSicknessData = (
       setEntitlementUsage(usage);
     } catch (error: any) {
       console.error('Error creating entitlement usage:', error);
+    }
+  };
+
+  const recalculateIfNeeded = async (currentUsage: EntitlementUsage) => {
+    if (!employee || !sicknessScheme) return;
+
+    console.log('Checking if recalculation is needed for employee:', employee.id);
+
+    const serviceMonths = sicknessService.calculateServiceMonths(employee.hire_date);
+    const applicableRule = sicknessService.findApplicableRule(
+      serviceMonths, 
+      sicknessScheme.eligibilityRules || []
+    );
+
+    // Check if service months or rule has changed, or if we need to recalculate based on work pattern
+    const needsRecalculation = 
+      currentUsage.current_service_months !== serviceMonths ||
+      currentUsage.current_rule_id !== (applicableRule?.id || null) ||
+      // Force recalculation to ensure work pattern is considered
+      true;
+
+    if (needsRecalculation) {
+      console.log('Recalculation needed, updating entitlement...');
+      try {
+        const updatedUsage = await sicknessService.recalculateExistingEntitlement(
+          employee.id,
+          employee.company_id || '',
+          sicknessScheme.id,
+          serviceMonths,
+          applicableRule
+        );
+        if (updatedUsage) {
+          setEntitlementUsage(updatedUsage);
+        }
+      } catch (error: any) {
+        console.error('Error recalculating entitlement:', error);
+      }
     }
   };
 

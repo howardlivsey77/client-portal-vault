@@ -6,10 +6,15 @@ import { WorkDay } from "@/components/employees/details/work-pattern/types";
  */
 export const calculateWorkingDaysPerWeek = (workPattern: WorkDay[]): number => {
   if (!workPattern || workPattern.length === 0) {
+    console.log('No work pattern provided, defaulting to 5 days');
     return 5; // Default to 5 days if no pattern provided
   }
   
-  return workPattern.filter(day => day.isWorking).length;
+  const workingDays = workPattern.filter(day => day.isWorking).length;
+  console.log('Work pattern:', workPattern);
+  console.log('Calculated working days per week:', workingDays);
+  
+  return workingDays;
 };
 
 /**
@@ -18,7 +23,15 @@ export const calculateWorkingDaysPerWeek = (workPattern: WorkDay[]): number => {
  */
 export const convertMonthsToDays = (months: number, workingDaysPerWeek: number): number => {
   const daysPerMonth = (workingDaysPerWeek * 52.14) / 12;
-  return Math.floor(daysPerMonth * months);
+  const result = Math.floor(daysPerMonth * months);
+  
+  console.log(`Converting ${months} months to days:`);
+  console.log(`Working days per week: ${workingDaysPerWeek}`);
+  console.log(`Days per month: ${daysPerMonth}`);
+  console.log(`Total days (before rounding): ${daysPerMonth * months}`);
+  console.log(`Total days (rounded down): ${result}`);
+  
+  return result;
 };
 
 /**
@@ -29,14 +42,24 @@ export const convertEntitlementToDays = (
   unit: 'days' | 'weeks' | 'months',
   workingDaysPerWeek: number
 ): number => {
+  console.log(`Converting entitlement: ${amount} ${unit}, working ${workingDaysPerWeek} days per week`);
+  
+  let result: number;
+  
   switch (unit) {
     case 'days':
-      return amount;
+      result = amount;
+      break;
     case 'weeks':
-      return amount * workingDaysPerWeek;
+      result = amount * workingDaysPerWeek;
+      break;
     case 'months':
-      return convertMonthsToDays(amount, workingDaysPerWeek);
+      result = convertMonthsToDays(amount, workingDaysPerWeek);
+      break;
     default:
-      return amount;
+      result = amount;
   }
+  
+  console.log(`Conversion result: ${result} days`);
+  return result;
 };
