@@ -21,10 +21,23 @@ export const compareEmployees = (
   const updatedEmps: {existing: EmployeeData; imported: EmployeeData}[] = [];
   
   preview.forEach(importedEmp => {
-    const existingEmp = existingEmployees.find(existing => 
-      existing.email && importedEmp.email && 
-      existing.email.toLowerCase() === importedEmp.email.toLowerCase()
-    );
+    // First try to match by payroll_id (if both have payroll_id)
+    let existingEmp = null;
+    
+    if (importedEmp.payroll_id && importedEmp.payroll_id.trim() !== '') {
+      existingEmp = existingEmployees.find(existing => 
+        existing.payroll_id && 
+        existing.payroll_id.trim() === importedEmp.payroll_id.trim()
+      );
+    }
+    
+    // If no payroll_id match found, try to match by email
+    if (!existingEmp && importedEmp.email && importedEmp.email.trim() !== '') {
+      existingEmp = existingEmployees.find(existing => 
+        existing.email && 
+        existing.email.toLowerCase() === importedEmp.email.toLowerCase()
+      );
+    }
     
     if (existingEmp) {
       // Check for changes in standard fields
