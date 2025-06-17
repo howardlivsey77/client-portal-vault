@@ -15,22 +15,106 @@ function isNumericValue(value: any): boolean {
 }
 
 /**
+ * Extract employee name from various column patterns
+ */
+function extractEmployeeName(row: any): { employeeName: string, payrollId: string } {
+  console.log('Extracting employee name from row:', Object.keys(row));
+  
+  // Try different patterns for employee identification
+  let firstName = '';
+  let lastName = '';
+  let payrollId = '';
+  
+  // Pattern 1: Staff First Name / Staff Last Name
+  if (row['Staff First Name'] || row['Staff Last Name']) {
+    firstName = row['Staff First Name'] || '';
+    lastName = row['Staff Last Name'] || '';
+    console.log('Found Staff Name columns:', { firstName, lastName });
+  }
+  
+  // Pattern 2: employee name / surname
+  else if (row['employee name'] || row.surname) {
+    firstName = row['employee name'] || '';
+    lastName = row.surname || '';
+    console.log('Found employee name/surname columns:', { firstName, lastName });
+  }
+  
+  // Pattern 3: FirstName / LastName
+  else if (row.FirstName || row.LastName || row['First Name'] || row['Last Name']) {
+    firstName = row.FirstName || row['First Name'] || '';
+    lastName = row.LastName || row['Last Name'] || '';
+    console.log('Found FirstName/LastName columns:', { firstName, lastName });
+  }
+  
+  // Pattern 4: Try case-insensitive search for common patterns
+  else {
+    const keys = Object.keys(row);
+    
+    // Look for first name patterns
+    const firstNameKey = keys.find(key => 
+      key.toLowerCase().includes('first') && key.toLowerCase().includes('name') ||
+      key.toLowerCase() === 'firstname' ||
+      key.toLowerCase().includes('staff') && key.toLowerCase().includes('first')
+    );
+    
+    // Look for last name patterns
+    const lastNameKey = keys.find(key => 
+      key.toLowerCase().includes('last') && key.toLowerCase().includes('name') ||
+      key.toLowerCase().includes('surname') ||
+      key.toLowerCase() === 'lastname' ||
+      key.toLowerCase().includes('staff') && key.toLowerCase().includes('last')
+    );
+    
+    if (firstNameKey) {
+      firstName = row[firstNameKey] || '';
+      console.log(`Found first name in column "${firstNameKey}":`, firstName);
+    }
+    
+    if (lastNameKey) {
+      lastName = row[lastNameKey] || '';
+      console.log(`Found last name in column "${lastNameKey}":`, lastName);
+    }
+  }
+  
+  // Extract payroll ID from various patterns
+  payrollId = row['payroll ID'] || row.EmployeeID || row.ID || row['Staff ID'] || row.StaffID || '';
+  
+  // Create full name
+  const employeeName = (firstName + (lastName ? ' ' + lastName : '')).trim();
+  
+  console.log('Extracted employee info:', { 
+    employeeName, 
+    payrollId, 
+    firstName, 
+    lastName 
+  });
+  
+  return { employeeName, payrollId };
+}
+
+/**
  * Extract employee hours data from parsed rows
  */
 export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
   const employeeDetails: EmployeeHoursData[] = [];
   
+  console.log('Processing employee data extraction from', jsonData.length, 'rows');
+  console.log('Sample row keys:', jsonData.length > 0 ? Object.keys(jsonData[0]) : 'No data');
+  
   // Process each row of data
   jsonData.forEach((row: any, rowIndex: number) => {
-    console.log(`Processing row ${rowIndex}:`, row);
+    console.log(`\n=== Processing row ${rowIndex} ===`);
     
-    // Extract employee identification info
-    const payrollId = row['payroll ID'] || row.EmployeeID || row.ID || '';
-    const firstName = row['employee name'] || row.FirstName || row['First Name'] || '';
-    const lastName = row.surname || row.LastName || row['Last Name'] || '';
-    const employeeName = firstName + (lastName ? ' ' + lastName : '');
+    // Extract employee identification info using enhanced logic
+    const { employeeName, payrollId } = extractEmployeeName(row);
     
-    console.log(`Employee: ${employeeName}, Payroll ID: ${payrollId}`);
+    // Skip if no employee name found
+    if (!employeeName) {
+      console.log(`❌ Skipping row ${rowIndex}: No employee name found`);
+      return;
+    }
+    
+    console.log(`Processing employee: "${employeeName}", Payroll ID: "${payrollId}"`);
     
     // Method 1: Check for traditional rate columns using multiple naming patterns
     const rateColumns = findRateColumns(row);
@@ -64,12 +148,14 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
         employeeDetails.push({
           employeeId: '',  // Will be enriched later with DB lookup
           payrollId: payrollId,
-          employeeName: employeeName || 'Unknown Employee',
+          employeeName: employeeName,
           extraHours: roundToTwoDecimals(hours) || 0,
           entries: 1,
           rateType: `Rate ${rateCol.rateNumber}`,
           rateValue: roundToTwoDecimals(rateValue) || 0
         });
+        
+        console.log(`✅ Added rate entry: ${employeeName}, ${hours} hours at Rate ${rateCol.rateNumber}`);
       }
     }
     
@@ -151,14 +237,14 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
           employeeDetails.push({
             employeeId: '',  // Will be enriched later with DB lookup
             payrollId: payrollId,
-            employeeName: employeeName || 'Unknown Employee',
+            employeeName: employeeName,
             extraHours: roundToTwoDecimals(hoursValue) || 0,
             entries: 1,
             rateType: rateMapping.rateType,
             rateValue: roundToTwoDecimals(rateValue) || 0
           });
           
-          console.log(`✅ Added entry: ${employeeName}, ${hoursValue} hours at ${rateMapping.rateType} from column "${usedHoursColumn}"`);
+          console.log(`✅ Added pay rate entry: ${employeeName}, ${hoursValue} hours at ${rateMapping.rateType} from column "${usedHoursColumn}"`);
         } else {
           console.log(`❌ No valid numeric hours found for ${employeeName} with rate type ${rateMapping.rateType}`);
         }
@@ -180,7 +266,7 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
         employeeDetails.push({
           employeeId: '',  // Will be enriched later with DB lookup
           payrollId: payrollId,
-          employeeName: employeeName || 'Unknown Employee',
+          employeeName: employeeName,
           extraHours: roundToTwoDecimals(standardHours) || 0,
           entries: 1,
           rateType: 'Standard',
@@ -192,6 +278,9 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
     }
   });
   
+  console.log(`\n=== Extraction Summary ===`);
   console.log(`Extracted ${employeeDetails.length} employee hour entries`);
+  console.log('Employee names found:', employeeDetails.map(e => e.employeeName));
+  
   return employeeDetails;
 }
