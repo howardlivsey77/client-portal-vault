@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
+import { useCompany } from "@/providers/CompanyProvider";
 import { Employee } from "@/types/employee-types";
 
 export const useEmployees = () => {
@@ -10,15 +11,23 @@ export const useEmployees = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { isAdmin } = useAuth();
+  const { currentCompany } = useCompany();
 
   const fetchEmployees = async () => {
     try {
       setLoading(true);
-      console.log("Fetching employees...");
+      console.log("Fetching employees for company:", currentCompany?.id);
       
+      if (!currentCompany?.id) {
+        console.log("No current company selected, setting empty employee list");
+        setEmployees([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("employees")
         .select("*")
+        .eq("company_id", currentCompany.id)
         .order("last_name", { ascending: true });
         
       if (error) {
@@ -26,7 +35,7 @@ export const useEmployees = () => {
         throw error;
       }
       
-      console.log("Employees data retrieved:", data?.length || 0, "records");
+      console.log("Employees data retrieved:", data?.length || 0, "records for company", currentCompany.name);
       
       // Cast the data to ensure TypeScript recognizes work_pattern
       const typedData = data as unknown as Employee[];
@@ -85,9 +94,10 @@ export const useEmployees = () => {
     }
   };
 
+  // Fetch employees when currentCompany changes
   useEffect(() => {
     fetchEmployees();
-  }, []);
+  }, [currentCompany?.id]);
 
   return {
     employees,
@@ -98,4 +108,3 @@ export const useEmployees = () => {
 };
 
 export type { Employee };
-

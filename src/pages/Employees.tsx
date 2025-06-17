@@ -8,15 +8,18 @@ import { EmptyEmployeeState } from "@/components/employees/EmptyEmployeeState";
 import { useEmployees } from "@/hooks/useEmployees";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { migratePayrollIdsToWorkPatterns } from "@/services/employeeService";
+import { migratePayrollIdsToWorkPatterns, assignEmployeesToCompany } from "@/services/employeeService";
 import { useAuth } from "@/providers/AuthProvider";
+import { useCompany } from "@/providers/CompanyProvider";
 
 export default function Employees() {
   const { employees, loading, fetchEmployees, deleteEmployee } = useEmployees();
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const { isAdmin } = useAuth();
+  const { currentCompany } = useCompany();
   const [migrating, setMigrating] = useState(false);
+  const [assigning, setAssigning] = useState(false);
 
   const runPayrollIdMigration = async () => {
     if (!isAdmin) {
@@ -55,6 +58,54 @@ export default function Employees() {
     }
   };
 
+  const assignExistingEmployees = async () => {
+    if (!isAdmin) {
+      toast({
+        title: "Permission denied",
+        description: "Only administrators can assign employees to companies.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!currentCompany?.id) {
+      toast({
+        title: "No company selected",
+        description: "Please select a company first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setAssigning(true);
+    try {
+      const success = await assignEmployeesToCompany(currentCompany.id);
+      
+      if (success) {
+        toast({
+          title: "Assignment completed",
+          description: `Successfully assigned existing employees to ${currentCompany.name}.`,
+        });
+        // Refresh the employee list to show the newly assigned employees
+        fetchEmployees();
+      } else {
+        toast({
+          title: "Assignment failed",
+          description: "There was an error assigning employees. Check the console for details.",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Assignment error",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive"
+      });
+    } finally {
+      setAssigning(false);
+    }
+  };
+
   return (
     <PageContainer title="Employees">
       <div className="flex flex-col space-y-6">
@@ -62,13 +113,22 @@ export default function Employees() {
           <EmployeeSearch searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
           <div className="flex flex-col sm:flex-row gap-2">
             {isAdmin && (
-              <Button 
-                variant="outline" 
-                onClick={runPayrollIdMigration}
-                disabled={migrating}
-              >
-                {migrating ? "Migrating..." : "Migrate Payroll IDs"}
-              </Button>
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={runPayrollIdMigration}
+                  disabled={migrating}
+                >
+                  {migrating ? "Migrating..." : "Migrate Payroll IDs"}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={assignExistingEmployees}
+                  disabled={assigning || !currentCompany}
+                >
+                  {assigning ? "Assigning..." : "Assign Existing Employees"}
+                </Button>
+              </>
             )}
             <EmployeeActions 
               isAdmin={isAdmin}
@@ -78,7 +138,11 @@ export default function Employees() {
           </div>
         </div>
 
-        {!loading && employees.length === 0 && !searchTerm ? (
+        {!currentCompany ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Please select a company to view employees.</p>
+          </div>
+        ) : !loading && employees.length === 0 && !searchTerm ? (
           <EmptyEmployeeState 
             isAdmin={isAdmin}
             searchTerm={searchTerm}

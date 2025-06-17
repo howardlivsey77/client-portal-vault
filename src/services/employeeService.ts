@@ -16,13 +16,14 @@ export const fetchEmployeeById = async (id: string) => {
   return data;
 };
 
-export const createEmployee = async (employeeData: EmployeeFormValues, userId: string) => {
+export const createEmployee = async (employeeData: EmployeeFormValues, userId: string, companyId: string) => {
   try {
     // Insert the employee first
     const { data, error } = await supabase
       .from("employees")
       .insert({
         user_id: userId,
+        company_id: companyId,
         first_name: employeeData.first_name,
         last_name: employeeData.last_name,
         department: employeeData.department,
@@ -176,6 +177,42 @@ export const migratePayrollIdsToWorkPatterns = async () => {
     return true;
   } catch (e) {
     console.error("Error in migratePayrollIdsToWorkPatterns:", e);
+    return false;
+  }
+};
+
+// New function to assign existing employees to a company
+export const assignEmployeesToCompany = async (companyId: string) => {
+  try {
+    // Get all employees without a company_id
+    const { data: employees, error: employeesError } = await supabase
+      .from("employees")
+      .select("id, first_name, last_name")
+      .is("company_id", null);
+    
+    if (employeesError) throw employeesError;
+    
+    console.log(`Found ${employees?.length || 0} employees without company assignment`);
+    
+    if (employees && employees.length > 0) {
+      // Update all employees without company_id to belong to the specified company
+      const { error: updateError } = await supabase
+        .from('employees')
+        .update({ company_id: companyId })
+        .is('company_id', null);
+      
+      if (updateError) {
+        console.error("Error assigning employees to company:", updateError);
+        return false;
+      } else {
+        console.log(`Assigned ${employees.length} employees to company ${companyId}`);
+        return true;
+      }
+    }
+    
+    return true;
+  } catch (e) {
+    console.error("Error in assignEmployeesToCompany:", e);
     return false;
   }
 };
