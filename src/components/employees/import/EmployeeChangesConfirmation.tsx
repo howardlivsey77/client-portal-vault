@@ -32,6 +32,19 @@ export const EmployeeChangesConfirmation = ({
     return rates.length > 0 ? rates.join(", ") : null;
   };
 
+  // Helper function to compare numeric values (accounting for null/undefined)
+  const areRatesEqual = (existing: number | null | undefined, imported: number | null | undefined): boolean => {
+    const existingVal = existing || 0;
+    const importedVal = imported || 0;
+    return Math.abs(existingVal - importedVal) < 0.01; // Account for small rounding differences
+  };
+
+  // Helper function to format currency value consistently
+  const formatCurrency = (value: number | null | undefined): string => {
+    if (!value) return "£0.00";
+    return `£${Number(value).toFixed(2)}`;
+  };
+
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent className="max-w-4xl">
@@ -68,7 +81,7 @@ export const EmployeeChangesConfirmation = ({
                         <TableCell>{emp.department}</TableCell>
                         <TableCell>{emp.email || "-"}</TableCell>
                         <TableCell>
-                          <div>Base: £{emp.hourly_rate || 0}</div>
+                          <div>Base: {formatCurrency(emp.hourly_rate)}</div>
                           {formatRates(emp) && (
                             <div className="text-xs text-muted-foreground mt-1">{formatRates(emp)}</div>
                           )}
@@ -111,21 +124,23 @@ export const EmployeeChangesConfirmation = ({
                         }
                       });
                       
-                      // Add rate changes - always show rates as changes if they exist in the import
-                      const importedRates = {
-                        rate_2: empPair.imported.rate_2,
-                        rate_3: empPair.imported.rate_3,
-                        rate_4: empPair.imported.rate_4
-                      };
+                      // Add rate changes - only if values actually differ
+                      const rateFields = [
+                        { key: 'rate_2', name: 'Rate 2' },
+                        { key: 'rate_3', name: 'Rate 3' },
+                        { key: 'rate_4', name: 'Rate 4' }
+                      ];
                       
-                      Object.entries(importedRates).forEach(([key, value]) => {
-                        if (value) {
-                          const fieldName = key === 'rate_2' ? 'Rate 2' : 
-                                           key === 'rate_3' ? 'Rate 3' : 'Rate 4';
+                      rateFields.forEach(({ key, name }) => {
+                        const importedValue = empPair.imported[key];
+                        const existingValue = empPair.existing[key];
+                        
+                        // Only add to changes if the rate values actually differ
+                        if (importedValue && !areRatesEqual(existingValue, importedValue)) {
                           changes.push({
-                            field: fieldName,
-                            oldValue: empPair.existing[key] || "-",
-                            newValue: `£${value}`
+                            field: name,
+                            oldValue: formatCurrency(existingValue),
+                            newValue: formatCurrency(importedValue)
                           });
                         }
                       });
