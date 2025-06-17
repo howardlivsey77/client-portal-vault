@@ -24,9 +24,18 @@ export interface SicknessScheme {
 
 export interface EligibilityRule {
   id: string;
-  serviceMonthsFrom: number;
-  serviceMonthsTo: number | null;
-  fullPayDays: number;
-  halfPayDays: number;
+  serviceFrom: number;
+  serviceTo: number | null;
+  serviceFromUnit: 'days' | 'weeks' | 'months' | 'years';
+  serviceToUnit: 'days' | 'weeks' | 'months' | 'years';
+  fullPayAmount: number;
+  halfPayAmount: number;
+  fullPayUnit: 'days' | 'weeks' | 'months';
+  halfPayUnit: 'days' | 'weeks' | 'months';
   sicknessPay: string;
+  // Legacy fields for backward compatibility
+  serviceMonthsFrom?: number;
+  serviceMonthsTo?: number | null;
+  fullPayDays?: number;
+  halfPayDays?: number;
 }

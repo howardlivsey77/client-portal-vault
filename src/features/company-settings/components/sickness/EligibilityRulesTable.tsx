@@ -35,10 +35,10 @@ export function EligibilityRulesTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Service From (Months)</TableHead>
-            <TableHead>Service To (Months)</TableHead>
-            <TableHead>Full Pay (Days)</TableHead>
-            <TableHead>Half Pay (Days)</TableHead>
+            <TableHead>Service From</TableHead>
+            <TableHead>Service To</TableHead>
+            <TableHead>Full Pay</TableHead>
+            <TableHead>Half Pay</TableHead>
             <TableHead>Then</TableHead>
             <TableHead className="w-[80px]">Action</TableHead>
           </TableRow>

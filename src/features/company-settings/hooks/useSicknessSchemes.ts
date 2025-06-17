@@ -15,19 +15,32 @@ export const useSicknessSchemes = () => {
   // Function to migrate old eligibility rules to new format
   const migrateEligibilityRules = (rules: any[]): EligibilityRule[] => {
     return rules.map(rule => {
-      // If old format with companyPaidDays, migrate to new format
-      if (rule.companyPaidDays !== undefined && rule.fullPayDays === undefined) {
+      // Handle migration from old format to new flexible format
+      if (rule.serviceMonthsFrom !== undefined && rule.serviceFrom === undefined) {
         return {
           ...rule,
-          fullPayDays: rule.companyPaidDays || 0,
-          halfPayDays: 0
+          serviceFrom: rule.serviceMonthsFrom || 0,
+          serviceTo: rule.serviceMonthsTo || null,
+          serviceFromUnit: 'months',
+          serviceToUnit: 'months',
+          fullPayAmount: rule.fullPayDays || rule.companyPaidDays || 0,
+          halfPayAmount: rule.halfPayDays || 0,
+          fullPayUnit: 'days',
+          halfPayUnit: 'days'
         };
       }
+      
       // If new format or already migrated, ensure all fields exist
       return {
         ...rule,
-        fullPayDays: rule.fullPayDays || 0,
-        halfPayDays: rule.halfPayDays || 0
+        serviceFrom: rule.serviceFrom ?? rule.serviceMonthsFrom ?? 0,
+        serviceTo: rule.serviceTo ?? rule.serviceMonthsTo ?? null,
+        serviceFromUnit: rule.serviceFromUnit ?? 'months',
+        serviceToUnit: rule.serviceToUnit ?? 'months',
+        fullPayAmount: rule.fullPayAmount ?? rule.fullPayDays ?? rule.companyPaidDays ?? 0,
+        halfPayAmount: rule.halfPayAmount ?? rule.halfPayDays ?? 0,
+        fullPayUnit: rule.fullPayUnit ?? 'days',
+        halfPayUnit: rule.halfPayUnit ?? 'days'
       };
     });
   };

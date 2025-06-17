@@ -17,8 +17,24 @@ interface SicknessSchemeFormProps {
 }
 
 export function SicknessSchemeForm({ scheme, onSave, onCancel }: SicknessSchemeFormProps) {
+  // Migrate legacy data to new format
+  const migrateRulesToNewFormat = (rules: EligibilityRule[]): EligibilityRule[] => {
+    return rules.map(rule => ({
+      ...rule,
+      // If new format fields don't exist, migrate from legacy fields
+      serviceFrom: rule.serviceFrom ?? rule.serviceMonthsFrom ?? 0,
+      serviceTo: rule.serviceTo ?? rule.serviceMonthsTo ?? null,
+      serviceFromUnit: rule.serviceFromUnit ?? 'months',
+      serviceToUnit: rule.serviceToUnit ?? 'months',
+      fullPayAmount: rule.fullPayAmount ?? rule.fullPayDays ?? 0,
+      halfPayAmount: rule.halfPayAmount ?? rule.halfPayDays ?? 0,
+      fullPayUnit: rule.fullPayUnit ?? 'days',
+      halfPayUnit: rule.halfPayUnit ?? 'days'
+    }));
+  };
+
   const [eligibilityRules, setEligibilityRules] = useState<EligibilityRule[]>(
-    scheme?.eligibilityRules || []
+    scheme?.eligibilityRules ? migrateRulesToNewFormat(scheme.eligibilityRules) : []
   );
 
   const form = useForm<SicknessSchemeFormData>({
@@ -31,10 +47,14 @@ export function SicknessSchemeForm({ scheme, onSave, onCancel }: SicknessSchemeF
   const handleAddRule = () => {
     const newRule: EligibilityRule = {
       id: `rule-${Date.now()}`,
-      serviceMonthsFrom: 0,
-      serviceMonthsTo: 0,
-      fullPayDays: 0,
-      halfPayDays: 0,
+      serviceFrom: 0,
+      serviceTo: null,
+      serviceFromUnit: 'months',
+      serviceToUnit: 'months',
+      fullPayAmount: 0,
+      halfPayAmount: 0,
+      fullPayUnit: 'days',
+      halfPayUnit: 'days',
       sicknessPay: "SSP"
     };
     setEligibilityRules([...eligibilityRules, newRule]);
