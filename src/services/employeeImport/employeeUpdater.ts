@@ -136,6 +136,32 @@ export const updateExistingEmployees = async (
       updateData.payroll_id = normalizedPayrollId;
     }
     
+    // Previously missing fields - now included
+    if (imported.gender !== undefined && imported.gender !== null && imported.gender !== '') {
+      updateData.gender = imported.gender;
+    }
+    if (imported.national_insurance_number !== undefined && imported.national_insurance_number !== null && imported.national_insurance_number !== '') {
+      updateData.national_insurance_number = imported.national_insurance_number;
+    }
+    if (imported.tax_code !== undefined && imported.tax_code !== null && imported.tax_code !== '') {
+      updateData.tax_code = imported.tax_code;
+    }
+    if (imported.nic_code !== undefined && imported.nic_code !== null && imported.nic_code !== '') {
+      updateData.nic_code = imported.nic_code;
+    }
+    if (imported.work_pattern !== undefined && imported.work_pattern !== null && imported.work_pattern !== '') {
+      updateData.work_pattern = imported.work_pattern;
+    }
+    if (imported.week_one_month_one !== undefined && imported.week_one_month_one !== null) {
+      updateData.week_one_month_one = imported.week_one_month_one;
+    }
+    if (imported.student_loan_plan !== undefined && imported.student_loan_plan !== null) {
+      updateData.student_loan_plan = imported.student_loan_plan;
+    }
+    if (imported.sickness_scheme_id !== undefined && imported.sickness_scheme_id !== null) {
+      updateData.sickness_scheme_id = imported.sickness_scheme_id;
+    }
+    
     // Rate fields - always update if provided
     if (imported.rate_2 !== undefined && imported.rate_2 !== null) {
       updateData.rate_2 = roundToTwoDecimals(imported.rate_2);

@@ -112,13 +112,22 @@ export const createNewEmployees = async (
       payroll_id: normalizedPayrollId,
       user_id: userId,
       company_id: companyId, // Automatically assign the current company ID
+      // Include missing fields that were being dropped
+      gender: emp.gender || null,
+      national_insurance_number: emp.national_insurance_number || null,
+      tax_code: emp.tax_code || null,
+      nic_code: emp.nic_code || null,
+      work_pattern: emp.work_pattern || null,
+      week_one_month_one: emp.week_one_month_one || false,
+      student_loan_plan: emp.student_loan_plan || null,
+      sickness_scheme_id: emp.sickness_scheme_id || null,
       // Include rate fields directly in the employee record
       rate_2: roundToTwoDecimals(emp.rate_2),
       rate_3: roundToTwoDecimals(emp.rate_3),
       rate_4: roundToTwoDecimals(emp.rate_4)
     };
     
-    console.log('Prepared employee data for insert (with company_id):', newEmployeeData);
+    console.log('Prepared employee data for insert (with all fields):', newEmployeeData);
     
     const { data: employeeData, error: insertError } = await supabase
       .from("employees")
@@ -131,7 +140,7 @@ export const createNewEmployees = async (
       throw insertError;
     }
     
-    console.log('Employee created successfully with company_id:', employeeData);
+    console.log('Employee created successfully with all fields:', employeeData);
     
     // If we have a new employee ID and work pattern data, save the work patterns
     if (employeeData && employeeData.length > 0) {
@@ -154,5 +163,5 @@ export const createNewEmployees = async (
     }
   }
   
-  console.log('All employees created successfully with company assignments');
+  console.log('All employees created successfully with all fields');
 };
