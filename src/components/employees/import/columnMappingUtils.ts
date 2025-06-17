@@ -1,4 +1,5 @@
-import { ColumnMapping, availableFields } from "./ImportConstants";
+
+import { ColumnMapping, availableFields, requiredFields } from "./ImportConstants";
 
 // Enhanced mapping patterns for common field variations
 const fieldMappingPatterns: Record<string, string[]> = {
@@ -163,8 +164,8 @@ export const clearSavedMappings = (): void => {
   }
 };
 
-// Check if all required fields are mapped
-export const areRequiredFieldsMapped = (columnMappings: ColumnMapping[], requiredFields: string[]): boolean => {
+// Check if all required fields are mapped - fixed signature to match usage
+export const areRequiredFieldsMapped = (columnMappings: ColumnMapping[]): boolean => {
   // Check if every required field has at least one column mapped to it
   return requiredFields.every(requiredField => 
     columnMappings.some(mapping => mapping.targetField === requiredField)
