@@ -17,19 +17,20 @@ interface SicknessSchemeFormProps {
 }
 
 export function SicknessSchemeForm({ scheme, onSave, onCancel }: SicknessSchemeFormProps) {
-  // Migrate legacy data to new format
+  // Migrate legacy data to new format with proper defaults
   const migrateRulesToNewFormat = (rules: EligibilityRule[]): EligibilityRule[] => {
     return rules.map(rule => ({
       ...rule,
-      // If new format fields don't exist, migrate from legacy fields
+      // Ensure all required fields have proper non-empty values
       serviceFrom: rule.serviceFrom ?? rule.serviceMonthsFrom ?? 0,
       serviceTo: rule.serviceTo ?? rule.serviceMonthsTo ?? null,
-      serviceFromUnit: rule.serviceFromUnit ?? 'months',
-      serviceToUnit: rule.serviceToUnit ?? 'months',
+      serviceFromUnit: rule.serviceFromUnit || 'months',
+      serviceToUnit: rule.serviceToUnit || 'months',
       fullPayAmount: rule.fullPayAmount ?? rule.fullPayDays ?? 0,
       halfPayAmount: rule.halfPayAmount ?? rule.halfPayDays ?? 0,
-      fullPayUnit: rule.fullPayUnit ?? 'days',
-      halfPayUnit: rule.halfPayUnit ?? 'days'
+      fullPayUnit: rule.fullPayUnit || 'days',
+      halfPayUnit: rule.halfPayUnit || 'days',
+      sicknessPay: rule.sicknessPay || 'SSP'
     }));
   };
 

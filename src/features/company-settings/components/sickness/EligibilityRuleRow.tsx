@@ -14,6 +14,13 @@ interface EligibilityRuleRowProps {
 }
 
 export function EligibilityRuleRow({ rule, onRuleChange, onRemoveRule }: EligibilityRuleRowProps) {
+  // Ensure all unit values have defaults to prevent empty strings
+  const serviceFromUnit = rule.serviceFromUnit || 'months';
+  const serviceToUnit = rule.serviceToUnit || 'months';
+  const fullPayUnit = rule.fullPayUnit || 'days';
+  const halfPayUnit = rule.halfPayUnit || 'days';
+  const sicknessPay = rule.sicknessPay || 'SSP';
+
   return (
     <TableRow>
       <TableCell>
@@ -30,7 +37,7 @@ export function EligibilityRuleRow({ rule, onRuleChange, onRemoveRule }: Eligibi
             className="w-16"
           />
           <Select 
-            value={rule.serviceFromUnit} 
+            value={serviceFromUnit} 
             onValueChange={(value) => onRuleChange(rule.id, 'serviceFromUnit', value)}
           >
             <SelectTrigger className="w-20">
@@ -61,7 +68,7 @@ export function EligibilityRuleRow({ rule, onRuleChange, onRemoveRule }: Eligibi
             placeholder="∞"
           />
           <Select 
-            value={rule.serviceToUnit} 
+            value={serviceToUnit} 
             onValueChange={(value) => onRuleChange(rule.id, 'serviceToUnit', value)}
           >
             <SelectTrigger className="w-20">
@@ -91,7 +98,7 @@ export function EligibilityRuleRow({ rule, onRuleChange, onRemoveRule }: Eligibi
             className="w-16"
           />
           <Select 
-            value={rule.fullPayUnit} 
+            value={fullPayUnit} 
             onValueChange={(value) => onRuleChange(rule.id, 'fullPayUnit', value)}
           >
             <SelectTrigger className="w-20">
@@ -121,7 +128,7 @@ export function EligibilityRuleRow({ rule, onRuleChange, onRemoveRule }: Eligibi
             className="w-16"
           />
           <Select 
-            value={rule.halfPayUnit} 
+            value={halfPayUnit} 
             onValueChange={(value) => onRuleChange(rule.id, 'halfPayUnit', value)}
           >
             <SelectTrigger className="w-20">
@@ -139,7 +146,7 @@ export function EligibilityRuleRow({ rule, onRuleChange, onRemoveRule }: Eligibi
       </TableCell>
       <TableCell>
         <Select 
-          value={rule.sicknessPay} 
+          value={sicknessPay} 
           onValueChange={(value) => onRuleChange(rule.id, 'sicknessPay', value)}
         >
           <SelectTrigger className="w-full">
