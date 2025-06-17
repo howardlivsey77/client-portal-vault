@@ -15,6 +15,36 @@ function isNumericValue(value: any): boolean {
 }
 
 /**
+ * Helper function to detect and convert Excel time decimal values to hours
+ * Excel stores time as decimal fractions of a day (e.g., 0.125 = 3 hours)
+ */
+function convertTimeDecimalToHours(value: any): number {
+  if (!isNumericValue(value)) return 0;
+  
+  const numericValue = parseFloat(value);
+  
+  // Check if this looks like an Excel time decimal (between 0 and 1)
+  // and when multiplied by 24 gives a reasonable hour value (0-24)
+  if (numericValue > 0 && numericValue < 1) {
+    const potentialHours = numericValue * 24;
+    // Only convert if it results in a reasonable hour value
+    if (potentialHours <= 24) {
+      console.log(`Converting Excel time decimal: ${numericValue} -> ${potentialHours} hours`);
+      return potentialHours;
+    }
+  }
+  
+  // If it's already a normal hour value (> 1), return as-is
+  if (numericValue >= 1) {
+    return numericValue;
+  }
+  
+  // For values between 0 and 1 that don't convert to reasonable hours,
+  // treat as decimal hours (e.g., 0.5 hours)
+  return numericValue;
+}
+
+/**
  * Extract employee name from various column patterns
  */
 function extractEmployeeName(row: any): { employeeName: string, payrollId: string } {
@@ -128,8 +158,11 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
     
     // Process each traditional rate type that has hours
     for (const rateCol of rateColumns) {
-      const hours = parseFloat(row[rateCol.columnName]);
+      const rawHours = row[rateCol.columnName];
+      const hours = convertTimeDecimalToHours(rawHours);
       let rateValue = 0;
+      
+      console.log(`Processing rate column "${rateCol.columnName}": raw value "${rawHours}" -> ${hours} hours`);
       
       // Only process if hours value is greater than 0
       if (hours > 0) {
@@ -183,11 +216,11 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
         // Try each hours column and use the first one with a valid numeric value
         for (const hoursColumn of hoursColumns) {
           const rawValue = row[hoursColumn];
-          console.log(`Checking hours column "${hoursColumn}" with value: "${rawValue}"`);
+          console.log(`Checking hours column "${hoursColumn}" with raw value: "${rawValue}"`);
           
           if (isNumericValue(rawValue)) {
-            const potentialHours = parseFloat(rawValue);
-            console.log(`Parsed hours value: ${potentialHours}`);
+            const potentialHours = convertTimeDecimalToHours(rawValue);
+            console.log(`Converted hours value: ${potentialHours}`);
             
             if (potentialHours > 0) {
               hoursValue = potentialHours;
@@ -205,7 +238,7 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
           const fallbackColumns = ['Hours', 'Hrs', 'Time', 'Duration', 'Sessions', 'Unpaid', 'Amount', 'Value'];
           for (const col of fallbackColumns) {
             if (row[col] !== undefined && isNumericValue(row[col])) {
-              const potentialHours = parseFloat(row[col]);
+              const potentialHours = convertTimeDecimalToHours(row[col]);
               if (potentialHours > 0) {
                 hoursValue = potentialHours;
                 usedHoursColumn = col;
@@ -252,7 +285,10 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
     }
     
     // Method 3: Check for standard hours columns as a fallback (existing logic)
-    const { standardHours, standardHoursFound } = findStandardHoursColumns(row);
+    const { standardHours: rawStandardHours, standardHoursFound } = findStandardHoursColumns(row);
+    const standardHours = convertTimeDecimalToHours(rawStandardHours);
+    
+    console.log(`Standard hours: raw value "${rawStandardHours}" -> ${standardHours} hours`);
     
     // Add standard hours entry if found and greater than 0, and no other entries were added for this employee
     if (standardHoursFound && standardHours > 0) {
