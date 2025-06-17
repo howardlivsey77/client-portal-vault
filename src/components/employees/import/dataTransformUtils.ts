@@ -91,7 +91,7 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): 
             transformedRow[mapping.targetField] = isoDate;
           } else {
             console.log(`Skipping invalid date for ${mapping.targetField} in row ${index + 1}:`, sourceValue);
-            // Don't set the field if date conversion failed
+            // Don't set the field if date conversion failed - let database handle defaults
           }
         } 
         // Handle rate fields to ensure they're numeric

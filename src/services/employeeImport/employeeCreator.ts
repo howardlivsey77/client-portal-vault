@@ -43,7 +43,8 @@ export const createNewEmployees = async (
       address4: emp.address4 || null,
       postcode: emp.postcode || null,
       date_of_birth: emp.date_of_birth || null,
-      hire_date: emp.hire_date || null,
+      // Only include hire_date if it exists, otherwise let database use default CURRENT_DATE
+      ...(emp.hire_date && { hire_date: emp.hire_date }),
       payroll_id: normalizedPayrollId,
       user_id: userId,
       // Include rate fields directly in the employee record
