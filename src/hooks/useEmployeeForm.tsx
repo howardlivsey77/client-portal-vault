@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +9,15 @@ import { employeeSchema, EmployeeFormValues, genderOptions, defaultWorkPattern }
 import { fetchEmployeeById, createEmployee, updateEmployee } from "@/services/employeeService";
 import { fetchWorkPatterns, saveWorkPatterns } from "@/components/employees/details/work-pattern/utils";
 import { useCompany } from "@/providers/CompanyProvider";
+
+// Helper function to safely parse date from database without timezone issues
+const parseDateFromDatabase = (dateString: string | null): Date | null => {
+  if (!dateString) return null;
+  
+  // Parse as local date to avoid timezone shifts
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
 
 export const useEmployeeForm = (employeeId?: string) => {
   const isEditMode = employeeId !== undefined && employeeId !== "new";
@@ -72,6 +82,8 @@ export const useEmployeeForm = (employeeId?: string) => {
     try {
       if (!employeeId) return;
       
+      setLoading(true);
+      
       // Fetch employee data
       const data = await fetchEmployeeById(employeeId);
       
@@ -79,9 +91,9 @@ export const useEmployeeForm = (employeeId?: string) => {
       const workPatterns = await fetchWorkPatterns(employeeId);
       
       if (data) {
-        // Convert date_of_birth string to Date object if it exists
-        const dateOfBirth = data.date_of_birth ? new Date(data.date_of_birth) : null;
-        const hireDate = data.hire_date ? new Date(data.hire_date) : new Date();
+        // Convert date strings to Date objects safely without timezone issues
+        const dateOfBirth = parseDateFromDatabase(data.date_of_birth);
+        const hireDate = parseDateFromDatabase(data.hire_date) || new Date();
         
         // Validate gender to ensure it matches one of the allowed values
         const validGender = data.gender && 
@@ -93,6 +105,8 @@ export const useEmployeeForm = (employeeId?: string) => {
         if (data.payroll_id) {
           await syncWorkPatternsWithPayrollId(employeeId, data.payroll_id);
         }
+        
+        console.log("Fetched employee data - hire_date:", data.hire_date, "parsed as:", hireDate);
         
         form.reset({
           first_name: data.first_name,
@@ -152,6 +166,8 @@ export const useEmployeeForm = (employeeId?: string) => {
       if (!currentCompany?.id) {
         throw new Error("No company selected. Please select a company first.");
       }
+      
+      console.log("Submitting employee data - hire_date:", data.hire_date);
       
       if (isEditMode && employeeId) {
         // Update existing employee

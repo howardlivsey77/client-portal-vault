@@ -47,7 +47,10 @@ export const HireDateField = ({ form, readOnly }: HireDateFieldProps) => {
               <Calendar
                 mode="single"
                 selected={field.value || new Date()}
-                onSelect={field.onChange}
+                onSelect={(date) => {
+                  console.log("Hire date selected:", date);
+                  field.onChange(date);
+                }}
                 initialFocus
                 className={cn("p-3 pointer-events-auto")}
               />

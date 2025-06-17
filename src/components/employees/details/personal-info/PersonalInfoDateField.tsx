@@ -45,7 +45,10 @@ export const PersonalInfoDateField = ({ control }: PersonalInfoDateFieldProps) =
                 <Calendar
                   mode="single"
                   selected={field.value || undefined}
-                  onSelect={field.onChange}
+                  onSelect={(date) => {
+                    console.log("Date of birth selected:", date);
+                    field.onChange(date);
+                  }}
                   initialFocus
                   disabled={(date) => date > new Date()}
                   className={cn("p-3 pointer-events-auto")}

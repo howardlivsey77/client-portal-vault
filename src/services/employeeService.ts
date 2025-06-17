@@ -4,6 +4,27 @@ import { EmployeeFormValues, defaultWorkPattern } from "@/types/employee";
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { WorkDay } from "@/components/employees/details/work-pattern/types";
 
+// Helper function to safely convert Date to YYYY-MM-DD format without timezone issues
+const formatDateForDatabase = (date: Date | null): string | null => {
+  if (!date) return null;
+  
+  // Use local date components to avoid timezone conversion
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+};
+
+// Helper function to safely parse date from database without timezone issues
+const parseDateFromDatabase = (dateString: string | null): Date | null => {
+  if (!dateString) return null;
+  
+  // Parse as local date to avoid timezone shifts
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
 export const fetchEmployeeById = async (id: string) => {
   const { data, error } = await supabase
     .from("employees")
@@ -32,8 +53,8 @@ export const createEmployee = async (employeeData: EmployeeFormValues, userId: s
         rate_2: roundToTwoDecimals(employeeData.rate_2),
         rate_3: roundToTwoDecimals(employeeData.rate_3),
         rate_4: roundToTwoDecimals(employeeData.rate_4),
-        date_of_birth: employeeData.date_of_birth ? employeeData.date_of_birth.toISOString() : null,
-        hire_date: employeeData.hire_date ? employeeData.hire_date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        date_of_birth: formatDateForDatabase(employeeData.date_of_birth),
+        hire_date: formatDateForDatabase(employeeData.hire_date) || formatDateForDatabase(new Date()),
         email: employeeData.email || null,
         address1: employeeData.address1 || null,
         address2: employeeData.address2 || null,
@@ -124,8 +145,8 @@ export const updateEmployee = async (id: string, employeeData: EmployeeFormValue
       rate_2: roundToTwoDecimals(employeeData.rate_2),
       rate_3: roundToTwoDecimals(employeeData.rate_3),
       rate_4: roundToTwoDecimals(employeeData.rate_4),
-      date_of_birth: employeeData.date_of_birth ? employeeData.date_of_birth.toISOString() : null,
-      hire_date: employeeData.hire_date ? employeeData.hire_date.toISOString().split('T')[0] : null,
+      date_of_birth: formatDateForDatabase(employeeData.date_of_birth),
+      hire_date: formatDateForDatabase(employeeData.hire_date),
       email: employeeData.email || null,
       address1: employeeData.address1 || null,
       address2: employeeData.address2 || null,
@@ -181,7 +202,6 @@ export const migratePayrollIdsToWorkPatterns = async () => {
   }
 };
 
-// New function to assign existing employees to a company
 export const assignEmployeesToCompany = async (companyId: string) => {
   try {
     // Get all employees without a company_id
