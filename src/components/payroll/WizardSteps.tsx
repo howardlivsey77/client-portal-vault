@@ -2,7 +2,6 @@
 import { WizardStep } from "./types";
 import { FileUploader } from "./FileUploader";
 import { UploadSummary } from "./upload-summary";
-import { EmployeeMappingDialog } from "./EmployeeMappingDialog";
 
 interface CreateWizardStepsProps {
   uploadedFiles: any;
@@ -19,11 +18,7 @@ export function createWizardSteps({
   uploadedFiles,
   handleFileUpload,
   getSummary,
-  isProcessing,
-  showEmployeeMapping = false,
-  matchingResults,
-  onEmployeeMappingConfirm,
-  onEmployeeMappingCancel
+  isProcessing
 }: CreateWizardStepsProps): WizardStep[] {
   const steps: WizardStep[] = [
     {
@@ -47,36 +42,19 @@ export function createWizardSteps({
           isProcessing={isProcessing}
         />
       ),
-    }
-  ];
-
-  // Add employee mapping step if needed
-  if (showEmployeeMapping && matchingResults && onEmployeeMappingConfirm && onEmployeeMappingCancel) {
-    steps.splice(2, 0, {
-      title: "Map Employees",
+    },
+    {
+      title: "Upload Absences File",
       component: (
-        <EmployeeMappingDialog
-          open={true}
-          onOpenChange={() => {}}
-          matchingResults={matchingResults}
-          onConfirm={onEmployeeMappingConfirm}
-          onCancel={onEmployeeMappingCancel}
+        <FileUploader
+          uploadedFile={uploadedFiles.absences}
+          onFileChange={(file) => handleFileUpload('absences', file)}
+          acceptedFileTypes=".csv,.xlsx,.xls"
+          description="Select your absences file (CSV, Excel) - Optional"
         />
       ),
-    });
-  }
-
-  steps.push({
-    title: "Upload Absences File",
-    component: (
-      <FileUploader
-        uploadedFile={uploadedFiles.absences}
-        onFileChange={(file) => handleFileUpload('absences', file)}
-        acceptedFileTypes=".csv,.xlsx,.xls"
-        description="Select your absences file (CSV, Excel) - Optional"
-      />
-    ),
-  });
+    }
+  ];
 
   return steps;
 }

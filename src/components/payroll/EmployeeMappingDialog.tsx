@@ -116,7 +116,7 @@ export function EmployeeMappingDialog({
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Choose an employee or skip..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-50 bg-white border shadow-lg">
                   <SelectItem value="">Skip this employee</SelectItem>
                   {matchingResults.allDatabaseEmployees.map(employee => (
                     <SelectItem key={employee.id} value={employee.id}>
@@ -145,7 +145,7 @@ export function EmployeeMappingDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh]">
+      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <Users className="h-5 w-5 mr-2" />
@@ -153,7 +153,7 @@ export function EmployeeMappingDialog({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <div className="flex-1 space-y-4 min-h-0">
           {/* Summary */}
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center p-3 bg-green-50 rounded-lg">
@@ -186,8 +186,8 @@ export function EmployeeMappingDialog({
           
           {/* Pending Matches */}
           {totalPendingCount > 0 ? (
-            <ScrollArea className="h-[400px]">
-              <div className="space-y-4">
+            <ScrollArea className="flex-1">
+              <div className="space-y-4 pr-4">
                 <h3 className="font-medium flex items-center">
                   <AlertCircle className="h-4 w-4 mr-2" />
                   Employees Requiring Manual Mapping
@@ -203,7 +203,7 @@ export function EmployeeMappingDialog({
           )}
         </div>
         
-        <DialogFooter>
+        <DialogFooter className="border-t pt-4">
           <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>

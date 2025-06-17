@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface EmployeeHoursTableProps {
   employeeDetails: EmployeeHoursData[];
@@ -24,37 +25,39 @@ export function EmployeeHoursTable({ employeeDetails }: EmployeeHoursTableProps)
       <div className="p-3 border-b bg-muted/40">
         <h3 className="text-sm font-medium">Employee Hours Breakdown</h3>
       </div>
-      <div className="p-0 overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Payroll ID</TableHead>
-              <TableHead>Employee</TableHead>
-              <TableHead className="text-right">Rate Type</TableHead>
-              <TableHead className="text-right">Hourly Rate</TableHead>
-              <TableHead className="text-right">Extra Hours</TableHead>
-              <TableHead className="text-right">Total</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {employeeDetails.map((employee, index) => {
-              const total = roundToTwoDecimals((employee.rateValue || 0) * employee.extraHours) || 0;
-              return (
-                <TableRow key={`${employee.employeeId || employee.employeeName}-${employee.rateType || 'standard'}-${index}`}>
-                  <TableCell>{employee.payrollId || 'N/A'}</TableCell>
-                  <TableCell className="font-medium">{employee.employeeName}</TableCell>
-                  <TableCell className="text-right">{employee.rateType || 'Standard'}</TableCell>
-                  <TableCell className="text-right">
-                    {employee.rateValue ? formatCurrency(roundToTwoDecimals(employee.rateValue) || 0) : 'N/A'}
-                  </TableCell>
-                  <TableCell className="text-right">{employee.extraHours}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(total)}</TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
+      <ScrollArea className="w-full">
+        <div className="min-w-[600px]">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[100px]">Payroll ID</TableHead>
+                <TableHead className="min-w-[150px]">Employee</TableHead>
+                <TableHead className="min-w-[120px] text-right">Rate Type</TableHead>
+                <TableHead className="min-w-[100px] text-right">Hourly Rate</TableHead>
+                <TableHead className="min-w-[100px] text-right">Extra Hours</TableHead>
+                <TableHead className="min-w-[100px] text-right">Total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {employeeDetails.map((employee, index) => {
+                const total = roundToTwoDecimals((employee.rateValue || 0) * employee.extraHours) || 0;
+                return (
+                  <TableRow key={`${employee.employeeId || employee.employeeName}-${employee.rateType || 'standard'}-${index}`}>
+                    <TableCell className="font-mono">{employee.payrollId || 'N/A'}</TableCell>
+                    <TableCell className="font-medium">{employee.employeeName}</TableCell>
+                    <TableCell className="text-right">{employee.rateType || 'Standard'}</TableCell>
+                    <TableCell className="text-right font-mono">
+                      {employee.rateValue ? formatCurrency(roundToTwoDecimals(employee.rateValue) || 0) : 'N/A'}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">{employee.extraHours}</TableCell>
+                    <TableCell className="text-right font-mono font-medium">{formatCurrency(total)}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </ScrollArea>
     </div>
   );
 }
