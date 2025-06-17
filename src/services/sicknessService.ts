@@ -1,8 +1,9 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { SicknessRecord, EntitlementUsage, SicknessEntitlementSummary, HistoricalBalance, OpeningBalanceData } from "@/types/sickness";
 import { EligibilityRule } from "@/components/employees/details/work-pattern/types";
 import { convertToDays } from "@/features/company-settings/components/sickness/unitUtils";
+import { fetchWorkPatterns } from "@/components/employees/details/work-pattern/services/fetchPatterns";
+import { calculateWorkingDaysPerWeek, convertEntitlementToDays } from "@/components/employees/details/sickness/utils/workPatternCalculations";
 
 export const sicknessService = {
   // Fetch sickness records for an employee
@@ -97,17 +98,31 @@ export const sicknessService = {
     return applicableRule || sortedRules[0]; // Return first rule if none match
   },
 
-  // Calculate entitlements based on rule and convert to days
-  calculateEntitlements(rule: EligibilityRule): { fullPayDays: number; halfPayDays: number } {
-    const fullPayDays = rule.fullPayUnit === 'days' ? rule.fullPayAmount : 
-                       rule.fullPayUnit === 'weeks' ? rule.fullPayAmount * 7 :
-                       rule.fullPayAmount * 30; // months
+  // Calculate entitlements based on rule and work pattern
+  async calculateEntitlements(rule: EligibilityRule, employeeId: string): Promise<{ fullPayDays: number; halfPayDays: number }> {
+    try {
+      // Fetch the employee's work pattern
+      const workPattern = await fetchWorkPatterns(employeeId);
+      const workingDaysPerWeek = calculateWorkingDaysPerWeek(workPattern);
 
-    const halfPayDays = rule.halfPayUnit === 'days' ? rule.halfPayAmount :
-                       rule.halfPayUnit === 'weeks' ? rule.halfPayAmount * 7 :
-                       rule.halfPayAmount * 30; // months
+      // Calculate entitlements using correct formula
+      const fullPayDays = convertEntitlementToDays(rule.fullPayAmount, rule.fullPayUnit, workingDaysPerWeek);
+      const halfPayDays = convertEntitlementToDays(rule.halfPayAmount, rule.halfPayUnit, workingDaysPerWeek);
 
-    return { fullPayDays, halfPayDays };
+      return { fullPayDays, halfPayDays };
+    } catch (error) {
+      console.error('Error calculating entitlements:', error);
+      // Fallback to simple calculation if work pattern fetch fails
+      const fullPayDays = rule.fullPayUnit === 'days' ? rule.fullPayAmount : 
+                         rule.fullPayUnit === 'weeks' ? rule.fullPayAmount * 5 : // Assume 5-day week
+                         Math.floor((5 * 52.14 / 12) * rule.fullPayAmount); // months with 5-day week
+
+      const halfPayDays = rule.halfPayUnit === 'days' ? rule.halfPayAmount :
+                         rule.halfPayUnit === 'weeks' ? rule.halfPayAmount * 5 : // Assume 5-day week
+                         Math.floor((5 * 52.14 / 12) * rule.halfPayAmount); // months with 5-day week
+
+      return { fullPayDays, halfPayDays };
+    }
   },
 
   // Create or update entitlement usage record
@@ -122,7 +137,7 @@ export const sicknessService = {
     const periodStart = `${currentYear}-01-01`;
     const periodEnd = `${currentYear}-12-31`;
 
-    const entitlements = rule ? this.calculateEntitlements(rule) : { fullPayDays: 0, halfPayDays: 0 };
+    const entitlements = rule ? await this.calculateEntitlements(rule, employeeId) : { fullPayDays: 0, halfPayDays: 0 };
 
     const entitlementData = {
       employee_id: employeeId,
