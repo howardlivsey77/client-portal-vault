@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { employeeSchema, EmployeeFormValues, genderOptions, defaultWorkPattern } from "@/types/employee";
 import { fetchEmployeeById, createEmployee, updateEmployee } from "@/services/employeeService";
 import { fetchWorkPatterns, saveWorkPatterns } from "@/components/employees/details/work-pattern/utils";
+import { useCompany } from "@/providers/CompanyProvider";
 
 export const useEmployeeForm = (employeeId?: string) => {
   const isEditMode = employeeId !== undefined && employeeId !== "new";
@@ -15,6 +16,7 @@ export const useEmployeeForm = (employeeId?: string) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [readOnly, setReadOnly] = useState(false);
+  const { currentCompany } = useCompany();
   
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
@@ -146,6 +148,10 @@ export const useEmployeeForm = (employeeId?: string) => {
       if (!user) {
         throw new Error("User not authenticated");
       }
+
+      if (!currentCompany?.id) {
+        throw new Error("No company selected. Please select a company first.");
+      }
       
       if (isEditMode && employeeId) {
         // Update existing employee
@@ -156,8 +162,8 @@ export const useEmployeeForm = (employeeId?: string) => {
           description: "Employee information has been updated successfully.",
         });
       } else {
-        // Create new employee
-        await createEmployee(data, user.id);
+        // Create new employee - now with all 3 required parameters
+        await createEmployee(data, user.id, currentCompany.id);
         
         toast({
           title: "Employee created",
