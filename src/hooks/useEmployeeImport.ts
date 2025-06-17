@@ -12,8 +12,10 @@ import {
 } from "./import/employeeImportUtils";
 import { 
   executeImport,
-  findExistingEmployees
+  findExistingEmployees,
+  validateImportData
 } from "./import/employeeImportService";
+import { EmployeeConflict } from "./import/enhancedEmployeeMatching";
 
 export const useEmployeeImport = (onSuccess: () => void) => {
   const [state, dispatch] = useReducer(employeeImportReducer, initialState);
@@ -86,7 +88,7 @@ export const useEmployeeImport = (onSuccess: () => void) => {
   };
   
   // Prepare data for import and show confirmation dialog
-  const prepareImport = () => {
+  const prepareImport = async () => {
     if (!state.preview.length) {
       toast({
         title: "No valid data found",
@@ -96,20 +98,61 @@ export const useEmployeeImport = (onSuccess: () => void) => {
       return;
     }
     
-    const { newEmployees, updatedEmployees } = compareEmployees(state.preview, state.existingEmployees);
+    dispatch({ type: 'SET_LOADING', payload: true });
     
-    dispatch({ 
-      type: 'PREPARE_IMPORT', 
-      payload: { newEmployees, updatedEmployees } 
-    });
-    
-    if (newEmployees.length > 0 || updatedEmployees.length > 0) {
-      dispatch({ type: 'SET_SHOW_CONFIRM_DIALOG', payload: true });
-    } else {
-      toast({
-        title: "No changes detected",
-        description: "All employees are already up to date."
+    try {
+      const comparisonResult = compareEmployees(state.preview, state.existingEmployees);
+      const { newEmployees, updatedEmployees, conflicts = [] } = comparisonResult;
+      
+      // Validate the import data
+      const validation = await validateImportData(newEmployees, updatedEmployees, conflicts);
+      
+      if (!validation.canProceed) {
+        toast({
+          title: "Import validation failed",
+          description: validation.message,
+          variant: "destructive"
+        });
+        
+        dispatch({ 
+          type: 'SET_IMPORT_ERROR',
+          payload: validation.message
+        });
+        
+        dispatch({ type: 'SET_LOADING', payload: false });
+        return;
+      }
+      
+      dispatch({ 
+        type: 'PREPARE_IMPORT', 
+        payload: { newEmployees, updatedEmployees } 
       });
+      
+      if (newEmployees.length > 0 || updatedEmployees.length > 0) {
+        dispatch({ type: 'SET_SHOW_CONFIRM_DIALOG', payload: true });
+        toast({
+          title: "Import ready",
+          description: `${newEmployees.length} new employees and ${updatedEmployees.length} updates ready for import.`
+        });
+      } else {
+        toast({
+          title: "No changes detected",
+          description: "All employees are already up to date."
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error preparing import",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive"
+      });
+      
+      dispatch({ 
+        type: 'SET_IMPORT_ERROR',
+        payload: error.message || "Error preparing import"
+      });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
   
