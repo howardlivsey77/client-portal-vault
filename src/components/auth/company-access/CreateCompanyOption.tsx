@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureUserProfile } from "@/services/profileService";
 
 type CreateCompanyOptionProps = {
   userId?: string;
@@ -27,7 +28,7 @@ export const CreateCompanyOption = ({ userId }: CreateCompanyOptionProps) => {
     
     setLoading(true);
     try {
-      // Get user ID directly from auth session instead of using the prop
+      // Get user ID directly from auth session
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
       if (authError) {
@@ -40,6 +41,9 @@ export const CreateCompanyOption = ({ userId }: CreateCompanyOptionProps) => {
       }
       
       console.log("Creating company for user:", user.id);
+      
+      // Ensure user profile exists
+      await ensureUserProfile(user.id);
       
       // Create the company
       const { data: companyData, error: companyError } = await supabase
@@ -56,19 +60,18 @@ export const CreateCompanyOption = ({ userId }: CreateCompanyOptionProps) => {
         throw companyError;
       }
       
-      // Get the created company ID
+      // Create company access for the user
       if (companyData) {
         const companyId = companyData.id;
         
         console.log("Company created, now creating access for:", user.id, "to company:", companyId);
         
-        // Create company access for the user
         const { error: accessError } = await supabase
           .from('company_access')
           .insert([{
             user_id: user.id,
             company_id: companyId,
-            role: 'admin'  // User who creates a company is automatically an admin
+            role: 'admin'
           }]);
         
         if (accessError) {
