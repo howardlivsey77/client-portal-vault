@@ -46,10 +46,16 @@ export function EmployeeMappingDialog({
   }, [matchingResults]);
   
   const handleMappingChange = (employeeName: string, employeeId: string) => {
-    setUserMappings(prev => ({
-      ...prev,
-      [employeeName]: employeeId
-    }));
+    setUserMappings(prev => {
+      const newMappings = { ...prev };
+      if (employeeId === 'skip') {
+        // Remove the mapping if user chooses to skip
+        delete newMappings[employeeName];
+      } else {
+        newMappings[employeeName] = employeeId;
+      }
+      return newMappings;
+    });
   };
   
   const handleConfirm = () => {
@@ -110,14 +116,14 @@ export function EmployeeMappingDialog({
             <div>
               <label className="text-sm font-medium">Select employee from database:</label>
               <Select
-                value={selectedEmployeeId || ''}
+                value={selectedEmployeeId || 'skip'}
                 onValueChange={(value) => handleMappingChange(employeeName, value)}
               >
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Choose an employee or skip..." />
                 </SelectTrigger>
                 <SelectContent className="z-50 bg-white border shadow-lg">
-                  <SelectItem value="">Skip this employee</SelectItem>
+                  <SelectItem value="skip">Skip this employee</SelectItem>
                   {matchingResults.allDatabaseEmployees.map(employee => (
                     <SelectItem key={employee.id} value={employee.id}>
                       {employee.full_name}
