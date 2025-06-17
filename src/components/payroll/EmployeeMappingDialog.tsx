@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -77,8 +76,8 @@ export function EmployeeMappingDialog({
   };
   
   const allPendingMatches = [...matchingResults.fuzzyMatches, ...matchingResults.unmatchedEmployees];
-  const mappedCount = Object.keys(userMappings).length;
-  const totalPendingCount = allPendingMatches.length;
+  const totalEmployees = matchingResults.exactMatches.length + matchingResults.fuzzyMatches.length + matchingResults.unmatchedEmployees.length;
+  const totalMapped = matchingResults.exactMatches.length + Object.keys(userMappings).length;
   
   const renderMatchCard = (match: EmployeeMatchResult) => {
     const employeeName = match.employeeData.employeeName;
@@ -207,21 +206,21 @@ export function EmployeeMappingDialog({
           </div>
           
           {/* Progress - Fixed height */}
-          {totalPendingCount > 0 && (
+          {totalEmployees > 0 && (
             <div className="p-3 bg-blue-50 border border-blue-200 rounded flex-shrink-0">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-blue-800">
-                  Mapping Progress: {mappedCount} of {totalPendingCount} employees mapped
+                  Mapping Progress: {totalMapped} of {totalEmployees} total employees mapped
                 </span>
-                <Badge variant={mappedCount === totalPendingCount ? 'default' : 'secondary'}>
-                  {mappedCount === totalPendingCount ? 'Complete' : 'In Progress'}
+                <Badge variant={totalMapped === totalEmployees ? 'default' : 'secondary'}>
+                  {totalMapped === totalEmployees ? 'Complete' : 'In Progress'}
                 </Badge>
               </div>
             </div>
           )}
           
           {/* Scrollable Content Area */}
-          {totalPendingCount > 0 ? (
+          {allPendingMatches.length > 0 ? (
             <div className="flex-1 min-h-0">
               <h3 className="font-medium flex items-center mb-3 flex-shrink-0">
                 <AlertCircle className="h-4 w-4 mr-2" />
@@ -248,7 +247,7 @@ export function EmployeeMappingDialog({
             Cancel
           </Button>
           <Button onClick={handleConfirm}>
-            Continue with {matchingResults.exactMatches.length + mappedCount} employees
+            Continue with {totalMapped} employees
           </Button>
         </DialogFooter>
       </DialogContent>
