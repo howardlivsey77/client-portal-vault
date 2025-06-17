@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { getUserFromAuth } from "@/services/profileService";
 
 interface CompanyFormProps {
   open: boolean;
@@ -97,24 +99,19 @@ export const CompanyForm = ({
           description: "Company updated successfully",
         });
       } else {
-        // Create new company - get user ID directly from auth session
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        // Create new company - use getUserFromAuth instead of relying on profiles table
+        const userInfo = await getUserFromAuth();
         
-        if (authError) {
-          console.error("Auth error:", authError);
-          throw new Error("Authentication required to create a company");
-        }
-        
-        if (!user) {
+        if (!userInfo) {
           throw new Error("You must be logged in to create a company");
         }
         
-        console.log("Creating company for user:", user.id);
+        console.log("Creating company for user:", userInfo.id);
         
         // Add the user ID to the company data as the creator
         const companyData = {
           ...formData,
-          created_by: user.id
+          created_by: userInfo.id
         };
         
         console.log("Company data:", companyData);
@@ -141,7 +138,7 @@ export const CompanyForm = ({
         const { error: accessError } = await supabase
           .from("company_access")
           .insert({
-            user_id: user.id,
+            user_id: userInfo.id,
             company_id: newCompany.id,
             role: "admin"  // Set the creator as an admin of the company
           });
