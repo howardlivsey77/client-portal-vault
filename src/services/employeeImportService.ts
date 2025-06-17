@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeData } from "@/components/employees/import/ImportConstants";
 import { roundToTwoDecimals } from "@/lib/formatters";
@@ -22,10 +23,11 @@ export const createNewEmployees = async (
   newEmployees: EmployeeData[], 
   userId: string
 ) => {
-  // Extract all payroll IDs that are not empty
+  // Extract all payroll IDs that are not empty, converting to strings first
   const payrollIds = newEmployees
-    .filter(emp => emp.payroll_id && emp.payroll_id.trim() !== '')
-    .map(emp => emp.payroll_id);
+    .filter(emp => emp.payroll_id !== null && emp.payroll_id !== undefined && emp.payroll_id !== '')
+    .map(emp => String(emp.payroll_id).trim())
+    .filter(id => id !== '');
   
   // Check for duplicates in the database
   const existingPayrollIds = await checkDuplicatePayrollIds(payrollIds);
@@ -53,7 +55,7 @@ export const createNewEmployees = async (
       postcode: emp.postcode || null,
       date_of_birth: emp.date_of_birth || null,
       hire_date: emp.hire_date || null,
-      payroll_id: emp.payroll_id || null,
+      payroll_id: emp.payroll_id ? String(emp.payroll_id).trim() || null : null,
       user_id: userId,
       // Include rate fields directly in the employee record
       rate_2: roundToTwoDecimals(emp.rate_2),
@@ -75,7 +77,7 @@ export const createNewEmployees = async (
       // Get work patterns data, either from the form or use default with payrollId
       let workPatterns: WorkDay[] = defaultWorkPattern.map(pattern => ({
         ...pattern,
-        payrollId: emp.payroll_id || null
+        payrollId: emp.payroll_id ? String(emp.payroll_id).trim() || null : null
       }));
       
       const extractedPatterns = extractWorkPatternWithPayrollId(emp);
@@ -90,7 +92,7 @@ export const createNewEmployees = async (
         is_working: pattern.isWorking,
         start_time: pattern.startTime,
         end_time: pattern.endTime,
-        payroll_id: emp.payroll_id || null
+        payroll_id: emp.payroll_id ? String(emp.payroll_id).trim() || null : null
       }));
       
       const { error: patternsError } = await supabase
@@ -111,11 +113,14 @@ export const updateExistingEmployees = async (
 ) => {
   // Extract all new payroll IDs from updates where they differ from existing
   const newPayrollIds = updatedEmployees
-    .filter(({ existing, imported }) => 
-      imported.payroll_id && 
-      imported.payroll_id !== existing.payroll_id &&
-      imported.payroll_id.trim() !== '')
-    .map(({ imported }) => imported.payroll_id);
+    .filter(({ existing, imported }) => {
+      const importedPayrollId = imported.payroll_id ? String(imported.payroll_id).trim() : '';
+      const existingPayrollId = existing.payroll_id ? String(existing.payroll_id).trim() : '';
+      return importedPayrollId && 
+             importedPayrollId !== existingPayrollId &&
+             importedPayrollId !== '';
+    })
+    .map(({ imported }) => String(imported.payroll_id).trim());
   
   // Check for duplicates in the database if we have any new payroll IDs
   if (newPayrollIds.length > 0) {
@@ -137,7 +142,12 @@ export const updateExistingEmployees = async (
       if (key !== 'id' && 
           imported[key] !== undefined && imported[key] !== null && 
           imported[key] !== '' && imported[key] !== existing[key]) {
-        updates[key] = imported[key];
+        // Handle payroll_id specially to convert to string
+        if (key === 'payroll_id') {
+          updates[key] = String(imported[key]).trim() || null;
+        } else {
+          updates[key] = imported[key];
+        }
       }
     });
     
@@ -165,7 +175,7 @@ export const updateExistingEmployees = async (
       if (existing.id) {
         let workPatterns: WorkDay[] = defaultWorkPattern.map(pattern => ({
           ...pattern,
-          payrollId: imported.payroll_id || null
+          payrollId: imported.payroll_id ? String(imported.payroll_id).trim() || null : null
         }));
         
         const extractedPatterns = extractWorkPatternWithPayrollId(imported);
@@ -179,7 +189,7 @@ export const updateExistingEmployees = async (
             is_working: pattern.isWorking,
             start_time: pattern.startTime,
             end_time: pattern.endTime,
-            payroll_id: imported.payroll_id || null
+            payroll_id: imported.payroll_id ? String(imported.payroll_id).trim() || null : null
           }));
           
           // Delete existing work patterns
