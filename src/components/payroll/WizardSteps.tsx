@@ -30,10 +30,10 @@ export function createWizardSteps({
       title: "Upload Extra Hours File",
       component: (
         <FileUploader
-          file={uploadedFiles.extraHours}
+          uploadedFile={uploadedFiles.extraHours}
           onFileChange={(file) => handleFileUpload('extraHours', file)}
-          acceptedTypes=".csv,.xlsx,.xls"
-          placeholder="Select your extra hours file (CSV, Excel)"
+          acceptedFileTypes=".csv,.xlsx,.xls"
+          description="Select your extra hours file (CSV, Excel)"
         />
       ),
     },
@@ -42,6 +42,7 @@ export function createWizardSteps({
       component: (
         <UploadSummary 
           file={uploadedFiles.extraHours}
+          type="extraHours"
           getSummary={getSummary}
           isProcessing={isProcessing}
         />
@@ -69,10 +70,10 @@ export function createWizardSteps({
     title: "Upload Absences File",
     component: (
       <FileUploader
-        file={uploadedFiles.absences}
+        uploadedFile={uploadedFiles.absences}
         onFileChange={(file) => handleFileUpload('absences', file)}
-        acceptedTypes=".csv,.xlsx,.xls"
-        placeholder="Select your absences file (CSV, Excel) - Optional"
+        acceptedFileTypes=".csv,.xlsx,.xls"
+        description="Select your absences file (CSV, Excel) - Optional"
       />
     ),
   });
