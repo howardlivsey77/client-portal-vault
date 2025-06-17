@@ -4,17 +4,27 @@ import { SicknessScheme } from "../types";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
+import { useCompany } from "@/providers/CompanyProvider";
 
 export const useSicknessSchemes = () => {
   const [schemes, setSchemes] = useState<SicknessScheme[]>([]);
   const [loading, setLoading] = useState(true);
+  const { currentCompany } = useCompany();
 
   const fetchSicknessSchemes = async () => {
     try {
       setLoading(true);
+      
+      if (!currentCompany?.id) {
+        console.log("No current company selected");
+        setSchemes([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('sickness_schemes')
-        .select('id, name, eligibility_rules');
+        .select('id, name, eligibility_rules, company_id')
+        .eq('company_id', currentCompany.id);
       
       if (error) {
         throw error;
@@ -42,6 +52,13 @@ export const useSicknessSchemes = () => {
 
   const saveScheme = async (scheme: SicknessScheme) => {
     try {
+      if (!currentCompany?.id) {
+        return { 
+          success: false, 
+          message: "No company selected. Please select a company first."
+        };
+      }
+
       if (scheme.id) {
         // Update existing scheme
         const { error } = await supabase
@@ -51,18 +68,20 @@ export const useSicknessSchemes = () => {
             // Stringify the eligibility rules for storage
             eligibility_rules: JSON.stringify(scheme.eligibilityRules) as Json
           })
-          .eq('id', scheme.id);
+          .eq('id', scheme.id)
+          .eq('company_id', currentCompany.id); // Ensure we only update schemes for current company
           
         if (error) throw error;
         
         setSchemes(schemes.map(s => s.id === scheme.id ? scheme : s));
         return { success: true, message: `${scheme.name} has been updated successfully.` };
       } else {
-        // Add new scheme
+        // Add new scheme with company_id
         const { data, error } = await supabase
           .from('sickness_schemes')
           .insert({ 
             name: scheme.name, 
+            company_id: currentCompany.id,
             // Stringify the eligibility rules for storage
             eligibility_rules: JSON.stringify(scheme.eligibilityRules) as Json
           })
@@ -93,7 +112,7 @@ export const useSicknessSchemes = () => {
 
   useEffect(() => {
     fetchSicknessSchemes();
-  }, []);
+  }, [currentCompany?.id]);
 
   return {
     schemes,

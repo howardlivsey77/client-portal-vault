@@ -586,6 +586,7 @@ export type Database = {
       }
       sickness_schemes: {
         Row: {
+          company_id: string | null
           created_at: string
           eligibility_rules: Json | null
           id: string
@@ -593,6 +594,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           eligibility_rules?: Json | null
           id?: string
@@ -600,13 +602,22 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           eligibility_rules?: Json | null
           id?: string
           name?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sickness_schemes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tasks: {
         Row: {

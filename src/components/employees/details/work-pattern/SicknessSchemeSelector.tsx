@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { SicknessScheme } from "./types";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/providers/CompanyProvider";
 
 interface SicknessSchemeSelectorProps {
   employeeId: string;
@@ -22,17 +23,26 @@ export const SicknessSchemeSelector = ({
   const [schemes, setSchemes] = useState<SicknessScheme[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { currentCompany } = useCompany();
   
   useEffect(() => {
     fetchSicknessSchemes();
-  }, []);
+  }, [currentCompany?.id]);
   
   const fetchSicknessSchemes = async () => {
     try {
       setLoading(true);
+      
+      if (!currentCompany?.id) {
+        console.log("No current company selected for sickness schemes");
+        setSchemes([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('sickness_schemes')
-        .select('id, name, eligibility_rules');
+        .select('id, name, eligibility_rules, company_id')
+        .eq('company_id', currentCompany.id);
       
       if (error) {
         throw error;
@@ -48,19 +58,13 @@ export const SicknessSchemeSelector = ({
         }));
         setSchemes(transformedData);
       } else {
-        // Fallback to default schemes if none are found in the database
-        setSchemes([
-          { id: "1", name: "Standard Sickness Scheme", eligibilityRules: [] },
-          { id: "2", name: "Extended Sickness Scheme", eligibilityRules: [] }
-        ]);
+        // No company-specific schemes found
+        setSchemes([]);
       }
     } catch (error: any) {
       console.error("Error fetching sickness schemes:", error.message);
-      // Use fallback schemes
-      setSchemes([
-        { id: "1", name: "Standard Sickness Scheme", eligibilityRules: [] },
-        { id: "2", name: "Extended Sickness Scheme", eligibilityRules: [] }
-      ]);
+      // Set empty schemes on error
+      setSchemes([]);
     } finally {
       setLoading(false);
     }
@@ -99,16 +103,32 @@ export const SicknessSchemeSelector = ({
         disabled={!isAdmin || loading}
       >
         <SelectTrigger id="sickness-scheme" className="w-full">
-          <SelectValue placeholder="Select a sickness scheme" />
+          <SelectValue placeholder={
+            schemes.length === 0 
+              ? "No schemes available for this company" 
+              : "Select a sickness scheme"
+          } />
         </SelectTrigger>
         <SelectContent>
-          {schemes.map(scheme => (
-            <SelectItem key={scheme.id} value={scheme.id}>
-              {scheme.name}
+          {schemes.length === 0 ? (
+            <SelectItem value="" disabled>
+              No schemes configured for this company
             </SelectItem>
-          ))}
+          ) : (
+            schemes.map(scheme => (
+              <SelectItem key={scheme.id} value={scheme.id}>
+                {scheme.name}
+              </SelectItem>
+            ))
+          )}
         </SelectContent>
       </Select>
+      {schemes.length === 0 && (
+        <p className="text-sm text-muted-foreground">
+          No sickness schemes have been configured for this company. 
+          Contact an administrator to set up company sickness policies.
+        </p>
+      )}
     </div>
   );
 };
