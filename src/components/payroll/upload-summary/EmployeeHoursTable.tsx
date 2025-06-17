@@ -23,9 +23,11 @@ export function EmployeeHoursTable({ employeeDetails }: EmployeeHoursTableProps)
   return (
     <div className="border rounded-md mt-4">
       <div className="p-3 border-b bg-muted/40">
-        <h3 className="text-sm font-medium">Employee Hours Breakdown</h3>
+        <h3 className="text-sm font-medium">
+          Employee Hours Breakdown ({employeeDetails.length} entries)
+        </h3>
       </div>
-      <ScrollArea className="w-full">
+      <ScrollArea className="w-full h-[400px]">
         <div className="min-w-[600px]">
           <Table>
             <TableHeader>
