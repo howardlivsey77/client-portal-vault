@@ -7,6 +7,48 @@ import { extractValidPayrollIds, normalizePayrollId } from "./payrollIdUtils";
 import { prepareWorkPatterns, prepareWorkPatternsForInsert } from "./workPatternUtils";
 
 /**
+ * Get the current user's selected company ID
+ */
+const getCurrentCompanyId = async (): Promise<string | null> => {
+  try {
+    // Try to get the last selected company from localStorage first
+    const lastCompanyId = localStorage.getItem('lastSelectedCompany');
+    if (lastCompanyId) {
+      console.log('Using company ID from localStorage:', lastCompanyId);
+      return lastCompanyId;
+    }
+    
+    // If no stored company, get the user's first available company
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      return null;
+    }
+    
+    const { data: companies, error } = await supabase.rpc('get_user_companies', {
+      _user_id: user.id,
+    });
+    
+    if (error) {
+      console.error('Error fetching user companies:', error);
+      return null;
+    }
+    
+    if (companies && companies.length > 0) {
+      const companyId = companies[0].id;
+      console.log('Using first available company ID:', companyId);
+      return companyId;
+    }
+    
+    console.warn('No companies found for user');
+    return null;
+  } catch (error) {
+    console.error('Error getting current company ID:', error);
+    return null;
+  }
+};
+
+/**
  * Process new employees and insert them into the database
  */
 export const createNewEmployees = async (
@@ -15,6 +57,13 @@ export const createNewEmployees = async (
 ): Promise<void> => {
   console.log('Creating new employees. Count:', newEmployees.length);
   console.log('New employees data:', newEmployees);
+  
+  // Get the current company ID
+  const companyId = await getCurrentCompanyId();
+  if (!companyId) {
+    throw new Error('Unable to determine company ID. Please ensure you have selected a company and try again.');
+  }
+  console.log('Assigning employees to company ID:', companyId);
   
   // Extract all payroll IDs that are not empty, converting to strings first
   const payrollIds = extractValidPayrollIds(newEmployees);
@@ -44,7 +93,7 @@ export const createNewEmployees = async (
     const normalizedPayrollId = normalizePayrollId(emp.payroll_id);
     console.log(`Employee payroll_id: "${emp.payroll_id}" -> normalized: "${normalizedPayrollId}"`);
     
-    // Insert the employee with all rate fields
+    // Insert the employee with all rate fields and company_id
     const newEmployeeData = {
       first_name: emp.first_name,
       last_name: emp.last_name,
@@ -62,13 +111,14 @@ export const createNewEmployees = async (
       ...(emp.hire_date && { hire_date: emp.hire_date }),
       payroll_id: normalizedPayrollId,
       user_id: userId,
+      company_id: companyId, // Automatically assign the current company ID
       // Include rate fields directly in the employee record
       rate_2: roundToTwoDecimals(emp.rate_2),
       rate_3: roundToTwoDecimals(emp.rate_3),
       rate_4: roundToTwoDecimals(emp.rate_4)
     };
     
-    console.log('Prepared employee data for insert:', newEmployeeData);
+    console.log('Prepared employee data for insert (with company_id):', newEmployeeData);
     
     const { data: employeeData, error: insertError } = await supabase
       .from("employees")
@@ -81,7 +131,7 @@ export const createNewEmployees = async (
       throw insertError;
     }
     
-    console.log('Employee created successfully:', employeeData);
+    console.log('Employee created successfully with company_id:', employeeData);
     
     // If we have a new employee ID and work pattern data, save the work patterns
     if (employeeData && employeeData.length > 0) {
@@ -104,5 +154,5 @@ export const createNewEmployees = async (
     }
   }
   
-  console.log('All employees created successfully');
+  console.log('All employees created successfully with company assignments');
 };
