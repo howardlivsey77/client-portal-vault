@@ -1,55 +1,81 @@
 
+import { WizardStep } from "./types";
 import { FileUploader } from "./FileUploader";
 import { UploadSummary } from "./upload-summary";
-import { PayrollFiles, WizardStep } from "./types";
+import { EmployeeMappingDialog } from "./EmployeeMappingDialog";
 
-interface WizardStepsProps {
-  uploadedFiles: PayrollFiles;
-  handleFileUpload: (stepId: keyof PayrollFiles, file: File | null) => void;
+interface CreateWizardStepsProps {
+  uploadedFiles: any;
+  handleFileUpload: (stepId: string, file: File | null) => void;
   getSummary: (file: File) => Promise<any>;
   isProcessing: boolean;
+  showEmployeeMapping?: boolean;
+  matchingResults?: any;
+  onEmployeeMappingConfirm?: (mappings: Record<string, string>) => void;
+  onEmployeeMappingCancel?: () => void;
 }
 
-export function createWizardSteps({ 
-  uploadedFiles, 
-  handleFileUpload, 
-  getSummary, 
-  isProcessing 
-}: WizardStepsProps): WizardStep[] {
-  return [
+export function createWizardSteps({
+  uploadedFiles,
+  handleFileUpload,
+  getSummary,
+  isProcessing,
+  showEmployeeMapping = false,
+  matchingResults,
+  onEmployeeMappingConfirm,
+  onEmployeeMappingCancel
+}: CreateWizardStepsProps): WizardStep[] {
+  const steps: WizardStep[] = [
     {
-      title: "Extra Hours Upload",
+      title: "Upload Extra Hours File",
       component: (
-        <FileUploader 
-          onFileChange={(file) => handleFileUpload("extraHours", file)} 
-          acceptedFileTypes=".xlsx,.xls,.csv"
-          uploadedFile={uploadedFiles.extraHours}
-          description="Upload your extra hours file to begin the payroll process"
+        <FileUploader
+          file={uploadedFiles.extraHours}
+          onFileChange={(file) => handleFileUpload('extraHours', file)}
+          acceptedTypes=".csv,.xlsx,.xls"
+          placeholder="Select your extra hours file (CSV, Excel)"
         />
       ),
     },
     {
-      title: "Extra Hours Summary",
+      title: "Review Summary",
       component: (
-        <UploadSummary
+        <UploadSummary 
           file={uploadedFiles.extraHours}
-          type="extraHours"
           getSummary={getSummary}
           isProcessing={isProcessing}
         />
       ),
-    },
-    {
-      title: "Absences Upload",
+    }
+  ];
+
+  // Add employee mapping step if needed
+  if (showEmployeeMapping && matchingResults && onEmployeeMappingConfirm && onEmployeeMappingCancel) {
+    steps.splice(2, 0, {
+      title: "Map Employees",
       component: (
-        <FileUploader 
-          onFileChange={(file) => handleFileUpload("absences", file)} 
-          acceptedFileTypes=".xlsx,.xls,.csv"
-          uploadedFile={uploadedFiles.absences}
-          description="Upload your employee absences file (sick leave, holidays, etc.)"
+        <EmployeeMappingDialog
+          open={true}
+          onOpenChange={() => {}}
+          matchingResults={matchingResults}
+          onConfirm={onEmployeeMappingConfirm}
+          onCancel={onEmployeeMappingCancel}
         />
       ),
-    },
-    // Additional steps can be added here as needed
-  ];
+    });
+  }
+
+  steps.push({
+    title: "Upload Absences File",
+    component: (
+      <FileUploader
+        file={uploadedFiles.absences}
+        onFileChange={(file) => handleFileUpload('absences', file)}
+        acceptedTypes=".csv,.xlsx,.xls"
+        placeholder="Select your absences file (CSV, Excel) - Optional"
+      />
+    ),
+  });
+
+  return steps;
 }

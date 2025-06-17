@@ -1,4 +1,3 @@
-
 import { 
   Dialog,
   DialogContent,
@@ -9,6 +8,7 @@ import {
 import { usePayrollWizard } from "./hooks/usePayrollWizard";
 import { WizardNavigation } from "./WizardNavigation";
 import { createWizardSteps } from "./WizardSteps";
+import { EmployeeMappingDialog } from "./EmployeeMappingDialog";
 
 export { type EmployeeHoursData, type ExtraHoursSummary } from "./types";
 
@@ -22,10 +22,14 @@ export function PayrollInputWizard({ open, onOpenChange }: PayrollInputWizardPro
     currentStep,
     uploadedFiles,
     isProcessing,
+    showEmployeeMapping,
+    matchingResults,
     handleFileUpload,
     getExtraHoursSummary,
     handleNext,
     handleBack,
+    handleEmployeeMappingConfirm,
+    handleEmployeeMappingCancel,
     canProceed
   } = usePayrollWizard();
   
@@ -33,7 +37,11 @@ export function PayrollInputWizard({ open, onOpenChange }: PayrollInputWizardPro
     uploadedFiles,
     handleFileUpload,
     getSummary: getExtraHoursSummary,
-    isProcessing
+    isProcessing,
+    showEmployeeMapping,
+    matchingResults,
+    onEmployeeMappingConfirm: handleEmployeeMappingConfirm,
+    onEmployeeMappingCancel: handleEmployeeMappingCancel
   });
   
   const currentStepData = steps[currentStep];
@@ -46,19 +54,31 @@ export function PayrollInputWizard({ open, onOpenChange }: PayrollInputWizardPro
         </DialogHeader>
         
         <div className="py-4">
-          {currentStepData.component}
+          {showEmployeeMapping && matchingResults ? (
+            <EmployeeMappingDialog
+              open={showEmployeeMapping}
+              onOpenChange={() => {}}
+              matchingResults={matchingResults}
+              onConfirm={handleEmployeeMappingConfirm}
+              onCancel={handleEmployeeMappingCancel}
+            />
+          ) : (
+            currentStepData.component
+          )}
         </div>
 
-        <DialogFooter>
-          <WizardNavigation 
-            currentStep={currentStep}
-            totalSteps={steps.length}
-            canProceed={canProceed()}
-            isProcessing={isProcessing}
-            onBack={handleBack}
-            onNext={() => handleNext(onOpenChange)}
-          />
-        </DialogFooter>
+        {!showEmployeeMapping && (
+          <DialogFooter>
+            <WizardNavigation 
+              currentStep={currentStep}
+              totalSteps={steps.length}
+              canProceed={canProceed()}
+              isProcessing={isProcessing}
+              onBack={handleBack}
+              onNext={() => handleNext(onOpenChange)}
+            />
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

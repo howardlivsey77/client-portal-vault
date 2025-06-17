@@ -3,6 +3,7 @@ import { useState, useCallback } from "react";
 import { toast } from "@/hooks/use-toast";
 import { processExtraHoursFile, savePayrollData } from "@/services/payroll";
 import { ExtraHoursSummary, PayrollFiles } from "../types";
+import { matchEmployees, applyUserMappings, EmployeeMatchingResults } from "@/services/payroll/employeeMatching";
 import { useAuth } from "@/providers/AuthProvider";
 
 // Create a simple store for sharing data between components
@@ -26,6 +27,8 @@ export function usePayrollWizard() {
   
   // Keep track of processed data
   const [processedData, setProcessedData] = useState<ExtraHoursSummary | null>(null);
+  const [matchingResults, setMatchingResults] = useState<EmployeeMatchingResults | null>(null);
+  const [showEmployeeMapping, setShowEmployeeMapping] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const { user } = useAuth();
 
@@ -39,6 +42,8 @@ export function usePayrollWizard() {
     if (stepId === 'extraHours') {
       setProcessedData(null);
       setProcessedPayrollData(null);
+      setMatchingResults(null);
+      setShowEmployeeMapping(false);
     }
   };
 
@@ -54,6 +59,19 @@ export function usePayrollWizard() {
       setIsProcessing(true);
       const result = await processExtraHoursFile(file);
       setProcessedData(result);
+      
+      // Perform employee matching
+      const matching = await matchEmployees(result.employeeDetails);
+      setMatchingResults(matching);
+      
+      // Check if we need to show employee mapping dialog
+      const needsMapping = matching.fuzzyMatches.length > 0 || matching.unmatchedEmployees.length > 0;
+      if (needsMapping) {
+        console.log("Employee mapping required:", {
+          fuzzy: matching.fuzzyMatches.length,
+          unmatched: matching.unmatchedEmployees.length
+        });
+      }
       
       // Store in global state for sharing with reports
       setProcessedPayrollData(result);
@@ -72,8 +90,56 @@ export function usePayrollWizard() {
     }
   }, [processedData]);
 
+  const handleEmployeeMappingConfirm = (userMappings: Record<string, string>) => {
+    if (!matchingResults || !processedData) return;
+    
+    console.log("User mappings confirmed:", userMappings);
+    
+    // Apply user mappings to get final employee data
+    const finalEmployeeData = applyUserMappings(matchingResults, userMappings);
+    
+    // Update processed data with mapped employee information
+    const updatedProcessedData = {
+      ...processedData,
+      employeeDetails: finalEmployeeData,
+      employeeCount: finalEmployeeData.length
+    };
+    
+    setProcessedData(updatedProcessedData);
+    setProcessedPayrollData(updatedProcessedData);
+    setShowEmployeeMapping(false);
+    
+    toast({
+      title: "Employee mapping completed",
+      description: `${finalEmployeeData.length} employees successfully mapped.`,
+    });
+    
+    // Advance to next step
+    setCurrentStep(currentStep + 1);
+  };
+
+  const handleEmployeeMappingCancel = () => {
+    setShowEmployeeMapping(false);
+    toast({
+      title: "Employee mapping cancelled",
+      description: "Returning to previous step.",
+      variant: "destructive",
+    });
+  };
+
   const handleNext = async (onOpenChange: (open: boolean) => void) => {
-    if (currentStep < 2) { // Hardcoded length to avoid circular dependency
+    // Check if we need to show employee mapping after summary step
+    if (currentStep === 1 && matchingResults) {
+      const needsMapping = matchingResults.fuzzyMatches.length > 0 || matchingResults.unmatchedEmployees.length > 0;
+      if (needsMapping) {
+        setShowEmployeeMapping(true);
+        return; // Don't advance step yet
+      }
+    }
+    
+    const totalSteps = showEmployeeMapping ? 4 : 3; // Include mapping step if needed
+    
+    if (currentStep < totalSteps - 1) {
       setCurrentStep(currentStep + 1);
     } else {
       // Process all data and finish the wizard
@@ -116,17 +182,26 @@ export function usePayrollWizard() {
   };
 
   const handleBack = () => {
+    if (showEmployeeMapping) {
+      setShowEmployeeMapping(false);
+      return;
+    }
+    
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
 
   const canProceed = () => {
+    if (showEmployeeMapping) {
+      return false; // User must complete mapping first
+    }
+    
     if (currentStep === 0) {
       return uploadedFiles.extraHours !== null;
     } else if (currentStep === 1) {
-      // Allow proceeding from the summary step if data is processed or processing
-      return true;
+      // Allow proceeding from the summary step if data is processed
+      return processedData !== null;
     } else if (currentStep === 2) {
       return uploadedFiles.absences !== null;
     }
@@ -137,10 +212,14 @@ export function usePayrollWizard() {
     currentStep,
     uploadedFiles,
     isProcessing,
+    showEmployeeMapping,
+    matchingResults,
     handleFileUpload,
     getExtraHoursSummary,
     handleNext,
     handleBack,
+    handleEmployeeMappingConfirm,
+    handleEmployeeMappingCancel,
     canProceed,
   };
 }

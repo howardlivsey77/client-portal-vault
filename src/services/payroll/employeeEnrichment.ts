@@ -5,9 +5,21 @@ import { roundToTwoDecimals } from '@/lib/formatters';
 
 /**
  * Enrich the parsed data with employee information from the database
+ * This is now mainly used as a fallback when the new matching system isn't used
  */
 export const enrichEmployeeData = async (data: ExtraHoursSummary): Promise<void> => {
   try {
+    // Check if employees already have IDs (from new matching system)
+    const alreadyEnriched = data.employeeDetails.every(emp => emp.employeeId);
+    if (alreadyEnriched) {
+      console.log('Employee data already enriched by matching system');
+      await applyEmployeeRates(data);
+      return;
+    }
+    
+    // Fallback to original enrichment logic for backward compatibility
+    console.log('Using fallback employee enrichment');
+    
     // Extract unique employee names to look up
     const employeeNames = new Set<string>();
     data.employeeDetails.forEach(emp => {
@@ -60,7 +72,98 @@ export const enrichEmployeeData = async (data: ExtraHoursSummary): Promise<void>
 };
 
 /**
- * Match employees from parsed data with database records and apply appropriate rates
+ * Apply employee rates to already-matched employee data
+ */
+async function applyEmployeeRates(data: ExtraHoursSummary): Promise<void> {
+  try {
+    // Get all unique employee IDs
+    const employeeIds = [...new Set(data.employeeDetails.map(emp => emp.employeeId).filter(Boolean))];
+    
+    if (employeeIds.length === 0) return;
+    
+    // Fetch employee rate data
+    const { data: employees, error } = await supabase
+      .from('employees')
+      .select('id, hourly_rate, rate_2, rate_3, rate_4')
+      .in('id', employeeIds);
+      
+    if (error) {
+      console.error('Error fetching employee rates:', error);
+      return;
+    }
+    
+    const employeeRatesMap = new Map();
+    employees?.forEach(emp => {
+      employeeRatesMap.set(emp.id, emp);
+    });
+    
+    // Apply rates to employee details
+    data.employeeDetails.forEach(empHours => {
+      if (empHours.employeeId) {
+        const dbEmployee = employeeRatesMap.get(empHours.employeeId);
+        if (dbEmployee) {
+          applyRateToEmployee(empHours, dbEmployee);
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error applying employee rates:', error);
+  }
+}
+
+/**
+ * Apply appropriate rate to an employee based on rate type
+ */
+function applyRateToEmployee(empHours: any, dbEmployee: any): void {
+  if (empHours.rateType) {
+    // Handle both traditional rate numbers and new descriptive rate types
+    let rateNumber = null;
+    
+    // Extract rate number if present (e.g. "Rate 1" -> 1)
+    const traditionalRateMatch = empHours.rateType.match(/Rate\s*(\d+)/i);
+    if (traditionalRateMatch) {
+      rateNumber = parseInt(traditionalRateMatch[1], 10);
+    }
+    
+    // Map rate types to appropriate employee rate fields
+    if (rateNumber) {
+      switch (rateNumber) {
+        case 1:
+          empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
+          console.log(`Applied Rate 1 (hourly_rate) for ${empHours.employeeName}: ${empHours.rateValue}`);
+          break;
+        case 2:
+          empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_2) || 0;
+          console.log(`Applied Rate 2 (Standard Overtime) for ${empHours.employeeName}: ${empHours.rateValue}`);
+          break;
+        case 3:
+          empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_3) || 0;
+          console.log(`Applied Rate 3 (Extended Access) for ${empHours.employeeName}: ${empHours.rateValue}`);
+          break;
+        case 4:
+          empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_4) || 0;
+          console.log(`Applied Rate 4 for ${empHours.employeeName}: ${empHours.rateValue}`);
+          break;
+        default:
+          empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
+      }
+    } else if (empHours.rateType.toLowerCase() === 'standard') {
+      empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
+      console.log(`Applied standard rate for ${empHours.employeeName}: ${empHours.rateValue}`);
+    } else {
+      // For any unrecognized rate type, default to hourly_rate
+      empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
+      console.log(`Applied default rate for unrecognized type "${empHours.rateType}" for ${empHours.employeeName}: ${empHours.rateValue}`);
+    }
+  } else {
+    // Use standard hourly rate if no rate type specified
+    empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
+  }
+}
+
+/**
+ * Match employees from parsed data with database records and apply appropriate rates (legacy function)
  */
 const matchEmployeesWithRates = (
   data: ExtraHoursSummary, 
@@ -79,51 +182,7 @@ const matchEmployeesWithRates = (
       // Add the payroll ID
       empHours.payrollId = dbEmployee.payroll_id;
       
-      // Get the appropriate rate based on the rate type
-      if (empHours.rateType) {
-        // Handle both traditional rate numbers and new descriptive rate types
-        let rateNumber = null;
-        
-        // Extract rate number if present (e.g. "Rate 1" -> 1)
-        const traditionalRateMatch = empHours.rateType.match(/Rate\s*(\d+)/i);
-        if (traditionalRateMatch) {
-          rateNumber = parseInt(traditionalRateMatch[1], 10);
-        }
-        
-        // Map rate types to appropriate employee rate fields
-        if (rateNumber) {
-          switch (rateNumber) {
-            case 1:
-              empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
-              console.log(`Applied Rate 1 (hourly_rate) for ${empHours.employeeName}: ${empHours.rateValue}`);
-              break;
-            case 2:
-              empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_2) || 0;
-              console.log(`Applied Rate 2 (Standard Overtime) for ${empHours.employeeName}: ${empHours.rateValue}`);
-              break;
-            case 3:
-              empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_3) || 0;
-              console.log(`Applied Rate 3 (Extended Access) for ${empHours.employeeName}: ${empHours.rateValue}`);
-              break;
-            case 4:
-              empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_4) || 0;
-              console.log(`Applied Rate 4 for ${empHours.employeeName}: ${empHours.rateValue}`);
-              break;
-            default:
-              empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
-          }
-        } else if (empHours.rateType.toLowerCase() === 'standard') {
-          empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
-          console.log(`Applied standard rate for ${empHours.employeeName}: ${empHours.rateValue}`);
-        } else {
-          // For any unrecognized rate type, default to hourly_rate
-          empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
-          console.log(`Applied default rate for unrecognized type "${empHours.rateType}" for ${empHours.employeeName}: ${empHours.rateValue}`);
-        }
-      } else {
-        // Use standard hourly rate if no rate type specified
-        empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
-      }
+      applyRateToEmployee(empHours, dbEmployee);
     } else {
       console.log(`No employee match found for: ${empHours.employeeName}`);
     }

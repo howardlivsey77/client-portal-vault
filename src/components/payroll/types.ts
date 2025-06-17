@@ -30,3 +30,5 @@ export type WizardStep = {
   title: string;
   component: React.ReactNode;
 };
+
+export type { EmployeeMatchingResults, EmployeeMatchResult, EmployeeMatchCandidate } from '@/services/payroll/employeeMatching';
