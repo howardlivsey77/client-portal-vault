@@ -108,6 +108,142 @@ export type Database = {
           },
         ]
       }
+      employee_sickness_entitlement_usage: {
+        Row: {
+          company_id: string
+          created_at: string
+          current_rule_id: string | null
+          current_service_months: number | null
+          employee_id: string
+          entitlement_period_end: string
+          entitlement_period_start: string
+          full_pay_entitled_days: number | null
+          full_pay_used_days: number | null
+          half_pay_entitled_days: number | null
+          half_pay_used_days: number | null
+          id: string
+          sickness_scheme_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          current_rule_id?: string | null
+          current_service_months?: number | null
+          employee_id: string
+          entitlement_period_end: string
+          entitlement_period_start: string
+          full_pay_entitled_days?: number | null
+          full_pay_used_days?: number | null
+          half_pay_entitled_days?: number | null
+          half_pay_used_days?: number | null
+          id?: string
+          sickness_scheme_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          current_rule_id?: string | null
+          current_service_months?: number | null
+          employee_id?: string
+          entitlement_period_end?: string
+          entitlement_period_start?: string
+          full_pay_entitled_days?: number | null
+          full_pay_used_days?: number | null
+          half_pay_entitled_days?: number | null
+          half_pay_used_days?: number | null
+          id?: string
+          sickness_scheme_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_entitlement_usage_company"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_entitlement_usage_employee"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_entitlement_usage_scheme"
+            columns: ["sickness_scheme_id"]
+            isOneToOne: false
+            referencedRelation: "sickness_schemes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_sickness_records: {
+        Row: {
+          certification_required_from_day: number | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          end_date: string | null
+          id: string
+          is_certified: boolean | null
+          notes: string | null
+          reason: string | null
+          start_date: string
+          total_days: number
+          updated_at: string
+        }
+        Insert: {
+          certification_required_from_day?: number | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          end_date?: string | null
+          id?: string
+          is_certified?: boolean | null
+          notes?: string | null
+          reason?: string | null
+          start_date: string
+          total_days?: number
+          updated_at?: string
+        }
+        Update: {
+          certification_required_from_day?: number | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          end_date?: string | null
+          id?: string
+          is_certified?: boolean | null
+          notes?: string | null
+          reason?: string | null
+          start_date?: string
+          total_days?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_sickness_records_company"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_sickness_records_employee"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           address1: string | null
