@@ -1,8 +1,7 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeData } from "@/components/employees/import/ImportConstants";
 import { roundToTwoDecimals } from "@/lib/formatters";
-import { checkDuplicatePayrollIds } from "./duplicateChecker";
+import { checkDuplicatePayrollIds, checkDuplicatesInImportData } from "./duplicateChecker";
 import { extractValidPayrollIds, normalizePayrollId } from "./payrollIdUtils";
 import { prepareWorkPatterns, prepareWorkPatternsForInsert } from "./workPatternUtils";
 
@@ -15,6 +14,12 @@ export const createNewEmployees = async (
 ): Promise<void> => {
   // Extract all payroll IDs that are not empty, converting to strings first
   const payrollIds = extractValidPayrollIds(newEmployees);
+  
+  // First check for duplicates within the import data itself
+  const internalDuplicates = checkDuplicatesInImportData(payrollIds);
+  if (internalDuplicates.length > 0) {
+    throw new Error(`Duplicate payroll IDs found in import data: ${internalDuplicates.join(', ')}. Each employee must have a unique payroll ID.`);
+  }
   
   // Check for duplicates in the database
   const existingPayrollIds = await checkDuplicatePayrollIds(payrollIds);
