@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { ensureUserProfile } from "@/services/profileService";
+import { getUserFromAuth } from "@/services/profileService";
 
 type CreateCompanyOptionProps = {
   userId?: string;
@@ -28,29 +28,21 @@ export const CreateCompanyOption = ({ userId }: CreateCompanyOptionProps) => {
     
     setLoading(true);
     try {
-      // Get user ID directly from auth session
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      // Get user information without depending on profiles table
+      const userInfo = await getUserFromAuth();
       
-      if (authError) {
-        console.error("Auth error:", authError);
-        throw new Error("Authentication required to create a company");
-      }
-      
-      if (!user) {
+      if (!userInfo) {
         throw new Error("You must be logged in to create a company");
       }
       
-      console.log("Creating company for user:", user.id);
+      console.log("Creating company for user:", userInfo.id);
       
-      // Ensure user profile exists
-      await ensureUserProfile(user.id);
-      
-      // Create the company
+      // Create the company directly without profile dependency
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .insert([{ 
           name: companyName.trim(),
-          created_by: user.id 
+          created_by: userInfo.id 
         }])
         .select()
         .single();
@@ -64,12 +56,12 @@ export const CreateCompanyOption = ({ userId }: CreateCompanyOptionProps) => {
       if (companyData) {
         const companyId = companyData.id;
         
-        console.log("Company created, now creating access for:", user.id, "to company:", companyId);
+        console.log("Company created, now creating access for:", userInfo.id, "to company:", companyId);
         
         const { error: accessError } = await supabase
           .from('company_access')
           .insert([{
-            user_id: user.id,
+            user_id: userInfo.id,
             company_id: companyId,
             role: 'admin'
           }]);

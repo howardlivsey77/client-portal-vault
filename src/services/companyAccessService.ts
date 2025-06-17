@@ -1,14 +1,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { ensureUserProfile } from "./profileService";
+import { getUserFromAuth } from "./profileService";
 
 // Function to make sure user has access to at least one company
 export const ensureCompanyAccess = async (userId: string): Promise<void> => {
   try {
     console.log("Ensuring company access for user:", userId);
-    
-    // First ensure the user profile exists
-    await ensureUserProfile(userId);
     
     // Check if the user already has company access
     const { data: accessData, error: accessError } = await supabase
@@ -75,9 +72,6 @@ export const ensureCompanyAccess = async (userId: string): Promise<void> => {
 export const createCompanyAccess = async (userId: string, companyId: string, role: string = 'user'): Promise<boolean> => {
   try {
     console.log("Creating company access for user:", userId, "to company:", companyId, "with role:", role);
-    
-    // Ensure user profile exists first
-    await ensureUserProfile(userId);
     
     // First check if access already exists
     const { data: existingAccess, error: checkError } = await supabase
