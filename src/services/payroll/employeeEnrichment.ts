@@ -81,25 +81,29 @@ const matchEmployeesWithRates = (
       
       // Get the appropriate rate based on the rate type
       if (empHours.rateType) {
-        // Extract rate number if present (e.g. "Rate 1" -> 1)
-        const rateNumber = empHours.rateType.match(/\d+/)?.[0];
+        // Handle both traditional rate numbers and new descriptive rate types
+        let rateNumber = null;
         
+        // Extract rate number if present (e.g. "Rate 1" -> 1)
+        const traditionalRateMatch = empHours.rateType.match(/Rate\s*(\d+)/i);
+        if (traditionalRateMatch) {
+          rateNumber = parseInt(traditionalRateMatch[1], 10);
+        }
+        
+        // Map rate types to appropriate employee rate fields
         if (rateNumber) {
-          // Convert to number and get appropriate rate
-          const rateNum = parseInt(rateNumber, 10);
-          
-          switch (rateNum) {
+          switch (rateNumber) {
             case 1:
               empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
-              console.log(`Applied Rate 1 for ${empHours.employeeName}: ${empHours.rateValue}`);
+              console.log(`Applied Rate 1 (hourly_rate) for ${empHours.employeeName}: ${empHours.rateValue}`);
               break;
             case 2:
               empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_2) || 0;
-              console.log(`Applied Rate 2 for ${empHours.employeeName}: ${empHours.rateValue}`);
+              console.log(`Applied Rate 2 (Standard Overtime) for ${empHours.employeeName}: ${empHours.rateValue}`);
               break;
             case 3:
               empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_3) || 0;
-              console.log(`Applied Rate 3 for ${empHours.employeeName}: ${empHours.rateValue}`);
+              console.log(`Applied Rate 3 (Extended Access) for ${empHours.employeeName}: ${empHours.rateValue}`);
               break;
             case 4:
               empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_4) || 0;
@@ -110,6 +114,11 @@ const matchEmployeesWithRates = (
           }
         } else if (empHours.rateType.toLowerCase() === 'standard') {
           empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
+          console.log(`Applied standard rate for ${empHours.employeeName}: ${empHours.rateValue}`);
+        } else {
+          // For any unrecognized rate type, default to hourly_rate
+          empHours.rateValue = roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
+          console.log(`Applied default rate for unrecognized type "${empHours.rateType}" for ${empHours.employeeName}: ${empHours.rateValue}`);
         }
       } else {
         // Use standard hourly rate if no rate type specified
