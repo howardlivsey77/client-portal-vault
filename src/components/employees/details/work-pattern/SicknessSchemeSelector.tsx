@@ -73,6 +73,11 @@ export const SicknessSchemeSelector = ({
   const handleSchemeChange = async (schemeId: string) => {
     if (!isAdmin) return;
     
+    // Handle "none" selection
+    if (schemeId === "none") {
+      schemeId = null;
+    }
+    
     setLoading(true);
     try {
       const success = await updateEmployeeField("sickness_scheme_id", schemeId);
@@ -94,32 +99,32 @@ export const SicknessSchemeSelector = ({
     }
   };
   
+  // Convert null currentSchemeId to "none" for the Select component
+  const selectValue = currentSchemeId || "none";
+  
   return (
     <div className="space-y-2">
       <Label htmlFor="sickness-scheme">Sickness Policy Scheme</Label>
       <Select
-        value={currentSchemeId || ""}
+        value={selectValue}
         onValueChange={handleSchemeChange}
         disabled={!isAdmin || loading}
       >
         <SelectTrigger id="sickness-scheme" className="w-full">
-          <SelectValue placeholder={
-            schemes.length === 0 
-              ? "No schemes available for this company" 
-              : "Select a sickness scheme"
-          } />
+          <SelectValue placeholder="Select a sickness scheme" />
         </SelectTrigger>
         <SelectContent>
-          {schemes.length === 0 ? (
-            <SelectItem value="" disabled>
-              No schemes configured for this company
-            </SelectItem>
-          ) : (
+          <SelectItem value="none">No scheme selected</SelectItem>
+          {schemes.length > 0 ? (
             schemes.map(scheme => (
               <SelectItem key={scheme.id} value={scheme.id}>
                 {scheme.name}
               </SelectItem>
             ))
+          ) : (
+            <SelectItem value="no-schemes-available" disabled>
+              No schemes configured for this company
+            </SelectItem>
           )}
         </SelectContent>
       </Select>
