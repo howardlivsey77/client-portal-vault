@@ -21,7 +21,7 @@ export interface ImportValidationResult {
 }
 
 /**
- * Validate import data before processing
+ * Validate import data before processing - Fixed to properly handle updates
  */
 export const validateImportData = async (
   newEmployees: EmployeeData[],
@@ -29,48 +29,88 @@ export const validateImportData = async (
   conflicts: EmployeeConflict[] = []
 ): Promise<ImportValidationResult> => {
   console.log('Validating import data...');
+  console.log(`New employees: ${newEmployees.length}, Updated employees: ${updatedEmployees.length}, Conflicts: ${conflicts.length}`);
   
-  // Combine all import data for duplicate checking
+  // Only check NEW employees for database duplicates
+  // Updated employees are expected to have matching records in the database
+  const duplicateCheckResult = await performComprehensiveDuplicateCheck(newEmployees);
+  
+  // Check for internal duplicates in ALL import data (new + updated)
   const allImportData = [
     ...newEmployees,
     ...updatedEmployees.map(update => update.imported)
   ];
   
-  // Perform comprehensive duplicate check
-  const duplicateCheckResult = await performComprehensiveDuplicateCheck(allImportData);
+  // Perform internal duplicate check on all import data
+  const { 
+    checkDuplicatesInImportData, 
+    checkDuplicateEmailsInImportData, 
+    checkDuplicateNationalInsuranceNumbersInImportData 
+  } = await import("@/services/employeeImport/duplicateChecker");
+  
+  const payrollIds = allImportData
+    .map(emp => emp.payroll_id)
+    .filter(id => id && id.trim() !== '');
+  
+  const emails = allImportData
+    .map(emp => emp.email)
+    .filter(email => email && email.trim() !== '');
+  
+  const nationalInsuranceNumbers = allImportData
+    .map(emp => emp.national_insurance_number)
+    .filter(ni => ni && ni.trim() !== '');
+  
+  const internalPayrollDuplicates = checkDuplicatesInImportData(payrollIds);
+  const internalEmailDuplicates = checkDuplicateEmailsInImportData(emails);
+  const internalNiDuplicates = checkDuplicateNationalInsuranceNumbersInImportData(nationalInsuranceNumbers);
+  
+  // Combine internal duplicates with the database duplicate check results
+  const hasInternalDuplicates = internalPayrollDuplicates.length > 0 || 
+                               internalEmailDuplicates.length > 0 || 
+                               internalNiDuplicates.length > 0;
+  
+  const combinedDuplicateResult: DuplicateCheckResult = {
+    ...duplicateCheckResult,
+    hasInternalDuplicates: hasInternalDuplicates || duplicateCheckResult.hasInternalDuplicates,
+    internalDuplicates: {
+      payrollIds: [...new Set([...internalPayrollDuplicates, ...duplicateCheckResult.internalDuplicates.payrollIds])],
+      emails: [...new Set([...internalEmailDuplicates, ...duplicateCheckResult.internalDuplicates.emails])],
+      nationalInsuranceNumbers: [...new Set([...internalNiDuplicates, ...duplicateCheckResult.internalDuplicates.nationalInsuranceNumbers])]
+    }
+  };
   
   // Determine if we can proceed
-  const hasBlockingIssues = duplicateCheckResult.hasInternalDuplicates || 
+  const hasBlockingIssues = combinedDuplicateResult.hasInternalDuplicates || 
                            duplicateCheckResult.hasDatabaseDuplicates ||
                            conflicts.length > 0;
   
   let message = '';
-  if (duplicateCheckResult.hasInternalDuplicates) {
+  if (combinedDuplicateResult.hasInternalDuplicates) {
     const issues = [];
-    if (duplicateCheckResult.internalDuplicates.payrollIds.length > 0) {
-      issues.push(`Duplicate Payroll IDs: ${duplicateCheckResult.internalDuplicates.payrollIds.join(', ')}`);
+    if (combinedDuplicateResult.internalDuplicates.payrollIds.length > 0) {
+      issues.push(`Duplicate Payroll IDs in import file: ${combinedDuplicateResult.internalDuplicates.payrollIds.join(', ')}`);
     }
-    if (duplicateCheckResult.internalDuplicates.emails.length > 0) {
-      issues.push(`Duplicate Emails: ${duplicateCheckResult.internalDuplicates.emails.join(', ')}`);
+    if (combinedDuplicateResult.internalDuplicates.emails.length > 0) {
+      issues.push(`Duplicate Emails in import file: ${combinedDuplicateResult.internalDuplicates.emails.join(', ')}`);
     }
-    if (duplicateCheckResult.internalDuplicates.nationalInsuranceNumbers.length > 0) {
-      issues.push(`Duplicate National Insurance Numbers: ${duplicateCheckResult.internalDuplicates.nationalInsuranceNumbers.join(', ')}`);
+    if (combinedDuplicateResult.internalDuplicates.nationalInsuranceNumbers.length > 0) {
+      issues.push(`Duplicate National Insurance Numbers in import file: ${combinedDuplicateResult.internalDuplicates.nationalInsuranceNumbers.join(', ')}`);
     }
-    message += `Internal duplicates found in import data: ${issues.join('; ')}. `;
+    message += `${issues.join('; ')}. `;
   }
   
   if (duplicateCheckResult.hasDatabaseDuplicates) {
     const issues = [];
     if (duplicateCheckResult.databaseDuplicates.payrollIds.length > 0) {
-      issues.push(`Payroll IDs: ${duplicateCheckResult.databaseDuplicates.payrollIds.join(', ')}`);
+      issues.push(`New employees with existing Payroll IDs: ${duplicateCheckResult.databaseDuplicates.payrollIds.join(', ')}`);
     }
     if (duplicateCheckResult.databaseDuplicates.emails.length > 0) {
-      issues.push(`Emails: ${duplicateCheckResult.databaseDuplicates.emails.join(', ')}`);
+      issues.push(`New employees with existing Emails: ${duplicateCheckResult.databaseDuplicates.emails.join(', ')}`);
     }
     if (duplicateCheckResult.databaseDuplicates.nationalInsuranceNumbers.length > 0) {
-      issues.push(`National Insurance Numbers: ${duplicateCheckResult.databaseDuplicates.nationalInsuranceNumbers.join(', ')}`);
+      issues.push(`New employees with existing National Insurance Numbers: ${duplicateCheckResult.databaseDuplicates.nationalInsuranceNumbers.join(', ')}`);
     }
-    message += `Duplicates found in database: ${issues.join('; ')}. `;
+    message += `${issues.join('; ')}. `;
   }
   
   if (conflicts.length > 0) {
@@ -81,9 +121,16 @@ export const validateImportData = async (
     message = `Validation passed. Ready to import ${newEmployees.length} new employees and update ${updatedEmployees.length} existing employees.`;
   }
   
+  console.log('Validation result:', {
+    canProceed: !hasBlockingIssues,
+    message,
+    duplicateCheckResult: combinedDuplicateResult,
+    conflicts
+  });
+  
   return {
     canProceed: !hasBlockingIssues,
-    duplicateCheckResult,
+    duplicateCheckResult: combinedDuplicateResult,
     conflicts,
     message
   };
