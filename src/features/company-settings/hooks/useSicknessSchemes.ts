@@ -5,11 +5,32 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 import { useCompany } from "@/providers/CompanyProvider";
+import { EligibilityRule } from "@/components/employees/details/work-pattern/types";
 
 export const useSicknessSchemes = () => {
   const [schemes, setSchemes] = useState<SicknessScheme[]>([]);
   const [loading, setLoading] = useState(true);
   const { currentCompany } = useCompany();
+
+  // Function to migrate old eligibility rules to new format
+  const migrateEligibilityRules = (rules: any[]): EligibilityRule[] => {
+    return rules.map(rule => {
+      // If old format with companyPaidDays, migrate to new format
+      if (rule.companyPaidDays !== undefined && rule.fullPayDays === undefined) {
+        return {
+          ...rule,
+          fullPayDays: rule.companyPaidDays || 0,
+          halfPayDays: 0
+        };
+      }
+      // If new format or already migrated, ensure all fields exist
+      return {
+        ...rule,
+        fullPayDays: rule.fullPayDays || 0,
+        halfPayDays: rule.halfPayDays || 0
+      };
+    });
+  };
 
   const fetchSicknessSchemes = async () => {
     try {
@@ -35,8 +56,10 @@ export const useSicknessSchemes = () => {
         const transformedData: SicknessScheme[] = data.map(item => ({
           id: item.id,
           name: item.name,
-          // Parse the JSON eligibility rules
-          eligibilityRules: item.eligibility_rules ? JSON.parse(item.eligibility_rules as string) : null
+          // Parse and migrate the JSON eligibility rules
+          eligibilityRules: item.eligibility_rules ? 
+            migrateEligibilityRules(JSON.parse(item.eligibility_rules as string)) : 
+            null
         }));
         setSchemes(transformedData);
       }

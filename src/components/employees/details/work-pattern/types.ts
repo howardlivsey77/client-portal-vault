@@ -26,6 +26,7 @@ export interface EligibilityRule {
   id: string;
   serviceMonthsFrom: number;
   serviceMonthsTo: number | null;
-  companyPaidDays: number;
+  fullPayDays: number;
+  halfPayDays: number;
   sicknessPay: string;
 }

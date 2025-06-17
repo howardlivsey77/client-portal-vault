@@ -53,7 +53,8 @@ export function SicknessSchemeForm({ scheme, onSave, onCancel }: SicknessSchemeF
       id: `rule-${Date.now()}`,
       serviceMonthsFrom: 0,
       serviceMonthsTo: 0,
-      companyPaidDays: 0,
+      fullPayDays: 0,
+      halfPayDays: 0,
       sicknessPay: "SSP"
     };
     setEligibilityRules([...eligibilityRules, newRule]);
@@ -121,7 +122,8 @@ export function SicknessSchemeForm({ scheme, onSave, onCancel }: SicknessSchemeF
                     <TableRow>
                       <TableHead>Service From (Months)</TableHead>
                       <TableHead>Service To (Months)</TableHead>
-                      <TableHead>Company Paid (Days)</TableHead>
+                      <TableHead>Full Pay (Days)</TableHead>
+                      <TableHead>Half Pay (Days)</TableHead>
                       <TableHead>Then</TableHead>
                       <TableHead className="w-[80px]">Action</TableHead>
                     </TableRow>
@@ -159,10 +161,23 @@ export function SicknessSchemeForm({ scheme, onSave, onCancel }: SicknessSchemeF
                           <Input 
                             type="number"
                             min="0"
-                            value={rule.companyPaidDays}
+                            value={rule.fullPayDays}
                             onChange={(e) => handleRuleChange(
                               rule.id, 
-                              'companyPaidDays', 
+                              'fullPayDays', 
+                              parseInt(e.target.value) || 0
+                            )}
+                            className="w-full"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input 
+                            type="number"
+                            min="0"
+                            value={rule.halfPayDays}
+                            onChange={(e) => handleRuleChange(
+                              rule.id, 
+                              'halfPayDays', 
                               parseInt(e.target.value) || 0
                             )}
                             className="w-full"
