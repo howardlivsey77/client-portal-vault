@@ -57,16 +57,25 @@ export function findHoursColumns(row: any): string[] {
   const hoursColumns: string[] = [];
   const possibleColumns = Object.keys(row);
   
+  console.log("Searching for hours columns in:", possibleColumns);
+  
   for (const column of possibleColumns) {
     const normalizedName = column.toLowerCase().trim();
     
     // Look for columns that contain "hours" but aren't already captured by rate-specific patterns
-    if (normalizedName.includes('hours') && 
+    // Now includes columns with special characters like "Hours/Sessions"
+    if ((normalizedName.includes('hours') || 
+         normalizedName.includes('hrs') || 
+         normalizedName.includes('time') || 
+         normalizedName.includes('sessions')) && 
         !normalizedName.includes('rate') &&
         !/Rate[_\s]?\d[_\s]?Hours/i.test(column)) {
+      
+      console.log(`Found potential hours column: "${column}"`);
       hoursColumns.push(column);
     }
   }
   
+  console.log("Hours columns found:", hoursColumns);
   return hoursColumns;
 }

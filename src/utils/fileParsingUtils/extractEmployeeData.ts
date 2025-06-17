@@ -12,12 +12,16 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
   const employeeDetails: EmployeeHoursData[] = [];
   
   // Process each row of data
-  jsonData.forEach((row: any) => {
+  jsonData.forEach((row: any, rowIndex: number) => {
+    console.log(`Processing row ${rowIndex}:`, row);
+    
     // Extract employee identification info
     const payrollId = row['payroll ID'] || row.EmployeeID || row.ID || '';
     const firstName = row['employee name'] || row.FirstName || row['First Name'] || '';
     const lastName = row.surname || row.LastName || row['Last Name'] || '';
     const employeeName = firstName + (lastName ? ' ' + lastName : '');
+    
+    console.log(`Employee: ${employeeName}, Payroll ID: ${payrollId}`);
     
     // Method 1: Check for traditional rate columns using multiple naming patterns
     const rateColumns = findRateColumns(row);
@@ -72,29 +76,43 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
       const rateDescription = row[payRateColumn];
       const rateMapping = parseRateDescription(rateDescription);
       
+      console.log(`Processing rate description: "${rateDescription}" from column "${payRateColumn}"`);
+      
       if (rateMapping) {
         console.log(`Parsed rate description "${rateDescription}" -> Rate ${rateMapping.rateNumber}`);
         
         // Look for hours in adjacent columns or dedicated hours columns
         let hoursValue = 0;
+        let usedHoursColumn = '';
         
         // First, try to find a direct hours column match
         for (const hoursColumn of hoursColumns) {
-          const potentialHours = parseFloat(row[hoursColumn] || '0');
-          if (potentialHours > 0) {
-            hoursValue = potentialHours;
-            break; // Use the first valid hours value found
+          const rawValue = row[hoursColumn];
+          console.log(`Checking hours column "${hoursColumn}" with value: "${rawValue}"`);
+          
+          if (rawValue !== undefined && rawValue !== null && rawValue !== '') {
+            const potentialHours = parseFloat(rawValue);
+            console.log(`Parsed hours value: ${potentialHours}`);
+            
+            if (!isNaN(potentialHours) && potentialHours > 0) {
+              hoursValue = potentialHours;
+              usedHoursColumn = hoursColumn;
+              console.log(`Using hours value ${hoursValue} from column "${hoursColumn}"`);
+              break; // Use the first valid hours value found
+            }
           }
         }
         
-        // If no dedicated hours column, look for common adjacent column patterns
+        // If no dedicated hours column found, look for common adjacent column patterns
         if (hoursValue === 0) {
-          const possibleHoursColumns = ['Hours', 'Hrs', 'Time', 'Duration'];
+          const possibleHoursColumns = ['Hours', 'Hrs', 'Time', 'Duration', 'Sessions'];
           for (const col of possibleHoursColumns) {
-            if (row[col]) {
-              const potentialHours = parseFloat(row[col] || '0');
-              if (potentialHours > 0) {
+            if (row[col] !== undefined && row[col] !== null && row[col] !== '') {
+              const potentialHours = parseFloat(row[col]);
+              if (!isNaN(potentialHours) && potentialHours > 0) {
                 hoursValue = potentialHours;
+                usedHoursColumn = col;
+                console.log(`Using hours value ${hoursValue} from fallback column "${col}"`);
                 break;
               }
             }
@@ -129,7 +147,9 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
             rateValue: roundToTwoDecimals(rateValue) || 0
           });
           
-          console.log(`Added entry: ${employeeName}, ${hoursValue} hours at ${rateMapping.rateType}`);
+          console.log(`✅ Added entry: ${employeeName}, ${hoursValue} hours at ${rateMapping.rateType} from column "${usedHoursColumn}"`);
+        } else {
+          console.log(`❌ No valid hours found for ${employeeName} with rate type ${rateMapping.rateType}`);
         }
       }
     }
@@ -155,6 +175,8 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
           rateType: 'Standard',
           rateValue: roundToTwoDecimals(rate1Value) || 0
         });
+        
+        console.log(`✅ Added standard hours entry: ${employeeName}, ${standardHours} hours`);
       }
     }
   });
