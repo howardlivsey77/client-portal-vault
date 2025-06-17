@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCircle, AlertCircle, Users } from "lucide-react";
+import { CheckCircle, AlertCircle, Users, ChevronDown, ChevronUp } from "lucide-react";
 import { EmployeeMatchingResults, EmployeeMatchResult, EmployeeMatchCandidate } from '@/services/payroll/employeeMatching';
 
 interface EmployeeMappingDialogProps {
@@ -31,6 +31,7 @@ export function EmployeeMappingDialog({
   onCancel
 }: EmployeeMappingDialogProps) {
   const [userMappings, setUserMappings] = useState<Record<string, string>>({});
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
   
   // Initialize with best fuzzy matches
   React.useEffect(() => {
@@ -58,6 +59,13 @@ export function EmployeeMappingDialog({
     });
   };
   
+  const toggleCardExpansion = (employeeName: string) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [employeeName]: !prev[employeeName]
+    }));
+  };
+  
   const handleConfirm = () => {
     onConfirm(userMappings);
     onOpenChange(false);
@@ -79,33 +87,55 @@ export function EmployeeMappingDialog({
       ? matchingResults.allDatabaseEmployees.find(emp => emp.id === selectedEmployeeId)
       : null;
     
+    const isExpanded = expandedCards[employeeName];
+    const hasMultipleCandidates = match.candidates.length > 1;
+    const displayCandidates = isExpanded ? match.candidates : match.candidates.slice(0, 2);
+    
     return (
-      <Card key={employeeName} className="mb-4">
-        <CardHeader className="pb-3">
+      <Card key={employeeName} className="mb-3">
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">
+            <CardTitle className="text-sm">
               {employeeName}
-              <Badge variant={match.matchType === 'fuzzy' ? 'secondary' : 'destructive'} className="ml-2">
+              <Badge variant={match.matchType === 'fuzzy' ? 'secondary' : 'destructive'} className="ml-2 text-xs">
                 {match.matchType === 'fuzzy' ? 'Similar Match' : 'No Match'}
               </Badge>
             </CardTitle>
-            <div className="text-sm text-muted-foreground">
-              {match.employeeData.extraHours} hours • {match.employeeData.rateType}
+            <div className="text-xs text-muted-foreground">
+              {match.employeeData.extraHours}h • {match.employeeData.rateType}
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
+        <CardContent className="pt-0">
+          <div className="space-y-2">
             {match.candidates.length > 0 && (
               <div>
-                <label className="text-sm font-medium">Suggested matches:</label>
-                <div className="mt-1 space-y-1">
-                  {match.candidates.slice(0, 3).map(candidate => (
-                    <div key={candidate.id} className="text-sm text-muted-foreground">
-                      {candidate.full_name} 
-                      {candidate.payroll_id && ` (${candidate.payroll_id})`}
-                      <Badge variant="outline" className="ml-2">
-                        {Math.round(candidate.confidence * 100)}% match
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium">Suggested matches:</label>
+                  {hasMultipleCandidates && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => toggleCardExpansion(employeeName)}
+                    >
+                      {isExpanded ? (
+                        <>Show less <ChevronUp className="ml-1 h-3 w-3" /></>
+                      ) : (
+                        <>Show more <ChevronDown className="ml-1 h-3 w-3" /></>
+                      )}
+                    </Button>
+                  )}
+                </div>
+                <div className="mt-1 space-y-1 max-h-24 overflow-y-auto">
+                  {displayCandidates.map(candidate => (
+                    <div key={candidate.id} className="text-xs text-muted-foreground flex items-center justify-between">
+                      <span>
+                        {candidate.full_name} 
+                        {candidate.payroll_id && ` (${candidate.payroll_id})`}
+                      </span>
+                      <Badge variant="outline" className="text-xs px-1 py-0">
+                        {Math.round(candidate.confidence * 100)}%
                       </Badge>
                     </div>
                   ))}
@@ -114,18 +144,18 @@ export function EmployeeMappingDialog({
             )}
             
             <div>
-              <label className="text-sm font-medium">Select employee from database:</label>
+              <label className="text-xs font-medium">Select employee:</label>
               <Select
                 value={selectedEmployeeId || 'skip'}
                 onValueChange={(value) => handleMappingChange(employeeName, value)}
               >
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Choose an employee or skip..." />
+                <SelectTrigger className="mt-1 h-8 text-xs">
+                  <SelectValue placeholder="Choose or skip..." />
                 </SelectTrigger>
-                <SelectContent className="z-50 bg-white border shadow-lg">
-                  <SelectItem value="skip">Skip this employee</SelectItem>
+                <SelectContent className="z-50 bg-white border shadow-lg max-h-48">
+                  <SelectItem value="skip" className="text-xs">Skip this employee</SelectItem>
                   {matchingResults.allDatabaseEmployees.map(employee => (
-                    <SelectItem key={employee.id} value={employee.id}>
+                    <SelectItem key={employee.id} value={employee.id} className="text-xs">
                       {employee.full_name}
                       {employee.payroll_id && ` (${employee.payroll_id})`}
                     </SelectItem>
@@ -135,9 +165,9 @@ export function EmployeeMappingDialog({
             </div>
             
             {selectedEmployee && (
-              <div className="p-2 bg-green-50 border border-green-200 rounded">
-                <div className="flex items-center text-sm text-green-800">
-                  <CheckCircle className="h-4 w-4 mr-2" />
+              <div className="p-2 bg-green-50 border border-green-200 rounded text-xs">
+                <div className="flex items-center text-green-800">
+                  <CheckCircle className="h-3 w-3 mr-1" />
                   Mapped to: {selectedEmployee.full_name}
                   {selectedEmployee.payroll_id && ` (${selectedEmployee.payroll_id})`}
                 </div>
@@ -151,17 +181,17 @@ export function EmployeeMappingDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center">
             <Users className="h-5 w-5 mr-2" />
             Map Employees to Database
           </DialogTitle>
         </DialogHeader>
         
-        <div className="flex-1 space-y-4 min-h-0">
-          {/* Summary */}
-          <div className="grid grid-cols-3 gap-4">
+        <div className="flex-1 flex flex-col space-y-4 min-h-0">
+          {/* Summary - Fixed height */}
+          <div className="grid grid-cols-3 gap-4 flex-shrink-0">
             <div className="text-center p-3 bg-green-50 rounded-lg">
               <div className="text-2xl font-bold text-green-600">{matchingResults.exactMatches.length}</div>
               <div className="text-sm text-green-800">Exact Matches</div>
@@ -176,9 +206,9 @@ export function EmployeeMappingDialog({
             </div>
           </div>
           
-          {/* Progress */}
+          {/* Progress - Fixed height */}
           {totalPendingCount > 0 && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded flex-shrink-0">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-blue-800">
                   Mapping Progress: {mappedCount} of {totalPendingCount} employees mapped
@@ -190,26 +220,30 @@ export function EmployeeMappingDialog({
             </div>
           )}
           
-          {/* Pending Matches */}
+          {/* Scrollable Content Area */}
           {totalPendingCount > 0 ? (
-            <ScrollArea className="flex-1">
-              <div className="space-y-4 pr-4">
-                <h3 className="font-medium flex items-center">
-                  <AlertCircle className="h-4 w-4 mr-2" />
-                  Employees Requiring Manual Mapping
-                </h3>
-                {allPendingMatches.map(renderMatchCard)}
-              </div>
-            </ScrollArea>
+            <div className="flex-1 min-h-0">
+              <h3 className="font-medium flex items-center mb-3 flex-shrink-0">
+                <AlertCircle className="h-4 w-4 mr-2" />
+                Employees Requiring Manual Mapping
+              </h3>
+              <ScrollArea className="h-full pr-2">
+                <div className="space-y-2">
+                  {allPendingMatches.map(renderMatchCard)}
+                </div>
+              </ScrollArea>
+            </div>
           ) : (
-            <div className="text-center p-8 text-muted-foreground">
-              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-              <p>All employees have been automatically matched!</p>
+            <div className="flex-1 flex items-center justify-center text-center text-muted-foreground">
+              <div>
+                <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                <p>All employees have been automatically matched!</p>
+              </div>
             </div>
           )}
         </div>
         
-        <DialogFooter className="border-t pt-4">
+        <DialogFooter className="flex-shrink-0 border-t pt-4">
           <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
