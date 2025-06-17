@@ -73,15 +73,18 @@ export function EmployeeMappingDialog({
   const allPendingMatches = [...matchingResults.fuzzyMatches, ...matchingResults.unmatchedEmployees];
   const totalEmployees = matchingResults.exactMatches.length + matchingResults.fuzzyMatches.length + matchingResults.unmatchedEmployees.length;
   
-  // Calculate total mapped correctly
+  // Calculate total mapped correctly - count ALL resolved employees
   const exactMatchesCount = matchingResults.exactMatches.length;
   
-  // Count fuzzy matches that have been resolved (have a mapping)
-  const resolvedFuzzyMatches = matchingResults.fuzzyMatches.filter(match => 
-    userMappings.hasOwnProperty(match.employeeData.employeeName)
-  ).length;
+  // For fuzzy matches: count those that are resolved (either have userMapping OR are auto-resolved with high confidence)
+  const resolvedFuzzyMatches = matchingResults.fuzzyMatches.filter(match => {
+    const employeeName = match.employeeData.employeeName;
+    // Has user mapping OR was auto-resolved (has high confidence candidates)
+    return userMappings.hasOwnProperty(employeeName) || 
+           (match.candidates.length > 0 && match.candidates[0].confidence > 0.8);
+  }).length;
   
-  // Count unmatched employees that have been resolved (have a mapping)
+  // For unmatched employees: count those that have been manually mapped
   const resolvedUnmatchedEmployees = matchingResults.unmatchedEmployees.filter(match =>
     userMappings.hasOwnProperty(match.employeeData.employeeName)
   ).length;
@@ -89,7 +92,7 @@ export function EmployeeMappingDialog({
   // Total mapped = exact matches + resolved fuzzy matches + resolved unmatched employees
   const totalMapped = exactMatchesCount + resolvedFuzzyMatches + resolvedUnmatchedEmployees;
   
-  // Debug logging
+  // Enhanced debug logging
   console.log('Progress calculation:', {
     exactMatchesCount,
     resolvedFuzzyMatches,
@@ -97,7 +100,17 @@ export function EmployeeMappingDialog({
     totalEmployees,
     totalMapped,
     userMappings,
-    userMappingsCount: Object.keys(userMappings).length
+    userMappingsCount: Object.keys(userMappings).length,
+    fuzzyMatchDetails: matchingResults.fuzzyMatches.map(match => ({
+      name: match.employeeData.employeeName,
+      hasUserMapping: userMappings.hasOwnProperty(match.employeeData.employeeName),
+      hasHighConfidenceCandidate: match.candidates.length > 0 && match.candidates[0].confidence > 0.8,
+      topConfidence: match.candidates.length > 0 ? match.candidates[0].confidence : 0
+    })),
+    unmatchedDetails: matchingResults.unmatchedEmployees.map(match => ({
+      name: match.employeeData.employeeName,
+      hasUserMapping: userMappings.hasOwnProperty(match.employeeData.employeeName)
+    }))
   });
   
   return (
