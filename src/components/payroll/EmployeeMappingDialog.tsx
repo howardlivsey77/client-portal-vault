@@ -73,33 +73,31 @@ export function EmployeeMappingDialog({
   const allPendingMatches = [...matchingResults.fuzzyMatches, ...matchingResults.unmatchedEmployees];
   const totalEmployees = matchingResults.exactMatches.length + matchingResults.fuzzyMatches.length + matchingResults.unmatchedEmployees.length;
   
-  // Calculate total mapped more accurately
+  // Calculate total mapped correctly
   const exactMatchesCount = matchingResults.exactMatches.length;
-  const userMappingsCount = Object.keys(userMappings).length;
   
-  // For fuzzy matches, we need to count how many have been resolved (either mapped or skipped)
-  // All fuzzy matches that have a user mapping are considered "resolved"
+  // Count fuzzy matches that have been resolved (have a mapping)
   const resolvedFuzzyMatches = matchingResults.fuzzyMatches.filter(match => 
     userMappings.hasOwnProperty(match.employeeData.employeeName)
   ).length;
   
-  // For unmatched employees, count those that have been given a mapping
+  // Count unmatched employees that have been resolved (have a mapping)
   const resolvedUnmatchedEmployees = matchingResults.unmatchedEmployees.filter(match =>
     userMappings.hasOwnProperty(match.employeeData.employeeName)
   ).length;
   
-  // Total mapped = exact matches + employees with user mappings (not skipped)
-  const totalMapped = exactMatchesCount + userMappingsCount;
+  // Total mapped = exact matches + resolved fuzzy matches + resolved unmatched employees
+  const totalMapped = exactMatchesCount + resolvedFuzzyMatches + resolvedUnmatchedEmployees;
   
   // Debug logging
   console.log('Progress calculation:', {
     exactMatchesCount,
-    userMappingsCount,
     resolvedFuzzyMatches,
     resolvedUnmatchedEmployees,
     totalEmployees,
     totalMapped,
-    userMappings
+    userMappings,
+    userMappingsCount: Object.keys(userMappings).length
   });
   
   return (
