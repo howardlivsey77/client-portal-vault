@@ -48,43 +48,47 @@ export function PayrollInputWizard({ open, onOpenChange }: PayrollInputWizardPro
   
   const currentStepData = steps[currentStep];
 
-  // Render employee mapping directly in the dialog when active
-  if (showEmployeeMapping && matchingResults) {
-    return (
-      <EmployeeMappingDialog
-        open={open}
-        onOpenChange={onOpenChange}
-        matchingResults={matchingResults}
-        onConfirm={handleEmployeeMappingConfirm}
-        onCancel={handleEmployeeMappingCancel}
-      />
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>{currentStepData.title}</DialogTitle>
-        </DialogHeader>
-        
-        <ScrollArea className="flex-1 py-4">
-          <div className="pr-4">
-            {currentStepData.component}
-          </div>
-        </ScrollArea>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{currentStepData.title}</DialogTitle>
+          </DialogHeader>
+          
+          <ScrollArea className="flex-1 py-4">
+            <div className="pr-4">
+              {currentStepData.component}
+            </div>
+          </ScrollArea>
 
-        <DialogFooter className="border-t pt-4">
-          <WizardNavigation 
-            currentStep={currentStep}
-            totalSteps={steps.length}
-            canProceed={canProceed()}
-            isProcessing={isProcessing}
-            onBack={handleBack}
-            onNext={() => handleNext(onOpenChange)}
-          />
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter className="border-t pt-4">
+            <WizardNavigation 
+              currentStep={currentStep}
+              totalSteps={steps.length}
+              canProceed={canProceed()}
+              isProcessing={isProcessing}
+              onBack={handleBack}
+              onNext={() => handleNext(onOpenChange)}
+            />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Render employee mapping as a separate overlay dialog */}
+      {showEmployeeMapping && matchingResults && (
+        <EmployeeMappingDialog
+          open={showEmployeeMapping}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              handleEmployeeMappingCancel();
+            }
+          }}
+          matchingResults={matchingResults}
+          onConfirm={handleEmployeeMappingConfirm}
+          onCancel={handleEmployeeMappingCancel}
+        />
+      )}
+    </>
   );
 }

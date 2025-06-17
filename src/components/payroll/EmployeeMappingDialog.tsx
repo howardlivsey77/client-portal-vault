@@ -62,12 +62,12 @@ export function EmployeeMappingDialog({
   
   const handleConfirm = () => {
     onConfirm(userMappings);
-    onOpenChange(false);
+    // Don't close the main dialog here - let the parent handle the flow
   };
   
   const handleCancel = () => {
     onCancel();
-    onOpenChange(false);
+    // Don't close the main dialog here - let the parent handle the flow
   };
   
   const allPendingMatches = [...matchingResults.fuzzyMatches, ...matchingResults.unmatchedEmployees];
