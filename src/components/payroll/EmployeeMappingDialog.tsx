@@ -36,6 +36,7 @@ export function EmployeeMappingDialog({
       }
     });
     
+    console.log('Initial mappings:', initialMappings);
     setUserMappings(initialMappings);
   }, [matchingResults]);
   
@@ -47,6 +48,7 @@ export function EmployeeMappingDialog({
       } else {
         newMappings[employeeName] = employeeId;
       }
+      console.log('Updated mappings:', newMappings);
       return newMappings;
     });
   };
@@ -70,7 +72,35 @@ export function EmployeeMappingDialog({
   
   const allPendingMatches = [...matchingResults.fuzzyMatches, ...matchingResults.unmatchedEmployees];
   const totalEmployees = matchingResults.exactMatches.length + matchingResults.fuzzyMatches.length + matchingResults.unmatchedEmployees.length;
-  const totalMapped = matchingResults.exactMatches.length + Object.keys(userMappings).length;
+  
+  // Calculate total mapped more accurately
+  const exactMatchesCount = matchingResults.exactMatches.length;
+  const userMappingsCount = Object.keys(userMappings).length;
+  
+  // For fuzzy matches, we need to count how many have been resolved (either mapped or skipped)
+  // All fuzzy matches that have a user mapping are considered "resolved"
+  const resolvedFuzzyMatches = matchingResults.fuzzyMatches.filter(match => 
+    userMappings.hasOwnProperty(match.employeeData.employeeName)
+  ).length;
+  
+  // For unmatched employees, count those that have been given a mapping
+  const resolvedUnmatchedEmployees = matchingResults.unmatchedEmployees.filter(match =>
+    userMappings.hasOwnProperty(match.employeeData.employeeName)
+  ).length;
+  
+  // Total mapped = exact matches + employees with user mappings (not skipped)
+  const totalMapped = exactMatchesCount + userMappingsCount;
+  
+  // Debug logging
+  console.log('Progress calculation:', {
+    exactMatchesCount,
+    userMappingsCount,
+    resolvedFuzzyMatches,
+    resolvedUnmatchedEmployees,
+    totalEmployees,
+    totalMapped,
+    userMappings
+  });
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
