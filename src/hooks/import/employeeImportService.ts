@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeData } from "@/components/employees/import/ImportConstants";
-import { createNewEmployees, updateExistingEmployees } from "@/services/employeeImportService";
+import { createNewEmployees, updateExistingEmployees } from "@/services/employeeImport";
 
 export interface ImportResult {
   success: boolean;
