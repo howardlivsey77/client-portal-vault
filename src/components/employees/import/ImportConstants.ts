@@ -1,4 +1,3 @@
-
 // Types for employee import
 export interface EmployeeData {
   [key: string]: any;
@@ -12,8 +11,7 @@ export interface ColumnMapping {
 // Required fields that must be mapped for import to succeed
 export const requiredFields = [
   "first_name",
-  "last_name",
-  "department"
+  "last_name"
 ];
 
 // All available fields for mapping - all employee table columns

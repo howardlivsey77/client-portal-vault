@@ -1,9 +1,7 @@
-
-import { EmployeeData, ColumnMapping } from "@/components/employees/import/ImportConstants";
+import { EmployeeData, ColumnMapping, requiredFields } from "@/components/employees/import/ImportConstants";
 
 // Check if required fields are mapped
 export const areRequiredFieldsMapped = (mappings: ColumnMapping[]): boolean => {
-  const requiredFields = ["first_name", "last_name", "department"];
   return requiredFields.every(requiredField => 
     mappings.some(mapping => mapping.targetField === requiredField)
   );

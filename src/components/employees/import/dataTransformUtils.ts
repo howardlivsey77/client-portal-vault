@@ -131,6 +131,8 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): 
     // Set default values for missing fields
     if (!transformedRow.hours_per_week) transformedRow.hours_per_week = 40;
     if (!transformedRow.hourly_rate) transformedRow.hourly_rate = 0;
+    // Set default department if not provided
+    if (!transformedRow.department) transformedRow.department = 'General';
     
     // Convert numeric fields with validation
     if (transformedRow.hours_per_week) {
