@@ -23,35 +23,58 @@ export const CreateCompanyOption = ({ userId }: CreateCompanyOptionProps) => {
 
   const handleCreateCompany = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userId || !companyName.trim()) return;
+    if (!companyName.trim()) return;
     
     setLoading(true);
     try {
+      // Get user ID directly from auth session instead of using the prop
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error("Auth error:", authError);
+        throw new Error("Authentication required to create a company");
+      }
+      
+      if (!user) {
+        throw new Error("You must be logged in to create a company");
+      }
+      
+      console.log("Creating company for user:", user.id);
+      
       // Create the company
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .insert([{ 
           name: companyName.trim(),
-          created_by: userId 
+          created_by: user.id 
         }])
-        .select();
+        .select()
+        .single();
       
-      if (companyError) throw companyError;
+      if (companyError) {
+        console.error("Company creation error:", companyError);
+        throw companyError;
+      }
       
       // Get the created company ID
-      if (companyData && companyData.length > 0) {
-        const companyId = companyData[0].id;
+      if (companyData) {
+        const companyId = companyData.id;
+        
+        console.log("Company created, now creating access for:", user.id, "to company:", companyId);
         
         // Create company access for the user
         const { error: accessError } = await supabase
           .from('company_access')
           .insert([{
-            user_id: userId,
+            user_id: user.id,
             company_id: companyId,
             role: 'admin'  // User who creates a company is automatically an admin
           }]);
         
-        if (accessError) throw accessError;
+        if (accessError) {
+          console.error("Company access creation error:", accessError);
+          throw accessError;
+        }
         
         toast({
           title: "Success",

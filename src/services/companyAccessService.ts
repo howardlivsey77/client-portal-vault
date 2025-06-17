@@ -6,16 +6,6 @@ export const ensureCompanyAccess = async (userId: string): Promise<void> => {
   try {
     console.log("Ensuring company access for user:", userId);
     
-    // Check if the user is an admin first
-    const { data: adminData, error: adminError } = await supabase
-      .rpc('is_admin', { user_id: userId });
-    
-    if (adminError) {
-      console.error("Error checking admin status:", adminError);
-    } else {
-      console.log("User admin status:", adminData);
-    }
-
     // Check if the user already has company access
     const { data: accessData, error: accessError } = await supabase
       .from('company_access')
@@ -24,6 +14,7 @@ export const ensureCompanyAccess = async (userId: string): Promise<void> => {
 
     if (accessError) {
       console.error("Error checking company access:", accessError);
+      return; // Don't block auth flow on error
     } else {
       console.log("User company access data:", accessData);
     }
@@ -42,33 +33,30 @@ export const ensureCompanyAccess = async (userId: string): Promise<void> => {
 
       if (companyError) {
         console.error("Error getting default company:", companyError);
-        return;
+        return; // Don't block auth flow if no default company exists
       } else {
         console.log("Default company found:", defaultCompany);
       }
 
       if (defaultCompany) {
-        // Assign user to default company with appropriate role
-        // If the user is an admin, assign admin role
-        const role = adminData ? 'admin' : 'user';
+        // Assign user to default company with user role (not admin by default)
+        console.log(`Assigning user ${userId} to default company ${defaultCompany.id} with role user`);
         
-        console.log(`Assigning user ${userId} to default company ${defaultCompany.id} with role ${role}`);
-        
-        const { data: insertData, error: insertError } = await supabase
+        const { error: insertError } = await supabase
           .from('company_access')
           .insert({
             user_id: userId,
             company_id: defaultCompany.id,
-            role: role
+            role: 'user' // Default role for auto-assigned users
           });
 
         if (insertError) {
           console.error("Error assigning user to default company:", insertError);
         } else {
-          console.log("User assigned to default company with role:", role);
+          console.log("User assigned to default company successfully");
         }
       } else {
-        console.error("No default company found to assign user to");
+        console.log("No default company found - user will need to create one");
       }
     } else {
       console.log(`User ${userId} already has company access, skipping assignment`);
@@ -116,7 +104,7 @@ export const createCompanyAccess = async (userId: string, companyId: string, rol
     }
     
     // Create new access record if one doesn't exist
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('company_access')
       .insert({
         user_id: userId,

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -98,11 +97,19 @@ export const CompanyForm = ({
           description: "Company updated successfully",
         });
       } else {
-        // Create new company - get user ID from auth instead of profiles table
-        const { data: { user } } = await supabase.auth.getUser();
+        // Create new company - get user ID directly from auth session
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError) {
+          console.error("Auth error:", authError);
+          throw new Error("Authentication required to create a company");
+        }
+        
         if (!user) {
           throw new Error("You must be logged in to create a company");
         }
+        
+        console.log("Creating company for user:", user.id);
         
         // Add the user ID to the company data as the creator
         const companyData = {
@@ -110,7 +117,7 @@ export const CompanyForm = ({
           created_by: user.id
         };
         
-        console.log("Creating company with data:", companyData);
+        console.log("Company data:", companyData);
         
         // Insert company and return the ID in a single operation
         const { data: newCompany, error: insertError } = await supabase
