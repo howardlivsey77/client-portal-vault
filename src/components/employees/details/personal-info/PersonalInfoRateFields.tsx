@@ -50,7 +50,7 @@ export const PersonalInfoRateFields = ({ control }: PersonalInfoRateFieldsProps)
             name="rate_2"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Rate 2 (Optional)</FormLabel>
+                <FormLabel>Standard Overtime (GBP)</FormLabel>
                 <FormControl>
                   <Input 
                     type="number" 
@@ -74,7 +74,7 @@ export const PersonalInfoRateFields = ({ control }: PersonalInfoRateFieldsProps)
             name="rate_3"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Rate 3 (Optional)</FormLabel>
+                <FormLabel>Extended Access (GBP)</FormLabel>
                 <FormControl>
                   <Input 
                     type="number" 

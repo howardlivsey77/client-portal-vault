@@ -118,7 +118,7 @@ export const PersonalInfoDisplay = ({ employee }: PersonalInfoDisplayProps) => {
           </div>
         </div>
         <div>
-          <div className="text-sm font-medium mb-2">Rate 2 (Optional)</div>
+          <div className="text-sm font-medium mb-2">Standard Overtime (GBP)</div>
           <div className="p-2.5 bg-gray-50 rounded border border-gray-200">
             {employee.rate_2 ? formatCurrency(roundToTwoDecimals(employee.rate_2)) : ""}
           </div>
@@ -127,7 +127,7 @@ export const PersonalInfoDisplay = ({ employee }: PersonalInfoDisplayProps) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <div className="text-sm font-medium mb-2">Rate 3 (Optional)</div>
+          <div className="text-sm font-medium mb-2">Extended Access (GBP)</div>
           <div className="p-2.5 bg-gray-50 rounded border border-gray-200">
             {employee.rate_3 ? formatCurrency(roundToTwoDecimals(employee.rate_3)) : ""}
           </div>
