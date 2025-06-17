@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { sicknessService } from '@/services/sicknessService';
-import { SicknessRecord, EntitlementUsage, SicknessEntitlementSummary } from '@/types/sickness';
+import { SicknessRecord, EntitlementUsage, SicknessEntitlementSummary, OpeningBalanceData } from '@/types/sickness';
 import { EligibilityRule, SicknessScheme } from '@/components/employees/details/work-pattern/types';
 import { Employee } from '@/types/employee-types';
 
@@ -70,19 +70,63 @@ export const useSicknessData = (
     if (!entitlementUsage || !employee) return null;
 
     try {
-      const usedDays = await sicknessService.calculateUsedDays(employee.id);
+      const [usedDays, rollingUsage] = await Promise.all([
+        sicknessService.calculateUsedDays(employee.id),
+        sicknessService.calculateRolling12MonthUsage(employee.id)
+      ]);
+
+      const rollingPeriod = sicknessService.getRolling12MonthPeriod();
+      
+      // Include opening balance in calculations
+      const openingBalanceFullPay = entitlementUsage.opening_balance_full_pay || 0;
+      const openingBalanceHalfPay = entitlementUsage.opening_balance_half_pay || 0;
+      
+      // Rolling 12-month usage includes opening balance
+      const totalRollingFullPay = rollingUsage.fullPayUsed + openingBalanceFullPay;
+      const totalRollingHalfPay = rollingUsage.halfPayUsed + openingBalanceHalfPay;
       
       return {
-        full_pay_remaining: Math.max(0, entitlementUsage.full_pay_entitled_days - usedDays.fullPayUsed),
-        half_pay_remaining: Math.max(0, entitlementUsage.half_pay_entitled_days - usedDays.halfPayUsed),
+        full_pay_remaining: Math.max(0, entitlementUsage.full_pay_entitled_days - totalRollingFullPay),
+        half_pay_remaining: Math.max(0, entitlementUsage.half_pay_entitled_days - totalRollingHalfPay),
         full_pay_used: usedDays.fullPayUsed,
         half_pay_used: usedDays.halfPayUsed,
+        full_pay_used_rolling_12_months: totalRollingFullPay,
+        half_pay_used_rolling_12_months: totalRollingHalfPay,
+        opening_balance_full_pay: openingBalanceFullPay,
+        opening_balance_half_pay: openingBalanceHalfPay,
         current_tier: entitlementUsage.current_rule_id || 'No tier',
-        service_months: entitlementUsage.current_service_months
+        service_months: entitlementUsage.current_service_months,
+        rolling_period_start: rollingPeriod.start,
+        rolling_period_end: rollingPeriod.end
       };
     } catch (error) {
       console.error('Error calculating entitlement summary:', error);
       return null;
+    }
+  };
+
+  const setOpeningBalance = async (openingBalance: OpeningBalanceData) => {
+    if (!employee) return;
+
+    try {
+      const updatedUsage = await sicknessService.setOpeningBalance(
+        employee.id,
+        employee.company_id || '',
+        openingBalance
+      );
+      
+      setEntitlementUsage(updatedUsage);
+      
+      toast({
+        title: "Opening balance set",
+        description: "The opening sickness balance has been updated successfully."
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error setting opening balance",
+        description: error.message,
+        variant: "destructive"
+      });
     }
   };
 
@@ -155,6 +199,7 @@ export const useSicknessData = (
     loading,
     fetchSicknessData,
     calculateEntitlementSummary,
+    setOpeningBalance,
     addSicknessRecord,
     updateSicknessRecord,
     deleteSicknessRecord

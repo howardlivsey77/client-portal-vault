@@ -28,8 +28,26 @@ export interface EntitlementUsage {
   half_pay_entitled_days: number;
   current_service_months: number;
   current_rule_id?: string;
+  opening_balance_full_pay?: number;
+  opening_balance_half_pay?: number;
+  opening_balance_date?: string;
+  opening_balance_notes?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface HistoricalBalance {
+  id: string;
+  employee_id: string;
+  company_id: string;
+  balance_date: string;
+  full_pay_days_used: number;
+  half_pay_days_used: number;
+  description?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
 }
 
 export interface SicknessEntitlementSummary {
@@ -37,6 +55,19 @@ export interface SicknessEntitlementSummary {
   half_pay_remaining: number;
   full_pay_used: number;
   half_pay_used: number;
+  full_pay_used_rolling_12_months: number;
+  half_pay_used_rolling_12_months: number;
+  opening_balance_full_pay: number;
+  opening_balance_half_pay: number;
   current_tier: string;
   service_months: number;
+  rolling_period_start: string;
+  rolling_period_end: string;
+}
+
+export interface OpeningBalanceData {
+  full_pay_days: number;
+  half_pay_days: number;
+  reference_date: string;
+  notes?: string;
 }

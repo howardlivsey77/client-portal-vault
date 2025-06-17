@@ -122,6 +122,10 @@ export type Database = {
           half_pay_entitled_days: number | null
           half_pay_used_days: number | null
           id: string
+          opening_balance_date: string | null
+          opening_balance_full_pay: number | null
+          opening_balance_half_pay: number | null
+          opening_balance_notes: string | null
           sickness_scheme_id: string | null
           updated_at: string
         }
@@ -138,6 +142,10 @@ export type Database = {
           half_pay_entitled_days?: number | null
           half_pay_used_days?: number | null
           id?: string
+          opening_balance_date?: string | null
+          opening_balance_full_pay?: number | null
+          opening_balance_half_pay?: number | null
+          opening_balance_notes?: string | null
           sickness_scheme_id?: string | null
           updated_at?: string
         }
@@ -154,6 +162,10 @@ export type Database = {
           half_pay_entitled_days?: number | null
           half_pay_used_days?: number | null
           id?: string
+          opening_balance_date?: string | null
+          opening_balance_full_pay?: number | null
+          opening_balance_half_pay?: number | null
+          opening_balance_notes?: string | null
           sickness_scheme_id?: string | null
           updated_at?: string
         }
@@ -177,6 +189,63 @@ export type Database = {
             columns: ["sickness_scheme_id"]
             isOneToOne: false
             referencedRelation: "sickness_schemes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_sickness_historical_balances: {
+        Row: {
+          balance_date: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          employee_id: string
+          full_pay_days_used: number | null
+          half_pay_days_used: number | null
+          id: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          balance_date: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          employee_id: string
+          full_pay_days_used?: number | null
+          half_pay_days_used?: number | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          balance_date?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          employee_id?: string
+          full_pay_days_used?: number | null
+          half_pay_days_used?: number | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_historical_balances_company"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_historical_balances_employee"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]

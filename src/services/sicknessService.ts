@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { SicknessRecord, EntitlementUsage, SicknessEntitlementSummary } from "@/types/sickness";
+import { SicknessRecord, EntitlementUsage, SicknessEntitlementSummary, HistoricalBalance, OpeningBalanceData } from "@/types/sickness";
 import { EligibilityRule } from "@/components/employees/details/work-pattern/types";
 import { convertToDays } from "@/features/company-settings/components/sickness/unitUtils";
 
@@ -30,6 +30,31 @@ export const sicknessService = {
 
     if (error && error.code !== 'PGRST116') throw error;
     return data;
+  },
+
+  // Fetch historical balances for an employee
+  async getHistoricalBalances(employeeId: string): Promise<HistoricalBalance[]> {
+    const { data, error } = await supabase
+      .from('employee_sickness_historical_balances')
+      .select('*')
+      .eq('employee_id', employeeId)
+      .order('balance_date', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  // Calculate rolling 12-month period
+  getRolling12MonthPeriod(): { start: string; end: string } {
+    const end = new Date();
+    const start = new Date();
+    start.setFullYear(start.getFullYear() - 1);
+    start.setDate(start.getDate() + 1); // Start from tomorrow last year
+    
+    return {
+      start: start.toISOString().split('T')[0],
+      end: end.toISOString().split('T')[0]
+    };
   },
 
   // Calculate service months from hire date
@@ -124,6 +149,34 @@ export const sicknessService = {
     return data;
   },
 
+  // Set opening balance for an employee
+  async setOpeningBalance(
+    employeeId: string,
+    companyId: string,
+    openingBalance: OpeningBalanceData
+  ): Promise<EntitlementUsage> {
+    const currentYear = new Date().getFullYear();
+    const periodStart = `${currentYear}-01-01`;
+
+    const updateData = {
+      opening_balance_full_pay: openingBalance.full_pay_days,
+      opening_balance_half_pay: openingBalance.half_pay_days,
+      opening_balance_date: openingBalance.reference_date,
+      opening_balance_notes: openingBalance.notes || null
+    };
+
+    const { data, error } = await supabase
+      .from('employee_sickness_entitlement_usage')
+      .update(updateData)
+      .eq('employee_id', employeeId)
+      .eq('entitlement_period_start', periodStart)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
   // Record a new sickness absence
   async recordSicknessAbsence(record: Omit<SicknessRecord, 'id' | 'created_at' | 'updated_at'>): Promise<SicknessRecord> {
     const { data, error } = await supabase
@@ -159,7 +212,30 @@ export const sicknessService = {
     if (error) throw error;
   },
 
-  // Calculate total sickness days used in current year
+  // Calculate rolling 12-month sickness days used
+  async calculateRolling12MonthUsage(employeeId: string): Promise<{ fullPayUsed: number; halfPayUsed: number }> {
+    const { start, end } = this.getRolling12MonthPeriod();
+
+    const { data, error } = await supabase
+      .from('employee_sickness_records')
+      .select('total_days, start_date')
+      .eq('employee_id', employeeId)
+      .gte('start_date', start)
+      .lte('start_date', end);
+
+    if (error) throw error;
+
+    // For now, assume all days are full pay days
+    // TODO: Implement logic to determine full pay vs half pay based on accumulated usage
+    const totalUsed = data?.reduce((sum, record) => sum + record.total_days, 0) || 0;
+    
+    return {
+      fullPayUsed: totalUsed,
+      halfPayUsed: 0
+    };
+  },
+
+  // Calculate total sickness days used in current year (for backward compatibility)
   async calculateUsedDays(employeeId: string): Promise<{ fullPayUsed: number; halfPayUsed: number }> {
     const currentYear = new Date().getFullYear();
     const yearStart = `${currentYear}-01-01`;
@@ -175,7 +251,6 @@ export const sicknessService = {
     if (error) throw error;
 
     // For now, assume all days are full pay days
-    // TODO: Implement logic to determine full pay vs half pay based on rules
     const totalUsed = data?.reduce((sum, record) => sum + record.total_days, 0) || 0;
     
     return {
