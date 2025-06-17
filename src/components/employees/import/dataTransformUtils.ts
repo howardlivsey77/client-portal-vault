@@ -84,8 +84,23 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[]): 
       if (mapping.targetField && row[mapping.sourceColumn] !== undefined) {
         const sourceValue = row[mapping.sourceColumn];
         
+        // Handle payroll_id specifically to ensure proper normalization
+        if (mapping.targetField === 'payroll_id') {
+          if (sourceValue !== undefined && sourceValue !== null && sourceValue !== '') {
+            // Convert to string and trim, ensuring we handle numeric values properly
+            const stringValue = String(sourceValue).trim();
+            if (stringValue !== '') {
+              transformedRow[mapping.targetField] = stringValue;
+              console.log(`Row ${index + 1}: payroll_id "${sourceValue}" -> "${stringValue}"`);
+            } else {
+              console.log(`Row ${index + 1}: payroll_id is empty after trimming, skipping`);
+            }
+          } else {
+            console.log(`Row ${index + 1}: payroll_id is null/undefined/empty, skipping`);
+          }
+        }
         // Handle date fields specifically
-        if (mapping.targetField === 'date_of_birth' || mapping.targetField === 'hire_date') {
+        else if (mapping.targetField === 'date_of_birth' || mapping.targetField === 'hire_date') {
           const isoDate = excelDateToISO(sourceValue);
           if (isoDate) {
             transformedRow[mapping.targetField] = isoDate;

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeData } from "@/components/employees/import/ImportConstants";
 import { roundToTwoDecimals } from "@/lib/formatters";
@@ -12,12 +13,17 @@ export const createNewEmployees = async (
   newEmployees: EmployeeData[], 
   userId: string
 ): Promise<void> => {
+  console.log('Creating new employees. Count:', newEmployees.length);
+  console.log('New employees data:', newEmployees);
+  
   // Extract all payroll IDs that are not empty, converting to strings first
   const payrollIds = extractValidPayrollIds(newEmployees);
+  console.log('Extracted payroll IDs for validation:', payrollIds);
   
   // First check for duplicates within the import data itself
   const internalDuplicates = checkDuplicatesInImportData(payrollIds);
   if (internalDuplicates.length > 0) {
+    console.error('Internal duplicates found:', internalDuplicates);
     throw new Error(`Duplicate payroll IDs found in import data: ${internalDuplicates.join(', ')}. Each employee must have a unique payroll ID.`);
   }
   
@@ -26,13 +32,17 @@ export const createNewEmployees = async (
   
   // If we have duplicate payroll IDs, throw an error
   if (existingPayrollIds.length > 0) {
+    console.error('Database duplicates found:', existingPayrollIds);
     throw new Error(`duplicate key value violates unique constraint "unique_payroll_id" for IDs: ${existingPayrollIds.join(', ')}`);
   }
+  
+  console.log('No duplicates found, proceeding with employee creation');
   
   for (const emp of newEmployees) {
     console.log("Creating new employee with data:", emp);
     
     const normalizedPayrollId = normalizePayrollId(emp.payroll_id);
+    console.log(`Employee payroll_id: "${emp.payroll_id}" -> normalized: "${normalizedPayrollId}"`);
     
     // Insert the employee with all rate fields
     const newEmployeeData = {
@@ -58,12 +68,20 @@ export const createNewEmployees = async (
       rate_4: roundToTwoDecimals(emp.rate_4)
     };
     
+    console.log('Prepared employee data for insert:', newEmployeeData);
+    
     const { data: employeeData, error: insertError } = await supabase
       .from("employees")
       .insert(newEmployeeData)
       .select();
     
-    if (insertError) throw insertError;
+    if (insertError) {
+      console.error('Error inserting employee:', insertError);
+      console.error('Employee data that failed:', newEmployeeData);
+      throw insertError;
+    }
+    
+    console.log('Employee created successfully:', employeeData);
     
     // If we have a new employee ID and work pattern data, save the work patterns
     if (employeeData && employeeData.length > 0) {
@@ -85,4 +103,6 @@ export const createNewEmployees = async (
       }
     }
   }
+  
+  console.log('All employees created successfully');
 };
