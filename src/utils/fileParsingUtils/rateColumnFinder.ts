@@ -62,12 +62,16 @@ export function findHoursColumns(row: any): string[] {
   for (const column of possibleColumns) {
     const normalizedName = column.toLowerCase().trim();
     
-    // Look for columns that contain "hours" but aren't already captured by rate-specific patterns
-    // Now includes columns with special characters like "Hours/Sessions"
+    // Look for columns that contain hours/time data or numeric values
+    // Include common alternative column names like "Unpaid", "Amount", "Value"
     if ((normalizedName.includes('hours') || 
          normalizedName.includes('hrs') || 
          normalizedName.includes('time') || 
-         normalizedName.includes('sessions')) && 
+         normalizedName.includes('sessions') ||
+         normalizedName.includes('unpaid') ||
+         normalizedName.includes('amount') ||
+         normalizedName.includes('value') ||
+         normalizedName.includes('duration')) && 
         !normalizedName.includes('rate') &&
         !/Rate[_\s]?\d[_\s]?Hours/i.test(column)) {
       

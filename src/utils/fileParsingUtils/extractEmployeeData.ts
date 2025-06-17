@@ -6,6 +6,15 @@ import { parseRateDescription, extractRateValue } from './rateTextParser';
 import { roundToTwoDecimals } from '@/lib/formatters';
 
 /**
+ * Helper function to check if a value is numeric
+ */
+function isNumericValue(value: any): boolean {
+  if (value === undefined || value === null || value === '') return false;
+  const parsed = parseFloat(value);
+  return !isNaN(parsed) && isFinite(parsed);
+}
+
+/**
  * Extract employee hours data from parsed rows
  */
 export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
@@ -85,34 +94,36 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
         let hoursValue = 0;
         let usedHoursColumn = '';
         
-        // First, try to find a direct hours column match
+        // Try each hours column and use the first one with a valid numeric value
         for (const hoursColumn of hoursColumns) {
           const rawValue = row[hoursColumn];
           console.log(`Checking hours column "${hoursColumn}" with value: "${rawValue}"`);
           
-          if (rawValue !== undefined && rawValue !== null && rawValue !== '') {
+          if (isNumericValue(rawValue)) {
             const potentialHours = parseFloat(rawValue);
             console.log(`Parsed hours value: ${potentialHours}`);
             
-            if (!isNaN(potentialHours) && potentialHours > 0) {
+            if (potentialHours > 0) {
               hoursValue = potentialHours;
               usedHoursColumn = hoursColumn;
-              console.log(`Using hours value ${hoursValue} from column "${hoursColumn}"`);
+              console.log(`✅ Using hours value ${hoursValue} from column "${hoursColumn}"`);
               break; // Use the first valid hours value found
             }
+          } else {
+            console.log(`❌ Column "${hoursColumn}" contains non-numeric value: "${rawValue}"`);
           }
         }
         
         // If no dedicated hours column found, look for common adjacent column patterns
         if (hoursValue === 0) {
-          const possibleHoursColumns = ['Hours', 'Hrs', 'Time', 'Duration', 'Sessions'];
-          for (const col of possibleHoursColumns) {
-            if (row[col] !== undefined && row[col] !== null && row[col] !== '') {
+          const fallbackColumns = ['Hours', 'Hrs', 'Time', 'Duration', 'Sessions', 'Unpaid', 'Amount', 'Value'];
+          for (const col of fallbackColumns) {
+            if (row[col] !== undefined && isNumericValue(row[col])) {
               const potentialHours = parseFloat(row[col]);
-              if (!isNaN(potentialHours) && potentialHours > 0) {
+              if (potentialHours > 0) {
                 hoursValue = potentialHours;
                 usedHoursColumn = col;
-                console.log(`Using hours value ${hoursValue} from fallback column "${col}"`);
+                console.log(`✅ Using hours value ${hoursValue} from fallback column "${col}"`);
                 break;
               }
             }
@@ -149,7 +160,7 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
           
           console.log(`✅ Added entry: ${employeeName}, ${hoursValue} hours at ${rateMapping.rateType} from column "${usedHoursColumn}"`);
         } else {
-          console.log(`❌ No valid hours found for ${employeeName} with rate type ${rateMapping.rateType}`);
+          console.log(`❌ No valid numeric hours found for ${employeeName} with rate type ${rateMapping.rateType}`);
         }
       }
     }
