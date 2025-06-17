@@ -53,10 +53,11 @@ export function useDashboardData(departmentColors: string[]) {
           
         if (deptError) throw deptError;
         
-        // Get gender distribution
+        // Get gender distribution - only for employees with gender specified
         const { data: genderRawData, error: genderError } = await supabase
           .from("employees")
-          .select("gender");
+          .select("gender")
+          .not("gender", "is", null);
           
         if (genderError) throw genderError;
         
@@ -90,16 +91,29 @@ export function useDashboardData(departmentColors: string[]) {
             color: departmentColors[index % departmentColors.length]
           }));
         
-        // Process gender data
+        // Process gender data - filter out null/undefined values and normalize
         const genderMap = new Map<string, number>();
         genderRawData?.forEach(emp => {
-          // Normalize gender values or use 'Unknown' if null/undefined
-          const gender = emp.gender ? 
-            (emp.gender.toLowerCase() === 'male' || emp.gender.toLowerCase() === 'm' ? 'Male' : 
-             emp.gender.toLowerCase() === 'female' || emp.gender.toLowerCase() === 'f' ? 'Female' : 'Other')
-            : 'Unknown';
-          
-          genderMap.set(gender, (genderMap.get(gender) || 0) + 1);
+          if (emp.gender && emp.gender.trim() !== '') {
+            // Normalize gender values to standard format
+            const normalizedGender = emp.gender.toLowerCase().trim();
+            let gender: string;
+            
+            if (normalizedGender === 'male' || normalizedGender === 'm') {
+              gender = 'Male';
+            } else if (normalizedGender === 'female' || normalizedGender === 'f') {
+              gender = 'Female';
+            } else if (normalizedGender === 'other') {
+              gender = 'Other';
+            } else if (normalizedGender === 'prefer not to say') {
+              gender = 'Prefer not to say';
+            } else {
+              // For any other values, use the original value but capitalize first letter
+              gender = emp.gender.charAt(0).toUpperCase() + emp.gender.slice(1).toLowerCase();
+            }
+            
+            genderMap.set(gender, (genderMap.get(gender) || 0) + 1);
+          }
         });
         
         const genderChartData: GenderData[] = [...genderMap.entries()]
