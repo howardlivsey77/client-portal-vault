@@ -126,6 +126,7 @@ export type Database = {
           hours_per_week: number | null
           id: string
           last_name: string
+          national_insurance_number: string | null
           nic_code: string | null
           payroll_id: string | null
           postcode: string | null
@@ -157,6 +158,7 @@ export type Database = {
           hours_per_week?: number | null
           id?: string
           last_name: string
+          national_insurance_number?: string | null
           nic_code?: string | null
           payroll_id?: string | null
           postcode?: string | null
@@ -188,6 +190,7 @@ export type Database = {
           hours_per_week?: number | null
           id?: string
           last_name?: string
+          national_insurance_number?: string | null
           nic_code?: string | null
           payroll_id?: string | null
           postcode?: string | null

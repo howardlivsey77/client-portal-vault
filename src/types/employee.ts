@@ -1,4 +1,5 @@
 
+
 import { z } from "zod";
 
 // Define work pattern schema
@@ -10,6 +11,33 @@ export const workDaySchema = z.object({
 });
 
 export type WorkDay = z.infer<typeof workDaySchema>;
+
+// Custom validation for National Insurance Number
+const nationalInsuranceNumberValidation = z.string().optional().refine(
+  (val) => {
+    if (!val || val.trim() === '') return true; // Allow empty
+    const cleaned = val.replace(/\s/g, '').toUpperCase();
+    const niPattern = /^[A-CEGHJ-PR-TW-Z]{2}[0-9]{6}[A-D]$/;
+    if (!niPattern.test(cleaned)) return false;
+    const invalidPrefixes = ['BG', 'GB', 'NK', 'KN', 'TN', 'NT', 'ZZ'];
+    return !invalidPrefixes.includes(cleaned.substring(0, 2));
+  },
+  {
+    message: "Invalid National Insurance Number format (expected: QQ123456C)"
+  }
+);
+
+// Custom validation for NIC Code
+const nicCodeValidation = z.string().optional().refine(
+  (val) => {
+    if (!val || val.trim() === '') return true; // Allow empty
+    const validCodes = ['A', 'B', 'C', 'H', 'J', 'M', 'Z'];
+    return validCodes.includes(val.toUpperCase().trim());
+  },
+  {
+    message: "Invalid NIC Code (must be A, B, C, H, J, M, or Z)"
+  }
+);
 
 // Define form schema using zod
 export const employeeSchema = z.object({
@@ -35,8 +63,10 @@ export const employeeSchema = z.object({
   // HMRC fields
   tax_code: z.string().optional().nullable(),
   week_one_month_one: z.boolean().optional().nullable(),
-  nic_code: z.string().optional().nullable(),
+  nic_code: nicCodeValidation.nullable(),
   student_loan_plan: z.number().optional().nullable(),
+  // New fields
+  national_insurance_number: nationalInsuranceNumberValidation.nullable(),
 });
 
 export type EmployeeFormValues = z.infer<typeof employeeSchema>;

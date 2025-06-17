@@ -1,3 +1,4 @@
+
 // Types for employee import
 export interface EmployeeData {
   [key: string]: any;
@@ -33,7 +34,9 @@ export const availableFields = [
   "gender",
   "rate_2",
   "rate_3",
-  "rate_4"
+  "rate_4",
+  "national_insurance_number",
+  "nic_code"
 ];
 
 // Human-readable field labels
@@ -55,5 +58,7 @@ export const fieldLabels: Record<string, string> = {
   gender: "Gender",
   rate_2: "Rate 2",
   rate_3: "Rate 3",
-  rate_4: "Rate 4"
+  rate_4: "Rate 4",
+  national_insurance_number: "National Insurance Number",
+  nic_code: "NIC Code"
 };

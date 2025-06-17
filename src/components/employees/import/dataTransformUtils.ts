@@ -1,5 +1,10 @@
-
 import { EmployeeData, ColumnMapping, requiredFields } from "./ImportConstants";
+import { 
+  validateNationalInsuranceNumber, 
+  normalizeNationalInsuranceNumber,
+  validateNicCode,
+  normalizeNicCode
+} from "./validationUtils";
 
 // Helper function to parse DD/MM/YYYY format dates from CSV files
 export const parseCSVDate = (dateValue: string | number): string | null => {
@@ -157,6 +162,32 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[], i
             }
           } else {
             console.log(`Row ${index + 1}: payroll_id is null/undefined/empty, skipping`);
+          }
+        }
+        // Handle National Insurance Number validation and normalization
+        else if (mapping.targetField === 'national_insurance_number') {
+          if (sourceValue !== undefined && sourceValue !== null && sourceValue !== '') {
+            const normalizedNI = normalizeNationalInsuranceNumber(String(sourceValue));
+            if (normalizedNI) {
+              transformedRow[mapping.targetField] = normalizedNI;
+              console.log(`Row ${index + 1}: national_insurance_number "${sourceValue}" -> "${normalizedNI}"`);
+            } else {
+              console.log(`Row ${index + 1}: Invalid National Insurance Number format: "${sourceValue}"`);
+              // Don't set the field if validation failed
+            }
+          }
+        }
+        // Handle NIC Code validation and normalization
+        else if (mapping.targetField === 'nic_code') {
+          if (sourceValue !== undefined && sourceValue !== null && sourceValue !== '') {
+            const normalizedNIC = normalizeNicCode(String(sourceValue));
+            if (normalizedNIC) {
+              transformedRow[mapping.targetField] = normalizedNIC;
+              console.log(`Row ${index + 1}: nic_code "${sourceValue}" -> "${normalizedNIC}"`);
+            } else {
+              console.log(`Row ${index + 1}: Invalid NIC Code: "${sourceValue}"`);
+              // Don't set the field if validation failed
+            }
           }
         }
         // Handle date fields specifically based on file type

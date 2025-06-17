@@ -1,4 +1,5 @@
 
+
 import { ColumnMapping, availableFields, requiredFields } from "./ImportConstants";
 
 // Enhanced mapping patterns for common field variations
@@ -56,6 +57,12 @@ const fieldMappingPatterns: Record<string, string[]> = {
   ],
   "rate_4": [
     "rate 4", "rate4", "fourth rate", "holiday rate", "bank holiday rate"
+  ],
+  "national_insurance_number": [
+    "national insurance number", "ni number", "nino", "nin", "national insurance", "ni no", "ni num"
+  ],
+  "nic_code": [
+    "nic code", "ni code", "national insurance code", "contribution code", "nic", "ni contribution code"
   ]
 };
 
