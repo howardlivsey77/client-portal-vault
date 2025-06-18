@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useDocuments } from "./documents/useDocuments";
 import { useSubfolders } from "./documents/useSubfolders";
@@ -92,13 +91,4 @@ export function DocumentGrid({
       )}
     </div>
   );
-}
-
-export interface Document {
-  id: string;
-  title: string;
-  type: string;
-  updatedAt: string;
-  size: string;
-  folderId: string | null;
 }
