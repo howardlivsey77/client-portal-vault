@@ -3,6 +3,7 @@ import { useState } from "react";
 import { FolderTile } from "../folder/FolderItem";
 import { EditFolderDialog } from "../folder/EditFolderDialog";
 import { SubfolderListProps } from "./types";
+import { FolderItem } from "../types/folder.types";
 
 export function SubfolderList({ subfolders, onFolderSelect }: SubfolderListProps) {
   const [isEditingFolder, setIsEditingFolder] = useState(false);
@@ -27,12 +28,20 @@ export function SubfolderList({ subfolders, onFolderSelect }: SubfolderListProps
       window.editFolderName(folderId, newName);
     }
   };
+
+  // Transform database subfolder objects to FolderItem interface
+  const transformedFolders: FolderItem[] = subfolders.map(folder => ({
+    id: folder.id,
+    name: folder.name,
+    parentId: folder.parent_id,
+    children: [] // Subfolders don't need children in this context
+  }));
   
   return (
     <div>
       <h3 className="text-lg font-medium mb-3">Folders</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-        {subfolders.map(folder => (
+        {transformedFolders.map(folder => (
           <FolderTile
             key={folder.id}
             folder={folder}
