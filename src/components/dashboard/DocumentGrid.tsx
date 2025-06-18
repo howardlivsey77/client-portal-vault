@@ -27,7 +27,8 @@ export function DocumentGrid({
   selectedFolderId,
   onNavigateBack,
   folderPath = [],
-  onFolderSelect
+  onFolderSelect,
+  onAddFolder
 }: DocumentGridProps) {
   const { documents: dbDocuments, loading } = useDocuments(selectedFolderId);
   const subfolders = useSubfolders(selectedFolderId);
@@ -55,12 +56,13 @@ export function DocumentGrid({
 
   return (
     <div className="space-y-6">
-      {/* Header with breadcrumb and back button */}
+      {/* Header with breadcrumb and action buttons */}
       <DocumentGridHeader 
         selectedFolderId={selectedFolderId} 
         onNavigateBack={onNavigateBack} 
         folderPath={folderPath} 
-        onAddDocument={onAddDocument} 
+        onAddDocument={onAddDocument}
+        onAddFolder={onAddFolder}
       />
       
       {/* Subfolders section */}
@@ -78,7 +80,7 @@ export function DocumentGrid({
           {documents.length > 0 ? (
             <DocumentList documents={documents} />
           ) : (
-            <EmptyFolder onAddDocument={onAddDocument} />
+            <EmptyFolder />
           )}
         </>
       )}

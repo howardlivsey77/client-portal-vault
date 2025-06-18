@@ -1,8 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { DocumentGrid } from "@/components/dashboard/DocumentGrid";
 import { FolderExplorer } from "@/components/dashboard/FolderExplorer";
 import { documentFolderService } from "@/services/documentFolderService";
 import { useCompany } from "@/providers/CompanyProvider";
+import { AddFolderDialog } from "@/components/dashboard/folder/AddFolderDialog";
+import { toast } from "@/hooks/use-toast";
 
 interface DocumentsTabProps {
   onAddDocument: () => void;
@@ -21,6 +24,7 @@ export function DocumentsTab({
 }: DocumentsTabProps) {
   const { currentCompany } = useCompany();
   const [folderPath, setFolderPath] = useState<string[]>([]);
+  const [isAddingFolder, setIsAddingFolder] = useState(false);
 
   // Load folder path when selectedFolderId changes
   useEffect(() => {
@@ -65,6 +69,32 @@ export function DocumentsTab({
     onFolderSelect(null);
   };
 
+  // Handle adding a new subfolder
+  const handleAddFolder = () => {
+    setIsAddingFolder(true);
+  };
+
+  // Handle creating the folder
+  const handleCreateFolder = async (folderName: string, parentId: string | null) => {
+    if (!currentCompany?.id) return;
+    
+    try {
+      await documentFolderService.createFolder(currentCompany.id, folderName, parentId || selectedFolderId);
+      await loadFolderPath(); // Refresh folder path
+      toast({
+        title: "Folder created",
+        description: `Subfolder "${folderName}" has been created successfully.`
+      });
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      toast({
+        title: "Error creating folder",
+        description: "Failed to create folder",
+        variant: "destructive"
+      });
+    }
+  };
+
   return isFullscreenFolderView ? (
     <div className="w-full">
       <DocumentGrid 
@@ -73,6 +103,15 @@ export function DocumentsTab({
         onNavigateBack={handleNavigateBack}
         folderPath={folderPath}
         onFolderSelect={onFolderSelect}
+        onAddFolder={handleAddFolder}
+      />
+      
+      <AddFolderDialog
+        open={isAddingFolder}
+        onOpenChange={setIsAddingFolder}
+        parentId={selectedFolderId}
+        onAddFolder={handleCreateFolder}
+        getFolderPath={() => folderPath}
       />
     </div>
   ) : (
@@ -89,6 +128,15 @@ export function DocumentsTab({
           selectedFolderId={selectedFolderId}
           folderPath={folderPath}
           onFolderSelect={onFolderSelect}
+          onAddFolder={handleAddFolder}
+        />
+        
+        <AddFolderDialog
+          open={isAddingFolder}
+          onOpenChange={setIsAddingFolder}
+          parentId={selectedFolderId}
+          onAddFolder={handleCreateFolder}
+          getFolderPath={() => folderPath}
         />
       </div>
     </div>

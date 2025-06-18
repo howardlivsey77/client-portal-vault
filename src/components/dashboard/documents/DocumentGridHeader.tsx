@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, FolderPlus } from "lucide-react";
 import { 
   Breadcrumb, 
   BreadcrumbItem, 
@@ -15,7 +15,8 @@ export function DocumentGridHeader({
   selectedFolderId,
   onNavigateBack,
   folderPath = [],
-  onAddDocument
+  onAddDocument,
+  onAddFolder
 }: DocumentGridHeaderProps) {
   if (!selectedFolderId) return null;
   
@@ -53,10 +54,18 @@ export function DocumentGridHeader({
         </Breadcrumb>
       </div>
       
-      <Button onClick={onAddDocument} size="sm">
-        <FileText className="h-4 w-4 mr-2" />
-        Upload Document
-      </Button>
+      <div className="flex items-center gap-2">
+        {onAddFolder && (
+          <Button variant="outline" onClick={onAddFolder} size="sm">
+            <FolderPlus className="h-4 w-4 mr-2" />
+            New Subfolder
+          </Button>
+        )}
+        <Button onClick={onAddDocument} size="sm">
+          <FileText className="h-4 w-4 mr-2" />
+          Upload Document
+        </Button>
+      </div>
     </div>
   );
 }
