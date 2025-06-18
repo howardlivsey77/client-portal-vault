@@ -253,6 +253,31 @@ export function FolderExplorer({
     }
   };
 
+  // Create a synchronous wrapper for getFolderPath
+  const getFolderPathSync = (folderId: string | null): string[] => {
+    if (!folderId) return ["All Documents"];
+    
+    // Build path from folder structure in memory
+    const buildPath = (folders: FolderItemType[], targetId: string, currentPath: string[] = []): string[] => {
+      for (const folder of folders) {
+        const newPath = [...currentPath, folder.name];
+        if (folder.id === targetId) {
+          return newPath;
+        }
+        if (folder.children.length > 0) {
+          const found = buildPath(folder.children, targetId, newPath);
+          if (found.length > 0) {
+            return found;
+          }
+        }
+      }
+      return [];
+    };
+
+    const path = buildPath(folderStructure, folderId);
+    return path.length > 0 ? path : ["Unknown Folder"];
+  };
+
   const currentFolders = getCurrentFolderContents();
 
   if (loading) {
@@ -319,10 +344,7 @@ export function FolderExplorer({
         onOpenChange={setIsAddingFolder}
         parentId={currentParentId}
         onAddFolder={addFolder}
-        getFolderPath={async (folderId) => {
-          if (!currentCompany?.id) return [];
-          return await documentFolderService.getFolderPath(folderId);
-        }}
+        getFolderPath={getFolderPathSync}
       />
       
       <EditFolderDialog
