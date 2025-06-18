@@ -24,8 +24,8 @@ export function DashboardHeader({
     }
   };
   
-  // Only show upload button on documents tab
-  const shouldShowUploadButton = activeTab === "documents";
+  // Don't show upload button on documents tab to avoid redundancy
+  const shouldShowUploadButton = false;
   
   return <>
       <div className="flex items-center justify-between mb-6">

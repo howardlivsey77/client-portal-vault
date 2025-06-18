@@ -53,9 +53,9 @@ export function DocumentGridHeader({
         </Breadcrumb>
       </div>
       
-      <Button variant="outline" onClick={onAddDocument} size="sm">
+      <Button onClick={onAddDocument} size="sm">
         <FileText className="h-4 w-4 mr-2" />
-        Add Document
+        Upload Document
       </Button>
     </div>
   );
