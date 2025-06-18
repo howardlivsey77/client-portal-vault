@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DocumentGrid } from "@/components/dashboard/DocumentGrid";
 import { FolderExplorer } from "@/components/dashboard/FolderExplorer";
-import { getFolderPathById, loadFolderStructure } from "@/components/dashboard/folder/folderService";
+import { documentFolderService } from "@/services/documentFolderService";
+import { useCompany } from "@/providers/CompanyProvider";
 
 interface DocumentsTabProps {
   onAddDocument: () => void;
@@ -18,48 +19,50 @@ export function DocumentsTab({
   isFullscreenFolderView,
   onSetFullscreenView
 }: DocumentsTabProps) {
+  const { currentCompany } = useCompany();
+  const [folderPath, setFolderPath] = useState<string[]>([]);
+
+  // Load folder path when selectedFolderId changes
+  useEffect(() => {
+    loadFolderPath();
+  }, [selectedFolderId, currentCompany?.id]);
+
+  const loadFolderPath = async () => {
+    if (!currentCompany?.id) {
+      setFolderPath([]);
+      return;
+    }
+
+    try {
+      const path = await documentFolderService.getFolderPath(selectedFolderId);
+      setFolderPath(path);
+    } catch (error) {
+      console.error('Error loading folder path:', error);
+      setFolderPath(selectedFolderId ? ["Unknown Folder"] : ["All Documents"]);
+    }
+  };
+
   // Handle navigation back from fullscreen view
-  const handleNavigateBack = () => {
-    const folderStructure = loadFolderStructure();
+  const handleNavigateBack = async () => {
+    if (!currentCompany?.id) return;
     
     // If inside a subfolder, navigate to parent folder
     if (selectedFolderId) {
-      const parentId = getParentFolderId(folderStructure, selectedFolderId);
-      if (parentId) {
-        onFolderSelect(parentId);
-        return;
+      try {
+        const allFolders = await documentFolderService.getFolders(currentCompany.id);
+        const currentFolder = allFolders.find(f => f.id === selectedFolderId);
+        if (currentFolder?.parent_id) {
+          onFolderSelect(currentFolder.parent_id);
+          return;
+        }
+      } catch (error) {
+        console.error('Error finding parent folder:', error);
       }
     }
     
     // Otherwise, go back to the folder explorer view
     onSetFullscreenView(false);
     onFolderSelect(null);
-  };
-  
-  // Helper function to get parent folder ID
-  const getParentFolderId = (folders: any[], folderId: string | null): string | null => {
-    if (!folderId) return null;
-    
-    for (const folder of folders) {
-      // Check if any of this folder's children is the one we're looking for
-      for (const child of folder.children) {
-        if (child.id === folderId) {
-          return folder.id;
-        }
-      }
-      
-      // Check in deeper levels
-      const foundInChildren = getParentFolderId(folder.children, folderId);
-      if (foundInChildren) return foundInChildren;
-    }
-    
-    return null;
-  };
-  
-  // Get the folder path for the current folder
-  const getFolderPath = () => {
-    const folderStructure = loadFolderStructure();
-    return getFolderPathById(folderStructure, selectedFolderId);
   };
 
   return isFullscreenFolderView ? (
@@ -68,7 +71,7 @@ export function DocumentsTab({
         onAddDocument={onAddDocument} 
         selectedFolderId={selectedFolderId}
         onNavigateBack={handleNavigateBack}
-        folderPath={getFolderPath()}
+        folderPath={folderPath}
         onFolderSelect={onFolderSelect}
       />
     </div>
@@ -84,6 +87,8 @@ export function DocumentsTab({
         <DocumentGrid 
           onAddDocument={onAddDocument} 
           selectedFolderId={selectedFolderId}
+          folderPath={folderPath}
+          onFolderSelect={onFolderSelect}
         />
       </div>
     </div>

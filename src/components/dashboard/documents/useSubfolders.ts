@@ -1,25 +1,41 @@
 
 import { useState, useEffect } from "react";
-import { FolderItem } from "../types/folder.types";
-import { findFolderById, loadFolderStructure } from "../folder/folderService";
+import { documentFolderService } from "@/services/documentFolderService";
+import { useCompany } from "@/providers/CompanyProvider";
+import { toast } from "@/hooks/use-toast";
 
 export function useSubfolders(selectedFolderId: string | null) {
-  const [subfolders, setSubfolders] = useState<FolderItem[]>([]);
+  const { currentCompany } = useCompany();
+  const [subfolders, setSubfolders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // Load subfolders when the selected folder changes
   useEffect(() => {
-    if (selectedFolderId) {
-      const folderStructure = loadFolderStructure();
-      const currentFolder = findFolderById(folderStructure, selectedFolderId);
-      if (currentFolder && currentFolder.children) {
-        setSubfolders(currentFolder.children);
-      } else {
-        setSubfolders([]);
-      }
-    } else {
+    loadSubfolders();
+  }, [currentCompany?.id, selectedFolderId]);
+
+  const loadSubfolders = async () => {
+    if (!currentCompany?.id || !selectedFolderId) {
       setSubfolders([]);
+      return;
     }
-  }, [selectedFolderId]);
+
+    setLoading(true);
+    try {
+      const allFolders = await documentFolderService.getFolders(currentCompany.id);
+      const childFolders = allFolders.filter(folder => folder.parent_id === selectedFolderId);
+      setSubfolders(childFolders);
+    } catch (error) {
+      console.error('Error loading subfolders:', error);
+      toast({
+        title: "Error loading subfolders",
+        description: "Failed to load subfolders",
+        variant: "destructive"
+      });
+      setSubfolders([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return subfolders;
 }

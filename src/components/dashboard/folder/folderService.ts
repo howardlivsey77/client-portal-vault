@@ -24,12 +24,8 @@ export const loadFolderStructure = async (companyId: string) => {
     return rootFolders.map(folder => convertToFolderItem(folder, dbFolders));
   } catch (error) {
     console.error('Error loading folder structure:', error);
-    // Return default structure if database fails
-    return [
-      { id: 'contracts', name: 'Contracts', parentId: null, children: [] },
-      { id: 'reports', name: 'Reports', parentId: null, children: [] },
-      { id: 'invoices', name: 'Invoices', parentId: null, children: [] }
-    ];
+    // Return empty structure if database fails
+    return [];
   }
 };
 

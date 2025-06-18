@@ -130,14 +130,6 @@ export function useDocuments(selectedFolderId: string | null) {
     }
   };
 
-  // Add the methods to window for access from other components
-  useEffect(() => {
-    window.addDocument = addDocument;
-    window.moveDocument = moveDocument;
-    window.deleteDocument = deleteDocument;
-    window.renameDocument = renameDocument;
-  }, [currentCompany?.id, selectedFolderId]);
-
   return {
     documents,
     loading,
