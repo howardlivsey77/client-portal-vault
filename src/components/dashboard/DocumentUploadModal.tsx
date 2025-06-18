@@ -10,9 +10,10 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
+import { documentService } from "@/services/documentService";
+import { documentFolderService } from "@/services/documentFolderService";
+import { useCompany } from "@/providers/CompanyProvider";
 import { useToast } from "@/components/ui/use-toast";
-import { Document } from "./DocumentGrid";
-import { FolderItem } from "./FolderExplorer";
 import { FileUploadArea } from "./upload/FileUploadArea";
 import { DocumentMetadataForm } from "./upload/DocumentMetadataForm";
 
@@ -22,13 +23,27 @@ interface DocumentUploadModalProps {
   selectedFolderId: string | null;
 }
 
+// Convert database folders to legacy format for compatibility
+const convertToLegacyFolder = (dbFolder: any, allFolders: any[]): any => {
+  const children = allFolders
+    .filter(f => f.parent_id === dbFolder.id)
+    .map(child => convertToLegacyFolder(child, allFolders));
+
+  return {
+    id: dbFolder.id,
+    name: dbFolder.name,
+    children
+  };
+};
+
 export function DocumentUploadModal({ open, onOpenChange, selectedFolderId }: DocumentUploadModalProps) {
+  const { currentCompany } = useCompany();
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState<string>("");
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [category, setCategory] = useState<string>("contracts");
   const [uploading, setUploading] = useState(false);
-  const [folderStructure, setFolderStructure] = useState<FolderItem[]>([]);
+  const [folderStructure, setFolderStructure] = useState<any[]>([]);
   const { toast } = useToast();
   
   // Initialize selected folder from prop
@@ -38,42 +53,34 @@ export function DocumentUploadModal({ open, onOpenChange, selectedFolderId }: Do
   
   // Load folder structure
   useEffect(() => {
-    const savedFolders = localStorage.getItem('documentFolders');
-    if (savedFolders) {
-      try {
-        setFolderStructure(JSON.parse(savedFolders));
-      } catch (e) {
-        console.error('Error parsing saved folders', e);
-      }
+    if (open && currentCompany?.id) {
+      loadFolders();
     }
-  }, [open]);
+  }, [open, currentCompany?.id]);
+
+  const loadFolders = async () => {
+    if (!currentCompany?.id) return;
+    
+    try {
+      const dbFolders = await documentFolderService.getFolders(currentCompany.id);
+      const rootFolders = dbFolders.filter(f => f.parent_id === null);
+      const legacyStructure = rootFolders.map(folder => convertToLegacyFolder(folder, dbFolders));
+      setFolderStructure(legacyStructure);
+    } catch (error) {
+      console.error('Error loading folders:', error);
+    }
+  };
   
   // Get folder name by ID
-  const getFolderNameById = (id: string | null): string => {
+  const getFolderNameById = async (id: string | null): Promise<string> => {
     if (!id) return "All Documents";
     
-    // Recursive function to find folder by id
-    const findFolder = (folders: FolderItem[], id: string): string | null => {
-      for (const folder of folders) {
-        if (folder.id === id) {
-          return folder.name;
-        }
-        
-        const childResult = findFolder(folder.children, id);
-        if (childResult) return childResult;
-      }
-      
-      return null;
-    };
-    
-    for (const folder of folderStructure) {
-      if (folder.id === id) return folder.name;
-      
-      const childName = findFolder(folder.children, id);
-      if (childName) return childName;
+    try {
+      const path = await documentFolderService.getFolderPath(id);
+      return path[path.length - 1] || "Unknown Folder";
+    } catch (error) {
+      return "Unknown Folder";
     }
-    
-    return "Unknown Folder";
   };
   
   const handleFileChange = (newFile: File | null) => {
@@ -96,33 +103,23 @@ export function DocumentUploadModal({ open, onOpenChange, selectedFolderId }: Do
     setSelectedFolder(folderId === "none" ? null : folderId);
   };
   
-  const handleUpload = () => {
-    if (!file) return;
+  const handleUpload = async () => {
+    if (!file || !currentCompany?.id) return;
     
     setUploading(true);
     
-    // Simulate upload - in a real app, this would be an API call
-    setTimeout(() => {
-      // Generate a new document object
-      const newDocument: Document = {
-        id: `new-${Date.now()}`, // Generate a temporary id
+    try {
+      await documentService.uploadDocument(currentCompany.id, {
         title: title || file.name.split('.')[0],
-        type: file.name.split('.').pop()?.toUpperCase() || "FILE",
-        updatedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-        folderId: selectedFolder
-      };
+        file,
+        folder_id: selectedFolder
+      });
       
-      // Add the document to the list if the addDocument function exists
-      if (typeof window.addDocument === 'function') {
-        window.addDocument(newDocument);
-      }
-      
-      setUploading(false);
+      const folderName = await getFolderNameById(selectedFolder);
       
       toast({
         title: "Document uploaded",
-        description: `${file.name} has been successfully uploaded to ${getFolderNameById(selectedFolder)}.`,
+        description: `${file.name} has been successfully uploaded to ${folderName}.`,
       });
       
       // Reset form and close modal
@@ -130,7 +127,16 @@ export function DocumentUploadModal({ open, onOpenChange, selectedFolderId }: Do
       setFile(null);
       setTitle("");
       setCategory("contracts");
-    }, 1500);
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload document. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
   };
   
   return (

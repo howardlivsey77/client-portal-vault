@@ -108,6 +108,108 @@ export type Database = {
           },
         ]
       }
+      document_folders: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          created_by: string
+          id: string
+          name: string
+          parent_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          created_by: string
+          id?: string
+          name: string
+          parent_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          name?: string
+          parent_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_folders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_folders_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "document_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          folder_id: string | null
+          id: string
+          mime_type: string
+          title: string
+          updated_at: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          folder_id?: string | null
+          id?: string
+          mime_type: string
+          title: string
+          updated_at?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          folder_id?: string | null
+          id?: string
+          mime_type?: string
+          title?: string
+          updated_at?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "document_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_sickness_entitlement_usage: {
         Row: {
           company_id: string

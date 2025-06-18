@@ -1,112 +1,109 @@
 
 import { useState, useEffect } from "react";
-import { Document } from "./types";
+import { DatabaseDocument } from "@/types/documents";
+import { documentService } from "@/services/documentService";
+import { useCompany } from "@/providers/CompanyProvider";
 import { toast } from "@/hooks/use-toast";
 
 export function useDocuments(selectedFolderId: string | null) {
-  // Initial documents list
-  const initialDocuments = [
-    {
-      id: "1",
-      title: "Contract Agreement - Q2 2023",
-      type: "PDF",
-      updatedAt: "May 1, 2023",
-      size: "2.4 MB",
-      folderId: "contracts"
-    }, {
-      id: "2",
-      title: "Financial Report",
-      type: "XLSX",
-      updatedAt: "Apr 15, 2023",
-      size: "1.8 MB",
-      folderId: "reports"
-    }, {
-      id: "3",
-      title: "Project Proposal",
-      type: "DOCX",
-      updatedAt: "Apr 10, 2023",
-      size: "3.2 MB",
-      folderId: null
-    }, {
-      id: "4",
-      title: "Meeting Notes - Strategy Session",
-      type: "PDF",
-      updatedAt: "Mar 28, 2023",
-      size: "1.1 MB",
-      folderId: null
-    }, {
-      id: "5",
-      title: "Client Onboarding Guide",
-      type: "PDF",
-      updatedAt: "Mar 22, 2023",
-      size: "4.5 MB",
-      folderId: null
-    }, {
-      id: "6",
-      title: "Marketing Assets",
-      type: "ZIP",
-      updatedAt: "Mar 15, 2023",
-      size: "12.8 MB",
-      folderId: null
-    }, {
-      id: "7",
-      title: "Product Roadmap",
-      type: "PPTX",
-      updatedAt: "Mar 10, 2023",
-      size: "5.7 MB",
-      folderId: null
-    }
-  ];
-  
-  const [documents, setDocuments] = useState<Document[]>(() => {
-    // Try to load documents from localStorage
-    const savedDocs = localStorage.getItem('documents');
-    if (savedDocs) {
-      try {
-        return JSON.parse(savedDocs);
-      } catch (e) {
-        console.error('Error parsing saved documents', e);
-        return initialDocuments;
-      }
-    }
-    return initialDocuments;
-  });
+  const { currentCompany } = useCompany();
+  const [documents, setDocuments] = useState<DatabaseDocument[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Save documents to localStorage whenever they change
+  // Load documents when company or folder changes
   useEffect(() => {
-    localStorage.setItem('documents', JSON.stringify(documents));
-  }, [documents]);
+    loadDocuments();
+  }, [currentCompany?.id, selectedFolderId]);
 
-  // Filter documents based on selected folder
-  const filteredDocuments = selectedFolderId ? documents.filter(doc => doc.folderId === selectedFolderId) : documents;
+  const loadDocuments = async () => {
+    if (!currentCompany?.id) {
+      setDocuments([]);
+      setLoading(false);
+      return;
+    }
 
-  // Method to add a new document to the list
-  const addDocument = (newDoc: Document) => {
-    setDocuments(prevDocs => [{
-      ...newDoc,
-      folderId: selectedFolderId
-    }, ...prevDocs]);
+    setLoading(true);
+    try {
+      const docs = await documentService.getDocuments(currentCompany.id, selectedFolderId);
+      setDocuments(docs);
+    } catch (error) {
+      console.error('Error loading documents:', error);
+      toast({
+        title: "Error loading documents",
+        description: "Failed to load documents",
+        variant: "destructive"
+      });
+      setDocuments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Method to add a new document
+  const addDocument = async (uploadData: { title: string; file: File; folder_id?: string | null }) => {
+    if (!currentCompany?.id) return;
+
+    try {
+      await documentService.uploadDocument(currentCompany.id, {
+        title: uploadData.title,
+        file: uploadData.file,
+        folder_id: uploadData.folder_id || selectedFolderId
+      });
+      await loadDocuments();
+      toast({
+        title: "Document uploaded",
+        description: `${uploadData.file.name} has been successfully uploaded.`,
+      });
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload document",
+        variant: "destructive"
+      });
+    }
   };
 
   // Method to move a document to a different folder
-  const moveDocument = (docId: string, targetFolderId: string | null) => {
-    setDocuments(prevDocs => prevDocs.map(doc => doc.id === docId ? {
-      ...doc,
-      folderId: targetFolderId
-    } : doc));
+  const moveDocument = async (docId: string, targetFolderId: string | null) => {
+    try {
+      await documentService.updateDocument(docId, { folder_id: targetFolderId });
+      await loadDocuments();
+      toast({
+        title: "Document moved",
+        description: "Document has been moved successfully.",
+      });
+    } catch (error) {
+      console.error('Error moving document:', error);
+      toast({
+        title: "Move failed",
+        description: "Failed to move document",
+        variant: "destructive"
+      });
+    }
   };
 
   // Method to delete a document
-  const deleteDocument = (docId: string) => {
-    setDocuments(prevDocs => prevDocs.filter(doc => doc.id !== docId));
-    toast({
-      title: "Document deleted",
-      description: "The document has been successfully deleted.",
-    });
+  const deleteDocument = async (docId: string) => {
+    try {
+      await documentService.deleteDocument(docId);
+      await loadDocuments();
+      toast({
+        title: "Document deleted",
+        description: "The document has been successfully deleted.",
+      });
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete document",
+        variant: "destructive"
+      });
+    }
   };
 
   // Method to rename a document
-  const renameDocument = (docId: string, newTitle: string) => {
+  const renameDocument = async (docId: string, newTitle: string) => {
     if (!newTitle.trim()) {
       toast({
         title: "Invalid name",
@@ -116,16 +113,21 @@ export function useDocuments(selectedFolderId: string | null) {
       return;
     }
 
-    setDocuments(prevDocs => prevDocs.map(doc => doc.id === docId ? {
-      ...doc,
-      title: newTitle,
-      updatedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    } : doc));
-
-    toast({
-      title: "Document renamed",
-      description: "The document has been successfully renamed.",
-    });
+    try {
+      await documentService.updateDocument(docId, { title: newTitle });
+      await loadDocuments();
+      toast({
+        title: "Document renamed",
+        description: "The document has been successfully renamed.",
+      });
+    } catch (error) {
+      console.error('Error renaming document:', error);
+      toast({
+        title: "Rename failed",
+        description: "Failed to rename document",
+        variant: "destructive"
+      });
+    }
   };
 
   // Add the methods to window for access from other components
@@ -134,10 +136,11 @@ export function useDocuments(selectedFolderId: string | null) {
     window.moveDocument = moveDocument;
     window.deleteDocument = deleteDocument;
     window.renameDocument = renameDocument;
-  }, [selectedFolderId]);
+  }, [currentCompany?.id, selectedFolderId]);
 
   return {
-    documents: filteredDocuments,
+    documents,
+    loading,
     addDocument,
     moveDocument,
     deleteDocument,

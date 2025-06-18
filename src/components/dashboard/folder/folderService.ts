@@ -1,180 +1,104 @@
-import { FolderItem } from "../types/folder.types";
 
-// Load folders from localStorage
-export const loadFolderStructure = (): FolderItem[] => {
-  const savedFolders = localStorage.getItem('documentFolders');
-  if (savedFolders) {
-    try {
-      return JSON.parse(savedFolders);
-    } catch (e) {
-      console.error('Error parsing saved folders', e);
-    }
-  }
-  
-  // Default folder structure if nothing is saved
-  return [
-    { id: 'contracts', name: 'Contracts', parentId: null, children: [] },
-    { id: 'reports', name: 'Reports', parentId: null, children: [] },
-    { id: 'invoices', name: 'Invoices', parentId: null, children: [] }
-  ];
+import { DatabaseFolder } from "@/types/documents";
+import { documentFolderService } from "@/services/documentFolderService";
+
+// Convert DatabaseFolder to FolderItem format for compatibility
+const convertToFolderItem = (dbFolder: DatabaseFolder, allFolders: DatabaseFolder[]) => {
+  const children = allFolders
+    .filter(f => f.parent_id === dbFolder.id)
+    .map(child => convertToFolderItem(child, allFolders));
+
+  return {
+    id: dbFolder.id,
+    name: dbFolder.name,
+    parentId: dbFolder.parent_id,
+    children
+  };
 };
 
-// Save folders to localStorage
-export const saveFolderStructure = (folderStructure: FolderItem[]): void => {
-  localStorage.setItem('documentFolders', JSON.stringify(folderStructure));
+// Load folders from database
+export const loadFolderStructure = async (companyId: string) => {
+  try {
+    const dbFolders = await documentFolderService.getFolders(companyId);
+    const rootFolders = dbFolders.filter(f => f.parent_id === null);
+    return rootFolders.map(folder => convertToFolderItem(folder, dbFolders));
+  } catch (error) {
+    console.error('Error loading folder structure:', error);
+    // Return default structure if database fails
+    return [
+      { id: 'contracts', name: 'Contracts', parentId: null, children: [] },
+      { id: 'reports', name: 'Reports', parentId: null, children: [] },
+      { id: 'invoices', name: 'Invoices', parentId: null, children: [] }
+    ];
+  }
+};
+
+// Save folders to database (this is now handled by individual operations)
+export const saveFolderStructure = (folderStructure: any[]): void => {
+  // This function is kept for compatibility but operations are now handled individually
+  console.log('Folder structure is now automatically saved to database');
 };
 
 // Get path of folder by ID
-export const getFolderPathById = (
-  folderStructure: FolderItem[],
+export const getFolderPathById = async (
+  companyId: string,
   folderId: string | null
-): string[] => {
-  if (!folderId) return ["All Documents"];
-  
-  const findPath = (folders: FolderItem[], id: string, path: string[] = []): string[] | null => {
-    for (const folder of folders) {
-      if (folder.id === id) {
-        return [...path, folder.name];
-      }
-      
-      if (folder.children.length > 0) {
-        const childPath = findPath(folder.children, id, [...path, folder.name]);
-        if (childPath) return childPath;
-      }
-    }
-    return null;
-  };
-  
-  let path: string[] = [];
-  for (const rootFolder of folderStructure) {
-    if (rootFolder.id === folderId) {
-      path = [rootFolder.name];
-      break;
-    }
-    
-    const childPath = findPath(rootFolder.children, folderId, [rootFolder.name]);
-    if (childPath) {
-      path = childPath;
-      break;
-    }
+): Promise<string[]> => {
+  try {
+    return await documentFolderService.getFolderPath(folderId);
+  } catch (error) {
+    console.error('Error getting folder path:', error);
+    return folderId ? ["Unknown Folder"] : ["All Documents"];
   }
-  
-  return path.length > 0 ? path : ["Unknown Folder"];
 };
 
 // Add a subfolder to a parent folder
-export const addSubFolder = (
-  folders: FolderItem[], 
-  parentId: string, 
-  newFolder: FolderItem
-): FolderItem[] => {
-  return folders.map(folder => {
-    if (folder.id === parentId) {
-      return {
-        ...folder,
-        children: [...folder.children, newFolder]
-      };
-    } else if (folder.children.length > 0) {
-      return {
-        ...folder,
-        children: addSubFolder(folder.children, parentId, newFolder)
-      };
-    }
-    return folder;
-  });
+export const addSubFolder = async (
+  companyId: string,
+  parentId: string,
+  name: string
+): Promise<void> => {
+  try {
+    await documentFolderService.createFolder(companyId, name, parentId);
+  } catch (error) {
+    console.error('Error creating subfolder:', error);
+    throw error;
+  }
 };
 
 // Update folder name by ID
-export const updateFolderName = (
-  folders: FolderItem[], 
-  id: string, 
+export const updateFolderName = async (
+  folderId: string,
   newName: string
-): FolderItem[] => {
-  return folders.map(folder => {
-    if (folder.id === id) {
-      return { ...folder, name: newName.trim() };
-    }
-    if (folder.children.length > 0) {
-      return {
-        ...folder,
-        children: updateFolderName(folder.children, id, newName)
-      };
-    }
-    return folder;
-  });
-};
-
-// Find a folder by ID
-export const findFolderById = (
-  folders: FolderItem[], 
-  id: string
-): FolderItem | null => {
-  for (const folder of folders) {
-    if (folder.id === id) {
-      return folder;
-    }
-    if (folder.children.length > 0) {
-      const childResult = findFolderById(folder.children, id);
-      if (childResult) return childResult;
-    }
+): Promise<void> => {
+  try {
+    await documentFolderService.updateFolder(folderId, newName);
+  } catch (error) {
+    console.error('Error updating folder name:', error);
+    throw error;
   }
-  return null;
 };
 
 // Delete folder by ID
-export const deleteFolder = (
-  folders: FolderItem[],
-  id: string
-): FolderItem[] => {
-  // First, handle root level folders
-  const filteredFolders = folders.filter(folder => folder.id !== id);
-  
-  // If the length is the same, the folder was not at the root level
-  if (filteredFolders.length === folders.length) {
-    // Look in each folder's children
-    return folders.map(folder => ({
-      ...folder,
-      children: deleteFolder(folder.children, id)
-    }));
+export const deleteFolder = async (folderId: string): Promise<void> => {
+  try {
+    await documentFolderService.deleteFolder(folderId);
+  } catch (error) {
+    console.error('Error deleting folder:', error);
+    throw error;
   }
-  
-  return filteredFolders;
 };
 
-// Update documents to remove folderId reference when a folder is deleted
+// Legacy functions for compatibility
+export const findFolderById = (folders: any[], id: string) => {
+  // This is now handled by database queries
+  return null;
+};
+
 export const updateDocumentsAfterFolderDeletion = (folderId: string): void => {
-  try {
-    const savedDocs = localStorage.getItem('documents');
-    if (savedDocs) {
-      const documents = JSON.parse(savedDocs);
-      const updatedDocs = documents.map((doc: any) => {
-        if (doc.folderId === folderId) {
-          return { ...doc, folderId: null };
-        }
-        return doc;
-      });
-      localStorage.setItem('documents', JSON.stringify(updatedDocs));
-    }
-  } catch (e) {
-    console.error('Error updating documents after folder deletion', e);
-  }
+  // This is now handled automatically by the database CASCADE rules
 };
 
-// Edit folder name globally (exposed to window)
-export const editFolderName = (folderId: string, newName: string): void => {
-  try {
-    const savedFolders = localStorage.getItem('documentFolders');
-    if (savedFolders) {
-      const folders = JSON.parse(savedFolders);
-      const updatedFolders = updateFolderName(folders, folderId, newName);
-      localStorage.setItem('documentFolders', JSON.stringify(updatedFolders));
-    }
-  } catch (e) {
-    console.error('Error updating folder name', e);
-  }
+export const editFolderName = async (folderId: string, newName: string): Promise<void> => {
+  await updateFolderName(folderId, newName);
 };
-
-// Attach to window for global access
-if (typeof window !== 'undefined') {
-  window.editFolderName = editFolderName;
-}

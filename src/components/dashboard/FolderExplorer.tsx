@@ -1,20 +1,26 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { FolderPlus, ArrowLeft } from "lucide-react";
 import { AddFolderDialog } from "./folder/AddFolderDialog";
 import { EditFolderDialog } from "./folder/EditFolderDialog";
 import { DeleteFolderDialog } from "./folder/DeleteFolderDialog";
-import { loadFolderStructure, saveFolderStructure, getFolderPathById, addSubFolder, updateFolderName, findFolderById, deleteFolder, updateDocumentsAfterFolderDeletion } from "./folder/folderService";
+import { documentFolderService } from "@/services/documentFolderService";
 import { FolderItem as FolderItemType, FolderExplorerProps } from "./types/folder.types";
 import { FolderTile } from "./folder/FolderItem";
 import { Card } from "@/components/ui/card";
+import { useCompany } from "@/providers/CompanyProvider";
+import { toast } from "@/hooks/use-toast";
+
 export { type FolderItem } from "./types/folder.types";
+
 export function FolderExplorer({
   onFolderSelect,
   selectedFolderId
 }: FolderExplorerProps) {
-  const [folderStructure, setFolderStructure] = useState<FolderItemType[]>(loadFolderStructure);
-  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
+  const { currentCompany } = useCompany();
+  const [folderStructure, setFolderStructure] = useState<FolderItemType[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [navigationStack, setNavigationStack] = useState<string[]>([]);
 
@@ -32,16 +38,67 @@ export function FolderExplorer({
   const [deletingFolderId, setDeletingFolderId] = useState<string | null>(null);
   const [deletingFolderName, setDeletingFolderName] = useState("");
 
-  // Save folder structure to localStorage whenever it changes
+  // Load folders when company changes
   useEffect(() => {
-    saveFolderStructure(folderStructure);
-  }, [folderStructure]);
+    loadFolders();
+  }, [currentCompany?.id]);
+
+  const loadFolders = async () => {
+    if (!currentCompany?.id) return;
+    
+    setLoading(true);
+    try {
+      const dbFolders = await documentFolderService.getFolders(currentCompany.id);
+      const folderTree = buildFolderTree(dbFolders);
+      setFolderStructure(folderTree);
+    } catch (error) {
+      console.error('Error loading folders:', error);
+      toast({
+        title: "Error loading folders",
+        description: "Failed to load folder structure",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const buildFolderTree = (dbFolders: any[]): FolderItemType[] => {
+    const folderMap = new Map();
+    const rootFolders: FolderItemType[] = [];
+
+    // Create folder items
+    dbFolders.forEach(folder => {
+      folderMap.set(folder.id, {
+        id: folder.id,
+        name: folder.name,
+        parentId: folder.parent_id,
+        children: []
+      });
+    });
+
+    // Build tree structure
+    dbFolders.forEach(folder => {
+      const folderItem = folderMap.get(folder.id);
+      if (folder.parent_id) {
+        const parent = folderMap.get(folder.parent_id);
+        if (parent) {
+          parent.children.push(folderItem);
+        }
+      } else {
+        rootFolders.push(folderItem);
+      }
+    });
+
+    return rootFolders;
+  };
 
   // Get current folder's contents
   const getCurrentFolderContents = (): FolderItemType[] => {
     if (!currentFolderId) {
       return folderStructure;
     }
+    
     const findChildrenById = (folders: FolderItemType[], id: string): FolderItemType[] => {
       for (const folder of folders) {
         if (folder.id === id) {
@@ -59,11 +116,6 @@ export function FolderExplorer({
     return findChildrenById(folderStructure, currentFolderId);
   };
 
-  // Get current folder path for breadcrumb
-  const getCurrentFolderPath = (): string[] => {
-    return getFolderPathById(folderStructure, currentFolderId);
-  };
-
   // Navigate to a specific folder
   const navigateToFolder = (folderId: string | null) => {
     if (folderId) {
@@ -71,7 +123,6 @@ export function FolderExplorer({
       setCurrentFolderId(folderId);
       onFolderSelect(folderId);
     } else {
-      // Root level
       setNavigationStack([]);
       setCurrentFolderId(null);
       onFolderSelect(null);
@@ -81,14 +132,12 @@ export function FolderExplorer({
   // Navigate back to parent folder
   const navigateBack = () => {
     if (navigationStack.length <= 1) {
-      // Go back to root
       setNavigationStack([]);
       setCurrentFolderId(null);
       onFolderSelect(null);
       return;
     }
 
-    // Remove current folder from stack and set previous as current
     const newStack = navigationStack.slice(0, -1);
     const parentFolderId = newStack.length > 0 ? newStack[newStack.length - 1] : null;
     setNavigationStack(newStack);
@@ -97,47 +146,66 @@ export function FolderExplorer({
   };
 
   // Add a new folder
-  const addFolder = (newFolderName: string, parentId: string | null) => {
-    const newFolder: FolderItemType = {
-      id: `folder-${Date.now()}`,
-      name: newFolderName,
-      parentId: parentId,
-      children: []
-    };
-
-    // If it's a root level folder
-    if (!parentId) {
-      setFolderStructure([...folderStructure, newFolder]);
-    } else {
-      // If it's a subfolder
-      const updatedStructure = addSubFolder(folderStructure, parentId, newFolder);
-      setFolderStructure(updatedStructure);
-
-      // Ensure the parent folder is expanded
-      setExpandedFolders(prev => ({
-        ...prev,
-        [parentId]: true
-      }));
+  const addFolder = async (newFolderName: string, parentId: string | null) => {
+    if (!currentCompany?.id) return;
+    
+    try {
+      await documentFolderService.createFolder(currentCompany.id, newFolderName, parentId || currentFolderId);
+      await loadFolders();
+      toast({
+        title: "Folder created",
+        description: `Folder "${newFolderName}" has been created successfully.`
+      });
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      toast({
+        title: "Error creating folder",
+        description: "Failed to create folder",
+        variant: "destructive"
+      });
     }
   };
 
   // Edit folder name
-  const editFolder = (folderId: string, newName: string) => {
-    const updatedStructure = updateFolderName(folderStructure, folderId, newName);
-    setFolderStructure(updatedStructure);
+  const editFolder = async (folderId: string, newName: string) => {
+    try {
+      await documentFolderService.updateFolder(folderId, newName);
+      await loadFolders();
+      toast({
+        title: "Folder renamed",
+        description: `Folder has been renamed to "${newName}".`
+      });
+    } catch (error) {
+      console.error('Error updating folder:', error);
+      toast({
+        title: "Error renaming folder",
+        description: "Failed to rename folder",
+        variant: "destructive"
+      });
+    }
   };
 
   // Delete folder
-  const handleDeleteFolder = (folderId: string) => {
-    const updatedStructure = deleteFolder(folderStructure, folderId);
-    setFolderStructure(updatedStructure);
-
-    // Update documents to remove references to deleted folder
-    updateDocumentsAfterFolderDeletion(folderId);
-
-    // If deleting current folder, go back
-    if (currentFolderId === folderId) {
-      navigateBack();
+  const handleDeleteFolder = async (folderId: string) => {
+    try {
+      await documentFolderService.deleteFolder(folderId);
+      await loadFolders();
+      
+      if (currentFolderId === folderId) {
+        navigateBack();
+      }
+      
+      toast({
+        title: "Folder deleted",
+        description: "Folder has been deleted successfully."
+      });
+    } catch (error) {
+      console.error('Error deleting folder:', error);
+      toast({
+        title: "Error deleting folder",
+        description: "Failed to delete folder",
+        variant: "destructive"
+      });
     }
   };
 
@@ -149,7 +217,16 @@ export function FolderExplorer({
 
   // Open dialog to edit a folder
   const openEditFolderDialog = (folderId: string) => {
-    const folderToEdit = findFolderById(folderStructure, folderId);
+    const findFolder = (folders: FolderItemType[], id: string): FolderItemType | null => {
+      for (const folder of folders) {
+        if (folder.id === id) return folder;
+        const found = findFolder(folder.children, id);
+        if (found) return found;
+      }
+      return null;
+    };
+
+    const folderToEdit = findFolder(folderStructure, folderId);
     if (folderToEdit) {
       setEditingFolderId(folderId);
       setEditingFolderName(folderToEdit.name);
@@ -159,7 +236,16 @@ export function FolderExplorer({
 
   // Open dialog to delete a folder
   const openDeleteFolderDialog = (folderId: string) => {
-    const folderToDelete = findFolderById(folderStructure, folderId);
+    const findFolder = (folders: FolderItemType[], id: string): FolderItemType | null => {
+      for (const folder of folders) {
+        if (folder.id === id) return folder;
+        const found = findFolder(folder.children, id);
+        if (found) return found;
+      }
+      return null;
+    };
+
+    const folderToDelete = findFolder(folderStructure, folderId);
     if (folderToDelete) {
       setDeletingFolderId(folderId);
       setDeletingFolderName(folderToDelete.name);
@@ -167,20 +253,29 @@ export function FolderExplorer({
     }
   };
 
-  // Get folder path for display
-  const getFolderPath = (folderId: string | null): string[] => {
-    return getFolderPathById(folderStructure, folderId);
-  };
   const currentFolders = getCurrentFolderContents();
-  const folderPath = getCurrentFolderPath();
-  return <div>
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading folders...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
       <div className="flex justify-between items-center mb-6">
-        
         <div className="flex gap-2">
-          {currentFolderId && <Button variant="outline" onClick={navigateBack} className="flex items-center gap-2">
+          {currentFolderId && (
+            <Button variant="outline" onClick={navigateBack} className="flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" />
               Back
-            </Button>}
+            </Button>
+          )}
           <Button onClick={() => openAddFolderDialog(currentFolderId)} className="flex items-center gap-2">
             <FolderPlus className="h-4 w-4" />
             {currentFolderId ? "New Subfolder" : "New Folder"}
@@ -189,10 +284,21 @@ export function FolderExplorer({
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {currentFolders.map(folder => <FolderTile key={folder.id} folder={folder} isSelected={selectedFolderId === folder.id} onFolderSelect={() => navigateToFolder(folder.id)} onEditFolder={openEditFolderDialog} onAddSubfolder={openAddFolderDialog} onDeleteFolder={openDeleteFolderDialog} />)}
+        {currentFolders.map(folder => (
+          <FolderTile
+            key={folder.id}
+            folder={folder}
+            isSelected={selectedFolderId === folder.id}
+            onFolderSelect={() => navigateToFolder(folder.id)}
+            onEditFolder={openEditFolderDialog}
+            onAddSubfolder={openAddFolderDialog}
+            onDeleteFolder={openDeleteFolderDialog}
+          />
+        ))}
       </div>
       
-      {currentFolders.length === 0 && <Card className="p-12 text-center">
+      {currentFolders.length === 0 && (
+        <Card className="p-12 text-center">
           <div className="flex flex-col items-center justify-center gap-4">
             <h3 className="text-xl font-medium">
               {currentFolderId ? "This folder is empty" : "No folders yet"}
@@ -205,12 +311,35 @@ export function FolderExplorer({
               {currentFolderId ? "New Subfolder" : "New Folder"}
             </Button>
           </div>
-        </Card>}
+        </Card>
+      )}
       
-      <AddFolderDialog open={isAddingFolder} onOpenChange={setIsAddingFolder} parentId={currentParentId} onAddFolder={addFolder} getFolderPath={getFolderPath} />
+      <AddFolderDialog
+        open={isAddingFolder}
+        onOpenChange={setIsAddingFolder}
+        parentId={currentParentId}
+        onAddFolder={addFolder}
+        getFolderPath={async (folderId) => {
+          if (!currentCompany?.id) return [];
+          return await documentFolderService.getFolderPath(folderId);
+        }}
+      />
       
-      <EditFolderDialog open={isEditingFolder} onOpenChange={setIsEditingFolder} folderId={editingFolderId} folderName={editingFolderName} onEditFolder={editFolder} />
+      <EditFolderDialog
+        open={isEditingFolder}
+        onOpenChange={setIsEditingFolder}
+        folderId={editingFolderId}
+        folderName={editingFolderName}
+        onEditFolder={editFolder}
+      />
       
-      <DeleteFolderDialog open={isDeletingFolder} onOpenChange={setIsDeletingFolder} folderId={deletingFolderId} folderName={deletingFolderName} onDeleteFolder={handleDeleteFolder} />
-    </div>;
+      <DeleteFolderDialog
+        open={isDeletingFolder}
+        onOpenChange={setIsDeletingFolder}
+        folderId={deletingFolderId}
+        folderName={deletingFolderName}
+        onDeleteFolder={handleDeleteFolder}
+      />
+    </div>
+  );
 }
