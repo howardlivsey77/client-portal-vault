@@ -1,5 +1,4 @@
 
-
 import { z } from "zod";
 
 // Define work pattern schema
@@ -64,7 +63,7 @@ export const employeeSchema = z.object({
   tax_code: z.string().optional().nullable(),
   week_one_month_one: z.boolean().optional().nullable(),
   nic_code: nicCodeValidation.nullable(),
-  student_loan_plan: z.number().optional().nullable(),
+  student_loan_plan: z.number().min(1).max(6).optional().nullable(),
   // New fields
   national_insurance_number: nationalInsuranceNumberValidation.nullable(),
 });
@@ -108,6 +107,7 @@ export const studentLoanPlanOptions = [
   { label: "Plan 2", value: 2 },
   { label: "Plan 4", value: 4 },
   { label: "Plan 5", value: 5 },
+  { label: "Plan 6 (Postgraduate)", value: 6 },
 ];
 
 export const nicCodeOptions = [

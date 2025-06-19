@@ -19,13 +19,14 @@ export function FinancialDetailsFields({
 }: FinancialDetailsFieldsProps) {
   const [showTaxCodeHelp, setShowTaxCodeHelp] = useState(false);
   
-  // Student loan plan options
+  // Student loan plan options with Plan 6
   const studentLoanOptions = [
     { value: null, label: "None" },
     { value: 1, label: "Plan 1" },
     { value: 2, label: "Plan 2" },
     { value: 4, label: "Plan 4" },
-    { value: 5, label: "Postgraduate Loan" }
+    { value: 5, label: "Plan 5" },
+    { value: 6, label: "Plan 6 (Postgraduate)" }
   ];
 
   return (

@@ -23,3 +23,12 @@ export const NI_RATES = {
   MAIN_RATE: 0.12,
   HIGHER_RATE: 0.02
 };
+
+// Student Loan thresholds and rates for 2025-2026
+export const STUDENT_LOAN_THRESHOLDS = {
+  PLAN_1: { annual: 22015, rate: 0.09 }, // Pre-2012 students
+  PLAN_2: { annual: 27295, rate: 0.09 }, // Post-2012 students 
+  PLAN_4: { annual: 27660, rate: 0.09 }, // Scottish students
+  PLAN_5: { annual: 25000, rate: 0.09 }, // Post-2023 students
+  PLAN_6: { annual: 21000, rate: 0.06 }  // Postgraduate loan
+};
