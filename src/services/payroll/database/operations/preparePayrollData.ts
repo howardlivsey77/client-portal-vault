@@ -26,6 +26,14 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       - Above ST: £${result.earningsAboveST}
     `);
     
+    console.log(`[PREPARE] NHS pension values:
+      - Employee contribution: £${result.nhsPensionEmployeeContribution}
+      - Employer contribution: £${result.nhsPensionEmployerContribution}
+      - Tier: ${result.nhsPensionTier}
+      - Employee rate: ${result.nhsPensionEmployeeRate}%
+      - Employer rate: ${result.nhsPensionEmployerRate}%
+    `);
+    
     const payrollPeriodDate = new Date(payPeriod.year, payPeriod.month - 1, 1);
     const formattedPayrollPeriod = payrollPeriodDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
     
@@ -96,6 +104,10 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
     const earningsAboveSTPennies = Math.round(earningsAboveST * 100);
     const nicEmployeeThisPeriodPennies = Math.round(niValue * 100);
     
+    // NHS Pension values in pennies
+    const nhsPensionEmployeeThisPeriodPennies = Math.round((result.nhsPensionEmployeeContribution || 0) * 100);
+    const nhsPensionEmployerThisPeriodPennies = Math.round((result.nhsPensionEmployerContribution || 0) * 100);
+    
     // Verify NI values before saving - This is critical for debugging
     console.log(`[PREPARE] NI values in pennies for database: 
       - NI Employee: ${nicEmployeeThisPeriodPennies} pennies (£${nicEmployeeThisPeriodPennies/100})
@@ -104,6 +116,11 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       - PT to UEL: ${earningsPTtoUELPennies} pennies (£${earningsPTtoUELPennies/100})
       - Above UEL: ${earningsAboveUELPennies} pennies (£${earningsAboveUELPennies/100})
       - Above ST: ${earningsAboveSTPennies} pennies (£${earningsAboveSTPennies/100})
+    `);
+    
+    console.log(`[PREPARE] NHS pension values in pennies:
+      - Employee contribution: ${nhsPensionEmployeeThisPeriodPennies} pennies (£${nhsPensionEmployeeThisPeriodPennies/100})
+      - Employer contribution: ${nhsPensionEmployerThisPeriodPennies} pennies (£${nhsPensionEmployerThisPeriodPennies/100})
     `);
     
     // Full salary info for NI eligibility check
@@ -140,6 +157,15 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       earnings_pt_to_uel_this_period: earningsPTtoUELPennies,
       earnings_above_uel_this_period: earningsAboveUELPennies,
       earnings_above_st_this_period: earningsAboveSTPennies,
+      
+      // NHS Pension fields
+      nhs_pension_employee_this_period: nhsPensionEmployeeThisPeriodPennies,
+      nhs_pension_employer_this_period: nhsPensionEmployerThisPeriodPennies,
+      nhs_pension_employee_ytd: nhsPensionEmployeeThisPeriodPennies, // For now, same as this period
+      nhs_pension_employer_ytd: nhsPensionEmployerThisPeriodPennies, // For now, same as this period
+      nhs_pension_tier: result.nhsPensionTier || null,
+      nhs_pension_employee_rate: result.nhsPensionEmployeeRate || null,
+      nhs_pension_employer_rate: result.nhsPensionEmployerRate || null,
       
       // Net pay calculation
       net_pay_this_period: Math.round(result.netPay * 100),

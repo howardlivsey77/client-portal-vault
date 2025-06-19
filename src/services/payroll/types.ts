@@ -14,6 +14,9 @@ export interface PayrollDetails {
   additionalDeductions?: Array<{ description: string, amount: number }>;
   additionalAllowances?: Array<{ description: string, amount: number }>;
   additionalEarnings?: Array<{ description: string, amount: number }>;
+  // NHS Pension fields
+  isNHSPensionMember?: boolean;
+  previousYearPensionablePay?: number | null;
 }
 
 export interface PayrollResult {
@@ -43,4 +46,11 @@ export interface PayrollResult {
   earningsPTtoUEL: number;
   earningsAboveUEL: number;
   earningsAboveST: number;
+  // NHS Pension fields
+  nhsPensionEmployeeContribution: number;
+  nhsPensionEmployerContribution: number;
+  nhsPensionTier: number;
+  nhsPensionEmployeeRate: number;
+  nhsPensionEmployerRate: number;
+  isNHSPensionMember: boolean;
 }

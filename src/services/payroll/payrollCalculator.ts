@@ -4,6 +4,7 @@ import { calculateMonthlyIncomeTaxAsync } from "./calculations/income-tax";
 import { calculateNationalInsurance, calculateNationalInsuranceAsync, NICalculationResult } from "./calculations/national-insurance";
 import { calculateStudentLoan } from "./calculations/student-loan";
 import { calculatePension } from "./calculations/pension";
+import { calculateNHSPension } from "./calculations/nhs-pension";
 import { PayrollDetails, PayrollResult } from "./types";
 import { parseTaxCode } from "./utils/tax-code-utils";
 import { NationalInsuranceCalculator } from "./calculations/ni/services/NationalInsuranceCalculator";
@@ -29,10 +30,12 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     studentLoanPlan = null,
     additionalDeductions = [],
     additionalAllowances = [],
-    additionalEarnings = []
+    additionalEarnings = [],
+    isNHSPensionMember = false,
+    previousYearPensionablePay = null
   } = details;
   
-  console.log(`[PAYROLL] Starting calculation for ${employeeName}, monthly salary: £${monthlySalary}`);
+  console.log(`[PAYROLL] Starting calculation for ${employeeName}, monthly salary: £${monthlySalary}, NHS pension member: ${isNHSPensionMember}`);
   
   // Tax year in format YYYY/YY
   const currentYear = new Date().getFullYear();
@@ -89,11 +92,21 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   const pensionContribution = calculatePension(grossPay, pensionPercentage);
   console.log(`[PAYROLL] Student loan: £${studentLoan}, Pension contribution: £${pensionContribution}`);
   
+  // Calculate NHS pension contributions
+  const nhsPensionResult = await calculateNHSPension(
+    monthlySalary, 
+    previousYearPensionablePay, 
+    taxYear, 
+    isNHSPensionMember
+  );
+  
+  console.log(`[PAYROLL] NHS pension - Employee: £${nhsPensionResult.employeeContribution}, Employer: £${nhsPensionResult.employerContribution}, Tier: ${nhsPensionResult.tier}`);
+  
   // Calculate totals
   const totalAdditionalDeductions = additionalDeductions.reduce((sum, item) => sum + item.amount, 0);
   const totalAdditionalAllowances = additionalAllowances.reduce((sum, item) => sum + item.amount, 0);
   
-  const totalDeductions = incomeTax + nationalInsurance + studentLoan + pensionContribution + totalAdditionalDeductions;
+  const totalDeductions = incomeTax + nationalInsurance + studentLoan + pensionContribution + nhsPensionResult.employeeContribution + totalAdditionalDeductions;
   const totalAllowances = totalAdditionalAllowances;
   const netPay = grossPay - totalDeductions + totalAllowances;
   
@@ -127,7 +140,14 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     earningsLELtoPT: roundToTwoDecimals(earningsLELtoPT),
     earningsPTtoUEL: roundToTwoDecimals(earningsPTtoUEL),
     earningsAboveUEL: roundToTwoDecimals(earningsAboveUEL),
-    earningsAboveST: roundToTwoDecimals(earningsAboveST)
+    earningsAboveST: roundToTwoDecimals(earningsAboveST),
+    // Add NHS pension fields to the result
+    nhsPensionEmployeeContribution: roundToTwoDecimals(nhsPensionResult.employeeContribution),
+    nhsPensionEmployerContribution: roundToTwoDecimals(nhsPensionResult.employerContribution),
+    nhsPensionTier: nhsPensionResult.tier,
+    nhsPensionEmployeeRate: nhsPensionResult.employeeRate,
+    nhsPensionEmployerRate: nhsPensionResult.employerRate,
+    isNHSPensionMember
   };
   
   console.log(`[PAYROLL] Final calculation result:`, result);
@@ -139,6 +159,7 @@ export * from "./calculations/income-tax";
 export * from "./calculations/national-insurance";
 export * from "./calculations/student-loan";
 export * from "./calculations/pension";
+export * from "./calculations/nhs-pension";
 export * from "./utils/tax-code-utils";
 export * from "./constants/tax-constants";
 export * from "./types";

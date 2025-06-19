@@ -38,7 +38,10 @@ export const PayrollCalculator = ({ employee, payPeriod }: PayrollCalculatorProp
     studentLoanPlan: employee.student_loan_plan as 1 | 2 | 4 | 5 | null,
     additionalDeductions: [],
     additionalAllowances: [],
-    additionalEarnings: []
+    additionalEarnings: [],
+    // NHS Pension fields
+    isNHSPensionMember: employee.nhs_pension_member || false,
+    previousYearPensionablePay: employee.previous_year_pensionable_pay || null
   });
 
   const handleClearResults = async () => {

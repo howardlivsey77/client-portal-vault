@@ -434,9 +434,13 @@ export type Database = {
           id: string
           last_name: string
           national_insurance_number: string | null
+          nhs_pension_employee_rate: number | null
+          nhs_pension_member: boolean | null
+          nhs_pension_tier: number | null
           nic_code: string | null
           payroll_id: string | null
           postcode: string | null
+          previous_year_pensionable_pay: number | null
           rate_2: number | null
           rate_3: number | null
           rate_4: number | null
@@ -466,9 +470,13 @@ export type Database = {
           id?: string
           last_name: string
           national_insurance_number?: string | null
+          nhs_pension_employee_rate?: number | null
+          nhs_pension_member?: boolean | null
+          nhs_pension_tier?: number | null
           nic_code?: string | null
           payroll_id?: string | null
           postcode?: string | null
+          previous_year_pensionable_pay?: number | null
           rate_2?: number | null
           rate_3?: number | null
           rate_4?: number | null
@@ -498,9 +506,13 @@ export type Database = {
           id?: string
           last_name?: string
           national_insurance_number?: string | null
+          nhs_pension_employee_rate?: number | null
+          nhs_pension_member?: boolean | null
+          nhs_pension_tier?: number | null
           nic_code?: string | null
           payroll_id?: string | null
           postcode?: string | null
+          previous_year_pensionable_pay?: number | null
           rate_2?: number | null
           rate_3?: number | null
           rate_4?: number | null
@@ -555,6 +567,51 @@ export type Database = {
           issued_at?: string
           issued_by?: string
           role?: string | null
+        }
+        Relationships: []
+      }
+      nhs_pension_bands: {
+        Row: {
+          annual_pensionable_pay_from: number
+          annual_pensionable_pay_to: number | null
+          created_at: string
+          effective_from: string
+          effective_to: string | null
+          employee_contribution_rate: number
+          employer_contribution_rate: number
+          id: string
+          is_current: boolean
+          tax_year: string
+          tier_number: number
+          updated_at: string
+        }
+        Insert: {
+          annual_pensionable_pay_from: number
+          annual_pensionable_pay_to?: number | null
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          employee_contribution_rate: number
+          employer_contribution_rate?: number
+          id?: string
+          is_current?: boolean
+          tax_year: string
+          tier_number: number
+          updated_at?: string
+        }
+        Update: {
+          annual_pensionable_pay_from?: number
+          annual_pensionable_pay_to?: number | null
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          employee_contribution_rate?: number
+          employer_contribution_rate?: number
+          id?: string
+          is_current?: boolean
+          tax_year?: string
+          tier_number?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -779,6 +836,13 @@ export type Database = {
           income_tax_this_period: number
           income_tax_ytd: number | null
           net_pay_this_period: number
+          nhs_pension_employee_rate: number | null
+          nhs_pension_employee_this_period: number | null
+          nhs_pension_employee_ytd: number | null
+          nhs_pension_employer_rate: number | null
+          nhs_pension_employer_this_period: number | null
+          nhs_pension_employer_ytd: number | null
+          nhs_pension_tier: number | null
           nic_employee_this_period: number
           nic_employee_ytd: number | null
           nic_employer_this_period: number
@@ -812,6 +876,13 @@ export type Database = {
           income_tax_this_period: number
           income_tax_ytd?: number | null
           net_pay_this_period: number
+          nhs_pension_employee_rate?: number | null
+          nhs_pension_employee_this_period?: number | null
+          nhs_pension_employee_ytd?: number | null
+          nhs_pension_employer_rate?: number | null
+          nhs_pension_employer_this_period?: number | null
+          nhs_pension_employer_ytd?: number | null
+          nhs_pension_tier?: number | null
           nic_employee_this_period: number
           nic_employee_ytd?: number | null
           nic_employer_this_period: number
@@ -845,6 +916,13 @@ export type Database = {
           income_tax_this_period?: number
           income_tax_ytd?: number | null
           net_pay_this_period?: number
+          nhs_pension_employee_rate?: number | null
+          nhs_pension_employee_this_period?: number | null
+          nhs_pension_employee_ytd?: number | null
+          nhs_pension_employer_rate?: number | null
+          nhs_pension_employer_this_period?: number | null
+          nhs_pension_employer_ytd?: number | null
+          nhs_pension_tier?: number | null
           nic_employee_this_period?: number
           nic_employee_ytd?: number | null
           nic_employer_this_period?: number
