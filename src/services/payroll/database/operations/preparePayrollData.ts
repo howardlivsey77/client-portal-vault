@@ -68,6 +68,22 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       - Above ST: £${earningsAboveST} (original: £${result.earningsAboveST})
     `);
     
+    // ADDED: Additional validation for NIC earnings bands according to HMRC rules
+    const totalBandEarnings = earningsAtLEL + earningsLELtoPT + earningsPTtoUEL + earningsAboveUEL;
+    if (Math.abs(totalBandEarnings - result.grossPay) > 0.01) {
+      console.warn(`[PREPARE] WARNING: NIC earnings bands don't sum to gross pay`);
+      console.warn(`[PREPARE] Total bands: £${totalBandEarnings}, Gross pay: £${result.grossPay}`);
+      console.warn(`[PREPARE] This indicates a potential issue with the NIC band calculations`);
+    }
+    
+    // ADDED: Validate HMRC reporting rules
+    if (result.grossPay > 542 && earningsAtLEL !== 542) {
+      console.warn(`[PREPARE] HMRC Rule Check: Salary above LEL (£542) but LEL band is not £542. Current LEL: £${earningsAtLEL}`);
+    }
+    if (result.grossPay > 1048 && earningsLELtoPT !== (1048 - 542)) {
+      console.warn(`[PREPARE] HMRC Rule Check: Salary above PT (£1048) but LEL to PT band is not £506. Current LEL to PT: £${earningsLELtoPT}`);
+    }
+    
     // Convert earnings band values to pennies for database storage
     const earningsAtLELPennies = Math.round(earningsAtLEL * 100);
     const earningsLELtoPTPennies = Math.round(earningsLELtoPT * 100);
@@ -113,7 +129,7 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       employee_pension_this_period: Math.round(result.pensionContribution * 100),
       employer_pension_this_period: 0, // Default to 0, update if available
       
-      // NI earnings bands - ensure values are always positive
+      // NI earnings bands - using corrected HMRC-compliant values
       earnings_at_lel_this_period: earningsAtLELPennies,
       earnings_lel_to_pt_this_period: earningsLELtoPTPennies,
       earnings_pt_to_uel_this_period: earningsPTtoUELPennies,
@@ -130,7 +146,7 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       nic_employee_ytd: nicEmployeeYTD
     };
     
-    console.log(`[PREPARE] Final payroll data prepared successfully:`, payrollData);
+    console.log(`[PREPARE] Final payroll data prepared successfully with corrected NIC bands:`, payrollData);
     
     return { 
       success: true, 

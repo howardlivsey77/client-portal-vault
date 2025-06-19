@@ -1,7 +1,75 @@
-
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { NICalculationResult, NICBand } from "./types";
 import { NI_THRESHOLDS, NI_RATES } from "../../constants/tax-constants";
+
+/**
+ * Calculate NIC earnings bands according to HMRC reporting rules
+ * This ensures proper reporting of earnings bands while maintaining correct NIC calculations
+ */
+function calculateNICEarningsBands(
+  monthlySalary: number,
+  lel: number,
+  pt: number,
+  uel: number,
+  st: number
+): Pick<NICalculationResult, 'earningsAtLEL' | 'earningsLELtoPT' | 'earningsPTtoUEL' | 'earningsAboveUEL' | 'earningsAboveST'> {
+  console.log(`[NIC BANDS] Calculating NIC earnings bands for salary: £${monthlySalary}`);
+  console.log(`[NIC BANDS] Thresholds - LEL: £${lel}, PT: £${pt}, UEL: £${uel}, ST: £${st}`);
+  
+  let earningsAtLEL = 0;
+  let earningsLELtoPT = 0;
+  let earningsPTtoUEL = 0;
+  let earningsAboveUEL = 0;
+  let earningsAboveST = 0;
+  
+  if (monthlySalary <= lel) {
+    // If salary doesn't exceed LEL, all earnings are at LEL level
+    earningsAtLEL = monthlySalary;
+    earningsLELtoPT = 0;
+    earningsPTtoUEL = 0;
+    earningsAboveUEL = 0;
+    console.log(`[NIC BANDS] Salary below LEL - All earnings (£${monthlySalary}) reported at LEL`);
+  } else if (monthlySalary <= pt) {
+    // If salary exceeds LEL but not PT
+    earningsAtLEL = lel; // Full LEL amount
+    earningsLELtoPT = monthlySalary - lel;
+    earningsPTtoUEL = 0;
+    earningsAboveUEL = 0;
+    console.log(`[NIC BANDS] Salary above LEL but below PT - LEL: £${earningsAtLEL}, LEL to PT: £${earningsLELtoPT}`);
+  } else if (monthlySalary <= uel) {
+    // If salary exceeds PT but not UEL
+    earningsAtLEL = lel; // Full LEL amount
+    earningsLELtoPT = pt - lel; // Full LEL to PT amount
+    earningsPTtoUEL = monthlySalary - pt;
+    earningsAboveUEL = 0;
+    console.log(`[NIC BANDS] Salary above PT but below UEL - LEL: £${earningsAtLEL}, LEL to PT: £${earningsLELtoPT}, PT to UEL: £${earningsPTtoUEL}`);
+  } else {
+    // If salary exceeds UEL
+    earningsAtLEL = lel; // Full LEL amount
+    earningsLELtoPT = pt - lel; // Full LEL to PT amount
+    earningsPTtoUEL = uel - pt; // Full PT to UEL amount
+    earningsAboveUEL = monthlySalary - uel;
+    console.log(`[NIC BANDS] Salary above UEL - LEL: £${earningsAtLEL}, LEL to PT: £${earningsLELtoPT}, PT to UEL: £${earningsPTtoUEL}, Above UEL: £${earningsAboveUEL}`);
+  }
+  
+  // Calculate earnings above ST (Secondary Threshold) for employer NIC
+  earningsAboveST = Math.max(0, monthlySalary - st);
+  
+  // Validation - ensure all earnings bands add up to the total salary
+  const totalEarnings = earningsAtLEL + earningsLELtoPT + earningsPTtoUEL + earningsAboveUEL;
+  if (Math.abs(totalEarnings - monthlySalary) > 0.01) {
+    console.warn(`[NIC BANDS] WARNING: Earnings bands don't sum to total salary. Total: £${totalEarnings}, Salary: £${monthlySalary}`);
+    console.warn(`[NIC BANDS] Bands: LEL: £${earningsAtLEL}, LEL to PT: £${earningsLELtoPT}, PT to UEL: £${earningsPTtoUEL}, Above UEL: £${earningsAboveUEL}`);
+  }
+  
+  return {
+    earningsAtLEL: roundToTwoDecimals(earningsAtLEL),
+    earningsLELtoPT: roundToTwoDecimals(earningsLELtoPT),
+    earningsPTtoUEL: roundToTwoDecimals(earningsPTtoUEL),
+    earningsAboveUEL: roundToTwoDecimals(earningsAboveUEL),
+    earningsAboveST: roundToTwoDecimals(earningsAboveST)
+  };
+}
 
 /**
  * Calculate NI bands and contributions based on database bands
@@ -40,55 +108,25 @@ export function calculateFromBands(
     
     console.log(`[NI DEBUG] NI thresholds in pounds: LEL: £${lel}, PT: £${pt}, UEL: £${uel}`);
     console.log(`[NI DEBUG] Monthly salary: £${monthlySalary}`);
-    console.log(`[NI DEBUG] Is salary above LEL? ${monthlySalary > lel ? 'YES' : 'NO'}`);
-    console.log(`[NI DEBUG] Is salary above PT? ${monthlySalary > pt ? 'YES' : 'NO'}`);
-    console.log(`[NI DEBUG] Is salary above UEL? ${monthlySalary > uel ? 'YES' : 'NO'}`);
     
-    // FIXED: Calculate earnings in each band correctly
-    // LEL band - earnings up to the LEL threshold
-    result.earningsAtLEL = Math.min(monthlySalary, lel);
+    // Get Secondary Threshold from employer bands
+    const employerBands = niBands.filter(band => band.contribution_type === 'Employer');
+    const stBand = employerBands.find(band => band.name.includes('Above ST'));
+    const st = stBand ? stBand.threshold_from / 100 : pt; // Default to PT if ST not found
     
-    // LEL to PT band - earnings between LEL and PT thresholds
-    result.earningsLELtoPT = monthlySalary > lel ? 
-      Math.min(monthlySalary, pt) - lel : 0;
+    // Calculate correct NIC earnings bands using the new logic
+    const earningsBands = calculateNICEarningsBands(monthlySalary, lel, pt, uel, st);
     
-    // PT to UEL band - earnings between PT and UEL thresholds
-    result.earningsPTtoUEL = monthlySalary > pt ? 
-      Math.min(monthlySalary, uel) - pt : 0;
+    // Apply the calculated bands to the result
+    result.earningsAtLEL = earningsBands.earningsAtLEL;
+    result.earningsLELtoPT = earningsBands.earningsLELtoPT;
+    result.earningsPTtoUEL = earningsBands.earningsPTtoUEL;
+    result.earningsAboveUEL = earningsBands.earningsAboveUEL;
+    result.earningsAboveST = earningsBands.earningsAboveST;
     
-    // Above UEL band - earnings above the UEL threshold
-    result.earningsAboveUEL = monthlySalary > uel ? 
-      monthlySalary - uel : 0;
-    
-    // Validation - ensure all earnings bands add up to the total salary (allowing for small rounding errors)
-    const totalEarnings = result.earningsAtLEL + result.earningsLELtoPT + 
-                        result.earningsPTtoUEL + result.earningsAboveUEL;
-    
-    if (Math.abs(totalEarnings - monthlySalary) > 0.01) {
-      console.warn(`[NI WARNING] Earnings bands don't sum to total salary. Total: £${totalEarnings}, Salary: £${monthlySalary}`);
-      console.warn(`[NI WARNING] Bands: LEL: £${result.earningsAtLEL}, LEL to PT: £${result.earningsLELtoPT}, PT to UEL: £${result.earningsPTtoUEL}, Above UEL: £${result.earningsAboveUEL}`);
-      
-      // Adjust the highest band to correct the total
-      // This ensures the earnings breakdown is always accurate
-      const adjustment = monthlySalary - totalEarnings;
-      
-      if (result.earningsAboveUEL > 0) {
-        result.earningsAboveUEL += adjustment;
-      } else if (result.earningsPTtoUEL > 0) {
-        result.earningsPTtoUEL += adjustment;
-      } else if (result.earningsLELtoPT > 0) {
-        result.earningsLELtoPT += adjustment;
-      } else {
-        result.earningsAtLEL += adjustment;
-      }
-      
-      console.log(`[NI DEBUG] Applied adjustment of £${adjustment} to fix band totals`);
-    }
-    
-    // Calculate NI contributions based on bands with rates
+    // Calculate NI contributions based on bands with rates (unchanged logic)
     // PT to UEL contribution (typically 12%)
     if (result.earningsPTtoUEL > 0) {
-      // Get the rate from the band data
       const ptToUELRate = ptToUELBand.rate;
       console.log(`[NI DEBUG] PT to UEL rate: ${ptToUELRate} for earnings: £${result.earningsPTtoUEL}`);
       
@@ -101,7 +139,6 @@ export function calculateFromBands(
     
     // Above UEL contribution (typically 2%)
     if (result.earningsAboveUEL > 0) {
-      // Get the rate from the band data
       const aboveUELRate = aboveUELBand.rate;
       console.log(`[NI DEBUG] Above UEL rate: ${aboveUELRate} for earnings: £${result.earningsAboveUEL}`);
       
@@ -112,25 +149,16 @@ export function calculateFromBands(
       console.log(`[NI DEBUG] No contribution for Above UEL band - earnings: £${result.earningsAboveUEL}`);
     }
     
-    console.log(`[NI DEBUG] Calculated earnings in each band: 
+    console.log(`[NI DEBUG] Final calculated earnings bands: 
       - LEL: £${result.earningsAtLEL} 
       - LEL to PT: £${result.earningsLELtoPT} 
       - PT to UEL: £${result.earningsPTtoUEL} 
       - Above UEL: £${result.earningsAboveUEL}
+      - Above ST: £${result.earningsAboveST}
       - Total NI: £${result.nationalInsurance}`);
   } else {
     console.log("[NI DEBUG] Could not find all required NI bands. Using fallback calculation.");
     return null;
-  }
-  
-  // Process employer bands to calculate earningsAboveST
-  const employerBands = niBands.filter(band => band.contribution_type === 'Employer');
-  const stBand = employerBands.find(band => band.name.includes('Above ST'));
-  
-  if (stBand) {
-    const stThreshold = stBand.threshold_from / 100;
-    result.earningsAboveST = Math.max(0, monthlySalary - stThreshold);
-    console.log(`[NI DEBUG] Secondary Threshold: £${stThreshold}, Earnings above ST: £${result.earningsAboveST}`);
   }
   
   result.nationalInsurance = roundToTwoDecimals(result.nationalInsurance);
@@ -152,24 +180,31 @@ export function calculateNationalInsuranceFallback(monthlySalary: number): NICal
   
   console.log(`[NI DEBUG] Fallback thresholds - LEL: £${lowerEarningsLimit}, PT: £${primaryThreshold}, UEL: £${upperLimit}, ST: ${secondaryThreshold}`);
   
-  // FIXED: Calculate earnings bands correctly using the same logic as above
+  // Initialize result with NIC calculation
   const result: NICalculationResult = {
     nationalInsurance: 0,
-    // LEL band - earnings up to the LEL threshold
-    earningsAtLEL: Math.min(monthlySalary, lowerEarningsLimit),
-    // LEL to PT band - earnings between LEL and PT thresholds
-    earningsLELtoPT: monthlySalary > lowerEarningsLimit ? 
-      Math.min(monthlySalary, primaryThreshold) - lowerEarningsLimit : 0,
-    // PT to UEL band - earnings between PT and UEL thresholds
-    earningsPTtoUEL: monthlySalary > primaryThreshold ? 
-      Math.min(monthlySalary, upperLimit) - primaryThreshold : 0,
-    // Above UEL band - earnings above the UEL threshold
-    earningsAboveUEL: monthlySalary > upperLimit ? 
-      monthlySalary - upperLimit : 0,
-    // Above ST band - earnings above the Secondary Threshold
-    earningsAboveST: monthlySalary > secondaryThreshold ? 
-      monthlySalary - secondaryThreshold : 0
+    earningsAtLEL: 0,
+    earningsLELtoPT: 0,
+    earningsPTtoUEL: 0,
+    earningsAboveUEL: 0,
+    earningsAboveST: 0
   };
+  
+  // Calculate correct NIC earnings bands using the new logic
+  const earningsBands = calculateNICEarningsBands(
+    monthlySalary, 
+    lowerEarningsLimit, 
+    primaryThreshold, 
+    upperLimit, 
+    secondaryThreshold
+  );
+  
+  // Apply the calculated bands to the result
+  result.earningsAtLEL = earningsBands.earningsAtLEL;
+  result.earningsLELtoPT = earningsBands.earningsLELtoPT;
+  result.earningsPTtoUEL = earningsBands.earningsPTtoUEL;
+  result.earningsAboveUEL = earningsBands.earningsAboveUEL;
+  result.earningsAboveST = earningsBands.earningsAboveST;
   
   console.log(`[NI DEBUG] Earnings bands from fallback calculation:
     - LEL: £${result.earningsAtLEL}
@@ -179,34 +214,14 @@ export function calculateNationalInsuranceFallback(monthlySalary: number): NICal
     - Above ST: ${result.earningsAboveST}
   `);
   
-  // Validation - ensure all earnings bands add up to the total salary
-  const totalEarnings = result.earningsAtLEL + result.earningsLELtoPT + 
-                        result.earningsPTtoUEL + result.earningsAboveUEL;
-  
-  if (Math.abs(totalEarnings - monthlySalary) > 0.01) {
-    console.warn(`[NI WARNING] Fallback earnings bands don't sum to total salary: ${totalEarnings} vs ${monthlySalary}`);
-    // Apply an adjustment to fix the total
-    const adjustment = monthlySalary - totalEarnings;
-    
-    if (result.earningsAboveUEL > 0) {
-      result.earningsAboveUEL += adjustment;
-    } else if (result.earningsPTtoUEL > 0) {
-      result.earningsPTtoUEL += adjustment;
-    } else if (result.earningsLELtoPT > 0) {
-      result.earningsLELtoPT += adjustment;
-    } else {
-      result.earningsAtLEL += adjustment;
-    }
-  }
-  
-  // Calculate NI - Main rate (12%) between PT and UEL
+  // Calculate NI - Main rate (12%) between PT and UEL (unchanged logic)
   if (result.earningsPTtoUEL > 0) {
     const mainRateContribution = result.earningsPTtoUEL * NI_RATES.MAIN_RATE;
     console.log(`[NI DEBUG] Main rate contribution: £${mainRateContribution} (£${result.earningsPTtoUEL} × ${NI_RATES.MAIN_RATE})`);
     result.nationalInsurance += mainRateContribution;
   }
   
-  // Higher rate (2%) above UEL
+  // Higher rate (2%) above UEL (unchanged logic)
   if (result.earningsAboveUEL > 0) {
     const higherRateContribution = result.earningsAboveUEL * NI_RATES.HIGHER_RATE;
     console.log(`[NI DEBUG] Higher rate contribution: £${higherRateContribution} (£${result.earningsAboveUEL} × ${NI_RATES.HIGHER_RATE})`);
