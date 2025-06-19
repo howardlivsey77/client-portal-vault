@@ -24,11 +24,11 @@ export const NI_RATES = {
   HIGHER_RATE: 0.02
 };
 
-// Student Loan thresholds and rates for 2025-2026
+// Student Loan thresholds and rates for 2025-2026 (now includes monthly thresholds)
 export const STUDENT_LOAN_THRESHOLDS = {
-  PLAN_1: { annual: 22015, rate: 0.09 }, // Pre-2012 students
-  PLAN_2: { annual: 27295, rate: 0.09 }, // Post-2012 students 
-  PLAN_4: { annual: 27660, rate: 0.09 }, // Scottish students
-  PLAN_5: { annual: 25000, rate: 0.09 }, // Post-2023 students
-  PLAN_6: { annual: 21000, rate: 0.06 }  // Postgraduate loan
+  PLAN_1: { weekly: 423.36, monthly: 1834.58, annual: 22015, rate: 0.09 }, // Pre-2012 students
+  PLAN_2: { weekly: 524.52, monthly: 2274.58, annual: 27295, rate: 0.09 }, // Post-2012 students 
+  PLAN_4: { weekly: 532.31, monthly: 2305.00, annual: 27660, rate: 0.09 }, // Scottish students
+  PLAN_5: { weekly: 480.77, monthly: 2083.33, annual: 25000, rate: 0.09 }, // Post-2023 students
+  PLAN_6: { weekly: 403.85, monthly: 1750.00, annual: 21000, rate: 0.06 }  // Postgraduate loan
 };
