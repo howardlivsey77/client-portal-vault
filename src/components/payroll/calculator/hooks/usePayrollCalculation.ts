@@ -21,7 +21,8 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
     isSaving,
     isClearing,
     savePayrollResult,
-    clearPayrollResultsFromDB
+    clearPayrollResultsFromDB,
+    currentCompany
   } = usePayrollSave(payPeriod);
 
   /**
@@ -57,6 +58,7 @@ export function usePayrollCalculation(payPeriod: PayPeriod) {
     isClearing,
     calculatePayroll,
     clearPayrollResults: clearPayrollResultsFromDB,
-    setCalculationResult
+    setCalculationResult,
+    currentCompany
   };
 }

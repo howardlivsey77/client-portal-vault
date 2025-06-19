@@ -9,9 +9,9 @@ import { roundToTwoDecimals } from "@/lib/formatters";
 /**
  * Save payroll result to the database
  */
-export async function savePayrollResultToDatabase(result: PayrollResult, payPeriod: PayPeriod) {
+export async function savePayrollResultToDatabase(result: PayrollResult, payPeriod: PayPeriod, companyId: string) {
   try {
-    console.log(`[DATABASE] Saving payroll result to database for ${result.employeeName} with gross pay: £${result.grossPay}`);
+    console.log(`[DATABASE] Saving payroll result to database for ${result.employeeName} with gross pay: £${result.grossPay} (Company: ${companyId})`);
     console.log(`[DATABASE] NI values being saved: 
       - National Insurance: £${result.nationalInsurance}
       - LEL: £${result.earningsAtLEL}
@@ -27,7 +27,7 @@ export async function savePayrollResultToDatabase(result: PayrollResult, payPeri
     }
     
     // Prepare data for saving
-    const prepResult = await preparePayrollData(result, payPeriod);
+    const prepResult = await preparePayrollData(result, payPeriod, companyId);
     
     if (!prepResult.success) {
       console.error(`[DATABASE] Error preparing payroll data: ${prepResult.error}`);
@@ -45,6 +45,7 @@ export async function savePayrollResultToDatabase(result: PayrollResult, payPeri
       - Above UEL: ${payrollData.earnings_above_uel_this_period} pennies (£${payrollData.earnings_above_uel_this_period/100})
       - Above ST: ${payrollData.earnings_above_st_this_period} pennies (£${payrollData.earnings_above_st_this_period/100})
       - Total pay liable to NIC: ${payrollData.pay_liable_to_nic_this_period} pennies (£${payrollData.pay_liable_to_nic_this_period/100})
+      - Company ID: ${payrollData.company_id}
     `);
     
     // Double-check NI calculation before saving - if gross pay is over PT threshold, ensure we have NI
@@ -60,7 +61,7 @@ export async function savePayrollResultToDatabase(result: PayrollResult, payPeri
     const saveResult = await savePayrollData(payrollData, result.employeeId, taxYear, taxPeriod);
     
     if (saveResult.success) {
-      console.log(`[DATABASE] Payroll data saved successfully`);
+      console.log(`[DATABASE] Payroll data saved successfully for company ${companyId}`);
       
       // Convert database values back to a PayrollResult format
       // This ensures UI uses the exact same numbers that were saved to DB

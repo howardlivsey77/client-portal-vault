@@ -6,13 +6,17 @@ import { calculateYTDValues } from "./calculateYTDValues";
 /**
  * Prepare payroll data for database storage
  */
-export async function preparePayrollData(result: PayrollResult, payPeriod: PayPeriod) {
+export async function preparePayrollData(result: PayrollResult, payPeriod: PayPeriod, companyId: string) {
   try {
     if (!result.employeeId) {
       return { success: false, error: "Missing employee ID for saving payroll result" };
     }
     
-    console.log(`[PREPARE] Preparing payroll data for database storage for ${result.employeeName}`);
+    if (!companyId) {
+      return { success: false, error: "Missing company ID for saving payroll result" };
+    }
+    
+    console.log(`[PREPARE] Preparing payroll data for database storage for ${result.employeeName} (Company: ${companyId})`);
     console.log(`[PREPARE] NI values to convert to pennies: 
       - NI: £${result.nationalInsurance}
       - LEL: £${result.earningsAtLEL}
@@ -29,7 +33,7 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
     const taxYear = `${payPeriod.year}/${(payPeriod.year + 1).toString().substring(2)}`;
     const taxPeriod = payPeriod.periodNumber;
     
-    console.log(`[PREPARE] Processing payroll for tax year: ${taxYear}, period: ${taxPeriod}`);
+    console.log(`[PREPARE] Processing payroll for tax year: ${taxYear}, period: ${taxPeriod}, company: ${companyId}`);
     
     // Get YTD values
     const ytdResult = await calculateYTDValues(result, payPeriod, taxYear, taxPeriod);
@@ -108,6 +112,7 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
     // Data to save to the database
     const payrollData = {
       employee_id: result.employeeId,
+      company_id: companyId, // ADDED: Include company_id
       payroll_period: formattedPayrollPeriod,
       tax_year: taxYear,
       tax_period: taxPeriod,
@@ -146,7 +151,7 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       nic_employee_ytd: nicEmployeeYTD
     };
     
-    console.log(`[PREPARE] Final payroll data prepared successfully with corrected NIC bands:`, payrollData);
+    console.log(`[PREPARE] Final payroll data prepared successfully with company_id ${companyId}:`, payrollData);
     
     return { 
       success: true, 

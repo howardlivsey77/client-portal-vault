@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { useCompany } from "@/providers/CompanyProvider";
 import { PayrollResult } from "@/services/payroll/types";
 import { PayPeriod } from "@/services/payroll/utils/financial-year-utils";
 import { savePayrollResultToDatabase, clearPayrollResults } from "@/services/payroll/database/payrollDatabaseService";
@@ -10,6 +11,7 @@ import { savePayrollResultToDatabase, clearPayrollResults } from "@/services/pay
  */
 export function usePayrollSave(payPeriod: PayPeriod) {
   const { toast } = useToast();
+  const { currentCompany } = useCompany();
   const [isSaving, setIsSaving] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
 
@@ -18,13 +20,26 @@ export function usePayrollSave(payPeriod: PayPeriod) {
    */
   const savePayrollResult = async (result: PayrollResult) => {
     try {
+      if (!currentCompany) {
+        toast({
+          title: "No Company Selected",
+          description: "Please select a company before saving payroll results.",
+          variant: "destructive"
+        });
+        return { success: false, updatedResult: null };
+      }
+
       setIsSaving(true);
-      const { success, message, error, updatedResult } = await savePayrollResultToDatabase(result, payPeriod);
+      const { success, message, error, updatedResult } = await savePayrollResultToDatabase(
+        result, 
+        payPeriod, 
+        currentCompany.id
+      );
       
       if (success) {
         toast({
           title: "Payroll Saved",
-          description: `Payroll calculation for ${payPeriod.description} has been saved.`,
+          description: `Payroll calculation for ${payPeriod.description} has been saved to ${currentCompany.name}.`,
           variant: "default"
         });
         
@@ -48,6 +63,15 @@ export function usePayrollSave(payPeriod: PayPeriod) {
    */
   const clearPayrollResultsFromDB = async () => {
     try {
+      if (!currentCompany) {
+        toast({
+          title: "No Company Selected",
+          description: "Please select a company before clearing payroll results.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
       setIsClearing(true);
       const { success, message, error } = await clearPayrollResults();
       
@@ -75,6 +99,7 @@ export function usePayrollSave(payPeriod: PayPeriod) {
     isSaving,
     isClearing,
     savePayrollResult,
-    clearPayrollResultsFromDB
+    clearPayrollResultsFromDB,
+    currentCompany
   };
 }

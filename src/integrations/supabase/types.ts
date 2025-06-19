@@ -762,6 +762,7 @@ export type Database = {
       }
       payroll_results: {
         Row: {
+          company_id: string | null
           created_at: string | null
           earnings_above_st_this_period: number
           earnings_above_uel_this_period: number
@@ -794,6 +795,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string | null
           earnings_above_st_this_period: number
           earnings_above_uel_this_period: number
@@ -826,6 +828,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          company_id?: string | null
           created_at?: string | null
           earnings_above_st_this_period?: number
           earnings_above_uel_this_period?: number
@@ -858,6 +861,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "payroll_results_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payroll_results_employee_id_fkey"
             columns: ["employee_id"]
