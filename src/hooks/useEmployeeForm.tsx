@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -145,8 +144,8 @@ export const useEmployeeForm = (employeeId?: string) => {
           previous_year_pensionable_pay: data.previous_year_pensionable_pay,
           nhs_pension_tier: data.nhs_pension_tier,
           nhs_pension_employee_rate: data.nhs_pension_employee_rate,
-          // Monthly salary
-          monthly_salary: data.monthly_salary,
+          // Monthly salary - handle safely since it might not exist in database
+          monthly_salary: (data as any).monthly_salary || null,
         });
       }
     } catch (error: any) {

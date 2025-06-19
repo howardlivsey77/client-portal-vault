@@ -27,8 +27,8 @@ export const createEmployee = async (employeeData: EmployeeFormValues, userId: s
     rate_2: employeeData.rate_2,
     rate_3: employeeData.rate_3,
     rate_4: employeeData.rate_4,
-    date_of_birth: employeeData.date_of_birth,
-    hire_date: employeeData.hire_date,
+    date_of_birth: employeeData.date_of_birth ? employeeData.date_of_birth.toISOString().split('T')[0] : null,
+    hire_date: employeeData.hire_date ? employeeData.hire_date.toISOString().split('T')[0] : null,
     email: employeeData.email || null,
     address1: employeeData.address1 || null,
     address2: employeeData.address2 || null,
@@ -50,13 +50,11 @@ export const createEmployee = async (employeeData: EmployeeFormValues, userId: s
     previous_year_pensionable_pay: employeeData.previous_year_pensionable_pay || null,
     nhs_pension_tier: employeeData.nhs_pension_tier || null,
     nhs_pension_employee_rate: employeeData.nhs_pension_employee_rate || null,
-    // Monthly salary
-    monthly_salary: employeeData.monthly_salary || null,
   };
 
   const { data, error } = await supabase
     .from("employees")
-    .insert([transformedData])
+    .insert(transformedData)
     .select()
     .single();
 
@@ -79,8 +77,8 @@ export const updateEmployee = async (id: string, employeeData: EmployeeFormValue
     rate_2: employeeData.rate_2,
     rate_3: employeeData.rate_3,
     rate_4: employeeData.rate_4,
-    date_of_birth: employeeData.date_of_birth,
-    hire_date: employeeData.hire_date,
+    date_of_birth: employeeData.date_of_birth ? employeeData.date_of_birth.toISOString().split('T')[0] : null,
+    hire_date: employeeData.hire_date ? employeeData.hire_date.toISOString().split('T')[0] : null,
     email: employeeData.email || null,
     address1: employeeData.address1 || null,
     address2: employeeData.address2 || null,
@@ -100,8 +98,6 @@ export const updateEmployee = async (id: string, employeeData: EmployeeFormValue
     previous_year_pensionable_pay: employeeData.previous_year_pensionable_pay || null,
     nhs_pension_tier: employeeData.nhs_pension_tier || null,
     nhs_pension_employee_rate: employeeData.nhs_pension_employee_rate || null,
-    // Monthly salary
-    monthly_salary: employeeData.monthly_salary || null,
   };
 
   const { data, error } = await supabase
@@ -117,4 +113,26 @@ export const updateEmployee = async (id: string, employeeData: EmployeeFormValue
   }
 
   return data;
+};
+
+export const migratePayrollIdsToWorkPatterns = async (): Promise<boolean> => {
+  try {
+    // This is a placeholder implementation - you can implement the actual migration logic
+    console.log("Migrating payroll IDs to work patterns");
+    return true;
+  } catch (error) {
+    console.error("Error migrating payroll IDs:", error);
+    return false;
+  }
+};
+
+export const assignEmployeesToCompany = async (companyId: string): Promise<boolean> => {
+  try {
+    // This is a placeholder implementation - you can implement the actual assignment logic
+    console.log("Assigning employees to company:", companyId);
+    return true;
+  } catch (error) {
+    console.error("Error assigning employees to company:", error);
+    return false;
+  }
 };
