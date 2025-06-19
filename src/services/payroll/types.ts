@@ -10,7 +10,7 @@ export interface PayrollDetails {
   monthlySalary: number;
   taxCode: string;
   pensionPercentage?: number;
-  studentLoanPlan?: 1 | 2 | 4 | 5 | null;
+  studentLoanPlan?: 1 | 2 | 4 | 5 | 6 | null;
   additionalDeductions?: Array<{ description: string, amount: number }>;
   additionalAllowances?: Array<{ description: string, amount: number }>;
   additionalEarnings?: Array<{ description: string, amount: number }>;
@@ -26,7 +26,7 @@ export interface PayrollResult {
   incomeTax: number;
   nationalInsurance: number;
   studentLoan: number;
-  studentLoanPlan?: 1 | 2 | 4 | 5 | null;
+  studentLoanPlan?: 1 | 2 | 4 | 5 | 6 | null;
   pensionContribution: number;
   pensionPercentage?: number;
   additionalDeductions: Array<{ description: string, amount: number }>;
