@@ -17,6 +17,7 @@ import { HireDateField } from "@/components/employees/HireDateField";
 import { PayrollIdField } from "@/components/employees/PayrollIdField";
 import { EmployeeFormActions } from "@/components/employees/EmployeeFormActions";
 import { HmrcFields } from "@/components/employees/HmrcFields";
+import { NhsPensionFields } from "@/components/employees/NhsPensionFields";
 import { departments } from "@/types/employee";
 import { UseFormReturn } from "react-hook-form";
 import { EmployeeFormValues } from "@/types/employee";
@@ -78,6 +79,9 @@ export const EmployeeFormContainer = ({
             
             {/* HMRC Section */}
             <HmrcFields control={form.control} readOnly={readOnly} />
+            
+            {/* NHS Pension Section */}
+            <NhsPensionFields control={form.control} readOnly={readOnly} />
             
             {/* Compensation Information */}
             <CompensationFields 

@@ -50,6 +50,13 @@ export const useEmployeeForm = (employeeId?: string) => {
       week_one_month_one: false,
       nic_code: "",
       student_loan_plan: null,
+      // Default values for NHS pension fields
+      nhs_pension_member: false,
+      previous_year_pensionable_pay: null,
+      nhs_pension_tier: null,
+      nhs_pension_employee_rate: null,
+      // Monthly salary
+      monthly_salary: null,
     },
   });
   
@@ -133,6 +140,13 @@ export const useEmployeeForm = (employeeId?: string) => {
           week_one_month_one: data.week_one_month_one || false,
           nic_code: data.nic_code || "",
           student_loan_plan: data.student_loan_plan,
+          // NHS pension fields
+          nhs_pension_member: data.nhs_pension_member || false,
+          previous_year_pensionable_pay: data.previous_year_pensionable_pay,
+          nhs_pension_tier: data.nhs_pension_tier,
+          nhs_pension_employee_rate: data.nhs_pension_employee_rate,
+          // Monthly salary
+          monthly_salary: data.monthly_salary,
         });
       }
     } catch (error: any) {

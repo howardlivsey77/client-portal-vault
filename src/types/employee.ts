@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 
 // Define work pattern schema
@@ -64,8 +63,14 @@ export const employeeSchema = z.object({
   week_one_month_one: z.boolean().optional().nullable(),
   nic_code: nicCodeValidation.nullable(),
   student_loan_plan: z.number().min(1).max(6).optional().nullable(),
+  // NHS Pension fields
+  nhs_pension_member: z.boolean().optional().nullable(),
+  previous_year_pensionable_pay: z.coerce.number().min(0, "Previous year pensionable pay must be a positive number").optional().nullable(),
+  nhs_pension_tier: z.number().min(1).max(9).optional().nullable(),
+  nhs_pension_employee_rate: z.coerce.number().min(0).max(100, "Rate must be between 0 and 100").optional().nullable(),
   // New fields
   national_insurance_number: nationalInsuranceNumberValidation.nullable(),
+  monthly_salary: z.coerce.number().min(0, "Monthly salary must be a positive number").optional().nullable(),
 });
 
 export type EmployeeFormValues = z.infer<typeof employeeSchema>;
