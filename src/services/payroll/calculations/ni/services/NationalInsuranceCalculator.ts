@@ -61,7 +61,19 @@ export class NationalInsuranceCalculator {
     result.earningsAboveUEL = roundToTwoDecimals(result.earningsAboveUEL);
     result.earningsAboveST = roundToTwoDecimals(result.earningsAboveST);
     
-    // ADDED: Check for potential calculation errors
+    // ENHANCED: Check for Klaudia's specific case with enhanced validation
+    const isKlaudiaCase = result.earningsAtLEL === 628 || (result.earningsAtLEL > 600 && result.earningsAtLEL < 650);
+    if (isKlaudiaCase) {
+      this.log(`WARNING: Detected old LEL value £${result.earningsAtLEL} - should be £542 for 2025/26`);
+      this.log(`This indicates the calculation is using outdated constants or incorrect database extraction`);
+    }
+    
+    // Validate 2025/26 LEL value
+    if (result.earningsAtLEL > 0 && result.earningsAtLEL !== 542 && result.earningsAtLEL < 628) {
+      this.log(`INFO: LEL earnings of £${result.earningsAtLEL} - verifying this is correct for salary calculation`);
+    }
+    
+    // Check for potential calculation errors
     if (result.nationalInsurance === 0 && 
         (result.earningsPTtoUEL > 0 || result.earningsAboveUEL > 0)) {
       this.log(`WARNING: Zero NI despite earnings above PT - possible calculation error`);
@@ -90,15 +102,18 @@ export class NationalInsuranceCalculator {
   public async calculate(monthlySalary: number): Promise<NICalculationResult> {
     this.log(`Calculating NI for monthly salary: £${monthlySalary}`);
     
-    // Special case for debugging Holly King
-    const isHollyKingDebugging = monthlySalary === 2302.43;
-    if (isHollyKingDebugging) {
-      this.log(`HOLLY KING TEST CASE detected with salary £${monthlySalary}`);
+    // Special case for debugging Klaudia and similar salaries
+    const isKlaudiaCase = monthlySalary > 2000 && monthlySalary < 2100;
+    if (isKlaudiaCase) {
+      this.log(`KLAUDIA CASE detected with salary £${monthlySalary} - expecting LEL=£542, LEL to PT=£506`);
     }
     
     try {
       // Fetch NI bands from the database
       const niBands = await fetchNIBands(this.taxYear);
+      
+      // Enhanced logging for calculation path
+      this.log(`Using ${niBands && niBands.length > 0 ? 'DATABASE' : 'FALLBACK'} calculation path`);
       
       // If we successfully got bands from database, use those
       if (niBands && niBands.length > 0) {
@@ -117,9 +132,13 @@ export class NationalInsuranceCalculator {
           
           this.log(`Band check: LEL: ${hasLEL}, LEL to PT: ${hasLELtoPT}, PT to UEL: ${hasPTtoUEL}, Above UEL: ${hasAboveUEL}`);
           
-          // ADDED: Additional check for Holly King test case
-          if (isHollyKingDebugging) {
-            this.log(`Holly King test - expected to have PT to UEL earnings as salary £${monthlySalary} is above PT`);
+          // Log threshold values from database for Klaudia case
+          if (isKlaudiaCase) {
+            const lelBand = employeeBands.find(band => band.name.includes('LEL') && !band.name.includes('to'));
+            if (lelBand) {
+              this.log(`Klaudia case - LEL band from DB: threshold_from=${lelBand.threshold_from}, threshold_to=${lelBand.threshold_to}`);
+              this.log(`Klaudia case - LEL value will be: £${lelBand.threshold_to ? lelBand.threshold_to / 100 : 'undefined'}`);
+            }
           }
         }
         
@@ -129,30 +148,28 @@ export class NationalInsuranceCalculator {
           // Validate and log the calculation result
           const validatedResult = this.validateResult(result);
           
-          // Extra validation for Holly King test case
-          if (isHollyKingDebugging) {
-            if (validatedResult.nationalInsurance === 0 && monthlySalary > 1048) {
-              this.log(`ERROR: Holly King has salary above PT (£${monthlySalary} > £1048) but NI is zero!`);
-              this.log(`Forcing fallback calculation for Holly King as a safety measure`);
-              return this.calculateWithFallback(monthlySalary);
+          // Extra validation for Klaudia test case
+          if (isKlaudiaCase) {
+            if (validatedResult.earningsAtLEL !== 542) {
+              this.log(`ERROR: Klaudia case failed - LEL should be £542 but got £${validatedResult.earningsAtLEL}`);
+              this.log(`This indicates the database threshold extraction is incorrect`);
+            }
+            if (validatedResult.earningsLELtoPT !== 506) {
+              this.log(`ERROR: Klaudia case failed - LEL to PT should be £506 but got £${validatedResult.earningsLELtoPT}`);
             }
             
-            // Double-check the earnings band values
-            this.log(`Holly King validation - Bands: 
-              LEL: £${validatedResult.earningsAtLEL}
-              LEL to PT: £${validatedResult.earningsLELtoPT}
-              PT to UEL: £${validatedResult.earningsPTtoUEL}
-              Above UEL: £${validatedResult.earningsAboveUEL}
-              NI: £${validatedResult.nationalInsurance}
-            `);
+            // Log successful case
+            if (validatedResult.earningsAtLEL === 542 && validatedResult.earningsLELtoPT === 506) {
+              this.log(`SUCCESS: Klaudia case passed - correct LEL and LEL to PT values!`);
+            }
           }
           
-          this.log(`Calculation successful, NI: £${validatedResult.nationalInsurance}`);
+          this.log(`DATABASE calculation successful, NI: £${validatedResult.nationalInsurance}`);
           return validatedResult;
         }
       }
       
-      this.log(`No valid NI bands from database, using fallback calculation`);
+      this.log(`No valid NI bands from database, using FALLBACK calculation`);
       return this.calculateWithFallback(monthlySalary);
     } catch (error) {
       this.log(`Error in NI calculation: ${error instanceof Error ? error.message : String(error)}`);
@@ -164,7 +181,7 @@ export class NationalInsuranceCalculator {
    * Calculate NI using fallback constants-based approach
    */
   private calculateWithFallback(monthlySalary: number): NICalculationResult {
-    this.log(`Using fallback NI calculation for salary: £${monthlySalary}`);
+    this.log(`Using FALLBACK NI calculation for salary: £${monthlySalary}`);
     const result = calculateNationalInsuranceFallback(monthlySalary);
     return this.validateResult(result);
   }

@@ -9,13 +9,18 @@ import { calculateNICEarningsBands } from "./earnings-bands";
 export function calculateNationalInsuranceFallback(monthlySalary: number): NICalculationResult {
   console.log(`[NI DEBUG] Using fallback NI calculation for salary: £${monthlySalary}`);
   
-  // Define the thresholds using the available constants
-  const primaryThreshold = NI_THRESHOLDS.PRIMARY_THRESHOLD.monthly;
-  const lowerEarningsLimit = NI_THRESHOLDS.LOWER_EARNINGS_LIMIT.monthly;
-  const upperLimit = NI_THRESHOLDS.UPPER_EARNINGS_LIMIT.monthly;
-  const secondaryThreshold = NI_THRESHOLDS.SECONDARY_THRESHOLD.monthly;
+  // Define the thresholds using the UPDATED constants for 2025/26
+  const primaryThreshold = NI_THRESHOLDS.PRIMARY_THRESHOLD.monthly; // £1048
+  const lowerEarningsLimit = NI_THRESHOLDS.LOWER_EARNINGS_LIMIT.monthly; // £542 (updated)
+  const upperLimit = NI_THRESHOLDS.UPPER_EARNINGS_LIMIT.monthly; // £4189
+  const secondaryThreshold = NI_THRESHOLDS.SECONDARY_THRESHOLD.monthly; // £758
   
   console.log(`[NI DEBUG] Fallback thresholds - LEL: £${lowerEarningsLimit}, PT: £${primaryThreshold}, UEL: £${upperLimit}, ST: ${secondaryThreshold}`);
+  
+  // VALIDATION: Ensure we have correct 2025/26 values
+  if (lowerEarningsLimit !== 542) {
+    console.warn(`[NI DEBUG] FALLBACK WARNING: LEL should be £542 for 2025/26, but constants show £${lowerEarningsLimit}`);
+  }
   
   // Initialize result with NIC calculation
   const result: NICalculationResult = {
@@ -43,13 +48,20 @@ export function calculateNationalInsuranceFallback(monthlySalary: number): NICal
   result.earningsAboveUEL = earningsBands.earningsAboveUEL;
   result.earningsAboveST = earningsBands.earningsAboveST;
   
-  console.log(`[NI DEBUG] Earnings bands from fallback calculation:
+  console.log(`[NI DEBUG] Earnings bands from UPDATED fallback calculation:
     - LEL: £${result.earningsAtLEL}
     - LEL to PT: £${result.earningsLELtoPT}
     - PT to UEL: £${result.earningsPTtoUEL}
     - Above UEL: £${result.earningsAboveUEL}
     - Above ST: ${result.earningsAboveST}
   `);
+  
+  // Additional validation for Klaudia's case in fallback
+  if (monthlySalary > 2000 && monthlySalary < 2100) {
+    console.log(`[NI DEBUG] KLAUDIA FALLBACK TEST with salary £${monthlySalary}`);
+    console.log(`[NI DEBUG] LEL should be £542, got £${result.earningsAtLEL}`);
+    console.log(`[NI DEBUG] LEL to PT should be £506, got £${result.earningsLELtoPT}`);
+  }
   
   // Calculate NI - Main rate (12%) between PT and UEL (unchanged logic)
   if (result.earningsPTtoUEL > 0) {

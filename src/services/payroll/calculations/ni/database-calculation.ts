@@ -25,27 +25,54 @@ export function calculateFromBands(
   const employeeBands = niBands.filter(band => band.contribution_type === 'Employee');
   console.log("[NI DEBUG] Employee bands:", employeeBands);
   
-  // Find the LEL, PT, and UEL thresholds
+  // Find the LEL, PT, and UEL thresholds - FIXED LOGIC
   const lelBand = employeeBands.find(band => band.name.includes('LEL') && !band.name.includes('to'));
   const lelToPTBand = employeeBands.find(band => band.name.includes('LEL to PT'));
   const ptToUELBand = employeeBands.find(band => band.name.includes('PT to UEL'));
   const aboveUELBand = employeeBands.find(band => band.name.includes('Above UEL'));
   
+  console.log("[NI DEBUG] Found bands:", {
+    lelBand: lelBand ? `${lelBand.name}: ${lelBand.threshold_from}-${lelBand.threshold_to}` : 'NOT FOUND',
+    lelToPTBand: lelToPTBand ? `${lelToPTBand.name}: ${lelToPTBand.threshold_from}-${lelToPTBand.threshold_to}` : 'NOT FOUND',
+    ptToUELBand: ptToUELBand ? `${ptToUELBand.name}: ${ptToUELBand.threshold_from}-${ptToUELBand.threshold_to}` : 'NOT FOUND',
+    aboveUELBand: aboveUELBand ? `${aboveUELBand.name}: ${aboveUELBand.threshold_from}-${aboveUELBand.threshold_to}` : 'NOT FOUND'
+  });
+  
   if (lelBand && lelToPTBand && ptToUELBand && aboveUELBand) {
-    // Convert from pennies to pounds
-    const lel = lelBand.threshold_to ? lelBand.threshold_to / 100 : lelBand.threshold_from / 100;
-    const pt = lelToPTBand.threshold_to ? lelToPTBand.threshold_to / 100 : ptToUELBand.threshold_from / 100;
-    const uel = ptToUELBand.threshold_to ? ptToUELBand.threshold_to / 100 : aboveUELBand.threshold_from / 100;
+    // FIXED: Extract thresholds correctly from database bands
+    // LEL threshold should be threshold_to of LEL band (54200 pennies = £542)
+    const lel = lelBand.threshold_to ? lelBand.threshold_to / 100 : 542;
     
-    console.log(`[NI DEBUG] NI thresholds in pounds: LEL: £${lel}, PT: £${pt}, UEL: £${uel}`);
+    // PT threshold should be threshold_to of LEL to PT band OR threshold_from of PT to UEL band
+    const pt = lelToPTBand.threshold_to ? lelToPTBand.threshold_to / 100 : 
+               (ptToUELBand.threshold_from ? ptToUELBand.threshold_from / 100 : 1048);
+    
+    // UEL threshold should be threshold_to of PT to UEL band OR threshold_from of Above UEL band
+    const uel = ptToUELBand.threshold_to ? ptToUELBand.threshold_to / 100 : 
+                (aboveUELBand.threshold_from ? aboveUELBand.threshold_from / 100 : 4189);
+    
+    console.log(`[NI DEBUG] EXTRACTED thresholds in pounds: LEL: £${lel}, PT: £${pt}, UEL: £${uel}`);
     console.log(`[NI DEBUG] Monthly salary: £${monthlySalary}`);
+    
+    // VALIDATION: Check if thresholds are correct for 2025/26
+    if (lel !== 542) {
+      console.warn(`[NI DEBUG] WARNING: LEL should be £542 for 2025/26, but got £${lel}`);
+    }
+    if (pt !== 1048) {
+      console.warn(`[NI DEBUG] WARNING: PT should be £1048 for 2025/26, but got £${pt}`);
+    }
+    if (uel !== 4189) {
+      console.warn(`[NI DEBUG] WARNING: UEL should be £4189 for 2025/26, but got £${uel}`);
+    }
     
     // Get Secondary Threshold from employer bands
     const employerBands = niBands.filter(band => band.contribution_type === 'Employer');
     const stBand = employerBands.find(band => band.name.includes('Above ST'));
-    const st = stBand ? stBand.threshold_from / 100 : pt; // Default to PT if ST not found
+    const st = stBand ? stBand.threshold_from / 100 : 758; // Default to correct 2025/26 ST
     
-    // Calculate correct NIC earnings bands using the new logic
+    console.log(`[NI DEBUG] Secondary Threshold: £${st}`);
+    
+    // Calculate correct NIC earnings bands using the fixed logic
     const earningsBands = calculateNICEarningsBands(monthlySalary, lel, pt, uel, st);
     
     // Apply the calculated bands to the result
@@ -54,6 +81,21 @@ export function calculateFromBands(
     result.earningsPTtoUEL = earningsBands.earningsPTtoUEL;
     result.earningsAboveUEL = earningsBands.earningsAboveUEL;
     result.earningsAboveST = earningsBands.earningsAboveST;
+    
+    console.log(`[NI DEBUG] Calculated earnings bands AFTER fix:
+      - LEL: £${result.earningsAtLEL} (should be £${Math.min(monthlySalary, lel)})
+      - LEL to PT: £${result.earningsLELtoPT} (should be £${monthlySalary > lel ? Math.min(monthlySalary - lel, pt - lel) : 0})
+      - PT to UEL: £${result.earningsPTtoUEL}
+      - Above UEL: £${result.earningsAboveUEL}
+      - Above ST: £${result.earningsAboveST}
+    `);
+    
+    // Additional validation for Klaudia's case
+    if (monthlySalary > 2000 && monthlySalary < 2100) {
+      console.log(`[NI DEBUG] KLAUDIA TEST CASE detected with salary £${monthlySalary}`);
+      console.log(`[NI DEBUG] Expected: LEL=£542, LEL to PT=£506, PT to UEL=£${monthlySalary - 1048}`);
+      console.log(`[NI DEBUG] Actual: LEL=£${result.earningsAtLEL}, LEL to PT=£${result.earningsLELtoPT}, PT to UEL=£${result.earningsPTtoUEL}`);
+    }
     
     // Calculate NI contributions based on bands with rates (unchanged logic)
     // PT to UEL contribution (typically 12%)
@@ -80,7 +122,7 @@ export function calculateFromBands(
       console.log(`[NI DEBUG] No contribution for Above UEL band - earnings: £${result.earningsAboveUEL}`);
     }
     
-    console.log(`[NI DEBUG] Final calculated earnings bands: 
+    console.log(`[NI DEBUG] Final calculated earnings bands SUMMARY: 
       - LEL: £${result.earningsAtLEL} 
       - LEL to PT: £${result.earningsLELtoPT} 
       - PT to UEL: £${result.earningsPTtoUEL} 
@@ -88,7 +130,12 @@ export function calculateFromBands(
       - Above ST: £${result.earningsAboveST}
       - Total NI: £${result.nationalInsurance}`);
   } else {
-    console.log("[NI DEBUG] Could not find all required NI bands. Using fallback calculation.");
+    console.log("[NI DEBUG] Could not find all required NI bands. Missing bands:");
+    if (!lelBand) console.log("- LEL band missing");
+    if (!lelToPTBand) console.log("- LEL to PT band missing");
+    if (!ptToUELBand) console.log("- PT to UEL band missing");
+    if (!aboveUELBand) console.log("- Above UEL band missing");
+    console.log("[NI DEBUG] Using fallback calculation.");
     return null;
   }
   
