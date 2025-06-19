@@ -36,6 +36,12 @@ export interface Employee {
   week_one_month_one: boolean | null;
   nic_code: string | null;
   student_loan_plan: number | null;
+  
+  // NHS Pension fields
+  nhs_pension_member: boolean | null;
+  previous_year_pensionable_pay: number | null;
+  nhs_pension_tier: number | null;
+  nhs_pension_employee_rate: number | null;
 }
 
 /**
@@ -54,4 +60,3 @@ export interface EmployeeDetailsHookReturn {
   fetchEmployeeData: () => Promise<void>;
   updateEmployeeField: (fieldName: string, value: any) => Promise<boolean>;
 }
-
