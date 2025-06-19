@@ -1,3 +1,4 @@
+
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { calculateMonthlyIncomeTaxAsync } from "./calculations/income-tax";
 import { calculateNationalInsurance, calculateNationalInsuranceAsync, NICalculationResult } from "./calculations/national-insurance";
@@ -80,7 +81,11 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     - Total NI contribution: £${nationalInsurance}
   `);
   
-  const studentLoan = calculateStudentLoan(grossPay, studentLoanPlan);
+  // FIXED: Calculate student loan on base monthly salary only, not gross pay
+  // Student loan deductions should only be based on regular salary, excluding additional earnings
+  console.log(`[PAYROLL] Calculating student loan on base monthly salary: £${monthlySalary} (excluding additional earnings: £${totalAdditionalEarnings})`);
+  const studentLoan = calculateStudentLoan(monthlySalary, studentLoanPlan);
+  
   const pensionContribution = calculatePension(grossPay, pensionPercentage);
   console.log(`[PAYROLL] Student loan: £${studentLoan}, Pension contribution: £${pensionContribution}`);
   

@@ -4,6 +4,14 @@ import { STUDENT_LOAN_THRESHOLDS } from "../constants/tax-constants";
 
 /**
  * Calculate student loan repayments using 2025/26 HMRC thresholds
+ * 
+ * IMPORTANT: This function should be called with the employee's base monthly salary only,
+ * NOT including additional earnings such as bonuses or overtime. Student loan deductions
+ * are calculated based on regular salary according to HMRC rules.
+ * 
+ * @param monthlySalary - The employee's base monthly salary (excluding additional earnings)
+ * @param planType - The student loan plan type (1, 2, 4, 5, 6, or null)
+ * @returns Monthly student loan repayment amount
  */
 export function calculateStudentLoan(monthlySalary: number, planType: 1 | 2 | 4 | 5 | 6 | null): number {
   if (!planType) return 0;
@@ -36,10 +44,10 @@ export function calculateStudentLoan(monthlySalary: number, planType: 1 | 2 | 4 
       return 0;
   }
   
-  console.log(`[Student Loan] Plan ${planType}: Annual salary £${annualSalary}, Threshold £${threshold}, Rate ${rate * 100}%`);
+  console.log(`[Student Loan] Plan ${planType}: Annual salary £${annualSalary} (monthly: £${monthlySalary}), Threshold £${threshold}, Rate ${rate * 100}%`);
   
   if (annualSalary <= threshold) {
-    console.log(`[Student Loan] No repayment required - salary below threshold`);
+    console.log(`[Student Loan] No repayment required - annual salary £${annualSalary} is below threshold £${threshold}`);
     return 0;
   }
   
