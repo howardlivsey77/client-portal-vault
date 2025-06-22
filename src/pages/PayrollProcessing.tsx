@@ -2,9 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { PageContainer } from "@/components/layout/PageContainer";
 import { EmployeePayrollCalculator } from "@/components/payroll/EmployeePayrollCalculator";
+import { PayrollInputWizard } from "@/components/payroll/PayrollInputWizard";
+import { PayrollErrorBoundary } from "@/components/payroll/PayrollErrorBoundary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Upload } from "lucide-react";
 import { 
   AVAILABLE_FINANCIAL_YEARS, 
   PayPeriod, 
@@ -17,6 +21,7 @@ const PayrollProcessing = () => {
   // State for financial year and pay period
   const [selectedFinancialYear, setSelectedFinancialYear] = useState<FinancialYear>(CURRENT_FINANCIAL_YEAR);
   const [selectedPayPeriod, setSelectedPayPeriod] = useState<PayPeriod>(CURRENT_PAY_PERIOD);
+  const [showWizard, setShowWizard] = useState(false);
   
   // Update the selected pay period when financial year changes
   useEffect(() => {
@@ -40,6 +45,11 @@ const PayrollProcessing = () => {
     if (period) {
       setSelectedPayPeriod(period);
     }
+  };
+
+  const handleWizardReset = () => {
+    setShowWizard(false);
+    setTimeout(() => setShowWizard(true), 100);
   };
 
   return (
@@ -113,7 +123,15 @@ const PayrollProcessing = () => {
                 <CardTitle>Batch Payroll Processing</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>Batch processing features will be added here.</p>
+                <div className="space-y-4">
+                  <p className="text-muted-foreground">
+                    Import payroll data from Excel or CSV files to process multiple employees at once.
+                  </p>
+                  <Button onClick={() => setShowWizard(true)}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Import Payroll Data
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -129,6 +147,13 @@ const PayrollProcessing = () => {
             </Card>
           </TabsContent>
         </Tabs>
+        
+        <PayrollErrorBoundary onReset={handleWizardReset}>
+          <PayrollInputWizard 
+            open={showWizard} 
+            onOpenChange={setShowWizard} 
+          />
+        </PayrollErrorBoundary>
       </div>
     </PageContainer>
   );

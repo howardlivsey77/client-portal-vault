@@ -7,10 +7,12 @@ import {
   DialogTitle 
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { usePayrollWizard } from "./hooks/usePayrollWizard";
+import { useConsolidatedPayrollWizard } from "./hooks/useConsolidatedPayrollWizard";
 import { WizardNavigation } from "./WizardNavigation";
 import { createWizardSteps } from "./WizardSteps";
 import { EmployeeMappingDialog } from "./EmployeeMappingDialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export { type EmployeeHoursData, type ExtraHoursSummary } from "./types";
 
@@ -26,19 +28,20 @@ export function PayrollInputWizard({ open, onOpenChange }: PayrollInputWizardPro
     isProcessing,
     showEmployeeMapping,
     matchingResults,
+    error,
     handleFileUpload,
-    getExtraHoursSummary,
+    processExtraHours,
     handleNext,
     handleBack,
     handleEmployeeMappingConfirm,
     handleEmployeeMappingCancel,
     canProceed
-  } = usePayrollWizard();
+  } = useConsolidatedPayrollWizard();
   
   const steps = createWizardSteps({
     uploadedFiles,
     handleFileUpload,
-    getSummary: getExtraHoursSummary,
+    getSummary: processExtraHours,
     isProcessing,
     showEmployeeMapping,
     matchingResults,
@@ -55,6 +58,13 @@ export function PayrollInputWizard({ open, onOpenChange }: PayrollInputWizardPro
           <DialogHeader>
             <DialogTitle>{currentStepData.title}</DialogTitle>
           </DialogHeader>
+          
+          {error && (
+            <Alert variant="destructive" className="mx-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
           
           <ScrollArea className="flex-1 py-4">
             <div className="pr-4">

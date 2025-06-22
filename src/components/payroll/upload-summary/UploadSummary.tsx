@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useCallback } from "react";
 import { ExtraHoursSummary } from "../types";
 import { FileSummary } from "./FileSummary";
 import { SummaryCards } from "./SummaryCards";
@@ -19,36 +20,46 @@ interface UploadSummaryProps {
 export function UploadSummary({ file, type, getSummary, isProcessing }: UploadSummaryProps) {
   const [summary, setSummary] = useState<ExtraHoursSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
   
-  useEffect(() => {
-    async function processFile() {
-      if (!file) return;
-      
-      try {
-        setError(null);
-        setLoading(true);
-        const data = await getSummary(file);
-        setSummary(data);
-        console.log("Processed summary data:", data);
-      } catch (err) {
-        console.error("Error in UploadSummary:", err);
-        setError("Failed to process file. Please check the format and try again.");
-      } finally {
-        setLoading(false);
-      }
-    }
+  const processFile = useCallback(async () => {
+    if (!file) return;
     
-    if (file) {
-      processFile();
+    try {
+      setError(null);
+      setLocalLoading(true);
+      const data = await getSummary(file);
+      setSummary(data);
+      console.log("Processed summary data:", data);
+    } catch (err) {
+      console.error("Error in UploadSummary:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to process file. Please check the format and try again.";
+      setError(errorMessage);
+      setSummary(null);
+    } finally {
+      setLocalLoading(false);
     }
   }, [file, getSummary]);
+  
+  useEffect(() => {
+    if (file && !summary) {
+      processFile();
+    }
+  }, [file, summary, processFile]);
+
+  // Reset state when file changes
+  useEffect(() => {
+    if (!file) {
+      setSummary(null);
+      setError(null);
+    }
+  }, [file]);
 
   if (!file) {
     return <div>No file uploaded</div>;
   }
   
-  if (isProcessing || loading) {
+  if (isProcessing || localLoading) {
     return <ProcessingState />;
   }
   
