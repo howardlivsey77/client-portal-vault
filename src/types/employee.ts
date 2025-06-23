@@ -1,3 +1,4 @@
+
 import { z } from "zod";
 
 // Define work pattern schema
@@ -74,19 +75,6 @@ export const employeeSchema = z.object({
 });
 
 export type EmployeeFormValues = z.infer<typeof employeeSchema>;
-
-export const departments = [
-  "Engineering",
-  "Sales",
-  "Marketing",
-  "Human Resources",
-  "Finance",
-  "Operations",
-  "Customer Support",
-  "Research & Development",
-  "Legal",
-  "Executive",
-];
 
 export const genderOptions = [
   { label: "Male", value: "Male" },

@@ -3,14 +3,16 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UseFormReturn } from "react-hook-form";
 import { EmployeeFormValues } from "@/types/employee";
+import { useDepartments } from "@/hooks/useDepartments";
 
 interface JobInfoFieldsProps {
   form: UseFormReturn<EmployeeFormValues>;
   readOnly: boolean;
-  departments: string[];
 }
 
-export const JobInfoFields = ({ form, readOnly, departments }: JobInfoFieldsProps) => {
+export const JobInfoFields = ({ form, readOnly }: JobInfoFieldsProps) => {
+  const { departmentNames, loading } = useDepartments();
+
   return (
     <FormField
       control={form.control}
@@ -21,15 +23,15 @@ export const JobInfoFields = ({ form, readOnly, departments }: JobInfoFieldsProp
           <Select 
             onValueChange={field.onChange} 
             value={field.value || undefined}
-            disabled={readOnly}
+            disabled={readOnly || loading}
           >
             <FormControl>
               <SelectTrigger>
-                <SelectValue placeholder="Select a department" />
+                <SelectValue placeholder={loading ? "Loading departments..." : "Select a department"} />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {departments.map((dept) => (
+              {departmentNames.map((dept) => (
                 <SelectItem key={dept} value={dept}>
                   {dept}
                 </SelectItem>
