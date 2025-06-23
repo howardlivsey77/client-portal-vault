@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
@@ -24,10 +25,13 @@ export const useEmployeeDetails = (employeeId: string | undefined): EmployeeDeta
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const fetchEmployeeData = async () => {
+  // Stable fetchEmployeeData function with useCallback
+  const fetchEmployeeData = useCallback(async () => {
+    if (!employeeId) return;
+    
+    console.log("Starting fetchEmployeeData for details ID:", employeeId);
+    
     try {
-      if (!employeeId) return;
-      
       setLoading(true);
       
       const { employee, nextEmployeeId, prevEmployeeId } = await fetchEmployeeWithNavigation(employeeId);
@@ -45,15 +49,15 @@ export const useEmployeeDetails = (employeeId: string | undefined): EmployeeDeta
     } finally {
       setLoading(false);
     }
-  };
+  }, [employeeId, toast]);
   
-  const navigateToEmployee = (id: string | null) => {
+  const navigateToEmployee = useCallback((id: string | null) => {
     if (id) {
       navigate(`/employee/${id}`);
     }
-  };
+  }, [navigate]);
   
-  const deleteEmployee = async () => {
+  const deleteEmployee = useCallback(async () => {
     // Only admin users can delete employees
     if (!isAdmin) {
       toast({
@@ -89,10 +93,10 @@ export const useEmployeeDetails = (employeeId: string | undefined): EmployeeDeta
       });
       setLoading(false);
     }
-  };
+  }, [isAdmin, employeeId, toast, navigate]);
 
   // Update specific field
-  const updateEmployeeField = async (fieldName: string, value: any) => {
+  const updateEmployeeField = useCallback(async (fieldName: string, value: any) => {
     if (!isAdmin || !employeeId) {
       toast({
         title: "Permission denied",
@@ -124,13 +128,14 @@ export const useEmployeeDetails = (employeeId: string | undefined): EmployeeDeta
       setLoading(false);
       return false;
     }
-  };
+  }, [isAdmin, employeeId, toast, fetchEmployeeData]);
 
+  // Only fetch data when employeeId changes
   useEffect(() => {
     if (employeeId) {
       fetchEmployeeData();
     }
-  }, [employeeId]);
+  }, [employeeId]); // Removed fetchEmployeeData from dependencies to prevent infinite loop
 
   // Format address for display
   const formattedAddress = employee ? 

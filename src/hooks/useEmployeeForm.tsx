@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { employeeSchema, EmployeeFormValues, genderOptions, defaultWorkPattern } from "@/types/employee";
+import { employeeSchema, EmployeeFormValues, defaultWorkPattern } from "@/types/employee";
 import { fetchEmployeeById, createEmployee, updateEmployee } from "@/services/employeeService";
 import { fetchWorkPatterns, saveWorkPatterns } from "@/components/employees/details/work-pattern/utils";
 import { useCompany } from "@/providers/CompanyProvider";
@@ -60,95 +61,97 @@ export const useEmployeeForm = (employeeId?: string) => {
   });
   
   // Function to ensure work patterns have the correct payroll ID
-  const syncWorkPatternsWithPayrollId = async (employeeId: string, payrollId: string | null) => {
+  const syncWorkPatternsWithPayrollId = useCallback(async (employeeId: string, payrollId: string | null) => {
     try {
-      // First fetch the current work patterns
       const workPatterns = await fetchWorkPatterns(employeeId);
       
-      // Check if any work patterns don't have the payroll ID
       const needsUpdate = workPatterns.some(pattern => pattern.payrollId !== payrollId);
       
       if (needsUpdate) {
-        // Update all patterns with the correct payroll ID
         const updatedPatterns = workPatterns.map(pattern => ({
           ...pattern,
           payrollId: payrollId
         }));
         
-        // Save the updated patterns
         await saveWorkPatterns(employeeId, updatedPatterns);
         console.log("Work patterns updated with payroll ID:", payrollId);
       }
     } catch (error) {
       console.error("Error syncing work patterns with payroll ID:", error);
     }
-  };
+  }, []);
   
-  const fetchEmployeeData = async () => {
+  // Stable fetchEmployeeData function with useCallback to prevent infinite loops
+  const fetchEmployeeData = useCallback(async () => {
+    if (!employeeId || !isEditMode) return;
+    
+    console.log("Starting fetchEmployeeData for ID:", employeeId);
+    
     try {
-      if (!employeeId) return;
-      
       setLoading(true);
       
-      // Fetch employee data
-      const data = await fetchEmployeeById(employeeId);
+      // Fetch employee data and work patterns in parallel for better performance
+      const [employeeData, workPatterns] = await Promise.all([
+        fetchEmployeeById(employeeId),
+        fetchWorkPatterns(employeeId)
+      ]);
       
-      // Fetch work patterns for this employee
-      const workPatterns = await fetchWorkPatterns(employeeId);
-      
-      if (data) {
-        // Convert date strings to Date objects safely without timezone issues
-        const dateOfBirth = parseDateFromDatabase(data.date_of_birth);
-        const hireDate = parseDateFromDatabase(data.hire_date) || new Date();
-        
-        // Validate gender to ensure it matches one of the allowed values
-        const validGender = data.gender && 
-          ["Male", "Female", "Other", "Prefer not to say"].includes(data.gender)
-            ? data.gender as "Male" | "Female" | "Other" | "Prefer not to say"
-            : undefined;
-        
-        // If employee has a payroll ID, ensure work patterns are synced with it
-        if (data.payroll_id) {
-          await syncWorkPatternsWithPayrollId(employeeId, data.payroll_id);
-        }
-        
-        console.log("Fetched employee data - hire_date:", data.hire_date, "parsed as:", hireDate);
-        
-        form.reset({
-          first_name: data.first_name,
-          last_name: data.last_name,
-          department: data.department,
-          hours_per_week: data.hours_per_week || 40,
-          hourly_rate: data.hourly_rate || 0,
-          date_of_birth: dateOfBirth,
-          hire_date: hireDate,
-          email: data.email || "",
-          address1: data.address1 || "",
-          address2: data.address2 || "",
-          address3: data.address3 || "",
-          address4: data.address4 || "",
-          postcode: data.postcode || "",
-          payroll_id: data.payroll_id || "",
-          gender: validGender,
-          work_pattern: JSON.stringify(workPatterns), // Use work patterns from new table
-          rate_2: data.rate_2,
-          rate_3: data.rate_3,
-          rate_4: data.rate_4,
-          // HMRC fields
-          tax_code: data.tax_code || "",
-          week_one_month_one: data.week_one_month_one || false,
-          nic_code: data.nic_code || "",
-          student_loan_plan: data.student_loan_plan,
-          // NHS pension fields
-          nhs_pension_member: data.nhs_pension_member || false,
-          previous_year_pensionable_pay: data.previous_year_pensionable_pay,
-          nhs_pension_tier: data.nhs_pension_tier,
-          nhs_pension_employee_rate: data.nhs_pension_employee_rate,
-          // Monthly salary - handle safely since it might not exist in database
-          monthly_salary: (data as any).monthly_salary || null,
-        });
+      if (!employeeData) {
+        throw new Error("Employee not found");
       }
+
+      // Process the data before setting form values
+      const dateOfBirth = parseDateFromDatabase(employeeData.date_of_birth);
+      const hireDate = parseDateFromDatabase(employeeData.hire_date) || new Date();
+      
+      // Validate gender to ensure it matches one of the allowed values
+      const validGender = employeeData.gender && 
+        ["Male", "Female", "Other", "Prefer not to say"].includes(employeeData.gender)
+          ? employeeData.gender as "Male" | "Female" | "Other" | "Prefer not to say"
+          : undefined;
+      
+      console.log("Fetched employee data - hire_date:", employeeData.hire_date, "parsed as:", hireDate);
+      
+      // Set form values once with all data
+      form.reset({
+        first_name: employeeData.first_name,
+        last_name: employeeData.last_name,
+        department: employeeData.department,
+        hours_per_week: employeeData.hours_per_week || 40,
+        hourly_rate: employeeData.hourly_rate || 0,
+        date_of_birth: dateOfBirth,
+        hire_date: hireDate,
+        email: employeeData.email || "",
+        address1: employeeData.address1 || "",
+        address2: employeeData.address2 || "",
+        address3: employeeData.address3 || "",
+        address4: employeeData.address4 || "",
+        postcode: employeeData.postcode || "",
+        payroll_id: employeeData.payroll_id || "",
+        gender: validGender,
+        work_pattern: JSON.stringify(workPatterns),
+        rate_2: employeeData.rate_2,
+        rate_3: employeeData.rate_3,
+        rate_4: employeeData.rate_4,
+        tax_code: employeeData.tax_code || "",
+        week_one_month_one: employeeData.week_one_month_one || false,
+        nic_code: employeeData.nic_code || "",
+        student_loan_plan: employeeData.student_loan_plan,
+        nhs_pension_member: employeeData.nhs_pension_member || false,
+        previous_year_pensionable_pay: employeeData.previous_year_pensionable_pay,
+        nhs_pension_tier: employeeData.nhs_pension_tier,
+        nhs_pension_employee_rate: employeeData.nhs_pension_employee_rate,
+        monthly_salary: (employeeData as any).monthly_salary || null,
+      });
+
+      // Sync work patterns after form is populated (not during)
+      if (employeeData.payroll_id) {
+        // Don't await this to avoid blocking the UI
+        syncWorkPatternsWithPayrollId(employeeId, employeeData.payroll_id);
+      }
+      
     } catch (error: any) {
+      console.error("Error in fetchEmployeeData:", error);
       toast({
         title: "Error fetching employee data",
         description: error.message,
@@ -157,15 +160,16 @@ export const useEmployeeForm = (employeeId?: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [employeeId, isEditMode, form, toast, syncWorkPatternsWithPayrollId]);
   
+  // Only fetch data when employeeId changes, not on every render
   useEffect(() => {
     if (isEditMode && employeeId) {
       fetchEmployeeData();
     }
-  }, [isEditMode, employeeId]);
+  }, [isEditMode, employeeId]); // Removed fetchEmployeeData from dependencies to prevent infinite loop
   
-  const onSubmit = async (data: EmployeeFormValues) => {
+  const onSubmit = useCallback(async (data: EmployeeFormValues) => {
     setSubmitLoading(true);
     
     try {
@@ -191,7 +195,7 @@ export const useEmployeeForm = (employeeId?: string) => {
           description: "Employee information has been updated successfully.",
         });
       } else {
-        // Create new employee - now with all 3 required parameters
+        // Create new employee
         await createEmployee(data, user.id, currentCompany.id);
         
         toast({
@@ -203,6 +207,7 @@ export const useEmployeeForm = (employeeId?: string) => {
       // Redirect to employees list
       navigate("/employees");
     } catch (error: any) {
+      console.error("Error submitting employee:", error);
       toast({
         title: isEditMode ? "Error updating employee" : "Error creating employee",
         description: error.message,
@@ -211,7 +216,7 @@ export const useEmployeeForm = (employeeId?: string) => {
     } finally {
       setSubmitLoading(false);
     }
-  };
+  }, [isEditMode, employeeId, currentCompany?.id, toast, navigate]);
 
   return {
     form,

@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { useEmployeeForm } from "@/hooks/useEmployeeForm";
 import { EmployeeFormHeader } from "@/components/employees/form/EmployeeFormHeader";
 import { EmployeeFormContainer } from "@/components/employees/form/EmployeeFormContainer";
+import { EmployeeFormErrorBoundary } from "@/components/employees/form/EmployeeFormErrorBoundary";
 
 const EmployeeForm = () => {
   const { id } = useParams();
@@ -28,13 +29,6 @@ const EmployeeForm = () => {
     setReadOnly(!isAdmin);
   }, [isAdmin, setReadOnly]);
   
-  // Fetch employee data if in edit mode
-  useEffect(() => {
-    if (isEditMode) {
-      fetchEmployeeData();
-    }
-  }, [isEditMode, fetchEmployeeData]);
-  
   if (loading) {
     return (
       <PageContainer>
@@ -47,18 +41,20 @@ const EmployeeForm = () => {
   
   return (
     <PageContainer>
-      <EmployeeFormHeader isEditMode={isEditMode} readOnly={readOnly} />
-      
-      <EmployeeFormContainer
-        form={form}
-        isAdmin={isAdmin}
-        isEditMode={isEditMode}
-        readOnly={readOnly}
-        submitLoading={submitLoading}
-        employeeId={id}
-        onSubmit={onSubmit}
-        setReadOnly={setReadOnly}
-      />
+      <EmployeeFormErrorBoundary onReset={() => window.location.reload()}>
+        <EmployeeFormHeader isEditMode={isEditMode} readOnly={readOnly} />
+        
+        <EmployeeFormContainer
+          form={form}
+          isAdmin={isAdmin}
+          isEditMode={isEditMode}
+          readOnly={readOnly}
+          submitLoading={submitLoading}
+          employeeId={id}
+          onSubmit={onSubmit}
+          setReadOnly={setReadOnly}
+        />
+      </EmployeeFormErrorBoundary>
     </PageContainer>
   );
 };
