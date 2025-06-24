@@ -18,7 +18,6 @@ import { PayrollIdField } from "@/components/employees/PayrollIdField";
 import { EmployeeFormActions } from "@/components/employees/EmployeeFormActions";
 import { HmrcFields } from "@/components/employees/HmrcFields";
 import { NhsPensionFields } from "@/components/employees/NhsPensionFields";
-import { departments } from "@/types/employee";
 import { UseFormReturn } from "react-hook-form";
 import { EmployeeFormValues } from "@/types/employee";
 import { useNavigate } from "react-router-dom";
@@ -68,7 +67,7 @@ export const EmployeeFormContainer = ({
             
             {/* Job Information */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              <JobInfoFields form={form} readOnly={readOnly} departments={departments} />
+              <JobInfoFields form={form} readOnly={readOnly} />
               <HireDateField form={form} readOnly={readOnly} />
             </div>
 

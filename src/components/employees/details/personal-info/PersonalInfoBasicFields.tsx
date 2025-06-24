@@ -3,7 +3,8 @@ import { Control } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { genderOptions, departments } from "@/types/employee";
+import { genderOptions } from "@/types/employee";
+import { useDepartments } from "@/hooks/useDepartments";
 import { PersonalInfoFormValues } from "./types";
 
 interface PersonalInfoBasicFieldsProps {
@@ -11,6 +12,8 @@ interface PersonalInfoBasicFieldsProps {
 }
 
 export const PersonalInfoBasicFields = ({ control }: PersonalInfoBasicFieldsProps) => {
+  const { departmentNames, loading } = useDepartments();
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -56,14 +59,15 @@ export const PersonalInfoBasicFields = ({ control }: PersonalInfoBasicFieldsProp
               <Select 
                 onValueChange={field.onChange} 
                 value={field.value}
+                disabled={loading}
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a department" />
+                    <SelectValue placeholder={loading ? "Loading departments..." : "Select a department"} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {departments.map((dept) => (
+                  {departmentNames.map((dept) => (
                     <SelectItem key={dept} value={dept}>
                       {dept}
                     </SelectItem>
