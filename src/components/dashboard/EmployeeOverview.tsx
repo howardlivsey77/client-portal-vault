@@ -1,6 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Users } from "lucide-react";
 
 interface EmployeeOverviewProps {
   totalEmployees: number;
@@ -14,8 +15,11 @@ interface EmployeeOverviewProps {
 
 export function EmployeeOverview({ totalEmployees, departmentCount, departmentData }: EmployeeOverviewProps) {
   return (
-    <Card className="col-span-full lg:col-span-1">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
+    <Card className="col-span-full md:col-span-1 animate-fade-in">
+      <CardHeader className="flex items-center gap-3 pb-2">
+        <div className="p-2 rounded-md bg-primary/10 text-primary">
+          <Users className="h-5 w-5" />
+        </div>
         <div className="space-y-0.5">
           <CardTitle>Employee Overview</CardTitle>
           <CardDescription>Summary of your workforce</CardDescription>

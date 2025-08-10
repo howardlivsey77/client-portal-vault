@@ -1,6 +1,5 @@
 
 import { EmployeeOverview } from "./EmployeeOverview";
-import { RecentHires } from "./RecentHires";
 import { EmployeeDemographics } from "./EmployeeDemographics";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
@@ -10,7 +9,7 @@ const DEPARTMENT_COLORS = [
 ];
 
 export function EmployeeDashboard() {
-  const { stats, departmentData, genderData, recentHires, loading } = useDashboardData(DEPARTMENT_COLORS);
+  const { stats, departmentData, genderData, loading } = useDashboardData(DEPARTMENT_COLORS);
 
   if (loading) {
     return <div className="flex justify-center p-8">Loading dashboard data...</div>;
@@ -19,7 +18,7 @@ export function EmployeeDashboard() {
   return (
     <div className="space-y-6">
       <h2 className="monday-section-title">Company Overview</h2>
-      <div className="monday-grid">
+      <div className="grid gap-6 md:grid-cols-2">
         <EmployeeOverview 
           totalEmployees={stats.totalEmployees}
           departmentCount={stats.departmentCount}
@@ -30,7 +29,6 @@ export function EmployeeDashboard() {
           genderData={genderData}
           averageAge={stats.averageAge}
         />
-        <RecentHires recentHires={recentHires} />
       </div>
       
     </div>

@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { CalendarClock } from "lucide-react";
+import { PieChart } from "lucide-react";
 
 interface GenderData {
   gender: string;
@@ -20,8 +20,11 @@ export function EmployeeDemographics({ totalEmployees, genderData, averageAge }:
   const sortedGenderData = [...genderData].sort((a, b) => b.count - a.count);
 
   return (
-    <Card className="col-span-full lg:col-span-1">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
+    <Card className="col-span-full md:col-span-1 animate-fade-in">
+      <CardHeader className="flex items-center gap-3 pb-2">
+        <div className="p-2 rounded-md bg-primary/10 text-primary">
+          <PieChart className="h-5 w-5" />
+        </div>
         <div className="space-y-0.5">
           <CardTitle>Employee Demographics</CardTitle>
           <CardDescription>Workforce diversity insights</CardDescription>
