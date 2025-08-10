@@ -38,26 +38,12 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   // Check admin status using the security definer function
   const checkAdminStatus = async (userId: string) => {
     try {
-      // First try the RPC function
-      const { data, error } = await supabase
-        .rpc('is_admin', { user_id: userId });
+      // Check via secure RPC; no direct table fallbacks to avoid RLS bypass
+      const { data, error } = await supabase.rpc('is_admin', { user_id: userId });
       
       if (error) {
         console.error("Error checking admin status with RPC:", error);
-        
-        // Fallback: try direct query to profiles table
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', userId)
-          .single();
-        
-        if (profileError) {
-          console.error("Error checking admin status with direct query:", profileError);
-          return false;
-        }
-        
-        return !!profileData?.is_admin;
+        return false;
       }
       
       console.log("Admin check result:", data);
