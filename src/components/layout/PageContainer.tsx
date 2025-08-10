@@ -21,7 +21,7 @@ export function PageContainer({ children, title }: PageContainerProps) {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-monday-lightgray">
+    <div className="flex min-h-screen flex-col bg-background">
       <CustomNavbar toggleSidebar={!isAuthPage ? toggleSidebar : undefined} />
       
       <div className="flex flex-1">
