@@ -13,7 +13,7 @@ interface NhsPensionFieldsProps {
 
 export const NhsPensionFields = ({ control, readOnly }: NhsPensionFieldsProps) => {
   return (
-    <Card>
+    <Card className="border-[1.5px] border-foreground">
       <CardHeader>
         <CardTitle>NHS Pension Information</CardTitle>
       </CardHeader>

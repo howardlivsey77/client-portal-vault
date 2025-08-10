@@ -85,7 +85,7 @@ export const SicknessTrackingCard = ({
 
   if (!sicknessScheme) {
     return (
-      <Card>
+      <Card className="border-[1.5px] border-foreground">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5" />
@@ -106,7 +106,7 @@ export const SicknessTrackingCard = ({
   }
 
   return (
-    <Card>
+    <Card className="border-[1.5px] border-foreground">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Activity className="h-5 w-5" />

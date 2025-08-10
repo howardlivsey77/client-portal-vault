@@ -53,7 +53,7 @@ export const HmrcInfoCard = ({ employee, isAdmin, updateEmployeeField }: HmrcInf
   };
   
   return (
-    <Card>
+    <Card className="border-[1.5px] border-foreground">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-xl flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-muted-foreground" /> HMRC Information

@@ -46,7 +46,7 @@ export const EmployeeFormContainer = ({
   const navigate = useNavigate();
   
   return (
-    <Card>
+    <Card className="border-[1.5px] border-foreground">
       <CardHeader>
         <CardTitle>
           {isEditMode 

@@ -14,7 +14,7 @@ interface CompensationFieldsProps {
 
 export const CompensationFields = ({ form, readOnly }: CompensationFieldsProps) => {
   return (
-    <Card>
+    <Card className="border-[1.5px] border-foreground">
       <CardHeader>
         <CardTitle>Compensation Information</CardTitle>
       </CardHeader>

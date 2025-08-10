@@ -51,7 +51,7 @@ export const ContactInfoCard = ({
   };
 
   return (
-    <Card>
+    <Card className="border-[1.5px] border-foreground">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Contact Information</CardTitle>
         {isAdmin && (

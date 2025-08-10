@@ -25,7 +25,7 @@ export const SicknessRecordsList = ({
 }: SicknessRecordsListProps) => {
   if (loading) {
     return (
-      <Card>
+      <Card className="border-[1.5px] border-foreground">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -40,7 +40,7 @@ export const SicknessRecordsList = ({
   }
 
   return (
-    <Card>
+    <Card className="border-[1.5px] border-foreground">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5" />
