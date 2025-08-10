@@ -24,6 +24,8 @@ interface InviteManagementHeaderProps {
   setSelectedRole: (role: string) => void;
   invitationsLoading: boolean;
   handleCreateInvitation: (e: React.FormEvent) => void;
+  selectedCompanyId: string;
+  setSelectedCompanyId: (id: string) => void;
 }
 
 export const InviteManagementHeader = ({
@@ -37,7 +39,9 @@ export const InviteManagementHeader = ({
   selectedRole,
   setSelectedRole,
   invitationsLoading,
-  handleCreateInvitation
+  handleCreateInvitation,
+  selectedCompanyId,
+  setSelectedCompanyId
 }: InviteManagementHeaderProps) => {
   return (
     <div className="flex items-center justify-between mb-6">
@@ -71,6 +75,8 @@ export const InviteManagementHeader = ({
               setSelectedRole={setSelectedRole}
               loading={invitationsLoading}
               onSubmit={handleCreateInvitation}
+              selectedCompanyId={selectedCompanyId}
+              setSelectedCompanyId={setSelectedCompanyId}
             />
           </DialogContent>
         </Dialog>

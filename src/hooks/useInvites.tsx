@@ -13,6 +13,7 @@ export interface Invitation {
   accepted_at: string | null;
   role: string;
   issued_by: string;
+  company_id?: string;
 }
 
 export const useInvites = () => {
@@ -77,7 +78,7 @@ export const useInvites = () => {
     }
   };
   
-  const createInvitation = async (email: string, selectedRole: string, userId: string | null) => {
+  const createInvitation = async (email: string, selectedRole: string, userId: string | null, companyId: string | null) => {
     setLoading(true);
     
     try {
@@ -85,6 +86,14 @@ export const useInvites = () => {
         toast({
           title: "Email required",
           description: "Please enter a valid email address.",
+          variant: "destructive"
+        });
+        return false;
+      }
+      if (!companyId) {
+        toast({
+          title: "Company required",
+          description: "Please select a company for this invitation.",
           variant: "destructive"
         });
         return false;
@@ -103,6 +112,7 @@ export const useInvites = () => {
           _user_id: userId,
           _email: email.toLowerCase().trim(),
           _invite_code: inviteCode,
+          _company_id: companyId,
           _expires_at: expiresAt.toISOString(),
           _role: selectedRole
         });

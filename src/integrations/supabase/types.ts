@@ -583,6 +583,7 @@ export type Database = {
       invitations: {
         Row: {
           accepted_at: string | null
+          company_id: string | null
           email: string
           expires_at: string
           id: string
@@ -594,6 +595,7 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          company_id?: string | null
           email: string
           expires_at: string
           id?: string
@@ -605,6 +607,7 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          company_id?: string | null
           email?: string
           expires_at?: string
           id?: string
@@ -614,7 +617,15 @@ export type Database = {
           issued_by?: string
           role?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "invitations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       nhs_pension_bands: {
         Row: {
@@ -1274,15 +1285,25 @@ export type Database = {
     }
     Functions: {
       create_invitation: {
-        Args: {
-          _user_id: string
-          _email: string
-          _invite_code: string
-          _expires_at?: string
-          _role?: string
-        }
+        Args:
+          | {
+              _user_id: string
+              _email: string
+              _invite_code: string
+              _company_id: string
+              _expires_at?: string
+              _role?: string
+            }
+          | {
+              _user_id: string
+              _email: string
+              _invite_code: string
+              _expires_at?: string
+              _role?: string
+            }
         Returns: {
           accepted_at: string | null
+          company_id: string | null
           email: string
           expires_at: string
           id: string
@@ -1302,9 +1323,10 @@ export type Database = {
         Returns: string
       }
       get_invitations: {
-        Args: { _user_id: string }
+        Args: { _user_id: string } | { _user_id: string; _company_id?: string }
         Returns: {
           accepted_at: string | null
+          company_id: string | null
           email: string
           expires_at: string
           id: string

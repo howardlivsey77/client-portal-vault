@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 // Import custom hooks
 import { useInvites } from "@/hooks/useInvites";
 import { useUsers, UserProfile } from "@/hooks/useUsers";
+import { useCompany } from "@/providers/CompanyProvider";
 
 // Import components
 import { InviteManagementHeader } from "@/components/invites/InviteManagementHeader";
@@ -27,6 +28,8 @@ const InviteManagement = () => {
   
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { currentCompany, companies } = useCompany();
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
   
   // Use our custom hooks
   const { 
@@ -83,9 +86,15 @@ const InviteManagement = () => {
     checkAuth();
   }, [navigate]);
   
+  useEffect(() => {
+    if (!selectedCompanyId && currentCompany?.id) {
+      setSelectedCompanyId(currentCompany.id);
+    }
+  }, [currentCompany?.id, selectedCompanyId]);
+  
   const handleCreateInvitation = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await createInvitation(email, selectedRole, userId);
+    const success = await createInvitation(email, selectedRole, userId, selectedCompanyId);
     if (success) {
       setEmail("");
       setInviteDialogOpen(false);
@@ -140,6 +149,8 @@ const InviteManagement = () => {
         setSelectedRole={setSelectedRole}
         invitationsLoading={invitationsLoading}
         handleCreateInvitation={handleCreateInvitation}
+        selectedCompanyId={selectedCompanyId}
+        setSelectedCompanyId={setSelectedCompanyId}
       />
       
       <InviteManagementTabs
