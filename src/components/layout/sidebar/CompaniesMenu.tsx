@@ -33,7 +33,7 @@ export function CompaniesMenu() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="monday-sidebar-item w-full justify-between text-sm font-medium h-9 px-3"
+          className="monday-sidebar-item w-full justify-between text-sm font-medium h-9 px-3 border border-[hsl(var(--foreground))]"
         >
           <div className="flex items-center">
             <Building className="h-3 w-3 mr-2" />
