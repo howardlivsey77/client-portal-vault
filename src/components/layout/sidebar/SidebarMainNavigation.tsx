@@ -88,21 +88,6 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
         </Link>
       </Button>
 
-      {isAdmin && (
-        <Button 
-          variant="ghost" 
-          className={cn(
-            "monday-sidebar-item w-full justify-start", 
-            isRouteActive("/invites") && "bg-accent text-accent-foreground"
-          )} 
-          asChild
-        >
-          <Link to="/invites">
-            <UserCog className="h-4 w-4" />
-            Users
-          </Link>
-        </Button>
-      )}
       
       <Button 
         variant="ghost" 
@@ -173,6 +158,22 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
           Bureau Reports
         </Link>
       </Button>
+
+      {isAdmin && (
+        <Button 
+          variant="ghost" 
+          className={cn(
+            "monday-sidebar-item w-full justify-start", 
+            isRouteActive("/invites") && "bg-accent text-accent-foreground"
+          )} 
+          asChild
+        >
+          <Link to="/invites">
+            <UserCog className="h-4 w-4" />
+            Users
+          </Link>
+        </Button>
+      )}
     </div>
   );
 }
