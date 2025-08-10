@@ -1,14 +1,16 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { CheckSquare, ChartBar, Clock, FileText, Home, Receipt, Users, Building } from "lucide-react";
+import { CheckSquare, ChartBar, Clock, FileText, Home, Receipt, Users, Building, UserCog } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/providers/AuthProvider";
 
 interface SidebarMainNavigationProps {
   location: { pathname: string; search: string };
 }
 
 export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) {
+  const { isAdmin } = useAuth();
   // Functions to check active state
   const isTabActive = (tab: string) => {
     const params = new URLSearchParams(location.search);
@@ -85,6 +87,22 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
           Employees
         </Link>
       </Button>
+
+      {isAdmin && (
+        <Button 
+          variant="ghost" 
+          className={cn(
+            "monday-sidebar-item w-full justify-start", 
+            isRouteActive("/invites") && "bg-accent text-accent-foreground"
+          )} 
+          asChild
+        >
+          <Link to="/invites">
+            <UserCog className="h-4 w-4" />
+            Users
+          </Link>
+        </Button>
+      )}
       
       <Button 
         variant="ghost" 
