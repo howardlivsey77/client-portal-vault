@@ -31,7 +31,9 @@ export const useInvites = () => {
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData.session?.user?.id;
       if (!userId) {
-        throw new Error("Not authenticated");
+        // wait until auth is ready without surfacing an error
+        setLoading(false);
+        return;
       }
 
       const { data, error } = await supabase

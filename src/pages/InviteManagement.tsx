@@ -81,6 +81,7 @@ const InviteManagement = () => {
       
       setIsAdmin(true);
       setLoading(false);
+      await fetchInvitations();
     };
     
     checkAuth();
