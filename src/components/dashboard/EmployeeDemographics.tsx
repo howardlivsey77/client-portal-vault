@@ -20,7 +20,7 @@ export function EmployeeDemographics({ totalEmployees, genderData, averageAge }:
   const sortedGenderData = [...genderData].sort((a, b) => b.count - a.count);
 
   return (
-    <Card className="col-span-full md:col-span-1 animate-fade-in">
+    <Card className="col-span-full md:col-span-1 animate-fade-in border-[1.5px] border-foreground">
       <CardHeader className="flex items-center gap-3 pb-2">
         <div className="p-2 rounded-md bg-primary/10 text-primary">
           <PieChart className="h-5 w-5" />
