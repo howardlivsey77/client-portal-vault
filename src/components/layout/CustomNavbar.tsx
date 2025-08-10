@@ -28,12 +28,12 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
   const hasNotifications = unreadCount > 0 || timesheetExceptionsCount > 0;
 
   return (
-    <header className="sticky top-0 z-30 flex h-20 items-center gap-4 bg-white border-b px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 flex h-20 items-center gap-4 bg-[hsl(var(--header))] text-foreground border-b border-border px-4 sm:px-6 lg:px-8">
       {toggleSidebar && (
         <Button
           variant="ghost"
           size="icon"
-          className="shrink-0 md:hidden text-gray-700 hover:bg-gray-100"
+          className="shrink-0 md:hidden text-foreground hover:bg-[hsl(var(--foreground))/0.08]"
           onClick={toggleSidebar}
         >
           <Menu className="h-5 w-5" />
@@ -60,7 +60,7 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
         {user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-gray-700 hover:bg-gray-100 relative">
+              <Button variant="ghost" size="icon" className="text-foreground hover:bg-[hsl(var(--foreground))/0.08] relative">
                 {hasNotifications ? (
                   <>
                     <BellDot className="h-5 w-5 text-amber-500" />
@@ -105,7 +105,7 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
         {user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-gray-700 hover:bg-gray-100">
+              <Button variant="ghost" size="icon" className="text-foreground hover:bg-[hsl(var(--foreground))/0.08]">
                 <User className="h-5 w-5" />
                 <span className="sr-only">User menu</span>
               </Button>

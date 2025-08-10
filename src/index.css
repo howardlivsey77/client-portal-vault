@@ -45,6 +45,9 @@
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 211 100% 45%;
+
+    /* App header background */
+    --header: 169 56% 73%;
   }
 
   .dark {
@@ -84,6 +87,9 @@
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 223 47% 19%;
     --sidebar-ring: 211 100% 45%;
+
+    /* App header background */
+    --header: 169 56% 73%;
   }
 }
 
