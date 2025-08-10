@@ -1273,9 +1273,47 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_invitation: {
+        Args: {
+          _user_id: string
+          _email: string
+          _invite_code: string
+          _expires_at?: string
+          _role?: string
+        }
+        Returns: {
+          accepted_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          invite_code: string
+          is_accepted: boolean | null
+          issued_at: string
+          issued_by: string
+          role: string | null
+        }
+      }
+      delete_invitation: {
+        Args: { _user_id: string; _id: string }
+        Returns: boolean
+      }
       get_current_user_email: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_invitations: {
+        Args: { _user_id: string }
+        Returns: {
+          accepted_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          invite_code: string
+          is_accepted: boolean | null
+          issued_at: string
+          issued_by: string
+          role: string | null
+        }[]
       }
       get_user_companies: {
         Args: { _user_id: string }

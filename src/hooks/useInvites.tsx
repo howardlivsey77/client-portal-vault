@@ -26,12 +26,15 @@ export const useInvites = () => {
       setLoading(true);
       setError(null);
       
-      console.log("Fetching invitations...");
-      // The RLS policy will automatically filter based on admin status
+      // Use admin-gated RPC to fetch invitations
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id;
+      if (!userId) {
+        throw new Error("Not authenticated");
+      }
+
       const { data, error } = await supabase
-        .from("invitations")
-        .select("*")
-        .order("issued_at", { ascending: false });
+        .rpc('get_invitations', { _user_id: userId });
         
       if (error) {
         console.error("Invitations fetch error:", error);
@@ -95,15 +98,13 @@ export const useInvites = () => {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7);
       
-      const { error } = await supabase
-        .from("invitations")
-        .insert({
-          email: email.toLowerCase().trim(),
-          invite_code: inviteCode,
-          issued_by: userId,
-          expires_at: expiresAt.toISOString(),
-          is_accepted: false,
-          role: selectedRole
+      const { data: createData, error } = await supabase
+        .rpc('create_invitation', {
+          _user_id: userId,
+          _email: email.toLowerCase().trim(),
+          _invite_code: inviteCode,
+          _expires_at: expiresAt.toISOString(),
+          _role: selectedRole
         });
       
       if (error) {
@@ -144,10 +145,12 @@ export const useInvites = () => {
     
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from("invitations")
-        .delete()
-        .eq("id", id);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id;
+      if (!userId) throw new Error("Not authenticated");
+
+      const { data: deletedOk, error } = await supabase
+        .rpc('delete_invitation', { _user_id: userId, _id: id });
       
       if (error) throw error;
       
