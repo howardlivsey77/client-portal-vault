@@ -28,7 +28,7 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
   const hasNotifications = unreadCount > 0 || timesheetExceptionsCount > 0;
 
   return (
-    <header className="sticky top-0 z-30 flex h-20 items-center gap-4 bg-[hsl(var(--header))] text-foreground border-b border-border px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 flex h-20 items-center gap-4 bg-[hsl(var(--header))] text-foreground border-[1.5px] border-foreground px-4 sm:px-6 lg:px-8">
       {toggleSidebar && (
         <Button
           variant="ghost"
