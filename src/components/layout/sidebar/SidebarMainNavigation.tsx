@@ -36,7 +36,7 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
         variant="ghost" 
         className={cn(
           "monday-sidebar-item w-full justify-start", 
-          isTabActive("overview") && !isRouteActive("/employees") && "bg-accent text-accent-foreground"
+          isTabActive("overview") && !isRouteActive("/employees") && "bg-foreground text-background"
         )} 
         asChild
       >
@@ -50,7 +50,7 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
         variant="ghost" 
         className={cn(
           "monday-sidebar-item w-full justify-start", 
-          isTabActive("companies") && "bg-accent text-accent-foreground"
+          isTabActive("companies") && "bg-foreground text-background"
         )} 
         asChild
       >
@@ -64,7 +64,7 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
         variant="ghost" 
         className={cn(
           "monday-sidebar-item w-full justify-start", 
-          isTabActive("tasks") && "bg-accent text-accent-foreground"
+          isTabActive("tasks") && "bg-foreground text-background"
         )} 
         asChild
       >
@@ -78,7 +78,7 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
         variant="ghost" 
         className={cn(
           "monday-sidebar-item w-full justify-start", 
-          isRouteActive("/employees") && "bg-accent text-accent-foreground"
+          isRouteActive("/employees") && "bg-foreground text-background"
         )} 
         asChild
       >
@@ -93,7 +93,7 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
         variant="ghost" 
         className={cn(
           "monday-sidebar-item w-full justify-start", 
-          isTabActive("timesheets") && "bg-accent text-accent-foreground"
+          isTabActive("timesheets") && "bg-foreground text-background"
         )} 
         asChild
       >
@@ -107,7 +107,7 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
         variant="ghost" 
         className={cn(
           "monday-sidebar-item w-full justify-start", 
-          isTabActive("payroll") && "bg-accent text-accent-foreground"
+          isTabActive("payroll") && "bg-foreground text-background"
         )} 
         asChild
       >
@@ -121,7 +121,7 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
         variant="ghost" 
         className={cn(
           "monday-sidebar-item w-full justify-start", 
-          isRouteActive("/payroll-processing") && "bg-accent text-accent-foreground"
+          isRouteActive("/payroll-processing") && "bg-foreground text-background"
         )} 
         asChild
       >
@@ -135,7 +135,7 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
         variant="ghost" 
         className={cn(
           "monday-sidebar-item w-full justify-start", 
-          isTabActive("documents") && "bg-accent text-accent-foreground"
+          isTabActive("documents") && "bg-foreground text-background"
         )} 
         asChild
       >
@@ -149,7 +149,7 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
         variant="ghost" 
         className={cn(
           "monday-sidebar-item w-full justify-start", 
-          isTabActive("reports") && "bg-accent text-accent-foreground"
+          isTabActive("reports") && "bg-foreground text-background"
         )} 
         asChild
       >
@@ -164,7 +164,7 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
           variant="ghost" 
           className={cn(
             "monday-sidebar-item w-full justify-start", 
-            isRouteActive("/invites") && "bg-accent text-accent-foreground"
+            isRouteActive("/invites") && "bg-foreground text-background"
           )} 
           asChild
         >
