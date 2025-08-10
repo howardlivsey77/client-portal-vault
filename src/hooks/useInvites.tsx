@@ -37,7 +37,7 @@ export const useInvites = () => {
       }
 
       const { data, error } = await supabase
-        .rpc('get_invitations', { _user_id: userId });
+        .rpc('get_invitations', { _user_id: userId, _company_id: null });
         
       if (error) {
         console.error("Invitations fetch error:", error);
