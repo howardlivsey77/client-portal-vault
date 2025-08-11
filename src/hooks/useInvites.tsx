@@ -130,14 +130,31 @@ export const useInvites = () => {
           throw error;
         }
         return false;
-      } else {
-        toast({
-          title: "Invitation created",
-          description: `Invitation sent to ${email} with ${selectedRole} role`,
-        });
-        await fetchInvitations();
-        return true;
-      }
+        } else {
+          try {
+            await supabase.functions.invoke('send-invite', {
+              body: {
+                email: email.toLowerCase().trim(),
+                inviteCode,
+                role: selectedRole,
+                appUrl: window.location.origin
+              }
+            });
+            toast({
+              title: "Invitation created",
+              description: `Invitation sent to ${email} with ${selectedRole} role`,
+            });
+          } catch (e: any) {
+            console.error("Error sending invite email:", e);
+            toast({
+              title: "Invitation created (email not sent)",
+              description: "Invite created, but email sending failed.",
+              variant: "destructive"
+            });
+          }
+          await fetchInvitations();
+          return true;
+        }
     } catch (error: any) {
       toast({
         title: "Error creating invitation",
