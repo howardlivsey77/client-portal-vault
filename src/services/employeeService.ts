@@ -115,24 +115,3 @@ export const updateEmployee = async (id: string, employeeData: EmployeeFormValue
   return data;
 };
 
-export const migratePayrollIdsToWorkPatterns = async (): Promise<boolean> => {
-  try {
-    // This is a placeholder implementation - you can implement the actual migration logic
-    console.log("Migrating payroll IDs to work patterns");
-    return true;
-  } catch (error) {
-    console.error("Error migrating payroll IDs:", error);
-    return false;
-  }
-};
-
-export const assignEmployeesToCompany = async (companyId: string): Promise<boolean> => {
-  try {
-    // This is a placeholder implementation - you can implement the actual assignment logic
-    console.log("Assigning employees to company:", companyId);
-    return true;
-  } catch (error) {
-    console.error("Error assigning employees to company:", error);
-    return false;
-  }
-};
