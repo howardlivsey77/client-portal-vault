@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { CheckSquare, ChartBar, Clock, FileText, Home, Receipt, Users, Building, UserCog } from "lucide-react";
+import { CheckSquare, ChartBar, Clock, FileText, Home, Receipt, Users, Building, UserCog, Stethoscope } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -85,6 +85,20 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
         <Link to="/employees">
           <Users className="h-4 w-4" />
           Employees
+        </Link>
+      </Button>
+
+      <Button 
+        variant="ghost" 
+        className={cn(
+          "monday-sidebar-item w-full justify-start", 
+          isRouteActive("/employees/sickness/import") && "bg-foreground text-background"
+        )} 
+        asChild
+      >
+        <Link to="/employees/sickness/import">
+          <Stethoscope className="h-4 w-4" />
+          Sickness Import
         </Link>
       </Button>
 

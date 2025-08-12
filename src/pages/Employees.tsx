@@ -8,6 +8,8 @@ import { EmptyEmployeeState } from "@/components/employees/EmptyEmployeeState";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useAuth } from "@/providers/AuthProvider";
 import { useCompany } from "@/providers/CompanyProvider";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 export default function Employees() {
   const { employees, loading, fetchEmployees, deleteEmployee } = useEmployees();
@@ -24,6 +26,9 @@ export default function Employees() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-[1.5px] border-foreground rounded-md p-4">
           <EmployeeSearch searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
           <div className="flex flex-col sm:flex-row gap-2">
+            <Button asChild variant="outline">
+              <Link to="/employees/sickness/import">Sickness Import</Link>
+            </Button>
             <EmployeeActions 
               isAdmin={isAdmin}
               loading={loading}
