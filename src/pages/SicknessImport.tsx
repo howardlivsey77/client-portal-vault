@@ -443,12 +443,12 @@ export default function SicknessImport() {
                 <div key={f.key} className="space-y-1">
                   <Label>{f.label}</Label>
                   <Select
-                    value={(mapping as any)[f.key] ?? ""}
-                    onValueChange={(v) => setMapping((m) => ({ ...m, [f.key]: v }))}
+                    value={(mapping as any)[f.key] ?? undefined}
+                    onValueChange={(v) => setMapping((m) => ({ ...m, [f.key]: v === "__none__" ? undefined : v }))}
                   >
                     <SelectTrigger><SelectValue placeholder="Select column" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                    <SelectContent className="z-50">
+                      <SelectItem value="__none__">None</SelectItem>
                       {headers.map((h) => (
                         <SelectItem key={h} value={h}>{h}</SelectItem>
                       ))}
@@ -463,16 +463,16 @@ export default function SicknessImport() {
               {[0, 1, 2].map((i) => (
                 <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <Select
-                    value={mapping.pairs[i]?.days ?? ""}
+                    value={mapping.pairs[i]?.days ?? undefined}
                     onValueChange={(v) => setMapping((m) => {
                       const pairs = [...(m.pairs || [])];
-                      pairs[i] = { ...(pairs[i] || {}), days: v };
+                      pairs[i] = { ...(pairs[i] || {}), days: v === "__none__" ? undefined : v };
                       return { ...m, pairs };
                     })}
                   >
                     <SelectTrigger><SelectValue placeholder={`Days column #${i + 1}`} /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                    <SelectContent className="z-50">
+                      <SelectItem value="__none__">None</SelectItem>
                       {headers.map((h) => (
                         <SelectItem key={h} value={h}>{h}</SelectItem>
                       ))}
@@ -480,16 +480,16 @@ export default function SicknessImport() {
                   </Select>
 
                   <Select
-                    value={mapping.pairs[i]?.type ?? ""}
+                    value={mapping.pairs[i]?.type ?? undefined}
                     onValueChange={(v) => setMapping((m) => {
                       const pairs = [...(m.pairs || [])];
-                      pairs[i] = { ...(pairs[i] || {}), type: v };
+                      pairs[i] = { ...(pairs[i] || {}), type: v === "__none__" ? undefined : v };
                       return { ...m, pairs };
                     })}
                   >
                     <SelectTrigger><SelectValue placeholder={`Type column #${i + 1} (full/half/ssp)`} /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                    <SelectContent className="z-50">
+                      <SelectItem value="__none__">None</SelectItem>
                       {headers.map((h) => (
                         <SelectItem key={h} value={h}>{h}</SelectItem>
                       ))}
