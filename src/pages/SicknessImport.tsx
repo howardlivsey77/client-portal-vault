@@ -285,7 +285,8 @@ export default function SicknessImport() {
       // Group by employee
       const byEmp = new Map<string, ParsedRow[]>();
       matchResults.forEach((mr) => {
-        const empId = mr.matchedEmployeeId!;
+        if (!mr.matchedEmployeeId || mr.matchedEmployeeId === "__skip__") return; // skip ignored rows
+        const empId = mr.matchedEmployeeId;
         if (!byEmp.has(empId)) byEmp.set(empId, []);
         byEmp.get(empId)!.push(mr.parsed);
       });
@@ -447,7 +448,7 @@ export default function SicknessImport() {
                     onValueChange={(v) => setMapping((m) => ({ ...m, [f.key]: v === "__none__" ? undefined : v }))}
                   >
                     <SelectTrigger><SelectValue placeholder="Select column" /></SelectTrigger>
-                    <SelectContent className="z-50">
+                    <SelectContent className="z-50 bg-background">
                       <SelectItem value="__none__">None</SelectItem>
                       {headers.map((h) => (
                         <SelectItem key={h} value={h}>{h}</SelectItem>
@@ -471,7 +472,7 @@ export default function SicknessImport() {
                     })}
                   >
                     <SelectTrigger><SelectValue placeholder={`Days column #${i + 1}`} /></SelectTrigger>
-                    <SelectContent className="z-50">
+                    <SelectContent className="z-50 bg-background">
                       <SelectItem value="__none__">None</SelectItem>
                       {headers.map((h) => (
                         <SelectItem key={h} value={h}>{h}</SelectItem>
@@ -488,7 +489,7 @@ export default function SicknessImport() {
                     })}
                   >
                     <SelectTrigger><SelectValue placeholder={`Type column #${i + 1} (full/half/ssp)`} /></SelectTrigger>
-                    <SelectContent className="z-50">
+                    <SelectContent className="z-50 bg-background">
                       <SelectItem value="__none__">None</SelectItem>
                       {headers.map((h) => (
                         <SelectItem key={h} value={h}>{h}</SelectItem>
@@ -545,29 +546,32 @@ export default function SicknessImport() {
                     </TableCell>
                     <TableCell>
                       {r.matchedEmployeeId ? (
-                        <div className="text-sm">
-                          {(() => {
-                            const emp = employees.find((e) => e.id === r.matchedEmployeeId);
-                            return emp ? (
-                              <div>
-                                <div>{emp.last_name}, {emp.first_name}</div>
-                                <div className="text-muted-foreground">Payroll: {emp.payroll_id ?? "-"}</div>
-                              </div>
-                            ) : null;
-                          })()}
-                        </div>
+                        r.matchedEmployeeId === "__skip__" ? (
+                          <div className="text-sm text-muted-foreground">
+                            Skipped. This row will be ignored. {" "}
+                            <Button variant="link" size="sm" onClick={() => updateCandidateSelection(r.rowIndex, "")}>Undo</Button>
+                          </div>
+                        ) : (
+                          <div className="text-sm">
+                            {(() => {
+                              const emp = employees.find((e) => e.id === r.matchedEmployeeId);
+                              return emp ? (
+                                <div>
+                                  <div>{emp.last_name}, {emp.first_name}</div>
+                                  <div className="text-muted-foreground">Payroll: {emp.payroll_id ?? "-"}</div>
+                                </div>
+                              ) : null;
+                            })()}
+                          </div>
+                        )
                       ) : (
                         <Select onValueChange={(v) => updateCandidateSelection(r.rowIndex, v)}>
                           <SelectTrigger><SelectValue placeholder="Select match" /></SelectTrigger>
-                          <SelectContent>
-                            {r.candidates.length === 0 && (
-                              employees.slice(0, 10).map((e) => (
-                                <SelectItem key={e.id} value={e.id}>{e.last_name}, {e.first_name} ({e.payroll_id ?? "-"})</SelectItem>
-                              ))
-                            )}
-                            {r.candidates.map((c) => (
-                              <SelectItem key={c.id} value={c.id}>
-                                {c.last_name}, {c.first_name} ({c.payroll_id ?? "-"})
+                          <SelectContent className="z-50 bg-background max-h-80 overflow-auto">
+                            <SelectItem value="__skip__">Skip this employee</SelectItem>
+                            {employees.map((e) => (
+                              <SelectItem key={e.id} value={e.id}>
+                                {e.last_name}, {e.first_name} ({e.payroll_id ?? "-"})
                               </SelectItem>
                             ))}
                           </SelectContent>
