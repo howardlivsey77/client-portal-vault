@@ -24,10 +24,7 @@ export const readFileData = async (file: File): Promise<{data: EmployeeData[], h
           const worksheet = workbook.Sheets[sheetName];
           parsedData = XLSX.utils.sheet_to_json(worksheet);
           
-          // Extract headers
-          if (parsedData.length > 0) {
-            headers = Object.keys(parsedData[0]);
-          }
+          // Headers will be built after parsing all rows
         } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
           // Parse Excel
           const binary = new Uint8Array(data as ArrayBuffer);
@@ -36,13 +33,21 @@ export const readFileData = async (file: File): Promise<{data: EmployeeData[], h
           const worksheet = workbook.Sheets[sheetName];
           parsedData = XLSX.utils.sheet_to_json(worksheet);
           
-          // Extract headers
-          if (parsedData.length > 0) {
-            headers = Object.keys(parsedData[0]);
-          }
+          // Headers will be built after parsing all rows
         } else {
           reject("Unsupported file format");
           return;
+        }
+        // Build headers from union of keys across all rows so columns with empty first row still appear
+        headers = [];
+        if (parsedData.length > 0) {
+          const headerSet = new Set<string>();
+          for (const row of parsedData) {
+            Object.keys(row || {}).forEach((k) => {
+              if (k && typeof k === "string") headerSet.add(k);
+            });
+          }
+          headers = Array.from(headerSet);
         }
         
         console.log("Parsed data from file:", parsedData);
