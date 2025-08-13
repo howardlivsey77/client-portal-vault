@@ -94,14 +94,14 @@ export const EmployeeTimesheet = ({ autoLoad = false }: EmployeeTimesheetProps) 
             navigateToEmployeeTimesheet={navigateToEmployeeTimesheet}
           />
           
-          <Card>
+          <Card className="border-[1.5px] border-black">
             <CardContent className="p-4 overflow-x-auto">
               <WeeklyTimesheetGrid timesheet={weeklyTimesheet} />
             </CardContent>
           </Card>
         </>
       ) : (
-        <Card>
+        <Card className="border-[1.5px] border-black">
           <CardContent className="p-6 text-center">
             <p className="text-lg text-gray-500">Loading employee timesheet...</p>
           </CardContent>

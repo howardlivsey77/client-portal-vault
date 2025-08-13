@@ -10,7 +10,7 @@ export const TimesheetsTab = () => {
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6">Timesheets</h1>
       
-      <Card>
+      <Card className="border-[1.5px] border-black">
         <CardHeader>
           <CardTitle>Employee Timesheets</CardTitle>
           <CardDescription>Track and manage employee working hours</CardDescription>
