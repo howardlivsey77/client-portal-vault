@@ -75,9 +75,15 @@ export const generateExtraHoursPDF = (summary: ExtraHoursSummary, filename = 'ex
 };
 
 /**
- * Helper function to convert image URL to base64 data URL
+ * Helper function to convert image URL to base64 data URL with dimensions
  */
-const loadImageAsBase64 = async (url: string): Promise<{ data: string; format: string }> => {
+const loadImageAsBase64 = async (url: string): Promise<{ 
+  data: string; 
+  format: string; 
+  width: number; 
+  height: number; 
+  aspectRatio: number; 
+}> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -99,7 +105,13 @@ const loadImageAsBase64 = async (url: string): Promise<{ data: string; format: s
       const format = url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg') ? 'JPEG' : 'PNG';
       const dataURL = canvas.toDataURL(`image/${format.toLowerCase()}`);
       
-      resolve({ data: dataURL, format });
+      resolve({ 
+        data: dataURL, 
+        format,
+        width: img.width,
+        height: img.height,
+        aspectRatio: img.width / img.height
+      });
     };
     
     img.onerror = () => {
@@ -108,6 +120,30 @@ const loadImageAsBase64 = async (url: string): Promise<{ data: string; format: s
     
     img.src = url;
   });
+};
+
+/**
+ * Calculate optimal logo size maintaining aspect ratio
+ */
+const calculateLogoSize = (originalWidth: number, originalHeight: number, maxWidth: number, maxHeight: number) => {
+  const aspectRatio = originalWidth / originalHeight;
+  
+  let width = originalWidth;
+  let height = originalHeight;
+  
+  // Scale down if too wide
+  if (width > maxWidth) {
+    width = maxWidth;
+    height = width / aspectRatio;
+  }
+  
+  // Scale down if too tall
+  if (height > maxHeight) {
+    height = maxHeight;
+    width = height * aspectRatio;
+  }
+  
+  return { width, height };
 };
 
 /**
@@ -125,9 +161,25 @@ export const generateSicknessReportPDF = async (
   // Add company logo if available
   if (companyLogoUrl) {
     try {
-      const { data, format } = await loadImageAsBase64(companyLogoUrl);
-      // Position logo in top right corner
-      doc.addImage(data, format, 150, 10, 40, 15);
+      const { data, format, width, height } = await loadImageAsBase64(companyLogoUrl);
+      
+      // Define maximum logo constraints (in mm)
+      const maxLogoWidth = 40;
+      const maxLogoHeight = 20;
+      
+      // Calculate optimal size maintaining aspect ratio
+      const { width: logoWidth, height: logoHeight } = calculateLogoSize(
+        width, 
+        height, 
+        maxLogoWidth, 
+        maxLogoHeight
+      );
+      
+      // Position logo in top right corner with proper spacing
+      const pageWidth = doc.internal.pageSize.width;
+      const logoX = pageWidth - logoWidth - 14; // 14mm from right edge
+      
+      doc.addImage(data, format, logoX, 10, logoWidth, logoHeight);
     } catch (error) {
       console.warn('Could not add logo to PDF:', error);
     }
