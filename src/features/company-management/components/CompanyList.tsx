@@ -25,7 +25,7 @@ export const CompanyList = ({
   onDelete
 }: CompanyListProps) => {
   return (
-    <Card>
+    <Card className="border-[1.5px] border-black">
       <CardHeader>
         <CardTitle>Companies</CardTitle>
         <CardDescription>

@@ -43,7 +43,7 @@ export function CompaniesTable() {
   }
 
   return (
-    <Card>
+    <Card className="border-[1.5px] border-black">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
