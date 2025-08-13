@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { readFileData } from "@/components/employees/import/fileParsingUtils";
 import { useEmployees } from "@/hooks/useEmployees";
@@ -28,6 +29,33 @@ interface Mapping {
   endDate?: string;
   totalDays?: string;
   pairs: { days?: string; type?: string }[]; // up to 3
+}
+
+// Types for sickness scheme allocation import
+interface SchemeMapping {
+  firstName?: string;
+  lastName?: string;
+  sicknessScheme?: string;
+}
+
+interface SchemeParseResult {
+  raw: RawRow;
+  nameGuess: { first?: string; last?: string };
+  schemeGuess: string;
+}
+
+interface SchemeMatchResult {
+  rowIndex: number;
+  parsed: SchemeParseResult;
+  matchedEmployeeId?: string;
+  matchedSchemeId?: string;
+  candidates: { id: string; payroll_id?: string | null; first_name: string; last_name: string; score: number }[];
+}
+
+interface SicknessScheme {
+  id: string;
+  name: string;
+  company_id: string;
 }
 
 interface ParsedRow {
@@ -115,21 +143,61 @@ function suggestMapping(headers: string[], sample: RawRow): Mapping {
   };
 }
 
+function suggestSchemeMapping(headers: string[]): SchemeMapping {
+  const lower = headers.map((h) => h.toLowerCase());
+  const findHeader = (candidates: string[]) => {
+    const idx = lower.findIndex((h) => candidates.some((c) => h.includes(c)));
+    return idx >= 0 ? headers[idx] : undefined;
+  };
+
+  return {
+    firstName: findHeader(["first", "forename", "given name"]),
+    lastName: findHeader(["surname", "last", "family name"]),
+    sicknessScheme: findHeader(["sickness scheme", "scheme", "sick pay", "entitlement"]),
+  };
+}
+
 export default function SicknessImport() {
   const { toast } = useToast();
   const { employees } = useEmployees();
   const { currentCompany } = useCompany();
 
+  // Import type selection
+  const [importType, setImportType] = useState<"records" | "schemes">("records");
+
+  // Clear state when switching import types
+  useEffect(() => {
+    setRawRows([]);
+    setHeaders([]);
+    setFileName("");
+    setParsedRows([]);
+    setMatchResults([]);
+    setSchemeParsedRows([]);
+    setSchemeMatchResults([]);
+    setMapping({ pairs: [] });
+    setSchemeMapping({});
+  }, [importType]);
+
+  // Common state
   const [fileName, setFileName] = useState<string>("");
   const [headers, setHeaders] = useState<string[]>([]);
   const [rawRows, setRawRows] = useState<RawRow[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Sickness records import state
   const [mapping, setMapping] = useState<Mapping>({ pairs: [] });
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [matchResults, setMatchResults] = useState<MatchResult[]>([]);
-  const [submitting, setSubmitting] = useState(false);
   const [skipAllUnmatched, setSkipAllUnmatched] = useState(false);
   const [autoSkippedRows, setAutoSkippedRows] = useState<Set<number>>(new Set());
   const [ignoreMismatches, setIgnoreMismatches] = useState(false);
+
+  // Sickness scheme allocation state
+  const [schemeMapping, setSchemeMapping] = useState<SchemeMapping>({});
+  const [schemeParsedRows, setSchemeParsedRows] = useState<SchemeParseResult[]>([]);
+  const [schemeMatchResults, setSchemeMatchResults] = useState<SchemeMatchResult[]>([]);
+  const [availableSchemes, setAvailableSchemes] = useState<SicknessScheme[]>([]);
+  const [schemeSkipAllUnmatched, setSchemeSkipAllUnmatched] = useState(false);
 
   // Build fuse over employees for fuzzy surname/firstname
   const fuse = useMemo(() => {
@@ -150,6 +218,32 @@ export default function SicknessImport() {
     document.title = "Sickness Import | Employees";
   }, []);
 
+  // Fetch available sickness schemes for current company
+  useEffect(() => {
+    const fetchSchemes = async () => {
+      if (!currentCompany?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('sickness_schemes')
+          .select('id, name, company_id')
+          .eq('company_id', currentCompany.id);
+        
+        if (error) throw error;
+        setAvailableSchemes(data || []);
+      } catch (error) {
+        console.error('Error fetching sickness schemes:', error);
+        toast({
+          title: "Error loading sickness schemes",
+          description: "Could not load available sickness schemes",
+          variant: "destructive"
+        });
+      }
+    };
+
+    fetchSchemes();
+  }, [currentCompany?.id, toast]);
+
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const f = e.target.files[0];
@@ -163,8 +257,15 @@ export default function SicknessImport() {
       }
       setHeaders(headers);
       setRawRows(data as RawRow[]);
-      const guess = suggestMapping(headers, data[0] as RawRow);
-      setMapping(guess);
+      
+      if (importType === "records") {
+        const guess = suggestMapping(headers, data[0] as RawRow);
+        setMapping(guess);
+      } else {
+        const schemeGuess = suggestSchemeMapping(headers);
+        setSchemeMapping(schemeGuess);
+      }
+      
       toast({ title: "File loaded", description: `${data.length} rows detected` });
     } catch (err: any) {
       toast({ title: "Error reading file", description: err?.message ?? String(err), variant: "destructive" });
@@ -253,6 +354,63 @@ export default function SicknessImport() {
     setMatchResults(results);
   };
 
+  // Parse scheme allocation rows
+  const parseSchemesRows = () => {
+    if (!rawRows.length) return;
+
+    const rows: SchemeParseResult[] = rawRows.map((row) => ({
+      raw: row,
+      nameGuess: {
+        first: schemeMapping.firstName ? String(row[schemeMapping.firstName] ?? "").trim() : undefined,
+        last: schemeMapping.lastName ? String(row[schemeMapping.lastName] ?? "").trim() : undefined,
+      },
+      schemeGuess: schemeMapping.sicknessScheme ? String(row[schemeMapping.sicknessScheme] ?? "").trim() : "",
+    }));
+
+    setSchemeParsedRows(rows);
+
+    // Attempt matching employees and schemes
+    const results: SchemeMatchResult[] = rows.map((parsed, idx) => {
+      let matchedEmployeeId: string | undefined;
+      let matchedSchemeId: string | undefined;
+      let candidates: SchemeMatchResult["candidates"] = [];
+
+      // Employee matching - fuzzy last + first
+      const last = (parsed.nameGuess.last ?? "").toString();
+      const first = (parsed.nameGuess.first ?? "").toString();
+      const searchQuery = `${last} ${first}`.trim();
+      if (searchQuery) {
+        const res = fuse.search(searchQuery).slice(0, 5);
+        candidates = res.map((r) => ({
+          id: (r.item as any).id,
+          payroll_id: (r.item as any).payroll_id,
+          first_name: (r.item as any).first_name,
+          last_name: (r.item as any).last_name,
+          score: r.score ?? 1,
+        }));
+        if (res[0] && (res[0].score ?? 1) <= 0.2) {
+          matchedEmployeeId = (res[0].item as any).id;
+        }
+      }
+
+      // Scheme matching - find by name (case insensitive, partial match)
+      const schemeName = parsed.schemeGuess.toLowerCase();
+      if (schemeName) {
+        const matchedScheme = availableSchemes.find(scheme => 
+          scheme.name.toLowerCase().includes(schemeName) || 
+          schemeName.includes(scheme.name.toLowerCase())
+        );
+        if (matchedScheme) {
+          matchedSchemeId = matchedScheme.id;
+        }
+      }
+
+      return { rowIndex: idx, parsed, matchedEmployeeId, matchedSchemeId, candidates };
+    });
+
+    setSchemeMatchResults(results);
+  };
+
   const updateCandidateSelection = (rowIndex: number, employeeId: string) => {
     setMatchResults((prev) => prev.map((r) => (r.rowIndex === rowIndex ? { ...r, matchedEmployeeId: employeeId } : r)));
     setAutoSkippedRows((prev) => {
@@ -266,10 +424,27 @@ export default function SicknessImport() {
     });
   };
 
+  const updateSchemeSelection = (rowIndex: number, employeeId: string, schemeId?: string) => {
+    setSchemeMatchResults((prev) => prev.map((r) => 
+      r.rowIndex === rowIndex 
+        ? { ...r, matchedEmployeeId: employeeId, matchedSchemeId: schemeId }
+        : r
+    ));
+  };
+
   const allMatched = useMemo(() => matchResults.length > 0 && matchResults.every((r) => !!r.matchedEmployeeId), [matchResults]);
   const anyMismatches = useMemo(() => parsedRows.some((r) => r.mismatchTotal), [parsedRows]);
   const unmatchedCount = useMemo(() => matchResults.filter((r) => !r.matchedEmployeeId).length, [matchResults]);
   const mismatchCount = useMemo(() => parsedRows.filter((r) => r.mismatchTotal).length, [parsedRows]);
+
+  // Scheme-specific computed values
+  const allSchemesMatched = useMemo(() => 
+    schemeMatchResults.length > 0 && 
+    schemeMatchResults.every((r) => !!r.matchedEmployeeId && !!r.matchedSchemeId)
+  , [schemeMatchResults]);
+  const schemeUnmatchedCount = useMemo(() => 
+    schemeMatchResults.filter((r) => !r.matchedEmployeeId || !r.matchedSchemeId).length
+  , [schemeMatchResults]);
 
   const handleToggleSkipAllUnmatched = (checked: boolean) => {
     const isChecked = !!checked;
@@ -436,18 +611,98 @@ export default function SicknessImport() {
     }
   };
 
+  const onSchemeImport = async () => {
+    if (!currentCompany?.id) {
+      toast({ title: "Select a company first", variant: "destructive" });
+      return;
+    }
+    if (!allSchemesMatched) {
+      toast({ title: "Resolve unmatched employees and schemes before import", variant: "destructive" });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const updates = schemeMatchResults
+        .filter((r) => r.matchedEmployeeId && r.matchedSchemeId && r.matchedEmployeeId !== "__skip__")
+        .map((r) => ({
+          employee_id: r.matchedEmployeeId!,
+          sickness_scheme_id: r.matchedSchemeId!,
+        }));
+
+      // Batch update employees with their new sickness schemes
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('employees')
+          .update({ sickness_scheme_id: update.sickness_scheme_id })
+          .eq('id', update.employee_id);
+
+        if (error) throw error;
+      }
+
+      toast({ 
+        title: "Scheme allocation complete", 
+        description: `Successfully allocated sickness schemes to ${updates.length} employees.` 
+      });
+      
+      // Reset state
+      setRawRows([]);
+      setSchemeParsedRows([]);
+      setSchemeMatchResults([]);
+      setHeaders([]);
+      setFileName("");
+    } catch (err: any) {
+      console.error(err);
+      toast({ 
+        title: "Scheme allocation failed", 
+        description: err?.message ?? String(err), 
+        variant: "destructive" 
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <main className="container mx-auto p-4 space-y-6">
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold">Sickness Import</h1>
-        <p className="text-muted-foreground">Upload a CSV/XLSX file with DD/MM/YYYY dates. We'll fuzzy match employees and merge overlapping absences.</p>
+        <p className="text-muted-foreground">
+          Upload a CSV/XLSX file to import sickness records or allocate sickness schemes to employees.
+        </p>
         <link rel="canonical" href="/employees/sickness/import" />
       </header>
 
       <Card>
         <CardHeader>
-          <CardTitle>1) Upload file</CardTitle>
-          <CardDescription>Select a CSV or Excel file to begin</CardDescription>
+          <CardTitle>Import Type</CardTitle>
+          <CardDescription>Choose what type of data you want to import</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RadioGroup value={importType} onValueChange={(value: "records" | "schemes") => setImportType(value)}>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="records" id="records" />
+              <Label htmlFor="records">Sickness Records</Label>
+              <span className="text-sm text-muted-foreground">- Import absence records with dates and days</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="schemes" id="schemes" />
+              <Label htmlFor="schemes">Sickness Scheme Allocations</Label>
+              <span className="text-sm text-muted-foreground">- Assign sickness schemes to employees</span>
+            </div>
+          </RadioGroup>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Upload File</CardTitle>
+          <CardDescription>
+            {importType === "records" 
+              ? "Upload a CSV/XLSX file with DD/MM/YYYY dates. We'll fuzzy match employees and merge overlapping absences."
+              : "Upload a CSV/XLSX file with employee names and sickness scheme names to allocate schemes in bulk."
+            }
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-2 max-w-md">
@@ -458,11 +713,11 @@ export default function SicknessImport() {
         </CardContent>
       </Card>
 
-      {rawRows.length > 0 && (
+      {rawRows.length > 0 && importType === "records" && (
         <Card>
           <CardHeader>
-            <CardTitle>2) Map columns</CardTitle>
-            <CardDescription>Confirm detected columns. Adjust if needed.</CardDescription>
+            <CardTitle>Map Columns</CardTitle>
+            <CardDescription>Confirm detected columns for sickness records. Adjust if needed.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -540,10 +795,48 @@ export default function SicknessImport() {
         </Card>
       )}
 
-      {parsedRows.length > 0 && (
+      {rawRows.length > 0 && importType === "schemes" && (
         <Card>
           <CardHeader>
-            <CardTitle>3) Review matches</CardTitle>
+            <CardTitle>Map Columns</CardTitle>
+            <CardDescription>Map columns for sickness scheme allocation. All fields are required.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {([
+                { key: "firstName", label: "First Name" },
+                { key: "lastName", label: "Surname" },
+                { key: "sicknessScheme", label: "Sickness Scheme" },
+              ] as const).map((f) => (
+                <div key={f.key} className="space-y-1">
+                  <Label>{f.label}</Label>
+                  <Select
+                    value={(schemeMapping as any)[f.key] ?? undefined}
+                    onValueChange={(v) => setSchemeMapping((m) => ({ ...m, [f.key]: v === "__none__" ? undefined : v }))}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Select column" /></SelectTrigger>
+                    <SelectContent className="z-50 bg-background">
+                      <SelectItem value="__none__">None</SelectItem>
+                      {headers.map((h) => (
+                        <SelectItem key={h} value={h}>{h}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-3">
+              <Button onClick={parseSchemesRows}>Continue</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {parsedRows.length > 0 && importType === "records" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Review Sickness Record Matches</CardTitle>
             <CardDescription>Resolve any unmatched employees. Payroll ID → Surname → First name.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -651,6 +944,117 @@ export default function SicknessImport() {
             <div className="flex gap-3">
               <Button disabled={!allMatched || (anyMismatches && !ignoreMismatches) || submitting} onClick={onImport}>
                 {submitting ? "Importing..." : "Import and merge"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {schemeParsedRows.length > 0 && importType === "schemes" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Review Scheme Allocations</CardTitle>
+            <CardDescription>Verify employee matches and sickness scheme assignments.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">
+                {`${schemeUnmatchedCount > 0 ? `${schemeUnmatchedCount} unmatched items` : "All items matched"}`}
+              </span>
+            </div>
+            
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Employee from file</TableHead>
+                  <TableHead>Matched employee</TableHead>
+                  <TableHead>Sickness scheme</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {schemeMatchResults.map((r) => (
+                  <TableRow key={r.rowIndex}>
+                    <TableCell>
+                      <div className="text-sm">
+                        <div>{r.parsed.nameGuess.last ?? ""}, {r.parsed.nameGuess.first ?? ""}</div>
+                        <div className="text-muted-foreground">Scheme: {r.parsed.schemeGuess}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {r.matchedEmployeeId ? (
+                        r.matchedEmployeeId === "__skip__" ? (
+                          <div className="text-sm text-muted-foreground">Skipped</div>
+                        ) : (
+                          <div className="text-sm">
+                            {(() => {
+                              const emp = employees.find((e) => e.id === r.matchedEmployeeId);
+                              return emp ? (
+                                <div>
+                                  <div>{emp.last_name}, {emp.first_name}</div>
+                                  <div className="text-muted-foreground">Payroll: {emp.payroll_id ?? "-"}</div>
+                                </div>
+                              ) : null;
+                            })()}
+                          </div>
+                        )
+                      ) : (
+                        <Select onValueChange={(v) => updateSchemeSelection(r.rowIndex, v, r.matchedSchemeId)}>
+                          <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
+                          <SelectContent className="z-50 bg-background max-h-80 overflow-auto">
+                            <SelectItem value="__skip__">Skip this row</SelectItem>
+                            {employees.map((e) => (
+                              <SelectItem key={e.id} value={e.id}>
+                                {e.last_name}, {e.first_name} ({e.payroll_id ?? "-"})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {r.matchedSchemeId ? (
+                        <div className="text-sm">
+                          {availableSchemes.find(s => s.id === r.matchedSchemeId)?.name}
+                        </div>
+                      ) : (
+                        <Select 
+                          onValueChange={(v) => updateSchemeSelection(r.rowIndex, r.matchedEmployeeId || "", v)}
+                          value={r.matchedSchemeId}
+                        >
+                          <SelectTrigger><SelectValue placeholder="Select scheme" /></SelectTrigger>
+                          <SelectContent className="z-50 bg-background max-h-80 overflow-auto">
+                            {availableSchemes.map((scheme) => (
+                              <SelectItem key={scheme.id} value={scheme.id}>
+                                {scheme.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-xs">
+                        {r.matchedEmployeeId && r.matchedSchemeId && r.matchedEmployeeId !== "__skip__" ? (
+                          <span className="text-green-600">✓ Ready</span>
+                        ) : r.matchedEmployeeId === "__skip__" ? (
+                          <span className="text-muted-foreground">Skipped</span>
+                        ) : (
+                          <span className="text-orange-600">Needs attention</span>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            <div className="flex gap-3">
+              <Button 
+                disabled={!allSchemesMatched || submitting} 
+                onClick={onSchemeImport}
+              >
+                {submitting ? "Allocating..." : "Allocate Schemes"}
               </Button>
             </div>
           </CardContent>
