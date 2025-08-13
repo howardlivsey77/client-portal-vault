@@ -60,17 +60,36 @@ export function parseDate(value: any): ParsedDate {
     }
   }
 
-  // Convert to string for parsing
-  const dateStr = String(value).trim();
-  
-  if (!dateStr) {
-    return {
-      date: null,
-      isValid: false,
-      error: 'Empty date string',
-      originalValue
-    };
+// Convert to string for parsing
+const dateStr = String(value).trim();
+
+if (!dateStr) {
+  return {
+    date: null,
+    isValid: false,
+    error: 'Empty date string',
+    originalValue
+  };
+}
+
+// Handle numeric strings that are likely Excel serial numbers (e.g., "45720" or "45720.0")
+if (/^\d+(\.0+)?$/.test(dateStr)) {
+  const serial = parseFloat(dateStr);
+  if (serial > 25000 && serial < 100000) {
+    try {
+      const excelEpoch = new Date(1900, 0, 1);
+      const date = new Date(excelEpoch.getTime() + (serial - 2) * 24 * 60 * 60 * 1000);
+      return validateDateRange(date, originalValue);
+    } catch (error) {
+      return {
+        date: null,
+        isValid: false,
+        error: `Failed to parse Excel date string: ${error}`,
+        originalValue
+      };
+    }
   }
+}
 
   // Try different date formats
   const formats = [

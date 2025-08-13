@@ -234,7 +234,14 @@ const SicknessImport = () => {
 
       // Process each row with enhanced matching
       const processedRecords: ProcessedSicknessRecord[] = rows
-        .filter(row => row[employeeNameIndex] && row[sicknessDaysIndex])
+        .filter(row => {
+          const nameCell = row[employeeNameIndex];
+          const daysCell = row[sicknessDaysIndex];
+          const hasName = nameCell !== undefined && nameCell !== null && String(nameCell).trim() !== '';
+          const daysNum = Number(daysCell);
+          const hasValidDays = !isNaN(daysNum) && daysNum > 0;
+          return hasName && hasValidDays;
+        })
         .map((row, index) => {
           const employeeName = String(row[employeeNameIndex]).trim();
           const sicknessDays = Number(row[sicknessDaysIndex]) || 0;
