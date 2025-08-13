@@ -52,7 +52,7 @@ export const PersonalInfoCard = ({ employee, isAdmin, updateEmployeeField }: Per
   };
 
   return (
-    <Card className="border-[1.5px] border-foreground">
+    <Card className="border-[1.5px] border-foreground bg-white">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Personal Information</CardTitle>
         {isAdmin && (

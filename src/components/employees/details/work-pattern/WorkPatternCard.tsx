@@ -125,7 +125,7 @@ export const WorkPatternCard = ({
 
   return (
     <div className="space-y-6">
-      <Card className="border-[1.5px] border-foreground">
+      <Card className="border-[1.5px] border-foreground bg-white">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Work Pattern</CardTitle>
           {isAdmin && (

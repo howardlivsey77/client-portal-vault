@@ -14,7 +14,7 @@ interface SystemInfoCardProps {
 
 export const SystemInfoCard = ({ employee }: SystemInfoCardProps) => {
   return (
-    <Card className="md:col-span-2 border-[1.5px] border-foreground">
+    <Card className="md:col-span-2 border-[1.5px] border-foreground bg-white">
       <CardHeader>
         <CardTitle>System Information</CardTitle>
       </CardHeader>
