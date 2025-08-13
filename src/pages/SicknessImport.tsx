@@ -199,20 +199,104 @@ export default function SicknessImport() {
   const [availableSchemes, setAvailableSchemes] = useState<SicknessScheme[]>([]);
   const [schemeSkipAllUnmatched, setSchemeSkipAllUnmatched] = useState(false);
 
-  // Build fuse over employees for fuzzy surname/firstname
+  // Build fuse over employees for fuzzy surname/firstname - enhanced for scheme allocations
   const fuse = useMemo(() => {
     return new Fuse(
       employees.map((e) => ({ ...e })),
       {
         includeScore: true,
-        threshold: 0.3,
+        threshold: 0.4, // More lenient for scheme allocations
         keys: [
-          { name: "last_name", weight: 0.7 },
-          { name: "first_name", weight: 0.3 },
+          { name: "last_name", weight: 0.8 }, // Higher weight for surname
+          { name: "first_name", weight: 0.2 },
+          { name: "payroll_id", weight: 0.1 }, // Include payroll for additional matching
         ],
       }
     );
   }, [employees]);
+
+  // Enhanced employee matching with better name normalization
+  const findEmployeeMatches = (firstName: string = "", lastName: string = "", payrollId?: string) => {
+    const candidates: { id: string; payroll_id?: string | null; first_name: string; last_name: string; score: number }[] = [];
+    
+    // Normalize names
+    const normalizeText = (text: string) => text.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '');
+    const normFirst = normalizeText(firstName);
+    const normLast = normalizeText(lastName);
+    
+    // 1) Exact payroll ID match first
+    if (payrollId) {
+      const normPayroll = normalizeText(payrollId);
+      const exactPayrollMatch = employees.find(e => 
+        normalizeText(e.payroll_id || '') === normPayroll
+      );
+      if (exactPayrollMatch) {
+        return {
+          bestMatch: exactPayrollMatch.id,
+          candidates: [{
+            id: exactPayrollMatch.id,
+            payroll_id: exactPayrollMatch.payroll_id,
+            first_name: exactPayrollMatch.first_name,
+            last_name: exactPayrollMatch.last_name,
+            score: 0 // Perfect match
+          }]
+        };
+      }
+    }
+
+    // 2) Surname-first fuzzy matching with multiple search strategies
+    const searchQueries = [
+      `${normLast} ${normFirst}`, // Primary: surname first
+      `${normFirst} ${normLast}`, // Fallback: first name first
+      normLast, // Surname only if available
+    ].filter(q => q.trim());
+
+    let bestScore = 1;
+    let bestMatchId: string | undefined;
+
+    searchQueries.forEach(query => {
+      if (query.trim()) {
+        const results = fuse.search(query).slice(0, 10);
+        results.forEach(result => {
+          const item = result.item as any;
+          const score = result.score ?? 1;
+          
+          // Boost score for exact surname matches
+          const isExactSurnameMatch = normalizeText(item.last_name) === normLast;
+          const adjustedScore = isExactSurnameMatch ? score * 0.5 : score;
+          
+          if (adjustedScore < bestScore) {
+            bestScore = adjustedScore;
+            bestMatchId = item.id;
+          }
+          
+          // Add unique candidates
+          if (!candidates.find(c => c.id === item.id)) {
+            candidates.push({
+              id: item.id,
+              payroll_id: item.payroll_id,
+              first_name: item.first_name,
+              last_name: item.last_name,
+              score: adjustedScore,
+            });
+          }
+        });
+      }
+    });
+
+    // Sort candidates by score and limit to top 5
+    candidates.sort((a, b) => a.score - b.score);
+    const topCandidates = candidates.slice(0, 5);
+
+    // Auto-match if confidence is high enough
+    const autoMatchThreshold = 0.15;
+    const autoMatch = bestScore <= autoMatchThreshold ? bestMatchId : undefined;
+
+    return {
+      bestMatch: autoMatch,
+      candidates: topCandidates
+    };
+  };
 
   useEffect(() => {
     document.title = "Sickness Import | Employees";
@@ -328,24 +412,15 @@ export default function SicknessImport() {
         if (direct) matchedEmployeeId = direct.id;
       }
 
-      // 2) Fuzzy last + first if not matched
+      // 2) Enhanced fuzzy matching if not matched
       if (!matchedEmployeeId) {
         const last = (parsed.nameGuess.last ?? "").toString();
         const first = (parsed.nameGuess.first ?? "").toString();
-        const searchQuery = `${last} ${first}`.trim();
-        if (searchQuery) {
-          const res = fuse.search(searchQuery).slice(0, 5);
-          candidates = res.map((r) => ({
-            id: (r.item as any).id,
-            payroll_id: (r.item as any).payroll_id,
-            first_name: (r.item as any).first_name,
-            last_name: (r.item as any).last_name,
-            score: r.score ?? 1,
-          }));
-          if (res[0] && (res[0].score ?? 1) <= 0.2) {
-            matchedEmployeeId = (res[0].item as any).id;
-          }
-        }
+        const payroll = parsed.nameGuess.payroll;
+        
+        const matchResult = findEmployeeMatches(first, last, payroll);
+        matchedEmployeeId = matchResult.bestMatch;
+        candidates = matchResult.candidates;
       }
 
       return { rowIndex: idx, parsed, matchedEmployeeId, candidates };
@@ -375,31 +450,45 @@ export default function SicknessImport() {
       let matchedSchemeId: string | undefined;
       let candidates: SchemeMatchResult["candidates"] = [];
 
-      // Employee matching - fuzzy last + first
+      // Enhanced employee matching for scheme allocation
       const last = (parsed.nameGuess.last ?? "").toString();
       const first = (parsed.nameGuess.first ?? "").toString();
-      const searchQuery = `${last} ${first}`.trim();
-      if (searchQuery) {
-        const res = fuse.search(searchQuery).slice(0, 5);
-        candidates = res.map((r) => ({
-          id: (r.item as any).id,
-          payroll_id: (r.item as any).payroll_id,
-          first_name: (r.item as any).first_name,
-          last_name: (r.item as any).last_name,
-          score: r.score ?? 1,
-        }));
-        if (res[0] && (res[0].score ?? 1) <= 0.2) {
-          matchedEmployeeId = (res[0].item as any).id;
-        }
-      }
+      
+      const matchResult = findEmployeeMatches(first, last);
+      matchedEmployeeId = matchResult.bestMatch;
+      candidates = matchResult.candidates;
 
-      // Scheme matching - find by name (case insensitive, partial match)
-      const schemeName = parsed.schemeGuess.toLowerCase();
+      // Enhanced scheme matching with fuzzy logic
+      const schemeName = parsed.schemeGuess.toLowerCase().trim();
       if (schemeName) {
-        const matchedScheme = availableSchemes.find(scheme => 
-          scheme.name.toLowerCase().includes(schemeName) || 
-          schemeName.includes(scheme.name.toLowerCase())
+        // Try exact match first
+        let matchedScheme = availableSchemes.find(scheme => 
+          scheme.name.toLowerCase() === schemeName
         );
+        
+        // Try partial match
+        if (!matchedScheme) {
+          matchedScheme = availableSchemes.find(scheme => 
+            scheme.name.toLowerCase().includes(schemeName) || 
+            schemeName.includes(scheme.name.toLowerCase())
+          );
+        }
+        
+        // Try fuzzy matching for common abbreviations
+        if (!matchedScheme) {
+          const normalizeScheme = (name: string) => name.toLowerCase()
+            .replace(/\b(sick|pay|scheme|entitlement|practice)\b/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+          
+          const normalizedInput = normalizeScheme(schemeName);
+          matchedScheme = availableSchemes.find(scheme => {
+            const normalizedScheme = normalizeScheme(scheme.name);
+            return normalizedScheme.includes(normalizedInput) || 
+                   normalizedInput.includes(normalizedScheme);
+          });
+        }
+        
         if (matchedScheme) {
           matchedSchemeId = matchedScheme.id;
         }
@@ -430,6 +519,27 @@ export default function SicknessImport() {
         ? { ...r, matchedEmployeeId: employeeId, matchedSchemeId: schemeId }
         : r
     ));
+  };
+
+  // Bulk skip functionality for scheme allocations
+  const handleSchemeToggleSkipAllUnmatched = (checked: boolean) => {
+    const isChecked = !!checked;
+    setSchemeSkipAllUnmatched(isChecked);
+    if (isChecked) {
+      setSchemeMatchResults((prev) => 
+        prev.map((r) => (!r.matchedEmployeeId || !r.matchedSchemeId) 
+          ? { ...r, matchedEmployeeId: "__skip__", matchedSchemeId: "__skip__" } 
+          : r
+        )
+      );
+    } else {
+      setSchemeMatchResults((prev) => 
+        prev.map((r) => (r.matchedEmployeeId === "__skip__") 
+          ? { ...r, matchedEmployeeId: "", matchedSchemeId: "" } 
+          : r
+        )
+      );
+    }
   };
 
   const allMatched = useMemo(() => matchResults.length > 0 && matchResults.every((r) => !!r.matchedEmployeeId), [matchResults]);
@@ -915,26 +1025,44 @@ export default function SicknessImport() {
                             })()}
                           </div>
                         )
-                      ) : (
-                        <>
-                          <Select onValueChange={(v) => updateCandidateSelection(r.rowIndex, v)}>
-                            <SelectTrigger><SelectValue placeholder="Select match" /></SelectTrigger>
-                            <SelectContent className="z-50 bg-background max-h-80 overflow-auto">
-                              <SelectItem value="__skip__">Skip this employee</SelectItem>
-                              {employees.map((e) => (
-                                <SelectItem key={e.id} value={e.id}>
-                                  {e.last_name}, {e.first_name} ({e.payroll_id ?? "-"})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <div className="mt-1">
-                            <Button type="button" variant="link" size="sm" onClick={() => handleToggleSkipAllUnmatched(true)}>
-                              Skip all unmatched
-                            </Button>
-                          </div>
-                        </>
-                      )}
+                       ) : (
+                         <div className="space-y-2">
+                           <Select onValueChange={(v) => updateCandidateSelection(r.rowIndex, v)}>
+                             <SelectTrigger><SelectValue placeholder="Select match" /></SelectTrigger>
+                             <SelectContent className="z-50 bg-background max-h-80 overflow-auto">
+                               <SelectItem value="__skip__">Skip this employee</SelectItem>
+                               {r.candidates.length > 0 && (
+                                 <>
+                                   <SelectItem value="" disabled className="text-xs font-medium text-muted-foreground">
+                                     — Suggested matches —
+                                   </SelectItem>
+                                   {r.candidates.slice(0, 3).map((candidate) => (
+                                     <SelectItem key={candidate.id} value={candidate.id}>
+                                       {candidate.last_name}, {candidate.first_name} ({candidate.payroll_id ?? "-"})
+                                       <span className="ml-2 text-xs text-muted-foreground">
+                                         {Math.round((1 - candidate.score) * 100)}% match
+                                       </span>
+                                     </SelectItem>
+                                   ))}
+                                   <SelectItem value="" disabled className="text-xs font-medium text-muted-foreground">
+                                     — All employees —
+                                   </SelectItem>
+                                 </>
+                               )}
+                               {employees.map((e) => (
+                                 <SelectItem key={e.id} value={e.id}>
+                                   {e.last_name}, {e.first_name} ({e.payroll_id ?? "-"})
+                                 </SelectItem>
+                               ))}
+                             </SelectContent>
+                           </Select>
+                           {r.candidates.length === 0 && (
+                             <div className="text-xs text-orange-600">
+                               No close matches found. Please select manually.
+                             </div>
+                           )}
+                         </div>
+                       )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -957,9 +1085,19 @@ export default function SicknessImport() {
             <CardDescription>Verify employee matches and sickness scheme assignments.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">
-                {`${schemeUnmatchedCount > 0 ? `${schemeUnmatchedCount} unmatched items` : "All items matched"}`}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  id="scheme-skip-all-unmatched"
+                  checked={schemeSkipAllUnmatched}
+                  onCheckedChange={handleSchemeToggleSkipAllUnmatched}
+                />
+                <label htmlFor="scheme-skip-all-unmatched" className="text-sm">
+                  {`Skip all unmatched items${schemeUnmatchedCount > 0 ? ` (${schemeUnmatchedCount})` : ""}`}
+                </label>
+              </div>
+              <span className="text-sm text-muted-foreground">
+                {`${schemeUnmatchedCount > 0 ? `${schemeUnmatchedCount} need attention` : "All items ready"}`}
               </span>
             </div>
             
@@ -981,36 +1119,74 @@ export default function SicknessImport() {
                         <div className="text-muted-foreground">Scheme: {r.parsed.schemeGuess}</div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      {r.matchedEmployeeId ? (
-                        r.matchedEmployeeId === "__skip__" ? (
-                          <div className="text-sm text-muted-foreground">Skipped</div>
-                        ) : (
-                          <div className="text-sm">
-                            {(() => {
-                              const emp = employees.find((e) => e.id === r.matchedEmployeeId);
-                              return emp ? (
-                                <div>
-                                  <div>{emp.last_name}, {emp.first_name}</div>
-                                  <div className="text-muted-foreground">Payroll: {emp.payroll_id ?? "-"}</div>
-                                </div>
-                              ) : null;
-                            })()}
-                          </div>
-                        )
-                      ) : (
-                        <Select onValueChange={(v) => updateSchemeSelection(r.rowIndex, v, r.matchedSchemeId)}>
-                          <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
-                          <SelectContent className="z-50 bg-background max-h-80 overflow-auto">
-                            <SelectItem value="__skip__">Skip this row</SelectItem>
-                            {employees.map((e) => (
-                              <SelectItem key={e.id} value={e.id}>
-                                {e.last_name}, {e.first_name} ({e.payroll_id ?? "-"})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
+                     <TableCell>
+                       {r.matchedEmployeeId ? (
+                         r.matchedEmployeeId === "__skip__" ? (
+                           <div className="text-sm text-muted-foreground">
+                             Skipped {" "}
+                             <Button type="button" variant="link" size="sm" onClick={() => updateSchemeSelection(r.rowIndex, "", "")}>
+                               Undo
+                             </Button>
+                           </div>
+                         ) : (
+                           <div className="text-sm">
+                             {(() => {
+                               const emp = employees.find((e) => e.id === r.matchedEmployeeId);
+                               const candidate = r.candidates.find((c) => c.id === r.matchedEmployeeId);
+                               return emp ? (
+                                 <div>
+                                   <div>{emp.last_name}, {emp.first_name}</div>
+                                   <div className="text-muted-foreground">
+                                     Payroll: {emp.payroll_id ?? "-"}
+                                     {candidate && candidate.score > 0 && (
+                                       <span className="ml-2 text-xs">
+                                         (Match: {Math.round((1 - candidate.score) * 100)}%)
+                                       </span>
+                                     )}
+                                   </div>
+                                 </div>
+                               ) : null;
+                             })()}
+                           </div>
+                         )
+                       ) : (
+                         <div className="space-y-2">
+                           <Select onValueChange={(v) => updateSchemeSelection(r.rowIndex, v, r.matchedSchemeId)}>
+                             <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
+                             <SelectContent className="z-50 bg-background max-h-80 overflow-auto">
+                               <SelectItem value="__skip__">Skip this row</SelectItem>
+                               {r.candidates.length > 0 && (
+                                 <>
+                                   <SelectItem value="" disabled className="text-xs font-medium text-muted-foreground">
+                                     — Suggested matches —
+                                   </SelectItem>
+                                   {r.candidates.slice(0, 3).map((candidate) => (
+                                     <SelectItem key={candidate.id} value={candidate.id}>
+                                       {candidate.last_name}, {candidate.first_name} ({candidate.payroll_id ?? "-"})
+                                       <span className="ml-2 text-xs text-muted-foreground">
+                                         {Math.round((1 - candidate.score) * 100)}% match
+                                       </span>
+                                     </SelectItem>
+                                   ))}
+                                   <SelectItem value="" disabled className="text-xs font-medium text-muted-foreground">
+                                     — All employees —
+                                   </SelectItem>
+                                 </>
+                               )}
+                               {employees.map((e) => (
+                                 <SelectItem key={e.id} value={e.id}>
+                                   {e.last_name}, {e.first_name} ({e.payroll_id ?? "-"})
+                                 </SelectItem>
+                               ))}
+                             </SelectContent>
+                           </Select>
+                           {r.candidates.length === 0 && (
+                             <div className="text-xs text-orange-600">
+                               No close matches found. Please select manually.
+                             </div>
+                           )}
+                         </div>
+                       )}
                     </TableCell>
                     <TableCell>
                       {r.matchedSchemeId ? (
