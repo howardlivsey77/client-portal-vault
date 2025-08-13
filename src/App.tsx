@@ -19,6 +19,7 @@ import CompanySettings from "./features/company-settings/CompanySettings";
 import CompanyManagement from "./features/company-management/CompanyManagement";
 import NotFound from "./pages/NotFound";
 import SicknessImport from "./pages/SicknessImport";
+import ClientReports from "./pages/ClientReports";
 import AuthProvider from "./providers/AuthProvider";
 import CompanyProvider from "./providers/CompanyProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -41,6 +42,7 @@ const App = () => (
                 <Route path="/invites" element={<ProtectedRoute adminOnly={true}><InviteManagement /></ProtectedRoute>} />
                 <Route path="/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
                 <Route path="/employees/sickness/import" element={<ProtectedRoute><SicknessImport /></ProtectedRoute>} />
+                <Route path="/client-reports" element={<ProtectedRoute><ClientReports /></ProtectedRoute>} />
                 <Route path="/employee/new" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
                 <Route path="/employee/:id" element={<ProtectedRoute><EmployeeDetails /></ProtectedRoute>} />
                 <Route path="/employee/edit/:id" element={<ProtectedRoute><EmployeeForm /></ProtectedRoute>} />
