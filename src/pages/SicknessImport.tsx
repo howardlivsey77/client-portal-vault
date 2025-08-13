@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { readFileData } from "@/components/employees/import/fileParsingUtils";
@@ -126,6 +127,8 @@ export default function SicknessImport() {
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [matchResults, setMatchResults] = useState<MatchResult[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [skipAllUnmatched, setSkipAllUnmatched] = useState(false);
+  const [autoSkippedRows, setAutoSkippedRows] = useState<Set<number>>(new Set());
 
   // Build fuse over employees for fuzzy surname/firstname
   const fuse = useMemo(() => {
@@ -251,11 +254,39 @@ export default function SicknessImport() {
 
   const updateCandidateSelection = (rowIndex: number, employeeId: string) => {
     setMatchResults((prev) => prev.map((r) => (r.rowIndex === rowIndex ? { ...r, matchedEmployeeId: employeeId } : r)));
+    setAutoSkippedRows((prev) => {
+      const next = new Set(prev);
+      if (employeeId === "__skip__") {
+        next.add(rowIndex);
+      } else {
+        next.delete(rowIndex);
+      }
+      return next;
+    });
   };
 
   const allMatched = useMemo(() => matchResults.length > 0 && matchResults.every((r) => !!r.matchedEmployeeId), [matchResults]);
   const anyMismatches = useMemo(() => parsedRows.some((r) => r.mismatchTotal), [parsedRows]);
+  const unmatchedCount = useMemo(() => matchResults.filter((r) => !r.matchedEmployeeId).length, [matchResults]);
 
+  const handleToggleSkipAllUnmatched = (checked: boolean) => {
+    const isChecked = !!checked;
+    setSkipAllUnmatched(isChecked);
+    if (isChecked) {
+      setMatchResults((prev) => {
+        const indicesToSkip = prev.filter((r) => !r.matchedEmployeeId).map((r) => r.rowIndex);
+        setAutoSkippedRows(new Set(indicesToSkip));
+        return prev.map((r) => (!r.matchedEmployeeId ? { ...r, matchedEmployeeId: "__skip__" } : r));
+      });
+    } else {
+      setMatchResults((prev) => {
+        const indices = new Set(autoSkippedRows);
+        const updated = prev.map((r) => (indices.has(r.rowIndex) && r.matchedEmployeeId === "__skip__" ? { ...r, matchedEmployeeId: "" } : r));
+        return updated;
+      });
+      setAutoSkippedRows(new Set());
+    }
+  };
   function datesOverlapOrAdjacent(aStart: string, aEnd: string | null, bStart: string, bEnd: string | null): boolean {
     const aS = new Date(aStart);
     const aE = aEnd ? new Date(aEnd) : new Date(aStart);
@@ -514,6 +545,16 @@ export default function SicknessImport() {
             <CardDescription>Resolve any unmatched employees. Payroll ID → Surname → First name.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                id="skip-all-unmatched"
+                checked={skipAllUnmatched}
+                onCheckedChange={handleToggleSkipAllUnmatched}
+              />
+              <label htmlFor="skip-all-unmatched" className="text-sm">
+                {`Skip all unmatched employees${unmatchedCount > 0 ? ` (${unmatchedCount})` : ""}`}
+              </label>
+            </div>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -565,17 +606,24 @@ export default function SicknessImport() {
                           </div>
                         )
                       ) : (
-                        <Select onValueChange={(v) => updateCandidateSelection(r.rowIndex, v)}>
-                          <SelectTrigger><SelectValue placeholder="Select match" /></SelectTrigger>
-                          <SelectContent className="z-50 bg-background max-h-80 overflow-auto">
-                            <SelectItem value="__skip__">Skip this employee</SelectItem>
-                            {employees.map((e) => (
-                              <SelectItem key={e.id} value={e.id}>
-                                {e.last_name}, {e.first_name} ({e.payroll_id ?? "-"})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <>
+                          <Select onValueChange={(v) => updateCandidateSelection(r.rowIndex, v)}>
+                            <SelectTrigger><SelectValue placeholder="Select match" /></SelectTrigger>
+                            <SelectContent className="z-50 bg-background max-h-80 overflow-auto">
+                              <SelectItem value="__skip__">Skip this employee</SelectItem>
+                              {employees.map((e) => (
+                                <SelectItem key={e.id} value={e.id}>
+                                  {e.last_name}, {e.first_name} ({e.payroll_id ?? "-"})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <div className="mt-1">
+                            <Button type="button" variant="link" size="sm" onClick={() => handleToggleSkipAllUnmatched(true)}>
+                              Skip all unmatched
+                            </Button>
+                          </div>
+                        </>
                       )}
                     </TableCell>
                   </TableRow>
