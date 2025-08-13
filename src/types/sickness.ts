@@ -63,6 +63,11 @@ export interface SicknessEntitlementSummary {
   service_months: number;
   rolling_period_start: string;
   rolling_period_end: string;
+  // SSP fields (optional for backward compatibility)
+  ssp_entitled_days?: number;
+  ssp_used_current_year?: number;
+  ssp_used_rolling_12_months?: number;
+  ssp_remaining_days?: number;
 }
 
 export interface OpeningBalanceData {

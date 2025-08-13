@@ -5,6 +5,8 @@ import { sicknessService } from '@/services/sicknessService';
 import { SicknessRecord, EntitlementUsage, SicknessEntitlementSummary, OpeningBalanceData } from '@/types/sickness';
 import { EligibilityRule, SicknessScheme } from '@/components/employees/details/work-pattern/types';
 import { Employee } from '@/types/employee-types';
+import { fetchWorkPatterns } from '@/components/employees/details/work-pattern/services/fetchPatterns';
+import { calculateWorkingDaysPerWeek } from '@/components/employees/details/sickness/utils/workPatternCalculations';
 
 export const useSicknessData = (
   employee: Employee | null, 
@@ -112,34 +114,57 @@ export const useSicknessData = (
     if (!entitlementUsage || !employee) return null;
 
     try {
-      const [usedDays, rollingUsage] = await Promise.all([
+      const [yearUsage, rollingUsage, workPattern] = await Promise.all([
         sicknessService.calculateUsedDays(employee.id),
-        sicknessService.calculateRolling12MonthUsage(employee.id)
+        sicknessService.calculateRolling12MonthUsage(employee.id),
+        fetchWorkPatterns(employee.id)
       ]);
 
       const rollingPeriod = sicknessService.getRolling12MonthPeriod();
-      
-      // Include opening balance in calculations
+      const workingDaysPerWeek = calculateWorkingDaysPerWeek(workPattern);
+
+      // SSP entitlement: 28 weeks × working days per week
+      const sspEntitledDays = 28 * workingDaysPerWeek;
+
+      // Include opening balance in allowances
       const openingBalanceFullPay = entitlementUsage.opening_balance_full_pay || 0;
       const openingBalanceHalfPay = entitlementUsage.opening_balance_half_pay || 0;
-      
-      // Rolling 12-month usage includes opening balance
-      const totalRollingFullPay = rollingUsage.fullPayUsed + openingBalanceFullPay;
-      const totalRollingHalfPay = rollingUsage.halfPayUsed + openingBalanceHalfPay;
-      
+
+      const fullAllowance = (entitlementUsage.full_pay_entitled_days || 0) + openingBalanceFullPay;
+      const halfAllowance = (entitlementUsage.half_pay_entitled_days || 0) + openingBalanceHalfPay;
+
+      // Allocate current year usage across full/half/SSP
+      const yearTotalUsed = yearUsage.totalUsed || 0;
+      const yearFullUsed = Math.min(yearTotalUsed, fullAllowance);
+      const yearRemainingAfterFull = Math.max(0, yearTotalUsed - yearFullUsed);
+      const yearHalfUsed = Math.min(yearRemainingAfterFull, halfAllowance);
+      const yearSspUsed = Math.max(0, yearTotalUsed - yearFullUsed - yearHalfUsed);
+
+      // Allocate rolling 12-month usage across full/half/SSP
+      const rollingTotalUsed = rollingUsage.totalUsed || 0;
+      const rollingFullUsed = Math.min(rollingTotalUsed, fullAllowance);
+      const rollingRemainingAfterFull = Math.max(0, rollingTotalUsed - rollingFullUsed);
+      const rollingHalfUsed = Math.min(rollingRemainingAfterFull, halfAllowance);
+      const rollingSspUsed = Math.max(0, rollingTotalUsed - rollingFullUsed - rollingHalfUsed);
+
       return {
-        full_pay_remaining: Math.max(0, entitlementUsage.full_pay_entitled_days - totalRollingFullPay),
-        half_pay_remaining: Math.max(0, entitlementUsage.half_pay_entitled_days - totalRollingHalfPay),
-        full_pay_used: usedDays.fullPayUsed,
-        half_pay_used: usedDays.halfPayUsed,
-        full_pay_used_rolling_12_months: totalRollingFullPay,
-        half_pay_used_rolling_12_months: totalRollingHalfPay,
+        full_pay_remaining: Math.max(0, fullAllowance - rollingFullUsed),
+        half_pay_remaining: Math.max(0, halfAllowance - rollingHalfUsed),
+        full_pay_used: yearFullUsed,
+        half_pay_used: yearHalfUsed,
+        full_pay_used_rolling_12_months: rollingFullUsed,
+        half_pay_used_rolling_12_months: rollingHalfUsed,
         opening_balance_full_pay: openingBalanceFullPay,
         opening_balance_half_pay: openingBalanceHalfPay,
         current_tier: entitlementUsage.current_rule_id || 'No tier',
         service_months: entitlementUsage.current_service_months,
         rolling_period_start: rollingPeriod.start,
-        rolling_period_end: rollingPeriod.end
+        rolling_period_end: rollingPeriod.end,
+        // SSP fields
+        ssp_entitled_days: sspEntitledDays,
+        ssp_used_current_year: yearSspUsed,
+        ssp_used_rolling_12_months: Math.min(sspEntitledDays, rollingSspUsed),
+        ssp_remaining_days: Math.max(0, sspEntitledDays - Math.min(sspEntitledDays, rollingSspUsed))
       };
     } catch (error) {
       console.error('Error calculating entitlement summary:', error);

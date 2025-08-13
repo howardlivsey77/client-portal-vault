@@ -17,7 +17,7 @@ export const balanceService = {
   },
 
   // Calculate rolling 12-month sickness days used
-  async calculateRolling12MonthUsage(employeeId: string): Promise<{ fullPayUsed: number; halfPayUsed: number }> {
+  async calculateRolling12MonthUsage(employeeId: string): Promise<{ totalUsed: number; fullPayUsed: number; halfPayUsed: number }> {
     const { start, end } = calculationUtils.getRolling12MonthPeriod();
 
     const { data, error } = await supabase
@@ -29,18 +29,18 @@ export const balanceService = {
 
     if (error) throw error;
 
-    // For now, assume all days are full pay days
-    // TODO: Implement logic to determine full pay vs half pay based on accumulated usage
-    const totalUsed = data?.reduce((sum, record) => sum + record.total_days, 0) || 0;
+    const totalUsed = data?.reduce((sum, record) => sum + Number(record.total_days || 0), 0) || 0;
     
+    // Allocation into full/half happens at a higher level
     return {
-      fullPayUsed: totalUsed,
+      totalUsed,
+      fullPayUsed: 0,
       halfPayUsed: 0
     };
   },
 
   // Calculate total sickness days used in current year (for backward compatibility)
-  async calculateUsedDays(employeeId: string): Promise<{ fullPayUsed: number; halfPayUsed: number }> {
+  async calculateUsedDays(employeeId: string): Promise<{ totalUsed: number; fullPayUsed: number; halfPayUsed: number }> {
     const currentYear = new Date().getFullYear();
     const yearStart = `${currentYear}-01-01`;
     const yearEnd = `${currentYear}-12-31`;
@@ -54,11 +54,12 @@ export const balanceService = {
 
     if (error) throw error;
 
-    // For now, assume all days are full pay days
-    const totalUsed = data?.reduce((sum, record) => sum + record.total_days, 0) || 0;
+    const totalUsed = data?.reduce((sum, record) => sum + Number(record.total_days || 0), 0) || 0;
     
+    // Allocation handled at summary level
     return {
-      fullPayUsed: totalUsed,
+      totalUsed,
+      fullPayUsed: 0,
       halfPayUsed: 0
     };
   }

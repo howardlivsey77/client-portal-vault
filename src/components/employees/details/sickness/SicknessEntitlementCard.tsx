@@ -59,6 +59,9 @@ export const SicknessEntitlementCard = ({
   
   const halfPayUsagePercent = summary.half_pay_used_rolling_12_months > 0 ? 
     (summary.half_pay_used_rolling_12_months / (summary.half_pay_used_rolling_12_months + summary.half_pay_remaining)) * 100 : 0;
+  
+  const sspUsagePercent = (summary.ssp_used_rolling_12_months && summary.ssp_remaining_days) ?
+    (summary.ssp_used_rolling_12_months / (summary.ssp_used_rolling_12_months + summary.ssp_remaining_days)) * 100 : 0;
 
   return (
     <Card className="border-[1.5px] border-foreground">
@@ -161,6 +164,41 @@ export const SicknessEntitlementCard = ({
             )}
           </div>
         </div>
+
+        {/* SSP Entitlement (Statutory Sick Pay) */}
+        {summary.ssp_entitled_days !== undefined && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">SSP Days</span>
+              <div className="flex items-center gap-2">
+                {summary.ssp_remaining_days && summary.ssp_remaining_days > 5 ? (
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                ) : summary.ssp_remaining_days && summary.ssp_remaining_days > 0 ? (
+                  <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 text-red-500" />
+                )}
+                <span className="text-sm">
+                  {summary.ssp_remaining_days ?? 0} remaining / {summary.ssp_used_rolling_12_months ?? 0} used (12 months)
+                </span>
+              </div>
+            </div>
+            <Progress value={sspUsagePercent} className="h-2" />
+            {/* Breakdown */}
+            <div className="text-xs text-muted-foreground space-y-1">
+              <div className="flex justify-between">
+                <span>Entitled:</span>
+                <span>{summary.ssp_entitled_days ?? 0} days</span>
+              </div>
+              {(summary.ssp_used_current_year ?? 0) > 0 && (
+                <div className="flex justify-between">
+                  <span>Current year:</span>
+                  <span>{summary.ssp_used_current_year}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Current Tier */}
         <div className="flex items-center justify-between">
