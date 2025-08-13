@@ -1,8 +1,10 @@
 
+
 import { calculationUtils } from "./sickness/calculationUtils";
 import { entitlementService } from "./sickness/entitlementService";
 import { recordsService } from "./sickness/recordsService";
 import { balanceService } from "./sickness/balanceService";
+import { sspService } from "./sickness/sspService";
 
 export const sicknessService = {
   // Calculation utilities
@@ -10,6 +12,9 @@ export const sicknessService = {
   calculateServiceMonths: calculationUtils.calculateServiceMonths,
   findApplicableRule: calculationUtils.findApplicableRule,
   calculateEntitlements: calculationUtils.calculateEntitlements,
+
+  // SSP calculations
+  calculateSspUsage: sspService.calculateSspUsage,
 
   // Entitlement management
   getEntitlementUsage: entitlementService.getEntitlementUsage,

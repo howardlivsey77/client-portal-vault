@@ -5,8 +5,6 @@ import { sicknessService } from '@/services/sicknessService';
 import { SicknessRecord, EntitlementUsage, SicknessEntitlementSummary, OpeningBalanceData } from '@/types/sickness';
 import { EligibilityRule, SicknessScheme } from '@/components/employees/details/work-pattern/types';
 import { Employee } from '@/types/employee-types';
-import { fetchWorkPatterns } from '@/components/employees/details/work-pattern/services/fetchPatterns';
-import { calculateWorkingDaysPerWeek } from '@/components/employees/details/sickness/utils/workPatternCalculations';
 
 export const useSicknessData = (
   employee: Employee | null, 
@@ -114,17 +112,13 @@ export const useSicknessData = (
     if (!entitlementUsage || !employee) return null;
 
     try {
-      const [yearUsage, rollingUsage, workPattern] = await Promise.all([
+      const [yearUsage, rollingUsage, ssp] = await Promise.all([
         sicknessService.calculateUsedDays(employee.id),
         sicknessService.calculateRolling12MonthUsage(employee.id),
-        fetchWorkPatterns(employee.id)
+        sicknessService.calculateSspUsage(employee.id)
       ]);
 
       const rollingPeriod = sicknessService.getRolling12MonthPeriod();
-      const workingDaysPerWeek = calculateWorkingDaysPerWeek(workPattern);
-
-      // SSP entitlement: 28 weeks × working days per week
-      const sspEntitledDays = 28 * workingDaysPerWeek;
 
       // Include opening balance in allowances
       const openingBalanceFullPay = entitlementUsage.opening_balance_full_pay || 0;
@@ -133,19 +127,17 @@ export const useSicknessData = (
       const fullAllowance = (entitlementUsage.full_pay_entitled_days || 0) + openingBalanceFullPay;
       const halfAllowance = (entitlementUsage.half_pay_entitled_days || 0) + openingBalanceHalfPay;
 
-      // Allocate current year usage across full/half/SSP
       const yearTotalUsed = yearUsage.totalUsed || 0;
+      const rollingTotalUsed = rollingUsage.totalUsed || 0;
+
+      // Allocate used days to full then half for display (OSP logic placeholder)
       const yearFullUsed = Math.min(yearTotalUsed, fullAllowance);
       const yearRemainingAfterFull = Math.max(0, yearTotalUsed - yearFullUsed);
       const yearHalfUsed = Math.min(yearRemainingAfterFull, halfAllowance);
-      const yearSspUsed = Math.max(0, yearTotalUsed - yearFullUsed - yearHalfUsed);
 
-      // Allocate rolling 12-month usage across full/half/SSP
-      const rollingTotalUsed = rollingUsage.totalUsed || 0;
       const rollingFullUsed = Math.min(rollingTotalUsed, fullAllowance);
       const rollingRemainingAfterFull = Math.max(0, rollingTotalUsed - rollingFullUsed);
       const rollingHalfUsed = Math.min(rollingRemainingAfterFull, halfAllowance);
-      const rollingSspUsed = Math.max(0, rollingTotalUsed - rollingFullUsed - rollingHalfUsed);
 
       return {
         full_pay_remaining: Math.max(0, fullAllowance - rollingFullUsed),
@@ -160,11 +152,11 @@ export const useSicknessData = (
         service_months: entitlementUsage.current_service_months,
         rolling_period_start: rollingPeriod.start,
         rolling_period_end: rollingPeriod.end,
-        // SSP fields
-        ssp_entitled_days: sspEntitledDays,
-        ssp_used_current_year: yearSspUsed,
-        ssp_used_rolling_12_months: Math.min(sspEntitledDays, rollingSspUsed),
-        ssp_remaining_days: Math.max(0, sspEntitledDays - Math.min(sspEntitledDays, rollingSspUsed))
+        // SSP fields based on proper PIW/linking rules
+        ssp_entitled_days: ssp.sspEntitledDays,
+        ssp_used_current_year: ssp.sspUsedCurrentYear,
+        ssp_used_rolling_12_months: ssp.sspUsedRolling12,
+        ssp_remaining_days: Math.max(0, ssp.sspEntitledDays - ssp.sspUsedRolling12)
       };
     } catch (error) {
       console.error('Error calculating entitlement summary:', error);
