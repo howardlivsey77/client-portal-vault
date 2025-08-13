@@ -37,6 +37,7 @@ interface ProcessedSicknessRecord extends SicknessRecord {
   matchedEmployeeId: string | null;
   matchedSchemeName: string | null;
   status: 'ready' | 'needs_attention' | 'skipped';
+  statusReason?: string;
   confidence?: number;
   suggestions?: Array<{
     id: string;
@@ -112,28 +113,58 @@ const SicknessImport = () => {
       ? employeeFuse.search(employeeName.trim()) 
       : [];
     
+    // Try more flexible searches if no good matches found
+    let flexibleResults: any[] = [];
+    if (results.length === 0 || (results[0].score && results[0].score > 0.6)) {
+      // Try first name only
+      flexibleResults = employeeFuse.search(firstName);
+      
+      // Try surname only if we have one
+      if (surname) {
+        const surnameResults = employeeFuse.search(surname);
+        flexibleResults = [...flexibleResults, ...surnameResults];
+      }
+    }
+    
     // Combine and deduplicate results
-    const allResults = [...results, ...payrollResults];
+    const allResults = [...results, ...payrollResults, ...flexibleResults];
     const uniqueResults = allResults.filter((result, index, self) => 
       index === self.findIndex(r => r.item.id === result.item.id)
     );
     
-    return uniqueResults
+    const processedResults = uniqueResults
       .sort((a, b) => (a.score || 0) - (b.score || 0))
       .slice(0, 5)
       .map(result => ({
         id: result.item.id,
         name: `${result.item.last_name}, ${result.item.first_name}`,
         confidence: Math.round((1 - (result.score || 0)) * 100),
-        payrollId: result.item.payroll_id
+        payrollId: result.item.payroll_id,
+        score: result.score || 0
       }));
+
+    console.log(`Employee matching for "${employeeName}":`, {
+      searchQuery,
+      resultsFound: processedResults.length,
+      bestMatch: processedResults[0],
+      allMatches: processedResults
+    });
+
+    return processedResults;
   };
 
   const findSchemeMatch = (schemeName: string) => {
     if (!schemeName) return null;
     
     const results = schemeFuse.search(schemeName);
-    if (results.length > 0 && results[0].score! < 0.4) {
+    console.log(`Scheme matching for "${schemeName}":`, {
+      resultsFound: results.length,
+      bestMatch: results[0],
+      threshold: 0.6
+    });
+    
+    // Made threshold more flexible - was 0.4, now 0.6
+    if (results.length > 0 && results[0].score! < 0.6) {
       return results[0].item.name;
     }
     return null;
@@ -220,11 +251,28 @@ const SicknessImport = () => {
           // Find scheme match
           const matchedSchemeName = findSchemeMatch(schemeAllocation);
 
-          // Determine status
+          // Determine status - more flexible criteria
           let status: 'ready' | 'needs_attention' | 'skipped' = 'ready';
-          if (!bestEmployeeMatch || (schemeAllocation && !matchedSchemeName)) {
+          let statusReason = '';
+          
+          if (!bestEmployeeMatch) {
             status = 'needs_attention';
+            statusReason = 'No employee match found';
+          } else if (bestEmployeeMatch.confidence < 50) {
+            status = 'needs_attention';
+            statusReason = `Low confidence employee match (${bestEmployeeMatch.confidence}%)`;
+          } else if (schemeAllocation && !matchedSchemeName && schemeAllocation.toLowerCase() !== 'none' && schemeAllocation.toLowerCase() !== 'n/a') {
+            // Only mark as needs attention if scheme is specified but not found AND it's not "none" or "n/a"
+            status = 'needs_attention';
+            statusReason = `Scheme "${schemeAllocation}" not found`;
           }
+
+          console.log(`Record for "${employeeName}": Status = ${status}, Reason = ${statusReason}`, {
+            employeeMatch: bestEmployeeMatch,
+            schemeAllocation,
+            matchedSchemeName,
+            sicknessDays
+          });
 
           return {
             id: `record-${index}`,
@@ -239,6 +287,7 @@ const SicknessImport = () => {
             matchedEmployeeId: bestEmployeeMatch?.id || null,
             matchedSchemeName,
             status,
+            statusReason,
             confidence: bestEmployeeMatch?.confidence,
             suggestions: employeeMatches
           };
@@ -366,7 +415,7 @@ const SicknessImport = () => {
         // Create actual sickness record
         const sicknessRecord = {
           employee_id: record.matchedEmployeeId!,
-          company_id: employeeData?.company_id || null,
+          company_id: employeeData?.company_id,
           start_date: record.startDate ? new Date(record.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           end_date: record.endDate ? new Date(record.endDate).toISOString().split('T')[0] : null,
           total_days: record.sicknessDays,
@@ -376,9 +425,16 @@ const SicknessImport = () => {
           notes: record.notes || null
         };
 
-        await supabase
+        console.log('Creating sickness record:', sicknessRecord);
+
+        const { error: sicknessError } = await supabase
           .from('employee_sickness_records')
           .insert(sicknessRecord);
+
+        if (sicknessError) {
+          console.error('Error creating sickness record:', sicknessError);
+          throw new Error(`Failed to create sickness record: ${sicknessError.message}`);
+        }
 
         processed++;
         setImportProgress((processed / total) * 100);
@@ -719,6 +775,11 @@ const SicknessImport = () => {
                         {record.confidence && (
                           <div className="text-xs text-muted-foreground">
                             Match: {record.confidence}%
+                          </div>
+                        )}
+                        {record.statusReason && record.status === 'needs_attention' && (
+                          <div className="text-xs text-red-600 mt-1">
+                            {record.statusReason}
                           </div>
                         )}
                       </TableCell>
