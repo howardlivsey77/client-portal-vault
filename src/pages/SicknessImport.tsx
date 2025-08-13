@@ -129,6 +129,7 @@ export default function SicknessImport() {
   const [submitting, setSubmitting] = useState(false);
   const [skipAllUnmatched, setSkipAllUnmatched] = useState(false);
   const [autoSkippedRows, setAutoSkippedRows] = useState<Set<number>>(new Set());
+  const [ignoreMismatches, setIgnoreMismatches] = useState(false);
 
   // Build fuse over employees for fuzzy surname/firstname
   const fuse = useMemo(() => {
@@ -268,6 +269,7 @@ export default function SicknessImport() {
   const allMatched = useMemo(() => matchResults.length > 0 && matchResults.every((r) => !!r.matchedEmployeeId), [matchResults]);
   const anyMismatches = useMemo(() => parsedRows.some((r) => r.mismatchTotal), [parsedRows]);
   const unmatchedCount = useMemo(() => matchResults.filter((r) => !r.matchedEmployeeId).length, [matchResults]);
+  const mismatchCount = useMemo(() => parsedRows.filter((r) => r.mismatchTotal).length, [parsedRows]);
 
   const handleToggleSkipAllUnmatched = (checked: boolean) => {
     const isChecked = !!checked;
@@ -306,8 +308,8 @@ export default function SicknessImport() {
       toast({ title: "Resolve unmatched employees before import", variant: "destructive" });
       return;
     }
-    if (anyMismatches) {
-      toast({ title: "Fix total days mismatches before import", variant: "destructive" });
+    if (anyMismatches && !ignoreMismatches) {
+      toast({ title: "Total days mismatches detected", description: "Tick 'Ignore mismatches' to proceed or fix the mappings.", variant: "destructive" });
       return;
     }
 
@@ -555,6 +557,21 @@ export default function SicknessImport() {
                 {`Skip all unmatched employees${unmatchedCount > 0 ? ` (${unmatchedCount})` : ""}`}
               </label>
             </div>
+            {anyMismatches && (
+              <div className="flex flex-wrap items-center gap-3 text-destructive">
+                <span>{mismatchCount} row(s) have total days mismatches.</span>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="ignore-mismatches"
+                    checked={ignoreMismatches}
+                    onCheckedChange={(c) => setIgnoreMismatches(!!c)}
+                  />
+                  <label htmlFor="ignore-mismatches" className="text-sm">
+                    Ignore mismatches and proceed
+                  </label>
+                </div>
+              </div>
+            )}
             <Table>
               <TableHeader>
                 <TableRow>
@@ -632,7 +649,7 @@ export default function SicknessImport() {
             </Table>
 
             <div className="flex gap-3">
-              <Button disabled={!allMatched || anyMismatches || submitting} onClick={onImport}>
+              <Button disabled={!allMatched || (anyMismatches && !ignoreMismatches) || submitting} onClick={onImport}>
                 {submitting ? "Importing..." : "Import and merge"}
               </Button>
             </div>
