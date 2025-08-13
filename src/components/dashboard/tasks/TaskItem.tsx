@@ -113,7 +113,7 @@ export function TaskItem({ task, onEdit, onDelete, userEmails }: TaskItemProps) 
   };
   
   return (
-    <Card className="monday-card mb-4 overflow-hidden">
+    <Card className="monday-card mb-4 overflow-hidden border-[1.5px] border-black">
       <CardHeader className="monday-card-header pb-2">
         <div className="flex justify-between items-start w-full">
           <div>

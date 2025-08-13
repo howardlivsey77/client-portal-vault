@@ -72,7 +72,7 @@ export function TaskOverview() {
   };
 
   return (
-    <Card className="monday-tile">
+    <Card className="monday-tile border-[1.5px] border-black">
       <CardHeader className="monday-card-header">
         <div className="space-y-0.5">
           <CardTitle className="text-xl font-bold text-monday-darkblue">Task Summary</CardTitle>
