@@ -9,11 +9,14 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Upload, FileText, Users, CheckCircle, AlertCircle, Clock, X, Search, Filter, UserCheck, UserX, Download } from "lucide-react";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { Upload, FileText, Users, CheckCircle, AlertCircle, Clock, X, Search, Filter, UserCheck, UserX, Download, ArrowLeft, Home } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useSicknessSchemes } from "@/features/company-settings/hooks/useSicknessSchemes";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { Link, useNavigate } from "react-router-dom";
 import * as XLSX from 'xlsx';
 import Fuse from 'fuse.js';
 
@@ -47,6 +50,8 @@ const SicknessImport = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState<'upload' | 'review' | 'complete'>('upload');
+  
+  const navigate = useNavigate();
   
   // Data states
   const [sicknessRecords, setSicknessRecords] = useState<ProcessedSicknessRecord[]>([]);
@@ -367,13 +372,48 @@ const SicknessImport = () => {
   const validEmployees = employees.filter(emp => emp.id && emp.id.trim() !== '');
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <PageContainer title="Import Sickness Records">
+      <div className="space-y-6">
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/" className="flex items-center gap-1">
+                  <Home className="h-4 w-4" />
+                  Home
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/employees">Employees</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Sickness Import</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+
+        {/* Back Button */}
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/employees')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Employees
+          </Button>
+        </div>
+
+        {/* Description */}
         <div>
-          <h1 className="text-3xl font-bold">Import Sickness Records</h1>
           <p className="text-muted-foreground">Upload and process employee sickness data with scheme allocation</p>
         </div>
-      </div>
 
       {/* Step Indicator */}
       <div className="flex items-center space-x-4">
@@ -797,7 +837,8 @@ const SicknessImport = () => {
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+    </PageContainer>
   );
 };
 
