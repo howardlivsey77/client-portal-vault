@@ -549,7 +549,7 @@ export default function SicknessImport() {
                         r.matchedEmployeeId === "__skip__" ? (
                           <div className="text-sm text-muted-foreground">
                             Skipped. This row will be ignored. {" "}
-                            <Button variant="link" size="sm" onClick={() => updateCandidateSelection(r.rowIndex, "")}>Undo</Button>
+                            <Button type="button" variant="link" size="sm" onClick={() => updateCandidateSelection(r.rowIndex, "")}>Undo</Button>
                           </div>
                         ) : (
                           <div className="text-sm">
