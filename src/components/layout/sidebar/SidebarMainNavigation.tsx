@@ -46,19 +46,21 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
         </Link>
       </Button>
       
-      <Button 
-        variant="ghost" 
-        className={cn(
-          "monday-sidebar-item w-full justify-start", 
-          isTabActive("companies") && "bg-foreground text-background"
-        )} 
-        asChild
-      >
-        <Link to={getTabUrl("companies")}>
-          <Building className="h-4 w-4" />
-          Companies
-        </Link>
-      </Button>
+      {isAdmin && (
+        <Button 
+          variant="ghost" 
+          className={cn(
+            "monday-sidebar-item w-full justify-start", 
+            isTabActive("companies") && "bg-foreground text-background"
+          )} 
+          asChild
+        >
+          <Link to={getTabUrl("companies")}>
+            <Building className="h-4 w-4" />
+            Companies
+          </Link>
+        </Button>
+      )}
       
       <Button 
         variant="ghost" 
@@ -88,19 +90,21 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
         </Link>
       </Button>
 
-      <Button 
-        variant="ghost" 
-        className={cn(
-          "monday-sidebar-item w-full justify-start", 
-          isRouteActive("/employees/sickness/import") && "bg-foreground text-background"
-        )} 
-        asChild
-      >
-        <Link to="/employees/sickness/import">
-          <Stethoscope className="h-4 w-4" />
-          Sickness Import
-        </Link>
-      </Button>
+      {isAdmin && (
+        <Button 
+          variant="ghost" 
+          className={cn(
+            "monday-sidebar-item w-full justify-start", 
+            isRouteActive("/employees/sickness/import") && "bg-foreground text-background"
+          )} 
+          asChild
+        >
+          <Link to="/employees/sickness/import">
+            <Stethoscope className="h-4 w-4" />
+            Sickness Import
+          </Link>
+        </Button>
+      )}
 
       
       <Button 
@@ -131,19 +135,21 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
         </Link>
       </Button>
       
-      <Button 
-        variant="ghost" 
-        className={cn(
-          "monday-sidebar-item w-full justify-start", 
-          isRouteActive("/payroll-processing") && "bg-foreground text-background"
-        )} 
-        asChild
-      >
-        <Link to="/payroll-processing">
-          <Receipt className="h-4 w-4" />
-          Payroll Processing
-        </Link>
-      </Button>
+      {isAdmin && (
+        <Button 
+          variant="ghost" 
+          className={cn(
+            "monday-sidebar-item w-full justify-start", 
+            isRouteActive("/payroll-processing") && "bg-foreground text-background"
+          )} 
+          asChild
+        >
+          <Link to="/payroll-processing">
+            <Receipt className="h-4 w-4" />
+            Payroll Processing
+          </Link>
+        </Button>
+      )}
       
       <Button 
         variant="ghost" 
@@ -159,19 +165,21 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
         </Link>
       </Button>
       
-      <Button 
-        variant="ghost" 
-        className={cn(
-          "monday-sidebar-item w-full justify-start", 
-          isTabActive("reports") && "bg-foreground text-background"
-        )} 
-        asChild
-      >
-        <Link to={getTabUrl("reports")}>
-          <ChartBar className="h-4 w-4" />
-          Bureau Reports
-        </Link>
-      </Button>
+      {isAdmin && (
+        <Button 
+          variant="ghost" 
+          className={cn(
+            "monday-sidebar-item w-full justify-start", 
+            isTabActive("reports") && "bg-foreground text-background"
+          )} 
+          asChild
+        >
+          <Link to={getTabUrl("reports")}>
+            <ChartBar className="h-4 w-4" />
+            Bureau Reports
+          </Link>
+        </Button>
+      )}
 
       <Button 
         variant="ghost" 
