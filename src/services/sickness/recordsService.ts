@@ -17,14 +17,29 @@ export const recordsService = {
 
   // Record a new sickness absence
   async recordSicknessAbsence(record: Omit<SicknessRecord, 'id' | 'created_at' | 'updated_at'>): Promise<SicknessRecord> {
+    // Some deployments do not return the inserted row due to RLS/return=minimal.
+    // Use maybeSingle() and fall back to fetching the latest record for the employee.
     const { data, error } = await supabase
       .from('employee_sickness_records')
       .insert(record)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
-    return data;
+    if (data) return data as SicknessRecord;
+
+    // Fallback: fetch the most recent record for this employee (assumes sequential inserts)
+    const { data: fallback, error: fallbackError } = await supabase
+      .from('employee_sickness_records')
+      .select('*')
+      .eq('employee_id', (record as any).employee_id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (fallbackError) throw fallbackError;
+    if (!fallback) throw new Error('Sickness record inserted but no row returned');
+    return fallback as SicknessRecord;
   },
 
   // Update sickness record
@@ -34,10 +49,21 @@ export const recordsService = {
       .update(updates)
       .eq('id', id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
-    return data;
+    if (data) return data as SicknessRecord;
+
+    // Fallback: fetch the record by id
+    const { data: fallback, error: fallbackError } = await supabase
+      .from('employee_sickness_records')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (fallbackError) throw fallbackError;
+    if (!fallback) throw new Error('Sickness record updated but no row returned');
+    return fallback as SicknessRecord;
   },
 
   // Delete sickness record
