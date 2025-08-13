@@ -25,16 +25,11 @@ export default function Employees() {
       <div className="flex flex-col space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-[1.5px] border-foreground rounded-md p-4 bg-white">
           <EmployeeSearch searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button asChild variant="outline">
-              <Link to="/employees/sickness/import">Sickness Import</Link>
-            </Button>
-            <EmployeeActions 
-              isAdmin={isAdmin}
-              loading={loading}
-              onRefresh={fetchEmployees}
-            />
-          </div>
+          <EmployeeActions 
+            isAdmin={isAdmin}
+            loading={loading}
+            onRefresh={fetchEmployees}
+          />
         </div>
 
         {!currentCompany ? (
