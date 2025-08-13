@@ -28,6 +28,8 @@ interface SicknessRecord {
   endDate?: string;
   reason?: string;
   schemeAllocation?: string;
+  isCertified?: boolean;
+  notes?: string;
 }
 
 interface ProcessedSicknessRecord extends SicknessRecord {
@@ -173,6 +175,21 @@ const SicknessImport = () => {
       const schemeIndex = headers.findIndex(h => 
         h.includes('scheme') || h.includes('allocation')
       );
+      const startDateIndex = headers.findIndex(h => 
+        h.includes('start') && h.includes('date')
+      );
+      const endDateIndex = headers.findIndex(h => 
+        h.includes('end') && h.includes('date')
+      );
+      const reasonIndex = headers.findIndex(h => 
+        h.includes('reason') || h.includes('description')
+      );
+      const certifiedIndex = headers.findIndex(h => 
+        h.includes('certified') || h.includes('certificate')
+      );
+      const notesIndex = headers.findIndex(h => 
+        h.includes('notes') || h.includes('comment')
+      );
 
       if (employeeNameIndex === -1) {
         throw new Error('Could not find employee name column');
@@ -190,6 +207,11 @@ const SicknessImport = () => {
           const employeeName = String(row[employeeNameIndex]).trim();
           const sicknessDays = Number(row[sicknessDaysIndex]) || 0;
           const schemeAllocation = schemeIndex >= 0 ? String(row[schemeIndex] || '').trim() : '';
+          const startDate = startDateIndex >= 0 ? String(row[startDateIndex] || '').trim() : '';
+          const endDate = endDateIndex >= 0 ? String(row[endDateIndex] || '').trim() : '';
+          const reason = reasonIndex >= 0 ? String(row[reasonIndex] || '').trim() : '';
+          const isCertified = certifiedIndex >= 0 ? Boolean(row[certifiedIndex]) : false;
+          const notes = notesIndex >= 0 ? String(row[notesIndex] || '').trim() : '';
 
           // Find employee matches
           const employeeMatches = findEmployeeMatches(employeeName);
@@ -208,6 +230,11 @@ const SicknessImport = () => {
             id: `record-${index}`,
             employeeName,
             sicknessDays,
+            startDate: startDate || undefined,
+            endDate: endDate || undefined,
+            reason: reason || undefined,
+            isCertified,
+            notes: notes || undefined,
             schemeAllocation: schemeAllocation || undefined,
             matchedEmployeeId: bestEmployeeMatch?.id || null,
             matchedSchemeName,
@@ -329,8 +356,29 @@ const SicknessImport = () => {
           }
         }
 
-        // Here you would also create sickness record entries if you have that table
-        // await supabase.from('sickness_records').insert({...})
+        // Get employee data for company_id
+        const { data: employeeData } = await supabase
+          .from('employees')
+          .select('company_id')
+          .eq('id', record.matchedEmployeeId)
+          .single();
+
+        // Create actual sickness record
+        const sicknessRecord = {
+          employee_id: record.matchedEmployeeId!,
+          company_id: employeeData?.company_id || null,
+          start_date: record.startDate ? new Date(record.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          end_date: record.endDate ? new Date(record.endDate).toISOString().split('T')[0] : null,
+          total_days: record.sicknessDays,
+          is_certified: record.isCertified || false,
+          certification_required_from_day: 8, // Default value
+          reason: record.reason || null,
+          notes: record.notes || null
+        };
+
+        await supabase
+          .from('employee_sickness_records')
+          .insert(sicknessRecord);
 
         processed++;
         setImportProgress((processed / total) * 100);
@@ -339,7 +387,7 @@ const SicknessImport = () => {
       setCurrentStep('complete');
       toast({
         title: "Import completed successfully",
-        description: `Imported ${processed} sickness records and updated employee schemes`
+        description: `Created ${processed} sickness records and updated employee schemes`
       });
 
     } catch (error) {
