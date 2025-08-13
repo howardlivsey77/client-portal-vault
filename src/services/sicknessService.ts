@@ -21,6 +21,10 @@ export const sicknessService = {
   recalculateExistingEntitlement: entitlementService.recalculateExistingEntitlement,
   createOrUpdateEntitlementUsage: entitlementService.createOrUpdateEntitlementUsage,
   setOpeningBalance: entitlementService.setOpeningBalance,
+  updateUsedDays: entitlementService.updateUsedDays,
+  syncAllEmployeeEntitlements: entitlementService.syncAllEmployeeEntitlements,
+  recalculateAllUsedDays: entitlementService.recalculateAllUsedDays,
+  recalculateEmployeeUsedDays: entitlementService.recalculateEmployeeUsedDays,
 
   // Sickness records management
   getSicknessRecords: recordsService.getSicknessRecords,

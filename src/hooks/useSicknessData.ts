@@ -199,7 +199,8 @@ export const useSicknessData = (
         description: "The sickness absence has been recorded successfully."
       });
 
-      // Refresh entitlement data
+      // Refresh entitlement data and recalculate used days
+      await sicknessService.recalculateEmployeeUsedDays(employee.id);
       await fetchSicknessData();
     } catch (error: any) {
       toast({
@@ -221,6 +222,9 @@ export const useSicknessData = (
         title: "Sickness record updated",
         description: "The sickness record has been updated successfully."
       });
+
+      // Recalculate used days
+      await sicknessService.recalculateEmployeeUsedDays(employee.id);
     } catch (error: any) {
       toast({
         title: "Error updating sickness record",
@@ -239,6 +243,9 @@ export const useSicknessData = (
         title: "Sickness record deleted",
         description: "The sickness record has been deleted successfully."
       });
+
+      // Recalculate used days
+      await sicknessService.recalculateEmployeeUsedDays(employee.id);
     } catch (error: any) {
       toast({
         title: "Error deleting sickness record",

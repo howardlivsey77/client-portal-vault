@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { SchemesList } from "../components/sickness/SchemesList";
 import { EmptySchemesState } from "../components/sickness/EmptySchemesState";
 import { SchemesLoading } from "../components/sickness/SchemesLoading";
+import { SicknessDataMigration } from "@/components/admin/SicknessDataMigration";
 
 const SicknessSettingsTab = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -51,6 +52,8 @@ const SicknessSettingsTab = () => {
 
   return (
     <div className="space-y-6">
+      <SicknessDataMigration />
+      
       <Card>
         <CardHeader>
           <CardTitle>Company Sickness</CardTitle>
