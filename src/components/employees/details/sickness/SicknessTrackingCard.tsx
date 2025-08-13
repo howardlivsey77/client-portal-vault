@@ -12,6 +12,7 @@ import { SicknessRecord, SicknessEntitlementSummary, OpeningBalanceData } from "
 import { SicknessScheme } from "@/components/employees/details/work-pattern/types";
 import { Employee } from "@/types/employee-types";
 import { Activity, AlertCircle } from "lucide-react";
+import { SicknessReportPDFButton } from "./SicknessReportPDFButton";
 
 interface SicknessTrackingCardProps {
   employee: Employee;
@@ -108,9 +109,17 @@ export const SicknessTrackingCard = ({
   return (
     <Card className="border-[1.5px] border-foreground">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Activity className="h-5 w-5" />
-          Sickness Tracking
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Sickness Tracking
+          </div>
+          <SicknessReportPDFButton
+            employee={employee}
+            sicknessRecords={sicknessRecords}
+            entitlementSummary={entitlementSummary}
+            disabled={loading}
+          />
         </CardTitle>
       </CardHeader>
       <CardContent>
