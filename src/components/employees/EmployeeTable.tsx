@@ -38,7 +38,7 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
   });
 
   return (
-    <div className="rounded-md border-[1.5px] border-foreground">
+    <div className="rounded-md border-[1.5px] border-foreground bg-white">
       <Table>
         <TableHeader>
           <TableRow>
