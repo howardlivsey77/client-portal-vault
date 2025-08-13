@@ -21,10 +21,10 @@ export function SicknessReportPDFButton({
 }: SicknessReportPDFButtonProps) {
   const { currentCompany } = useCompany();
   
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     try {
       const filename = `sickness-report-${employee.first_name}-${employee.last_name}-${new Date().toISOString().split('T')[0]}.pdf`;
-      generateSicknessReportPDF(employee, sicknessRecords, entitlementSummary, currentCompany?.logo_url, filename);
+      await generateSicknessReportPDF(employee, sicknessRecords, entitlementSummary, currentCompany?.logo_url, filename);
       
       toast({
         title: "PDF exported successfully",

@@ -75,9 +75,45 @@ export const generateExtraHoursPDF = (summary: ExtraHoursSummary, filename = 'ex
 };
 
 /**
+ * Helper function to convert image URL to base64 data URL
+ */
+const loadImageAsBase64 = async (url: string): Promise<{ data: string; format: string }> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
+      
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      
+      // Detect format from URL or default to PNG for better quality
+      const format = url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg') ? 'JPEG' : 'PNG';
+      const dataURL = canvas.toDataURL(`image/${format.toLowerCase()}`);
+      
+      resolve({ data: dataURL, format });
+    };
+    
+    img.onerror = () => {
+      reject(new Error('Failed to load image'));
+    };
+    
+    img.src = url;
+  });
+};
+
+/**
  * Generate a PDF sickness report for an employee
  */
-export const generateSicknessReportPDF = (
+export const generateSicknessReportPDF = async (
   employee: Employee,
   sicknessRecords: SicknessRecord[],
   entitlementSummary: SicknessEntitlementSummary | null,
@@ -89,8 +125,9 @@ export const generateSicknessReportPDF = (
   // Add company logo if available
   if (companyLogoUrl) {
     try {
+      const { data, format } = await loadImageAsBase64(companyLogoUrl);
       // Position logo in top right corner
-      doc.addImage(companyLogoUrl, 'JPEG', 150, 10, 40, 15);
+      doc.addImage(data, format, 150, 10, 40, 15);
     } catch (error) {
       console.warn('Could not add logo to PDF:', error);
     }
