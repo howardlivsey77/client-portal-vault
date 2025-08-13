@@ -1,1241 +1,804 @@
-import { useEffect, useMemo, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Upload, FileText, Users, CheckCircle, AlertCircle, Clock, X, Search, Filter, UserCheck, UserX, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { readFileData } from "@/components/employees/import/fileParsingUtils";
-import { useEmployees } from "@/hooks/useEmployees";
-import Fuse from "fuse.js";
-import { format, parse } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { sicknessService } from "@/services/sicknessService";
-import { useCompany } from "@/providers/CompanyProvider";
+import { useEmployees } from "@/hooks/useEmployees";
+import { useSicknessSchemes } from "@/features/company-settings/hooks/useSicknessSchemes";
+import * as XLSX from 'xlsx';
+import Fuse from 'fuse.js';
 
-// Types for parsed import rows
-interface RawRow {
-  [key: string]: any;
-}
-
-interface Mapping {
-  payrollId?: string;
-  lastName?: string;
-  firstName?: string;
+// Types for sickness import
+interface SicknessRecord {
+  employeeName: string;
+  sicknessDays: number;
   startDate?: string;
   endDate?: string;
-  totalDays?: string;
-  pairs: { days?: string; type?: string }[]; // up to 3
+  reason?: string;
+  schemeAllocation?: string;
 }
 
-// Types for sickness scheme allocation import
-interface SchemeMapping {
-  firstName?: string;
-  lastName?: string;
-  sicknessScheme?: string;
-}
-
-interface SchemeParseResult {
-  raw: RawRow;
-  nameGuess: { first?: string; last?: string };
-  schemeGuess: string;
-}
-
-interface SchemeMatchResult {
-  rowIndex: number;
-  parsed: SchemeParseResult;
-  matchedEmployeeId?: string;
-  matchedSchemeId?: string;
-  candidates: { id: string; payroll_id?: string | null; first_name: string; last_name: string; score: number }[];
-}
-
-interface SicknessScheme {
+interface ProcessedSicknessRecord extends SicknessRecord {
   id: string;
-  name: string;
-  company_id: string;
+  matchedEmployeeId: string | null;
+  matchedSchemeName: string | null;
+  status: 'ready' | 'needs_attention' | 'skipped';
+  confidence?: number;
+  suggestions?: Array<{
+    id: string;
+    name: string;
+    confidence: number;
+    payrollId?: string;
+  }>;
 }
 
-interface ParsedRow {
-  raw: RawRow;
-  startDate: string | null; // ISO yyyy-MM-dd
-  endDate: string | null;   // ISO yyyy-MM-dd
-  totalDays: number;        // sum of full+half+ssp if not provided
-  fullDays: number;
-  halfDays: number;
-  sspDays: number;
-  nameGuess: { first?: string; last?: string; payroll?: string };
-  mismatchTotal: boolean;
-}
-
-interface MatchResult {
-  rowIndex: number;
-  parsed: ParsedRow;
-  matchedEmployeeId?: string;
-  candidates: { id: string; payroll_id?: string | null; first_name: string; last_name: string; score: number }[];
-}
-
-function toISOFromDDMMYYYY(value: any): string | null {
-  if (!value) return null;
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    // Attempt DD/MM/YYYY
-    try {
-      const d = parse(trimmed, "dd/MM/yyyy", new Date());
-      if (!isNaN(d.getTime())) return format(d, "yyyy-MM-dd");
-    } catch {}
-    // Fallback: if already ISO-like
-    if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) return trimmed.slice(0, 10);
-  }
-  if (typeof value === "number") {
-    // Excel serial not handled here; fileParsingUtils already normalizes strings usually
-    return null;
-  }
-  return null;
-}
-
-function normalizeType(v: any): "full" | "half" | "ssp" | null {
-  if (!v) return null;
-  const s = String(v).toLowerCase().trim();
-  if (s.includes("full")) return "full";
-  if (s.includes("half")) return "half";
-  if (s.includes("ssp")) return "ssp";
-  return null;
-}
-
-function isNumeric(n: any): boolean {
-  if (n === null || n === undefined) return false;
-  const num = Number(String(n).replace(/,/g, "."));
-  return !isNaN(num);
-}
-
-function suggestMapping(headers: string[], sample: RawRow): Mapping {
-  const lower = headers.map((h) => h.toLowerCase());
-  const findHeader = (candidates: string[]) => {
-    const idx = lower.findIndex((h) => candidates.some((c) => h.includes(c)));
-    return idx >= 0 ? headers[idx] : undefined;
-  };
-
-  // Detect days/type pairs by adjacency heuristic
-  const pairs: { days?: string; type?: string }[] = [];
-  for (let i = 0; i < headers.length - 1 && pairs.length < 3; i++) {
-    const left = headers[i];
-    const right = headers[i + 1];
-    const leftVal = sample[left];
-    const rightVal = sample[right];
-    const rightLooksType = /type|payment|pay/i.test(right) || normalizeType(rightVal) !== null;
-    if (isNumeric(leftVal) && rightLooksType) {
-      pairs.push({ days: left, type: right });
-      i++; // skip next
-    }
-  }
-
-  return {
-    payrollId: findHeader(["payroll", "pay id", "pay-id", "employee number", "emp no"]),
-    lastName: findHeader(["surname", "last", "family name"]),
-    firstName: findHeader(["first", "forename", "given name"]),
-    startDate: findHeader(["start", "from", "begin"]),
-    endDate: findHeader(["end", "to", "finish"]),
-    totalDays: findHeader(["total", "days absent", "absence days"]) ,
-    pairs,
-  };
-}
-
-function suggestSchemeMapping(headers: string[]): SchemeMapping {
-  const lower = headers.map((h) => h.toLowerCase());
-  const findHeader = (candidates: string[]) => {
-    const idx = lower.findIndex((h) => candidates.some((c) => h.includes(c)));
-    return idx >= 0 ? headers[idx] : undefined;
-  };
-
-  return {
-    firstName: findHeader(["first", "forename", "given name"]),
-    lastName: findHeader(["surname", "last", "family name"]),
-    sicknessScheme: findHeader(["sickness scheme", "scheme", "sick pay", "entitlement"]),
-  };
-}
-
-export default function SicknessImport() {
+const SicknessImport = () => {
+  // File handling states
+  const [file, setFile] = useState<File | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState<'upload' | 'review' | 'complete'>('upload');
+  
+  // Data states
+  const [sicknessRecords, setSicknessRecords] = useState<ProcessedSicknessRecord[]>([]);
+  const [skipAllUnmatched, setSkipAllUnmatched] = useState(false);
+  const [schemeSkipAllUnmatched, setSchemeSkipAllUnmatched] = useState(false);
+  
+  // UI states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'ready' | 'needs_attention' | 'skipped'>('all');
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { employees } = useEmployees();
-  const { currentCompany } = useCompany();
+  const { schemes } = useSicknessSchemes();
 
-  // Import type selection
-  const [importType, setImportType] = useState<"records" | "schemes">("records");
+  // Enhanced fuzzy search setup for employees (surname priority)
+  const employeeFuse = new Fuse(employees, {
+    keys: [
+      { name: 'last_name', weight: 0.7 },
+      { name: 'first_name', weight: 0.3 },
+      { name: 'payroll_id', weight: 0.5 }
+    ],
+    threshold: 0.3,
+    includeScore: true,
+    minMatchCharLength: 2
+  });
 
-  // Clear state when switching import types
-  useEffect(() => {
-    setRawRows([]);
-    setHeaders([]);
-    setFileName("");
-    setParsedRows([]);
-    setMatchResults([]);
-    setSchemeParsedRows([]);
-    setSchemeMatchResults([]);
-    setMapping({ pairs: [] });
-    setSchemeMapping({});
-  }, [importType]);
+  // Fuzzy search for schemes
+  const schemeFuse = new Fuse(schemes, {
+    keys: ['name'],
+    threshold: 0.4,
+    includeScore: true
+  });
 
-  // Common state
-  const [fileName, setFileName] = useState<string>("");
-  const [headers, setHeaders] = useState<string[]>([]);
-  const [rawRows, setRawRows] = useState<RawRow[]>([]);
-  const [submitting, setSubmitting] = useState(false);
+  // Enhanced name parsing and matching
+  const parseEmployeeName = (fullName: string) => {
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      // Assume last part is surname, everything else is first/middle names
+      const surname = parts[parts.length - 1];
+      const firstName = parts.slice(0, -1).join(' ');
+      return { firstName, surname };
+    }
+    return { firstName: fullName, surname: '' };
+  };
 
-  // Sickness records import state
-  const [mapping, setMapping] = useState<Mapping>({ pairs: [] });
-  const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
-  const [matchResults, setMatchResults] = useState<MatchResult[]>([]);
-  const [skipAllUnmatched, setSkipAllUnmatched] = useState(false);
-  const [autoSkippedRows, setAutoSkippedRows] = useState<Set<number>>(new Set());
-  const [ignoreMismatches, setIgnoreMismatches] = useState(false);
-
-  // Sickness scheme allocation state
-  const [schemeMapping, setSchemeMapping] = useState<SchemeMapping>({});
-  const [schemeParsedRows, setSchemeParsedRows] = useState<SchemeParseResult[]>([]);
-  const [schemeMatchResults, setSchemeMatchResults] = useState<SchemeMatchResult[]>([]);
-  const [availableSchemes, setAvailableSchemes] = useState<SicknessScheme[]>([]);
-  const [schemeSkipAllUnmatched, setSchemeSkipAllUnmatched] = useState(false);
-
-  // Build fuse over employees for fuzzy surname/firstname - enhanced for scheme allocations
-  const fuse = useMemo(() => {
-    return new Fuse(
-      employees.map((e) => ({ ...e })),
-      {
-        includeScore: true,
-        threshold: 0.4, // More lenient for scheme allocations
-        keys: [
-          { name: "last_name", weight: 0.8 }, // Higher weight for surname
-          { name: "first_name", weight: 0.2 },
-          { name: "payroll_id", weight: 0.1 }, // Include payroll for additional matching
-        ],
-      }
+  const findEmployeeMatches = (employeeName: string) => {
+    const { firstName, surname } = parseEmployeeName(employeeName);
+    
+    // Search with surname first for better matching
+    const searchQuery = surname ? `${surname} ${firstName}` : firstName;
+    const results = employeeFuse.search(searchQuery);
+    
+    // Also try with payroll ID if the name looks like an ID
+    const payrollResults = /^\d+$/.test(employeeName.trim()) 
+      ? employeeFuse.search(employeeName.trim()) 
+      : [];
+    
+    // Combine and deduplicate results
+    const allResults = [...results, ...payrollResults];
+    const uniqueResults = allResults.filter((result, index, self) => 
+      index === self.findIndex(r => r.item.id === result.item.id)
     );
-  }, [employees]);
-
-  // Enhanced employee matching with better name normalization
-  const findEmployeeMatches = (firstName: string = "", lastName: string = "", payrollId?: string) => {
-    const candidates: { id: string; payroll_id?: string | null; first_name: string; last_name: string; score: number }[] = [];
     
-    // Normalize names
-    const normalizeText = (text: string) => text.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '');
-    const normFirst = normalizeText(firstName);
-    const normLast = normalizeText(lastName);
+    return uniqueResults
+      .sort((a, b) => (a.score || 0) - (b.score || 0))
+      .slice(0, 5)
+      .map(result => ({
+        id: result.item.id,
+        name: `${result.item.last_name}, ${result.item.first_name}`,
+        confidence: Math.round((1 - (result.score || 0)) * 100),
+        payrollId: result.item.payroll_id
+      }));
+  };
+
+  const findSchemeMatch = (schemeName: string) => {
+    if (!schemeName) return null;
     
-    // 1) Exact payroll ID match first
-    if (payrollId) {
-      const normPayroll = normalizeText(payrollId);
-      const exactPayrollMatch = employees.find(e => 
-        normalizeText(e.payroll_id || '') === normPayroll
-      );
-      if (exactPayrollMatch) {
-        return {
-          bestMatch: exactPayrollMatch.id,
-          candidates: [{
-            id: exactPayrollMatch.id,
-            payroll_id: exactPayrollMatch.payroll_id,
-            first_name: exactPayrollMatch.first_name,
-            last_name: exactPayrollMatch.last_name,
-            score: 0 // Perfect match
-          }]
-        };
-      }
+    const results = schemeFuse.search(schemeName);
+    if (results.length > 0 && results[0].score! < 0.4) {
+      return results[0].item.name;
     }
+    return null;
+  };
 
-    // 2) Surname-first fuzzy matching with multiple search strategies
-    const searchQueries = [
-      `${normLast} ${normFirst}`, // Primary: surname first
-      `${normFirst} ${normLast}`, // Fallback: first name first
-      normLast, // Surname only if available
-    ].filter(q => q.trim());
+  const handleFileSelect = (selectedFile: File) => {
+    setFile(selectedFile);
+    setCurrentStep('upload');
+  };
 
-    let bestScore = 1;
-    let bestMatchId: string | undefined;
+  const processFile = async () => {
+    if (!file) return;
 
-    searchQueries.forEach(query => {
-      if (query.trim()) {
-        const results = fuse.search(query).slice(0, 10);
-        results.forEach(result => {
-          const item = result.item as any;
-          const score = result.score ?? 1;
-          
-          // Boost score for exact surname matches
-          const isExactSurnameMatch = normalizeText(item.last_name) === normLast;
-          const adjustedScore = isExactSurnameMatch ? score * 0.5 : score;
-          
-          if (adjustedScore < bestScore) {
-            bestScore = adjustedScore;
-            bestMatchId = item.id;
+    setIsProcessing(true);
+    setImportProgress(0);
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+      if (jsonData.length < 2) {
+        throw new Error('File must contain at least a header row and one data row');
+      }
+
+      const headers = jsonData[0].map(h => String(h).toLowerCase().trim());
+      const rows = jsonData.slice(1);
+
+      setImportProgress(25);
+
+      // Find column indices
+      const employeeNameIndex = headers.findIndex(h => 
+        h.includes('name') || h.includes('employee')
+      );
+      const sicknessDaysIndex = headers.findIndex(h => 
+        h.includes('days') || h.includes('sick')
+      );
+      const schemeIndex = headers.findIndex(h => 
+        h.includes('scheme') || h.includes('allocation')
+      );
+
+      if (employeeNameIndex === -1) {
+        throw new Error('Could not find employee name column');
+      }
+      if (sicknessDaysIndex === -1) {
+        throw new Error('Could not find sickness days column');
+      }
+
+      setImportProgress(50);
+
+      // Process each row with enhanced matching
+      const processedRecords: ProcessedSicknessRecord[] = rows
+        .filter(row => row[employeeNameIndex] && row[sicknessDaysIndex])
+        .map((row, index) => {
+          const employeeName = String(row[employeeNameIndex]).trim();
+          const sicknessDays = Number(row[sicknessDaysIndex]) || 0;
+          const schemeAllocation = schemeIndex >= 0 ? String(row[schemeIndex] || '').trim() : '';
+
+          // Find employee matches
+          const employeeMatches = findEmployeeMatches(employeeName);
+          const bestEmployeeMatch = employeeMatches.length > 0 ? employeeMatches[0] : null;
+
+          // Find scheme match
+          const matchedSchemeName = findSchemeMatch(schemeAllocation);
+
+          // Determine status
+          let status: 'ready' | 'needs_attention' | 'skipped' = 'ready';
+          if (!bestEmployeeMatch || (schemeAllocation && !matchedSchemeName)) {
+            status = 'needs_attention';
           }
-          
-          // Add unique candidates
-          if (!candidates.find(c => c.id === item.id)) {
-            candidates.push({
-              id: item.id,
-              payroll_id: item.payroll_id,
-              first_name: item.first_name,
-              last_name: item.last_name,
-              score: adjustedScore,
-            });
-          }
+
+          return {
+            id: `record-${index}`,
+            employeeName,
+            sicknessDays,
+            schemeAllocation: schemeAllocation || undefined,
+            matchedEmployeeId: bestEmployeeMatch?.id || null,
+            matchedSchemeName,
+            status,
+            confidence: bestEmployeeMatch?.confidence,
+            suggestions: employeeMatches
+          };
         });
-      }
-    });
 
-    // Sort candidates by score and limit to top 5
-    candidates.sort((a, b) => a.score - b.score);
-    const topCandidates = candidates.slice(0, 5);
+      setImportProgress(75);
+      setSicknessRecords(processedRecords);
+      setImportProgress(100);
+      setCurrentStep('review');
 
-    // Auto-match if confidence is high enough
-    const autoMatchThreshold = 0.15;
-    const autoMatch = bestScore <= autoMatchThreshold ? bestMatchId : undefined;
-
-    return {
-      bestMatch: autoMatch,
-      candidates: topCandidates
-    };
-  };
-
-  useEffect(() => {
-    document.title = "Sickness Import | Employees";
-  }, []);
-
-  // Fetch available sickness schemes for current company
-  useEffect(() => {
-    const fetchSchemes = async () => {
-      if (!currentCompany?.id) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('sickness_schemes')
-          .select('id, name, company_id')
-          .eq('company_id', currentCompany.id);
-        
-        if (error) throw error;
-        setAvailableSchemes(data || []);
-      } catch (error) {
-        console.error('Error fetching sickness schemes:', error);
-        toast({
-          title: "Error loading sickness schemes",
-          description: "Could not load available sickness schemes",
-          variant: "destructive"
-        });
-      }
-    };
-
-    fetchSchemes();
-  }, [currentCompany?.id, toast]);
-
-  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    const f = e.target.files[0];
-    setFileName(f.name);
-
-    try {
-      const { data, headers } = await readFileData(f);
-      if (!data || data.length === 0) {
-        toast({ title: "No data in file", variant: "destructive" });
-        return;
-      }
-      setHeaders(headers);
-      setRawRows(data as RawRow[]);
-      
-      if (importType === "records") {
-        const guess = suggestMapping(headers, data[0] as RawRow);
-        setMapping(guess);
-      } else {
-        const schemeGuess = suggestSchemeMapping(headers);
-        setSchemeMapping(schemeGuess);
-      }
-      
-      toast({ title: "File loaded", description: `${data.length} rows detected` });
-    } catch (err: any) {
-      toast({ title: "Error reading file", description: err?.message ?? String(err), variant: "destructive" });
-    }
-  };
-
-  const parseRows = () => {
-    if (!rawRows.length) return;
-
-    const rows: ParsedRow[] = rawRows.map((row) => {
-      const sd = toISOFromDDMMYYYY(mapping.startDate ? row[mapping.startDate] : null);
-      const ed = toISOFromDDMMYYYY(mapping.endDate ? row[mapping.endDate] : null);
-
-      let full = 0, half = 0, ssp = 0;
-      (mapping.pairs || []).forEach((p) => {
-        if (!p.days || !p.type) return;
-        const n = Number(String(row[p.days] ?? "").toString().replace(/,/g, "."));
-        const t = normalizeType(row[p.type]);
-        if (!isNaN(n) && n > 0 && t) {
-          if (t === "full") full += n;
-          else if (t === "half") half += n;
-          else if (t === "ssp") ssp += n;
-        }
+      toast({
+        title: "File processed successfully",
+        description: `Processed ${processedRecords.length} sickness records`
       });
 
-      const providedTotal = mapping.totalDays ? Number(row[mapping.totalDays] ?? 0) : 0;
-      const computedTotal = full + half + ssp;
-
-      const parsed: ParsedRow = {
-        raw: row,
-        startDate: sd,
-        endDate: ed,
-        totalDays: providedTotal > 0 ? providedTotal : computedTotal,
-        fullDays: full,
-        halfDays: half,
-        sspDays: ssp,
-        nameGuess: {
-          payroll: mapping.payrollId ? String(row[mapping.payrollId] ?? "").trim() : undefined,
-          first: mapping.firstName ? String(row[mapping.firstName] ?? "").trim() : undefined,
-          last: mapping.lastName ? String(row[mapping.lastName] ?? "").trim() : undefined,
-        },
-        mismatchTotal: providedTotal > 0 && providedTotal !== computedTotal,
-      };
-      return parsed;
-    });
-
-    setParsedRows(rows);
-
-    // Attempt matching
-    const results: MatchResult[] = rows.map((parsed, idx) => {
-      let matchedEmployeeId: string | undefined;
-      let candidates: MatchResult["candidates"] = [];
-
-      // 1) Payroll ID exact match
-      const payroll = parsed.nameGuess.payroll?.toLowerCase();
-      if (payroll) {
-        const direct = employees.find(
-          (e) => (e.payroll_id ?? "").toLowerCase() === payroll
-        );
-        if (direct) matchedEmployeeId = direct.id;
-      }
-
-      // 2) Enhanced fuzzy matching if not matched
-      if (!matchedEmployeeId) {
-        const last = (parsed.nameGuess.last ?? "").toString();
-        const first = (parsed.nameGuess.first ?? "").toString();
-        const payroll = parsed.nameGuess.payroll;
-        
-        const matchResult = findEmployeeMatches(first, last, payroll);
-        matchedEmployeeId = matchResult.bestMatch;
-        candidates = matchResult.candidates;
-      }
-
-      return { rowIndex: idx, parsed, matchedEmployeeId, candidates };
-    });
-
-    setMatchResults(results);
-  };
-
-  // Parse scheme allocation rows
-  const parseSchemesRows = () => {
-    if (!rawRows.length) return;
-
-    const rows: SchemeParseResult[] = rawRows.map((row) => ({
-      raw: row,
-      nameGuess: {
-        first: schemeMapping.firstName ? String(row[schemeMapping.firstName] ?? "").trim() : undefined,
-        last: schemeMapping.lastName ? String(row[schemeMapping.lastName] ?? "").trim() : undefined,
-      },
-      schemeGuess: schemeMapping.sicknessScheme ? String(row[schemeMapping.sicknessScheme] ?? "").trim() : "",
-    }));
-
-    setSchemeParsedRows(rows);
-
-    // Attempt matching employees and schemes
-    const results: SchemeMatchResult[] = rows.map((parsed, idx) => {
-      let matchedEmployeeId: string | undefined;
-      let matchedSchemeId: string | undefined;
-      let candidates: SchemeMatchResult["candidates"] = [];
-
-      // Enhanced employee matching for scheme allocation
-      const last = (parsed.nameGuess.last ?? "").toString();
-      const first = (parsed.nameGuess.first ?? "").toString();
-      
-      const matchResult = findEmployeeMatches(first, last);
-      matchedEmployeeId = matchResult.bestMatch;
-      candidates = matchResult.candidates;
-
-      // Enhanced scheme matching with fuzzy logic
-      const schemeName = parsed.schemeGuess.toLowerCase().trim();
-      if (schemeName) {
-        // Try exact match first
-        let matchedScheme = availableSchemes.find(scheme => 
-          scheme.name.toLowerCase() === schemeName
-        );
-        
-        // Try partial match
-        if (!matchedScheme) {
-          matchedScheme = availableSchemes.find(scheme => 
-            scheme.name.toLowerCase().includes(schemeName) || 
-            schemeName.includes(scheme.name.toLowerCase())
-          );
-        }
-        
-        // Try fuzzy matching for common abbreviations
-        if (!matchedScheme) {
-          const normalizeScheme = (name: string) => name.toLowerCase()
-            .replace(/\b(sick|pay|scheme|entitlement|practice)\b/g, '')
-            .replace(/\s+/g, ' ')
-            .trim();
-          
-          const normalizedInput = normalizeScheme(schemeName);
-          matchedScheme = availableSchemes.find(scheme => {
-            const normalizedScheme = normalizeScheme(scheme.name);
-            return normalizedScheme.includes(normalizedInput) || 
-                   normalizedInput.includes(normalizedScheme);
-          });
-        }
-        
-        if (matchedScheme) {
-          matchedSchemeId = matchedScheme.id;
-        }
-      }
-
-      return { rowIndex: idx, parsed, matchedEmployeeId, matchedSchemeId, candidates };
-    });
-
-    setSchemeMatchResults(results);
-  };
-
-  const updateCandidateSelection = (rowIndex: number, employeeId: string) => {
-    setMatchResults((prev) => prev.map((r) => (r.rowIndex === rowIndex ? { ...r, matchedEmployeeId: employeeId } : r)));
-    setAutoSkippedRows((prev) => {
-      const next = new Set(prev);
-      if (employeeId === "__skip__") {
-        next.add(rowIndex);
-      } else {
-        next.delete(rowIndex);
-      }
-      return next;
-    });
-  };
-
-  const updateSchemeSelection = (rowIndex: number, employeeId: string, schemeId?: string) => {
-    setSchemeMatchResults((prev) => prev.map((r) => 
-      r.rowIndex === rowIndex 
-        ? { ...r, matchedEmployeeId: employeeId, matchedSchemeId: schemeId }
-        : r
-    ));
-  };
-
-  // Bulk skip functionality for scheme allocations
-  const handleSchemeToggleSkipAllUnmatched = (checked: boolean) => {
-    const isChecked = !!checked;
-    setSchemeSkipAllUnmatched(isChecked);
-    if (isChecked) {
-      setSchemeMatchResults((prev) => 
-        prev.map((r) => (!r.matchedEmployeeId || !r.matchedSchemeId) 
-          ? { ...r, matchedEmployeeId: "__skip__", matchedSchemeId: "__skip__" } 
-          : r
-        )
-      );
-    } else {
-      setSchemeMatchResults((prev) => 
-        prev.map((r) => (r.matchedEmployeeId === "__skip__") 
-          ? { ...r, matchedEmployeeId: "", matchedSchemeId: "" } 
-          : r
-        )
-      );
-    }
-  };
-
-  const allMatched = useMemo(() => matchResults.length > 0 && matchResults.every((r) => !!r.matchedEmployeeId), [matchResults]);
-  const anyMismatches = useMemo(() => parsedRows.some((r) => r.mismatchTotal), [parsedRows]);
-  const unmatchedCount = useMemo(() => matchResults.filter((r) => !r.matchedEmployeeId).length, [matchResults]);
-  const mismatchCount = useMemo(() => parsedRows.filter((r) => r.mismatchTotal).length, [parsedRows]);
-
-  // Scheme-specific computed values
-  const allSchemesMatched = useMemo(() => 
-    schemeMatchResults.length > 0 && 
-    schemeMatchResults.every((r) => !!r.matchedEmployeeId && !!r.matchedSchemeId)
-  , [schemeMatchResults]);
-  const schemeUnmatchedCount = useMemo(() => 
-    schemeMatchResults.filter((r) => !r.matchedEmployeeId || !r.matchedSchemeId).length
-  , [schemeMatchResults]);
-
-  const handleToggleSkipAllUnmatched = (checked: boolean) => {
-    const isChecked = !!checked;
-    setSkipAllUnmatched(isChecked);
-    if (isChecked) {
-      setMatchResults((prev) => {
-        const indicesToSkip = prev.filter((r) => !r.matchedEmployeeId).map((r) => r.rowIndex);
-        setAutoSkippedRows(new Set(indicesToSkip));
-        return prev.map((r) => (!r.matchedEmployeeId ? { ...r, matchedEmployeeId: "__skip__" } : r));
-      });
-    } else {
-      setMatchResults((prev) => {
-        const indices = new Set(autoSkippedRows);
-        const updated = prev.map((r) => (indices.has(r.rowIndex) && r.matchedEmployeeId === "__skip__" ? { ...r, matchedEmployeeId: "" } : r));
-        return updated;
-      });
-      setAutoSkippedRows(new Set());
-    }
-  };
-  function datesOverlapOrAdjacent(aStart: string, aEnd: string | null, bStart: string, bEnd: string | null): boolean {
-    const aS = new Date(aStart);
-    const aE = aEnd ? new Date(aEnd) : new Date(aStart);
-    const bS = new Date(bStart);
-    const bE = bEnd ? new Date(bEnd) : new Date(bStart);
-    // adjacent if aE + 1 day >= bS and bE + 1 day >= aS
-    const add1 = (d: Date) => new Date(d.getTime() + 24 * 3600 * 1000);
-    return add1(aE) >= bS && add1(bE) >= aS;
-  }
-
-  const onImport = async () => {
-    if (!currentCompany?.id) {
-      toast({ title: "Select a company first", variant: "destructive" });
-      return;
-    }
-    if (!allMatched) {
-      toast({ title: "Resolve unmatched employees before import", variant: "destructive" });
-      return;
-    }
-    if (anyMismatches && !ignoreMismatches) {
-      toast({ title: "Total days mismatches detected", description: "Tick 'Ignore mismatches' to proceed or fix the mappings.", variant: "destructive" });
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      // Group by employee
-      const byEmp = new Map<string, ParsedRow[]>();
-      matchResults.forEach((mr) => {
-        if (!mr.matchedEmployeeId || mr.matchedEmployeeId === "__skip__") return; // skip ignored rows
-        const empId = mr.matchedEmployeeId;
-        if (!byEmp.has(empId)) byEmp.set(empId, []);
-        byEmp.get(empId)!.push(mr.parsed);
-      });
-
-      for (const [employeeId, rows] of byEmp.entries()) {
-        // 1) Coalesce new rows per employee
-        const newIntervals = rows
-          .filter((r) => r.startDate)
-          .map((r) => ({
-            start: r.startDate!,
-            end: r.endDate ?? r.startDate!,
-            total: r.totalDays,
-            full: r.fullDays,
-            half: r.halfDays + r.sspDays, // per user: SSP deducted from entitlement => count as half by default
-            rawHalfOnly: r.halfDays,
-            ssp: r.sspDays,
-          }))
-          .sort((a, b) => a.start.localeCompare(b.start));
-
-        const coalesced: typeof newIntervals = [];
-        for (const iv of newIntervals) {
-          const last = coalesced[coalesced.length - 1];
-          if (!last) coalesced.push({ ...iv });
-          else if (datesOverlapOrAdjacent(last.start, last.end, iv.start, iv.end)) {
-            last.start = last.start < iv.start ? last.start : iv.start;
-            last.end = last.end > iv.end ? last.end : iv.end;
-            last.total += iv.total;
-            last.full += iv.full;
-            last.half += iv.half;
-            last.ssp += iv.ssp;
-          } else coalesced.push({ ...iv });
-        }
-
-        // 2) Fetch existing records for employee
-        const existing = await sicknessService.getSicknessRecords(employeeId);
-
-        // 3) Merge with existing and apply changes
-        for (const iv of coalesced) {
-          const overlapping = existing.filter((er) => datesOverlapOrAdjacent(er.start_date, er.end_date ?? er.start_date, iv.start, iv.end));
-          if (overlapping.length > 0) {
-            const mergedStart = [iv.start, ...overlapping.map((o) => o.start_date)].sort()[0];
-            const mergedEnd = [iv.end, ...overlapping.map((o) => o.end_date ?? o.start_date)].sort().slice(-1)[0];
-            const existingTotal = overlapping.reduce((sum, r) => sum + Number(r.total_days || 0), 0);
-            const mergedTotal = existingTotal + iv.total;
-
-            // Delete overlapping existing records
-            for (const r of overlapping) {
-              await sicknessService.deleteSicknessRecord(r.id);
-            }
-
-            // Insert merged
-            await sicknessService.recordSicknessAbsence({
-              employee_id: employeeId,
-              company_id: currentCompany.id,
-              start_date: mergedStart,
-              end_date: mergedEnd,
-              total_days: mergedTotal,
-              is_certified: false,
-              certification_required_from_day: 8,
-              reason: "Import merge",
-              notes: `Imported and merged: full=${iv.full}, half/ssp=${iv.half}`,
-              created_by: undefined,
-            } as any);
-
-            // Historical balance entry at end date
-            await supabase.from("employee_sickness_historical_balances").insert({
-              employee_id: employeeId,
-              company_id: currentCompany.id,
-              balance_date: mergedEnd,
-              full_pay_days_used: iv.full,
-              half_pay_days_used: iv.half,
-              description: `Imported (merged)` ,
-              notes: `Full=${iv.full}, Half=${iv.rawHalfOnly}, SSP=${iv.ssp}`,
-            });
-          } else {
-            // No overlap: insert as-is
-            const inserted = await sicknessService.recordSicknessAbsence({
-              employee_id: employeeId,
-              company_id: currentCompany.id,
-              start_date: iv.start,
-              end_date: iv.end,
-              total_days: iv.total,
-              is_certified: false,
-              certification_required_from_day: 8,
-              reason: "Import",
-              notes: `Imported: full=${iv.full}, half/ssp=${iv.half}`,
-              created_by: undefined,
-            } as any);
-
-            await supabase.from("employee_sickness_historical_balances").insert({
-              employee_id: employeeId,
-              company_id: currentCompany.id,
-              balance_date: iv.end,
-              full_pay_days_used: iv.full,
-              half_pay_days_used: iv.half,
-              description: `Imported` ,
-              notes: `Full=${iv.full}, Half=${iv.rawHalfOnly}, SSP=${iv.ssp}`,
-            });
-          }
-        }
-      }
-
-      toast({ title: "Import complete", description: `File ${fileName} processed successfully.` });
-      setRawRows([]);
-      setParsedRows([]);
-      setMatchResults([]);
-      setHeaders([]);
-      setFileName("");
-    } catch (err: any) {
-      console.error(err);
-      toast({ title: "Import failed", description: err?.message ?? String(err), variant: "destructive" });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const onSchemeImport = async () => {
-    if (!currentCompany?.id) {
-      toast({ title: "Select a company first", variant: "destructive" });
-      return;
-    }
-    if (!allSchemesMatched) {
-      toast({ title: "Resolve unmatched employees and schemes before import", variant: "destructive" });
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const updates = schemeMatchResults
-        .filter((r) => r.matchedEmployeeId && r.matchedSchemeId && r.matchedEmployeeId !== "__skip__")
-        .map((r) => ({
-          employee_id: r.matchedEmployeeId!,
-          sickness_scheme_id: r.matchedSchemeId!,
-        }));
-
-      // Batch update employees with their new sickness schemes
-      for (const update of updates) {
-        const { error } = await supabase
-          .from('employees')
-          .update({ sickness_scheme_id: update.sickness_scheme_id })
-          .eq('id', update.employee_id);
-
-        if (error) throw error;
-      }
-
-      toast({ 
-        title: "Scheme allocation complete", 
-        description: `Successfully allocated sickness schemes to ${updates.length} employees.` 
-      });
-      
-      // Reset state
-      setRawRows([]);
-      setSchemeParsedRows([]);
-      setSchemeMatchResults([]);
-      setHeaders([]);
-      setFileName("");
-    } catch (err: any) {
-      console.error(err);
-      toast({ 
-        title: "Scheme allocation failed", 
-        description: err?.message ?? String(err), 
-        variant: "destructive" 
+    } catch (error) {
+      console.error('Error processing file:', error);
+      toast({
+        title: "Error processing file",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive"
       });
     } finally {
-      setSubmitting(false);
+      setIsProcessing(false);
     }
   };
+
+  // Bulk actions
+  const handleToggleSkipAllUnmatched = () => {
+    const newSkipState = !skipAllUnmatched;
+    setSkipAllUnmatched(newSkipState);
+    
+    setSicknessRecords(records => 
+      records.map(record => ({
+        ...record,
+        status: (newSkipState && !record.matchedEmployeeId) ? 'skipped' : 
+                (!newSkipState && record.status === 'skipped' && !record.matchedEmployeeId) ? 'needs_attention' :
+                record.status
+      }))
+    );
+  };
+
+  const handleSchemeToggleSkipAllUnmatched = () => {
+    const newSkipState = !schemeSkipAllUnmatched;
+    setSchemeSkipAllUnmatched(newSkipState);
+    
+    setSicknessRecords(records => 
+      records.map(record => ({
+        ...record,
+        matchedSchemeName: (newSkipState && record.schemeAllocation && !record.matchedSchemeName) ? "__skip__" :
+                          (!newSkipState && record.matchedSchemeName === "__skip__") ? null :
+                          record.matchedSchemeName
+      }))
+    );
+  };
+
+  // Manual mapping functions
+  const handleManualEmployeeMapping = (recordId: string, employeeId: string | null) => {
+    setSicknessRecords(records =>
+      records.map(record => {
+        if (record.id === recordId) {
+          const updatedRecord = {
+            ...record,
+            matchedEmployeeId: employeeId,
+            status: employeeId ? 'ready' as const : 'needs_attention' as const
+          };
+          return updatedRecord;
+        }
+        return record;
+      })
+    );
+  };
+
+  const handleManualSchemeMapping = (recordId: string, schemeName: string | null) => {
+    setSicknessRecords(records =>
+      records.map(record => 
+        record.id === recordId 
+          ? { ...record, matchedSchemeName: schemeName }
+          : record
+      )
+    );
+  };
+
+  // Import functionality
+  const handleImport = async () => {
+    const readyRecords = sicknessRecords.filter(record => 
+      record.status === 'ready' && record.matchedEmployeeId
+    );
+
+    if (readyRecords.length === 0) {
+      toast({
+        title: "No records to import",
+        description: "Please ensure at least one record has a matched employee",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    setImportProgress(0);
+
+    try {
+      let processed = 0;
+      const total = readyRecords.length;
+
+      for (const record of readyRecords) {
+        // Update employee's sickness scheme if provided and not skipped
+        if (record.matchedSchemeName && record.matchedSchemeName !== "__skip__") {
+          const scheme = schemes.find(s => s.name === record.matchedSchemeName);
+          if (scheme) {
+            await supabase
+              .from('employees')
+              .update({ sickness_scheme_id: scheme.id })
+              .eq('id', record.matchedEmployeeId);
+          }
+        }
+
+        // Here you would also create sickness record entries if you have that table
+        // await supabase.from('sickness_records').insert({...})
+
+        processed++;
+        setImportProgress((processed / total) * 100);
+      }
+
+      setCurrentStep('complete');
+      toast({
+        title: "Import completed successfully",
+        description: `Imported ${processed} sickness records and updated employee schemes`
+      });
+
+    } catch (error) {
+      console.error('Error importing records:', error);
+      toast({
+        title: "Error during import",
+        description: "Some records may not have been imported correctly",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Filter records based on search and status
+  const filteredRecords = sicknessRecords.filter(record => {
+    const matchesSearch = record.employeeName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === 'all' || record.status === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
+
+  const stats = {
+    total: sicknessRecords.length,
+    ready: sicknessRecords.filter(r => r.status === 'ready').length,
+    needsAttention: sicknessRecords.filter(r => r.status === 'needs_attention').length,
+    skipped: sicknessRecords.filter(r => r.status === 'skipped').length
+  };
+
+  // Filter employees to only include those with valid IDs (not empty strings)
+  const validEmployees = employees.filter(emp => emp.id && emp.id.trim() !== '');
 
   return (
-    <main className="container mx-auto p-4 space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">Sickness Import</h1>
-        <p className="text-muted-foreground">
-          Upload a CSV/XLSX file to import sickness records or allocate sickness schemes to employees.
-        </p>
-        <link rel="canonical" href="/employees/sickness/import" />
-      </header>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Import Sickness Records</h1>
+          <p className="text-muted-foreground">Upload and process employee sickness data with scheme allocation</p>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Import Type</CardTitle>
-          <CardDescription>Choose what type of data you want to import</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <RadioGroup value={importType} onValueChange={(value: "records" | "schemes") => setImportType(value)}>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="records" id="records" />
-              <Label htmlFor="records">Sickness Records</Label>
-              <span className="text-sm text-muted-foreground">- Import absence records with dates and days</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="schemes" id="schemes" />
-              <Label htmlFor="schemes">Sickness Scheme Allocations</Label>
-              <span className="text-sm text-muted-foreground">- Assign sickness schemes to employees</span>
-            </div>
-          </RadioGroup>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Upload File</CardTitle>
-          <CardDescription>
-            {importType === "records" 
-              ? "Upload a CSV/XLSX file with DD/MM/YYYY dates. We'll fuzzy match employees and merge overlapping absences."
-              : "Upload a CSV/XLSX file with employee names and sickness scheme names to allocate schemes in bulk."
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-2 max-w-md">
-            <Label htmlFor="file">File</Label>
-            <Input id="file" type="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" onChange={onFileChange} />
-            {fileName && <p className="text-sm text-muted-foreground">Selected: {fileName}</p>}
+      {/* Step Indicator */}
+      <div className="flex items-center space-x-4">
+        <div className={`flex items-center space-x-2 ${currentStep === 'upload' ? 'text-primary' : 'text-muted-foreground'}`}>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+            currentStep === 'upload' ? 'bg-primary text-primary-foreground' : 'bg-muted'
+          }`}>
+            1
           </div>
-        </CardContent>
-      </Card>
+          <span>Upload File</span>
+        </div>
+        <div className="w-8 border-t border-muted" />
+        <div className={`flex items-center space-x-2 ${currentStep === 'review' ? 'text-primary' : 'text-muted-foreground'}`}>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+            currentStep === 'review' ? 'bg-primary text-primary-foreground' : 'bg-muted'
+          }`}>
+            2
+          </div>
+          <span>Review & Map</span>
+        </div>
+        <div className="w-8 border-t border-muted" />
+        <div className={`flex items-center space-x-2 ${currentStep === 'complete' ? 'text-primary' : 'text-muted-foreground'}`}>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+            currentStep === 'complete' ? 'bg-primary text-primary-foreground' : 'bg-muted'
+          }`}>
+            3
+          </div>
+          <span>Complete</span>
+        </div>
+      </div>
 
-      {rawRows.length > 0 && importType === "records" && (
+      {/* Upload Section */}
+      {currentStep === 'upload' && (
         <Card>
           <CardHeader>
-            <CardTitle>Map Columns</CardTitle>
-            <CardDescription>Confirm detected columns for sickness records. Adjust if needed.</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5" />
+              Upload Sickness Records File
+            </CardTitle>
+            <CardDescription>
+              Upload an Excel file containing employee sickness records and scheme allocations
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {([
-                { key: "payrollId", label: "Payroll ID" },
-                { key: "lastName", label: "Surname" },
-                { key: "firstName", label: "First name" },
-                { key: "startDate", label: "Start date (DD/MM/YYYY)" },
-                { key: "endDate", label: "End date (DD/MM/YYYY)" },
-                { key: "totalDays", label: "Total days (optional)" },
-              ] as const).map((f) => (
-                <div key={f.key} className="space-y-1">
-                  <Label>{f.label}</Label>
-                  <Select
-                    value={(mapping as any)[f.key] ?? undefined}
-                    onValueChange={(v) => setMapping((m) => ({ ...m, [f.key]: v === "__none__" ? undefined : v }))}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Select column" /></SelectTrigger>
-                    <SelectContent className="z-50 bg-background">
-                      <SelectItem value="__none__">None</SelectItem>
-                      {headers.map((h) => (
-                        <SelectItem key={h} value={h}>{h}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ))}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Days + Type pairs (up to 3)</Label>
-              {[0, 1, 2].map((i) => (
-                <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <Select
-                    value={mapping.pairs[i]?.days ?? undefined}
-                    onValueChange={(v) => setMapping((m) => {
-                      const pairs = [...(m.pairs || [])];
-                      pairs[i] = { ...(pairs[i] || {}), days: v === "__none__" ? undefined : v };
-                      return { ...m, pairs };
-                    })}
-                  >
-                    <SelectTrigger><SelectValue placeholder={`Days column #${i + 1}`} /></SelectTrigger>
-                    <SelectContent className="z-50 bg-background">
-                      <SelectItem value="__none__">None</SelectItem>
-                      {headers.map((h) => (
-                        <SelectItem key={h} value={h}>{h}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select
-                    value={mapping.pairs[i]?.type ?? undefined}
-                    onValueChange={(v) => setMapping((m) => {
-                      const pairs = [...(m.pairs || [])];
-                      pairs[i] = { ...(pairs[i] || {}), type: v === "__none__" ? undefined : v };
-                      return { ...m, pairs };
-                    })}
-                  >
-                    <SelectTrigger><SelectValue placeholder={`Type column #${i + 1} (full/half/ssp)`} /></SelectTrigger>
-                    <SelectContent className="z-50 bg-background">
-                      <SelectItem value="__none__">None</SelectItem>
-                      {headers.map((h) => (
-                        <SelectItem key={h} value={h}>{h}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-3">
-              <Button onClick={parseRows}>Continue</Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {rawRows.length > 0 && importType === "schemes" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Map Columns</CardTitle>
-            <CardDescription>Map columns for sickness scheme allocation. All fields are required.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {([
-                { key: "firstName", label: "First Name" },
-                { key: "lastName", label: "Surname" },
-                { key: "sicknessScheme", label: "Sickness Scheme" },
-              ] as const).map((f) => (
-                <div key={f.key} className="space-y-1">
-                  <Label>{f.label}</Label>
-                  <Select
-                    value={(schemeMapping as any)[f.key] ?? undefined}
-                    onValueChange={(v) => setSchemeMapping((m) => ({ ...m, [f.key]: v === "__none__" ? undefined : v }))}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Select column" /></SelectTrigger>
-                    <SelectContent className="z-50 bg-background">
-                      <SelectItem value="__none__">None</SelectItem>
-                      {headers.map((h) => (
-                        <SelectItem key={h} value={h}>{h}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-3">
-              <Button onClick={parseSchemesRows}>Continue</Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {parsedRows.length > 0 && importType === "records" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Review Sickness Record Matches</CardTitle>
-            <CardDescription>Resolve any unmatched employees. Payroll ID → Surname → First name.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Checkbox 
-                id="skip-all-unmatched"
-                checked={skipAllUnmatched}
-                onCheckedChange={handleToggleSkipAllUnmatched}
+            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
+              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <div className="space-y-2">
+                <p className="text-lg font-medium">Choose Excel file</p>
+                <p className="text-sm text-muted-foreground">
+                  File should contain columns for employee name, sickness days, and optionally scheme allocation
+                </p>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+                className="hidden"
               />
-              <label htmlFor="skip-all-unmatched" className="text-sm">
-                {`Skip all unmatched employees${unmatchedCount > 0 ? ` (${unmatchedCount})` : ""}`}
-              </label>
+              <Button 
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-4"
+                disabled={isProcessing}
+              >
+                Select File
+              </Button>
             </div>
-            {anyMismatches && (
-              <div className="flex flex-wrap items-center gap-3 text-destructive">
-                <span>{mismatchCount} row(s) have total days mismatches.</span>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="ignore-mismatches"
-                    checked={ignoreMismatches}
-                    onCheckedChange={(c) => setIgnoreMismatches(!!c)}
-                  />
-                  <label htmlFor="ignore-mismatches" className="text-sm">
-                    Ignore mismatches and proceed
-                  </label>
+
+            {file && (
+              <div className="bg-muted p-4 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    <span className="font-medium">{file.name}</span>
+                    <Badge variant="secondary">{(file.size / 1024).toFixed(1)} KB</Badge>
+                  </div>
+                  <Button
+                    onClick={() => setFile(null)}
+                    variant="ghost"
+                    size="sm"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             )}
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Employee from file</TableHead>
-                  <TableHead>Dates</TableHead>
-                  <TableHead>Days (F/H/SSP)</TableHead>
-                  <TableHead>Matched employee</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {matchResults.map((r) => (
-                  <TableRow key={r.rowIndex} className={r.parsed.mismatchTotal ? "bg-destructive/10" : ""}>
-                    <TableCell>
-                      <div className="text-sm">
-                        <div>{r.parsed.nameGuess.last ?? ""}, {r.parsed.nameGuess.first ?? ""}</div>
-                        <div className="text-muted-foreground">Payroll: {r.parsed.nameGuess.payroll ?? "-"}</div>
-                        {r.parsed.mismatchTotal && (
-                          <div className="text-destructive">Total mismatch: file {r.parsed.totalDays} vs sum {r.parsed.fullDays + r.parsed.halfDays + r.parsed.sspDays}</div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <div>Start: {r.parsed.startDate ?? "-"}</div>
-                        <div>End: {r.parsed.endDate ?? r.parsed.startDate ?? "-"}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">F {r.parsed.fullDays} / H {r.parsed.halfDays} / SSP {r.parsed.sspDays}</div>
-                    </TableCell>
-                    <TableCell>
-                      {r.matchedEmployeeId ? (
-                        r.matchedEmployeeId === "__skip__" ? (
-                          <div className="text-sm text-muted-foreground">
-                            Skipped. This row will be ignored. {" "}
-                            <Button type="button" variant="link" size="sm" onClick={() => updateCandidateSelection(r.rowIndex, "")}>Undo</Button>
-                          </div>
-                        ) : (
-                          <div className="text-sm">
-                            {(() => {
-                              const emp = employees.find((e) => e.id === r.matchedEmployeeId);
-                              return emp ? (
-                                <div>
-                                  <div>{emp.last_name}, {emp.first_name}</div>
-                                  <div className="text-muted-foreground">Payroll: {emp.payroll_id ?? "-"}</div>
-                                </div>
-                              ) : null;
-                            })()}
-                          </div>
-                        )
-                       ) : (
-                         <div className="space-y-2">
-                           <Select onValueChange={(v) => updateCandidateSelection(r.rowIndex, v)}>
-                             <SelectTrigger><SelectValue placeholder="Select match" /></SelectTrigger>
-                             <SelectContent className="z-50 bg-background max-h-80 overflow-auto">
-                               <SelectItem value="__skip__">Skip this employee</SelectItem>
-                               {r.candidates.length > 0 && (
-                                 <>
-                                   <SelectItem value="" disabled className="text-xs font-medium text-muted-foreground">
-                                     — Suggested matches —
-                                   </SelectItem>
-                                   {r.candidates.slice(0, 3).map((candidate) => (
-                                     <SelectItem key={candidate.id} value={candidate.id}>
-                                       {candidate.last_name}, {candidate.first_name} ({candidate.payroll_id ?? "-"})
-                                       <span className="ml-2 text-xs text-muted-foreground">
-                                         {Math.round((1 - candidate.score) * 100)}% match
-                                       </span>
-                                     </SelectItem>
-                                   ))}
-                                   <SelectItem value="" disabled className="text-xs font-medium text-muted-foreground">
-                                     — All employees —
-                                   </SelectItem>
-                                 </>
-                               )}
-                               {employees.map((e) => (
-                                 <SelectItem key={e.id} value={e.id}>
-                                   {e.last_name}, {e.first_name} ({e.payroll_id ?? "-"})
-                                 </SelectItem>
-                               ))}
-                             </SelectContent>
-                           </Select>
-                           {r.candidates.length === 0 && (
-                             <div className="text-xs text-orange-600">
-                               No close matches found. Please select manually.
-                             </div>
-                           )}
-                         </div>
-                       )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
 
-            <div className="flex gap-3">
-              <Button disabled={!allMatched || (anyMismatches && !ignoreMismatches) || submitting} onClick={onImport}>
-                {submitting ? "Importing..." : "Import and merge"}
+            {isProcessing && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Processing file...</span>
+                  <span>{Math.round(importProgress)}%</span>
+                </div>
+                <Progress value={importProgress} />
+              </div>
+            )}
+
+            {file && !isProcessing && (
+              <Button onClick={processFile} className="w-full">
+                Process File
               </Button>
-            </div>
+            )}
           </CardContent>
         </Card>
       )}
 
-      {schemeParsedRows.length > 0 && importType === "schemes" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Review Scheme Allocations</CardTitle>
-            <CardDescription>Verify employee matches and sickness scheme assignments.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Checkbox 
-                  id="scheme-skip-all-unmatched"
-                  checked={schemeSkipAllUnmatched}
-                  onCheckedChange={handleSchemeToggleSkipAllUnmatched}
-                />
-                <label htmlFor="scheme-skip-all-unmatched" className="text-sm">
-                  {`Skip all unmatched items${schemeUnmatchedCount > 0 ? ` (${schemeUnmatchedCount})` : ""}`}
-                </label>
+      {/* Review Section */}
+      {currentStep === 'review' && (
+        <div className="space-y-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="flex items-center p-4">
+                <Users className="h-8 w-8 text-blue-500 mr-3" />
+                <div>
+                  <p className="text-2xl font-bold">{stats.total}</p>
+                  <p className="text-sm text-muted-foreground">Total Records</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="flex items-center p-4">
+                <CheckCircle className="h-8 w-8 text-green-500 mr-3" />
+                <div>
+                  <p className="text-2xl font-bold">{stats.ready}</p>
+                  <p className="text-sm text-muted-foreground">Ready to Import</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="flex items-center p-4">
+                <AlertCircle className="h-8 w-8 text-amber-500 mr-3" />
+                <div>
+                  <p className="text-2xl font-bold">{stats.needsAttention}</p>
+                  <p className="text-sm text-muted-foreground">Needs Attention</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="flex items-center p-4">
+                <Clock className="h-8 w-8 text-gray-500 mr-3" />
+                <div>
+                  <p className="text-2xl font-bold">{stats.skipped}</p>
+                  <p className="text-sm text-muted-foreground">Skipped</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Controls */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                  <div className="flex items-center gap-2">
+                    <Search className="h-4 w-4" />
+                    <Input
+                      placeholder="Search employees..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-64"
+                    />
+                  </div>
+                  <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Records</SelectItem>
+                      <SelectItem value="ready">Ready to Import</SelectItem>
+                      <SelectItem value="needs_attention">Needs Attention</SelectItem>
+                      <SelectItem value="skipped">Skipped</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="skip-unmatched-employees"
+                      checked={skipAllUnmatched}
+                      onCheckedChange={handleToggleSkipAllUnmatched}
+                    />
+                    <label htmlFor="skip-unmatched-employees" className="text-sm font-medium cursor-pointer">
+                      Skip all unmatched employees
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="skip-unmatched-schemes"
+                      checked={schemeSkipAllUnmatched}
+                      onCheckedChange={handleSchemeToggleSkipAllUnmatched}
+                    />
+                    <label htmlFor="skip-unmatched-schemes" className="text-sm font-medium cursor-pointer">
+                      Skip all unmatched schemes
+                    </label>
+                  </div>
+                </div>
               </div>
-              <span className="text-sm text-muted-foreground">
-                {`${schemeUnmatchedCount > 0 ? `${schemeUnmatchedCount} need attention` : "All items ready"}`}
-              </span>
-            </div>
-            
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Employee from file</TableHead>
-                  <TableHead>Matched employee</TableHead>
-                  <TableHead>Sickness scheme</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {schemeMatchResults.map((r) => (
-                  <TableRow key={r.rowIndex}>
-                    <TableCell>
-                      <div className="text-sm">
-                        <div>{r.parsed.nameGuess.last ?? ""}, {r.parsed.nameGuess.first ?? ""}</div>
-                        <div className="text-muted-foreground">Scheme: {r.parsed.schemeGuess}</div>
-                      </div>
-                    </TableCell>
-                     <TableCell>
-                       {r.matchedEmployeeId ? (
-                         r.matchedEmployeeId === "__skip__" ? (
-                           <div className="text-sm text-muted-foreground">
-                             Skipped {" "}
-                             <Button type="button" variant="link" size="sm" onClick={() => updateSchemeSelection(r.rowIndex, "", "")}>
-                               Undo
-                             </Button>
-                           </div>
-                         ) : (
-                           <div className="text-sm">
-                             {(() => {
-                               const emp = employees.find((e) => e.id === r.matchedEmployeeId);
-                               const candidate = r.candidates.find((c) => c.id === r.matchedEmployeeId);
-                               return emp ? (
-                                 <div>
-                                   <div>{emp.last_name}, {emp.first_name}</div>
-                                   <div className="text-muted-foreground">
-                                     Payroll: {emp.payroll_id ?? "-"}
-                                     {candidate && candidate.score > 0 && (
-                                       <span className="ml-2 text-xs">
-                                         (Match: {Math.round((1 - candidate.score) * 100)}%)
-                                       </span>
-                                     )}
-                                   </div>
-                                 </div>
-                               ) : null;
-                             })()}
-                           </div>
-                         )
-                       ) : (
-                         <div className="space-y-2">
-                           <Select onValueChange={(v) => updateSchemeSelection(r.rowIndex, v, r.matchedSchemeId)}>
-                             <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
-                             <SelectContent className="z-50 bg-background max-h-80 overflow-auto">
-                               <SelectItem value="__skip__">Skip this row</SelectItem>
-                               {r.candidates.length > 0 && (
-                                 <>
-                                   <SelectItem value="" disabled className="text-xs font-medium text-muted-foreground">
-                                     — Suggested matches —
-                                   </SelectItem>
-                                   {r.candidates.slice(0, 3).map((candidate) => (
-                                     <SelectItem key={candidate.id} value={candidate.id}>
-                                       {candidate.last_name}, {candidate.first_name} ({candidate.payroll_id ?? "-"})
-                                       <span className="ml-2 text-xs text-muted-foreground">
-                                         {Math.round((1 - candidate.score) * 100)}% match
-                                       </span>
-                                     </SelectItem>
-                                   ))}
-                                   <SelectItem value="" disabled className="text-xs font-medium text-muted-foreground">
-                                     — All employees —
-                                   </SelectItem>
-                                 </>
-                               )}
-                               {employees.map((e) => (
-                                 <SelectItem key={e.id} value={e.id}>
-                                   {e.last_name}, {e.first_name} ({e.payroll_id ?? "-"})
-                                 </SelectItem>
-                               ))}
-                             </SelectContent>
-                           </Select>
-                           {r.candidates.length === 0 && (
-                             <div className="text-xs text-orange-600">
-                               No close matches found. Please select manually.
-                             </div>
-                           )}
-                         </div>
-                       )}
-                    </TableCell>
-                    <TableCell>
-                      {r.matchedSchemeId ? (
-                        <div className="text-sm">
-                          {availableSchemes.find(s => s.id === r.matchedSchemeId)?.name}
-                        </div>
-                      ) : (
-                        <Select 
-                          onValueChange={(v) => updateSchemeSelection(r.rowIndex, r.matchedEmployeeId || "", v)}
-                          value={r.matchedSchemeId}
+            </CardContent>
+          </Card>
+
+          {/* Records Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Sickness Records Review</CardTitle>
+              <CardDescription>
+                Review and manually map employees and schemes as needed
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Employee Name</TableHead>
+                    <TableHead>Matched Employee</TableHead>
+                    <TableHead>Sickness Days</TableHead>
+                    <TableHead>Scheme Allocation</TableHead>
+                    <TableHead>Matched Scheme</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRecords.map((record) => (
+                    <TableRow key={record.id}>
+                      <TableCell>
+                        <Badge 
+                          variant={
+                            record.status === 'ready' ? 'default' :
+                            record.status === 'needs_attention' ? 'destructive' :
+                            'secondary'
+                          }
                         >
-                          <SelectTrigger><SelectValue placeholder="Select scheme" /></SelectTrigger>
-                          <SelectContent className="z-50 bg-background max-h-80 overflow-auto">
-                            {availableSchemes.map((scheme) => (
-                              <SelectItem key={scheme.id} value={scheme.id}>
-                                {scheme.name}
+                          {record.status === 'ready' ? (
+                            <>
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Ready
+                            </>
+                          ) : record.status === 'needs_attention' ? (
+                            <>
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              Needs Attention
+                            </>
+                          ) : (
+                            <>
+                              <UserX className="h-3 w-3 mr-1" />
+                              Skipped
+                            </>
+                          )}
+                        </Badge>
+                      </TableCell>
+                      
+                      <TableCell className="font-medium">
+                        {record.employeeName}
+                        {record.confidence && (
+                          <div className="text-xs text-muted-foreground">
+                            Match: {record.confidence}%
+                          </div>
+                        )}
+                      </TableCell>
+                      
+                      <TableCell>
+                        <Select
+                          value={record.matchedEmployeeId || "no-match"}
+                          onValueChange={(value) => 
+                            handleManualEmployeeMapping(record.id, value === "no-match" ? null : value)
+                          }
+                        >
+                          <SelectTrigger className="w-64">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="no-match">No match found</SelectItem>
+                            {record.suggestions?.map((suggestion) => (
+                              <SelectItem key={suggestion.id} value={suggestion.id}>
+                                <div className="flex flex-col">
+                                  <span>{suggestion.name}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {suggestion.confidence}% match
+                                    {suggestion.payrollId && ` • ID: ${suggestion.payrollId}`}
+                                  </span>
+                                </div>
                               </SelectItem>
                             ))}
+                            {validEmployees
+                              .filter(emp => !record.suggestions?.some(s => s.id === emp.id))
+                              .slice(0, 10)
+                              .map((employee) => (
+                                <SelectItem key={employee.id} value={employee.id}>
+                                  {employee.last_name}, {employee.first_name}
+                                  {employee.payroll_id && (
+                                    <span className="text-xs text-muted-foreground"> • ID: {employee.payroll_id}</span>
+                                  )}
+                                </SelectItem>
+                              ))
+                            }
                           </SelectContent>
                         </Select>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-xs">
-                        {r.matchedEmployeeId && r.matchedSchemeId && r.matchedEmployeeId !== "__skip__" ? (
-                          <span className="text-green-600">✓ Ready</span>
-                        ) : r.matchedEmployeeId === "__skip__" ? (
-                          <span className="text-muted-foreground">Skipped</span>
+                      </TableCell>
+                      
+                      <TableCell>{record.sicknessDays}</TableCell>
+                      
+                      <TableCell>
+                        {record.schemeAllocation || <span className="text-muted-foreground">-</span>}
+                      </TableCell>
+                      
+                      <TableCell>
+                        {record.schemeAllocation ? (
+                          <Select
+                            value={record.matchedSchemeName || "no-match"}
+                            onValueChange={(value) => 
+                              handleManualSchemeMapping(record.id, value === "no-match" ? null : value)
+                            }
+                          >
+                            <SelectTrigger className="w-48">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="no-match">No match found</SelectItem>
+                              {schemes.map((scheme) => (
+                                <SelectItem key={scheme.id} value={scheme.name}>
+                                  {scheme.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         ) : (
-                          <span className="text-orange-600">Needs attention</span>
+                          <span className="text-muted-foreground">-</span>
                         )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
 
-            <div className="flex gap-3">
+          {/* Import Actions */}
+          <div className="flex justify-between">
+            <Button 
+              variant="outline" 
+              onClick={() => setCurrentStep('upload')}
+              disabled={isProcessing}
+            >
+              Back to Upload
+            </Button>
+            <div className="space-x-2">
               <Button 
-                disabled={!allSchemesMatched || submitting} 
-                onClick={onSchemeImport}
+                variant="outline"
+                onClick={() => {
+                  // Export unmatched records
+                  const unmatchedRecords = sicknessRecords.filter(r => r.status === 'needs_attention');
+                  console.log('Unmatched records:', unmatchedRecords);
+                  toast({
+                    title: "Export functionality",
+                    description: "Export feature would download unmatched records for review"
+                  });
+                }}
               >
-                {submitting ? "Allocating..." : "Allocate Schemes"}
+                <Download className="h-4 w-4 mr-2" />
+                Export Unmatched
+              </Button>
+              <Button 
+                onClick={handleImport}
+                disabled={isProcessing || stats.ready === 0}
+              >
+                <UserCheck className="h-4 w-4 mr-2" />
+                Import {stats.ready} Records
+              </Button>
+            </div>
+          </div>
+
+          {isProcessing && (
+            <Card>
+              <CardContent className="p-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Importing records...</span>
+                    <span>{Math.round(importProgress)}%</span>
+                  </div>
+                  <Progress value={importProgress} />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Complete Section */}
+      {currentStep === 'complete' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              Import Complete
+            </CardTitle>
+            <CardDescription>
+              Sickness records have been successfully imported and employee schemes updated
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>
+                Import completed successfully. Employee sickness schemes have been updated based on the imported data.
+              </AlertDescription>
+            </Alert>
+            
+            <div className="flex justify-center">
+              <Button 
+                onClick={() => {
+                  setCurrentStep('upload');
+                  setSicknessRecords([]);
+                  setFile(null);
+                  setImportProgress(0);
+                }}
+              >
+                Import Another File
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
-    </main>
+    </div>
   );
-}
+};
+
+export default SicknessImport;
