@@ -13,6 +13,7 @@ export type Company = {
   contact_phone?: string | null;
   paye_ref?: string | null;
   accounts_office_number?: string | null;
+  logo_url?: string | null;
   created_at: string;
   updated_at: string;
   created_by?: string | null;

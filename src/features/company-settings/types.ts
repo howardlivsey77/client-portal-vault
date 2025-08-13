@@ -20,4 +20,5 @@ export interface CompanyFormValues {
   contactName?: string;
   contactEmail?: string;
   contactPhone?: string;
+  logoUrl?: string;
 }

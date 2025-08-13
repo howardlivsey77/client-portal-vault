@@ -81,9 +81,20 @@ export const generateSicknessReportPDF = (
   employee: Employee,
   sicknessRecords: SicknessRecord[],
   entitlementSummary: SicknessEntitlementSummary | null,
+  companyLogoUrl?: string | null,
   filename = 'sickness-report.pdf'
 ) => {
   const doc = new jsPDF();
+  
+  // Add company logo if available
+  if (companyLogoUrl) {
+    try {
+      // Position logo in top right corner
+      doc.addImage(companyLogoUrl, 'JPEG', 150, 10, 40, 15);
+    } catch (error) {
+      console.warn('Could not add logo to PDF:', error);
+    }
+  }
   
   // Add title
   doc.setFontSize(18);

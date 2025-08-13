@@ -4,6 +4,7 @@ import { Employee } from "@/types/employee-types";
 import { SicknessRecord, SicknessEntitlementSummary } from "@/types/sickness";
 import { generateSicknessReportPDF } from "@/utils/pdfExport";
 import { toast } from "@/hooks/use-toast";
+import { useCompany } from "@/providers/CompanyProvider";
 
 interface SicknessReportPDFButtonProps {
   employee: Employee;
@@ -18,10 +19,12 @@ export function SicknessReportPDFButton({
   entitlementSummary, 
   disabled = false 
 }: SicknessReportPDFButtonProps) {
+  const { currentCompany } = useCompany();
+  
   const handleExportPDF = () => {
     try {
       const filename = `sickness-report-${employee.first_name}-${employee.last_name}-${new Date().toISOString().split('T')[0]}.pdf`;
-      generateSicknessReportPDF(employee, sicknessRecords, entitlementSummary, filename);
+      generateSicknessReportPDF(employee, sicknessRecords, entitlementSummary, currentCompany?.logo_url, filename);
       
       toast({
         title: "PDF exported successfully",

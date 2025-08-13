@@ -21,7 +21,8 @@ export const useCompanyForm = () => {
       contactEmail: "",
       contactPhone: "",
       payeRef: "",
-      accountsOfficeNumber: ""
+      accountsOfficeNumber: "",
+      logoUrl: ""
     }
   });
 
