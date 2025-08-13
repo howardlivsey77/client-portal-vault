@@ -16,20 +16,29 @@ export const balanceService = {
     return data || [];
   },
 
-  // Calculate rolling 12-month sickness days used
+  // Calculate rolling 12-month sickness days used (overlap-aware)
   async calculateRolling12MonthUsage(employeeId: string): Promise<{ totalUsed: number; fullPayUsed: number; halfPayUsed: number }> {
     const { start, end } = calculationUtils.getRolling12MonthPeriod();
 
+    // Fetch candidate records up to range end; filter overlaps in code to catch spells that start before the window
     const { data, error } = await supabase
       .from('employee_sickness_records')
-      .select('total_days, start_date')
+      .select('total_days, start_date, end_date')
       .eq('employee_id', employeeId)
-      .gte('start_date', start)
       .lte('start_date', end);
 
     if (error) throw error;
 
-    const totalUsed = data?.reduce((sum, record) => sum + Number(record.total_days || 0), 0) || 0;
+    const rangeStart = new Date(start);
+    const rangeEnd = new Date(end);
+
+    const totalUsed = (data || []).reduce((sum, r) => {
+      const recStart = new Date(r.start_date as string);
+      const recEnd = new Date((r.end_date as string) || r.start_date as string);
+      // Overlaps if recordStart <= rangeEnd and recordEnd >= rangeStart
+      const overlaps = recStart <= rangeEnd && recEnd >= rangeStart;
+      return overlaps ? sum + Number(r.total_days || 0) : sum;
+    }, 0);
     
     // Allocation into full/half happens at a higher level
     return {
