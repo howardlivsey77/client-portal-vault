@@ -17,6 +17,7 @@ import { useEmployees } from "@/hooks/useEmployees";
 import { useSicknessSchemes } from "@/features/company-settings/hooks/useSicknessSchemes";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Link, useNavigate } from "react-router-dom";
+import { parseDate, formatDateForDB } from "@/utils/dateParser";
 import * as XLSX from 'xlsx';
 import Fuse from 'fuse.js';
 
@@ -412,12 +413,34 @@ const SicknessImport = () => {
           .eq('id', record.matchedEmployeeId)
           .single();
 
+        // Parse and validate dates
+        const startDateParsed = parseDate(record.startDate);
+        const endDateParsed = record.endDate ? parseDate(record.endDate) : { date: null, isValid: true, originalValue: null };
+
+        // Skip record if start date is invalid
+        if (!startDateParsed.isValid || !startDateParsed.date) {
+          console.error(`Skipping record for employee ${record.matchedEmployeeId}: Invalid start date`, {
+            originalStartDate: record.startDate,
+            error: startDateParsed.error
+          });
+          continue; // Skip this record
+        }
+
+        // Skip record if end date is provided but invalid
+        if (record.endDate && !endDateParsed.isValid) {
+          console.error(`Skipping record for employee ${record.matchedEmployeeId}: Invalid end date`, {
+            originalEndDate: record.endDate,
+            error: 'error' in endDateParsed ? endDateParsed.error : 'Invalid date'
+          });
+          continue; // Skip this record
+        }
+
         // Create actual sickness record
         const sicknessRecord = {
           employee_id: record.matchedEmployeeId!,
           company_id: employeeData?.company_id,
-          start_date: record.startDate ? new Date(record.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          end_date: record.endDate ? new Date(record.endDate).toISOString().split('T')[0] : null,
+          start_date: formatDateForDB(startDateParsed.date),
+          end_date: endDateParsed.date ? formatDateForDB(endDateParsed.date) : null,
           total_days: record.sicknessDays,
           is_certified: record.isCertified || false,
           certification_required_from_day: 8, // Default value
