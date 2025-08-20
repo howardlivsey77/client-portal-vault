@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1290,19 +1290,19 @@ export type Database = {
       create_invitation: {
         Args:
           | {
-              _user_id: string
-              _email: string
-              _invite_code: string
               _company_id: string
+              _email: string
               _expires_at?: string
+              _invite_code: string
               _role?: string
+              _user_id: string
             }
           | {
-              _user_id: string
               _email: string
-              _invite_code: string
               _expires_at?: string
+              _invite_code: string
               _role?: string
+              _user_id: string
             }
         Returns: {
           accepted_at: string | null
@@ -1318,7 +1318,7 @@ export type Database = {
         }
       }
       delete_invitation: {
-        Args: { _user_id: string; _id: string }
+        Args: { _id: string; _user_id: string }
         Returns: boolean
       }
       get_current_user_email: {
@@ -1326,7 +1326,7 @@ export type Database = {
         Returns: string
       }
       get_invitations: {
-        Args: { _user_id: string } | { _user_id: string; _company_id?: string }
+        Args: { _company_id?: string; _user_id: string } | { _user_id: string }
         Returns: {
           accepted_at: string | null
           company_id: string | null
@@ -1361,7 +1361,7 @@ export type Database = {
         Returns: number
       }
       user_has_company_access: {
-        Args: { _user_id: string; _company_id: string; _required_role?: string }
+        Args: { _company_id: string; _required_role?: string; _user_id: string }
         Returns: boolean
       }
     }
