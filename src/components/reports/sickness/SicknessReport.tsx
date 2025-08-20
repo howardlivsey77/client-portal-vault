@@ -27,7 +27,6 @@ export const SicknessReport = () => {
         'Department': data.employee.department,
         'Hire Date': data.employee.hire_date,
         'Service Months': data.entitlementSummary?.service_months || 0,
-        'Sickness Used (Current Year)': data.entitlementSummary?.full_pay_used || 0,
         'Sickness Used (Rolling 12 Months)': data.entitlementSummary?.full_pay_used_rolling_12_months || 0,
         'Full Pay Remaining': data.entitlementSummary?.full_pay_remaining || 0,
         'Half Pay Remaining': data.entitlementSummary?.half_pay_remaining || 0,

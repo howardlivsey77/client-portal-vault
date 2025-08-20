@@ -85,8 +85,7 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
               <TableHead>Department</TableHead>
               <TableHead>Hire Date</TableHead>
               <TableHead>Service</TableHead>
-              <TableHead>Used (Current)</TableHead>
-              <TableHead>Used (Rolling)</TableHead>
+              <TableHead>Used (Rolling 12m)</TableHead>
               <TableHead>Full Pay Left</TableHead>
               <TableHead>Half Pay Left</TableHead>
               <TableHead>SSP Left</TableHead>
@@ -96,7 +95,7 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
           <TableBody>
             {[...Array(5)].map((_, i) => (
               <TableRow key={i}>
-                {[...Array(12)].map((_, j) => (
+                {[...Array(11)].map((_, j) => (
                   <TableCell key={j}>
                     <div className="h-4 bg-muted animate-pulse rounded" />
                   </TableCell>
@@ -130,7 +129,6 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
             <TableHead>Department</TableHead>
             <TableHead>Hire Date</TableHead>
             <TableHead>Service</TableHead>
-            <TableHead>Used (Current)</TableHead>
             <TableHead>Used (Rolling 12m)</TableHead>
             <TableHead>Full Pay Left</TableHead>
             <TableHead>Half Pay Left</TableHead>
@@ -156,9 +154,6 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
               </TableCell>
               <TableCell>
                 {reportData.entitlementSummary?.service_months || 0} months
-              </TableCell>
-              <TableCell>
-                {formatDays(reportData.entitlementSummary?.full_pay_used)} days
               </TableCell>
               <TableCell>
                 {formatDays(reportData.entitlementSummary?.full_pay_used_rolling_12_months)} days
