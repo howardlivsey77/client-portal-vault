@@ -144,13 +144,13 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
                 {formatDays(reportData.entitlementSummary?.full_pay_used_rolling_12_months)} days
               </TableCell>
               <TableCell>
-                {getStatusBadge(reportData.entitlementSummary?.full_pay_remaining, "fullPay")}
+                {formatDays(reportData.entitlementSummary?.full_pay_remaining)} days
               </TableCell>
               <TableCell>
-                {getStatusBadge(reportData.entitlementSummary?.half_pay_remaining, "halfPay")}
+                {formatDays(reportData.entitlementSummary?.half_pay_remaining)} days
               </TableCell>
               <TableCell>
-                {getStatusBadge(reportData.entitlementSummary?.ssp_remaining_days, "ssp")}
+                {formatDays(reportData.entitlementSummary?.ssp_remaining_days)} days
               </TableCell>
               <TableCell>
                 <Button
