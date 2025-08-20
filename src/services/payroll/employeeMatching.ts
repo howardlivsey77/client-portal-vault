@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeHoursData } from '@/components/payroll/types';
+import { roundToTwoDecimals } from '@/lib/formatters';
 
 export interface EmployeeMatchCandidate {
   id: string;
@@ -10,6 +11,10 @@ export interface EmployeeMatchCandidate {
   email?: string;
   full_name: string;
   confidence: number;
+  hourly_rate?: number | null;
+  rate_2?: number | null;
+  rate_3?: number | null;
+  rate_4?: number | null;
 }
 
 export interface EmployeeMatchResult {
@@ -137,8 +142,8 @@ export async function matchEmployees(employeeHoursData: EmployeeHoursData[]): Pr
     // Fetch all employees from database
     const { data: employees, error } = await supabase
       .from('employees')
-      .select('id, first_name, last_name, payroll_id, email');
-      
+      .select('id, first_name, last_name, payroll_id, email, hourly_rate, rate_2, rate_3, rate_4');
+
     if (error) {
       console.error('Error fetching employees:', error);
       throw error;
@@ -151,9 +156,13 @@ export async function matchEmployees(employeeHoursData: EmployeeHoursData[]): Pr
       payroll_id: emp.payroll_id,
       email: emp.email,
       full_name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim(),
-      confidence: 0
+      confidence: 0,
+      hourly_rate: (emp as any).hourly_rate ?? null,
+      rate_2: (emp as any).rate_2 ?? null,
+      rate_3: (emp as any).rate_3 ?? null,
+      rate_4: (emp as any).rate_4 ?? null,
     }));
-    
+
     const exactMatches: EmployeeMatchResult[] = [];
     const fuzzyMatches: EmployeeMatchResult[] = [];
     const unmatchedEmployees: EmployeeMatchResult[] = [];
@@ -207,44 +216,87 @@ export async function matchEmployees(employeeHoursData: EmployeeHoursData[]): Pr
 }
 
 /**
- * Apply user-selected mappings to the matching results
+ * Apply rate to an employee hours entry based on its rateType and DB employee rates
+ */
+function applyRateToEmployeeHours(empHours: any, dbEmployee: { hourly_rate?: number | null; rate_2?: number | null; rate_3?: number | null; rate_4?: number | null; }) {
+  if (!empHours) return;
+  const safe = (v: any) => (typeof v === 'number' ? v : (v ? Number(v) : 0));
+
+  if (empHours.rateType) {
+    let rateNumber: number | null = null;
+    const match = String(empHours.rateType).match(/Rate\s*(\d+)/i);
+    if (match) rateNumber = parseInt(match[1], 10);
+
+    if (rateNumber) {
+      switch (rateNumber) {
+        case 1:
+          empHours.rateValue = roundToTwoDecimals(safe(dbEmployee.hourly_rate));
+          break;
+        case 2:
+          empHours.rateValue = roundToTwoDecimals(safe(dbEmployee.rate_2));
+          break;
+        case 3:
+          empHours.rateValue = roundToTwoDecimals(safe(dbEmployee.rate_3));
+          break;
+        case 4:
+          empHours.rateValue = roundToTwoDecimals(safe(dbEmployee.rate_4));
+          break;
+        default:
+          empHours.rateValue = roundToTwoDecimals(safe(dbEmployee.hourly_rate));
+      }
+    } else if (String(empHours.rateType).toLowerCase() === 'standard') {
+      empHours.rateValue = roundToTwoDecimals(safe(dbEmployee.hourly_rate));
+    } else {
+      empHours.rateValue = roundToTwoDecimals(safe(dbEmployee.hourly_rate));
+    }
+  } else {
+    empHours.rateValue = roundToTwoDecimals(safe(dbEmployee.hourly_rate));
+  }
+}
+
+/**
+ * Apply user-selected mappings to the matching results and enrich with rates
  */
 export function applyUserMappings(
   matchingResults: EmployeeMatchingResults,
   userMappings: Record<string, string>
 ): EmployeeHoursData[] {
   const finalEmployeeData: EmployeeHoursData[] = [];
-  
+
   // Process exact matches (automatically mapped)
   for (const match of matchingResults.exactMatches) {
     if (match.selectedMatch) {
-      finalEmployeeData.push({
+      const enriched = {
         ...match.employeeData,
         employeeId: match.selectedMatch.id,
         payrollId: match.selectedMatch.payroll_id
-      });
+      } as any;
+      applyRateToEmployeeHours(enriched, match.selectedMatch);
+      finalEmployeeData.push(enriched);
     }
   }
-  
+
   // Process fuzzy matches and unmatched employees with user mappings
   const allPendingMatches = [...matchingResults.fuzzyMatches, ...matchingResults.unmatchedEmployees];
-  
+
   for (const match of allPendingMatches) {
     const employeeName = match.employeeData.employeeName;
     const selectedEmployeeId = userMappings[employeeName];
-    
+
     if (selectedEmployeeId) {
       const selectedEmployee = matchingResults.allDatabaseEmployees.find(emp => emp.id === selectedEmployeeId);
       if (selectedEmployee) {
-        finalEmployeeData.push({
+        const enriched = {
           ...match.employeeData,
           employeeId: selectedEmployee.id,
           payrollId: selectedEmployee.payroll_id
-        });
+        } as any;
+        applyRateToEmployeeHours(enriched, selectedEmployee);
+        finalEmployeeData.push(enriched);
       }
     }
     // If no mapping selected, skip this employee (user chose not to include them)
   }
-  
+
   return finalEmployeeData;
 }
