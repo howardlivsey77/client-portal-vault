@@ -7,7 +7,7 @@ import { savePayrollData } from "@/services/payroll";
 import { useAuth } from "@/providers/AuthProvider";
 import { ExtraHoursSummary, PayrollFiles } from "../types";
 
-type WizardStep = 0 | 1 | 2; // Upload -> Review -> Absences
+type WizardStep = 0 | 1 | 2 | 3; // Upload -> Review -> Absences -> Final Summary
 
 interface ConsolidatedWizardState {
   currentStep: WizardStep;
@@ -140,7 +140,7 @@ export function useConsolidatedPayrollWizard() {
       }
     }
     
-    const totalSteps = 3;
+    const totalSteps = 4;
     
     if (state.currentStep < totalSteps - 1) {
       console.log("Advancing to step:", state.currentStep + 1);
@@ -210,6 +210,8 @@ export function useConsolidatedPayrollWizard() {
       return state.processedData !== null;
     } else if (state.currentStep === 2) {
       return true; // Absences file is optional
+    } else if (state.currentStep === 3) {
+      return state.processedData !== null; // Final summary requires processed data
     }
     return true;
   }, [state.currentStep, state.uploadedFiles.extraHours, state.processedData, state.showEmployeeMapping]);

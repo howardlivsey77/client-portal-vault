@@ -14,9 +14,12 @@ export function ExportPDFButton({ summary, filename }: ExportPDFButtonProps) {
   const handleExportPDF = () => {
     try {
       generateExtraHoursPDF(summary, filename);
+      const isComplete = filename?.includes('complete');
       toast({
         title: "PDF exported successfully",
-        description: "Your extra hours summary has been downloaded.",
+        description: isComplete 
+          ? "Your complete payroll report has been downloaded."
+          : "Your extra hours summary has been downloaded.",
       });
     } catch (err) {
       console.error("Error generating PDF:", err);
@@ -28,6 +31,9 @@ export function ExportPDFButton({ summary, filename }: ExportPDFButtonProps) {
     }
   };
 
+  const isComplete = filename?.includes('complete');
+  const buttonText = isComplete ? "Export Complete Report" : "Export Extra Hours PDF";
+
   return (
     <Button 
       variant="outline" 
@@ -36,7 +42,7 @@ export function ExportPDFButton({ summary, filename }: ExportPDFButtonProps) {
       onClick={handleExportPDF}
     >
       <Download size={16} />
-      Export PDF
+      {buttonText}
     </Button>
   );
 }

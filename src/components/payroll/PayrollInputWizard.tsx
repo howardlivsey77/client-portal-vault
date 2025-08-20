@@ -25,6 +25,7 @@ export function PayrollInputWizard({ open, onOpenChange }: PayrollInputWizardPro
   const {
     currentStep,
     uploadedFiles,
+    processedData,
     isProcessing,
     showEmployeeMapping,
     matchingResults,
@@ -43,6 +44,7 @@ export function PayrollInputWizard({ open, onOpenChange }: PayrollInputWizardPro
     handleFileUpload,
     getSummary: processExtraHours,
     isProcessing,
+    processedData,
     showEmployeeMapping,
     matchingResults,
     onEmployeeMappingConfirm: handleEmployeeMappingConfirm,
