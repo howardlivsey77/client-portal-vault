@@ -139,7 +139,7 @@ function applyRateToEmployee(empHours: any, dbEmployee: any): void {
           break;
         case 3:
           empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_3) || 0;
-          console.log(`Applied Rate 3 (Extended Access) for ${empHours.employeeName}: ${empHours.rateValue}`);
+          console.log(`Applied Rate 3 (Enhanced Access) for ${empHours.employeeName}: ${empHours.rateValue}`);
           break;
         case 4:
           empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_4) || 0;

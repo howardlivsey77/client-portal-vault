@@ -74,7 +74,7 @@ export const PersonalInfoRateFields = ({ control }: PersonalInfoRateFieldsProps)
             name="rate_3"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Extended Access (GBP)</FormLabel>
+                <FormLabel>Enhanced Access (GBP)</FormLabel>
                 <FormControl>
                   <Input 
                     type="number" 
