@@ -23,6 +23,31 @@ export function formatSummary(
     employeeDetails.reduce((sum, emp) => sum + emp.extraHours, 0)
   ) || 0;
   
+  // Calculate totals by rate type
+  const totalRate1Hours = roundToTwoDecimals(
+    employeeDetails
+      .filter(emp => emp.rateType === 'Rate 1' || emp.rateType === 'rate 1' || emp.rateType === 'RATE 1' || (!emp.rateType && emp.extraHours > 0))
+      .reduce((sum, emp) => sum + emp.extraHours, 0)
+  ) || 0;
+  
+  const totalRate2Hours = roundToTwoDecimals(
+    employeeDetails
+      .filter(emp => emp.rateType === 'Rate 2' || emp.rateType === 'rate 2' || emp.rateType === 'RATE 2')
+      .reduce((sum, emp) => sum + emp.extraHours, 0)
+  ) || 0;
+  
+  const totalRate3Hours = roundToTwoDecimals(
+    employeeDetails
+      .filter(emp => emp.rateType === 'Rate 3' || emp.rateType === 'rate 3' || emp.rateType === 'RATE 3')
+      .reduce((sum, emp) => sum + emp.extraHours, 0)
+  ) || 0;
+  
+  const totalRate4Hours = roundToTwoDecimals(
+    employeeDetails
+      .filter(emp => emp.rateType === 'Rate 4' || emp.rateType === 'rate 4' || emp.rateType === 'RATE 4')
+      .reduce((sum, emp) => sum + emp.extraHours, 0)
+  ) || 0;
+  
   // Count total entries
   const totalEntries = employeeDetails.length;
   
@@ -60,6 +85,10 @@ export function formatSummary(
       to: toDate
     },
     employeeCount: uniqueCount,
-    employeeDetails: employeeDetails
+    employeeDetails: employeeDetails,
+    totalRate1Hours,
+    totalRate2Hours,
+    totalRate3Hours,
+    totalRate4Hours
   };
 }

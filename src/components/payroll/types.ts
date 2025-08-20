@@ -17,6 +17,10 @@ export type ExtraHoursSummary = {
   };
   employeeCount: number;
   employeeDetails: EmployeeHoursData[];
+  totalRate1Hours?: number;
+  totalRate2Hours?: number;
+  totalRate3Hours?: number;
+  totalRate4Hours?: number;
 };
 
 export type PayrollFile = File | null;
