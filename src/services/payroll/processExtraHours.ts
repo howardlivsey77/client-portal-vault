@@ -35,9 +35,18 @@ export const savePayrollData = async (data: ExtraHoursSummary, userId: string): 
       return { success: false, message: "Missing data or user ID" };
     }
     
-    // Parse date strings to extract month/year info
-    const fromDate = new Date(data.dateRange.from);
-    const toDate = new Date(data.dateRange.to);
+    // Parse date strings to extract month/year info - use ISO format if available
+    const fromDateStr = data.dateRange.fromISO || data.dateRange.from;
+    const toDateStr = data.dateRange.toISO || data.dateRange.to;
+    
+    const fromDate = new Date(fromDateStr);
+    const toDate = new Date(toDateStr);
+    
+    // Validate dates
+    if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+      console.error('Invalid dates:', { fromDateStr, toDateStr });
+      return { success: false, message: "Invalid date format in data" };
+    }
     
     // Calculate period number (assuming month-based periods)
     const periodMonth = fromDate.getMonth() + 1; // 1-12

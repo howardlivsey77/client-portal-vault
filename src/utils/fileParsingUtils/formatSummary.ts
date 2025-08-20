@@ -67,7 +67,7 @@ export function formatSummary(
   const uniqueCount = uniqueEmployeeIds.size > 0 ? 
     uniqueEmployeeIds.size : uniqueEmployeeNames.size;
   
-  // Format date range
+  // Format date range - use ISO format for database compatibility and display format for UI
   const formatDateOption = { year: 'numeric', month: '2-digit', day: '2-digit' };
   const fromDate = earliestDate ? 
     earliestDate.toLocaleDateString(undefined, formatDateOption as any) : 
@@ -77,12 +77,23 @@ export function formatSummary(
     latestDate.toLocaleDateString(undefined, formatDateOption as any) : 
     today.toLocaleDateString(undefined, formatDateOption as any);
   
+  // Also store ISO format for database operations
+  const fromDateISO = earliestDate ? 
+    earliestDate.toISOString().split('T')[0] : 
+    oneMonthAgo.toISOString().split('T')[0];
+    
+  const toDateISO = latestDate ? 
+    latestDate.toISOString().split('T')[0] : 
+    today.toISOString().split('T')[0];
+  
   return {
     totalEntries,
     totalExtraHours,
     dateRange: {
       from: fromDate,
-      to: toDate
+      to: toDate,
+      fromISO: fromDateISO,
+      toISO: toDateISO
     },
     employeeCount: uniqueCount,
     employeeDetails: employeeDetails,

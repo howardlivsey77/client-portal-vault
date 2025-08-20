@@ -14,6 +14,8 @@ export type ExtraHoursSummary = {
   dateRange: {
     from: string;
     to: string;
+    fromISO?: string;
+    toISO?: string;
   };
   employeeCount: number;
   employeeDetails: EmployeeHoursData[];
