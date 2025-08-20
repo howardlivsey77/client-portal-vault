@@ -18,24 +18,24 @@ export function parseRateDescription(rateText: string): RateMapping | null {
   
   const normalizedText = rateText.toLowerCase().trim();
   
-  // Standard Pay maps to rate_2 (Standard Overtime) for extra hours
+  // Standard Pay maps to rate_1 (Standard)
   if (normalizedText.includes('standard pay') || 
       normalizedText.includes('standard overtime') ||
       normalizedText.includes('standard access')) {
     return {
-      rateNumber: 2,
-      rateType: 'Rate 2'
+      rateNumber: 1,
+      rateType: 'Rate 1'
     };
   }
   
-  // Enhanced/Extended Access maps to rate_3 (Extended Access)
+  // Enhanced/Extended Access maps to rate_2 (Enhanced)
   if (normalizedText.includes('enhanced access') || 
       normalizedText.includes('extended access') ||
       normalizedText.includes('enhanced') ||
       normalizedText.includes('extended')) {
     return {
-      rateNumber: 3,
-      rateType: 'Rate 3'
+      rateNumber: 2,
+      rateType: 'Rate 2'
     };
   }
   
