@@ -18,45 +18,80 @@ export function parseRateDescription(rateText: string): RateMapping | null {
   
   const normalizedText = rateText.toLowerCase().trim();
   
-  // Standard Pay maps to rate_1 (Standard)
-  if (normalizedText.includes('standard pay') || 
-      normalizedText.includes('standard overtime') ||
-      normalizedText.includes('standard access')) {
-    return {
-      rateNumber: 1,
-      rateType: 'Rate 1'
-    };
+  // Rate 4 explicit variations
+  if (
+    normalizedText.includes('rate 4') ||
+    normalizedText.includes('rate4') ||
+    normalizedText.includes('r4')
+  ) {
+    return { rateNumber: 4, rateType: 'Rate 4' };
   }
-  
-  // Enhanced/Extended Access maps to rate_2 (Enhanced)
-  if (normalizedText.includes('enhanced access') || 
-      normalizedText.includes('extended access') ||
-      normalizedText.includes('enhanced') ||
-      normalizedText.includes('extended')) {
-    return {
-      rateNumber: 2,
-      rateType: 'Rate 2'
-    };
+
+  // Enhanced Access -> Rate 3 (employee.rate_3)
+  if (
+    normalizedText.includes('enhanced access') ||
+    normalizedText.includes('extended access') ||
+    normalizedText.includes('enh access') ||
+    normalizedText.includes('enh. access') ||
+    normalizedText.includes('ea -') ||
+    normalizedText.endsWith(' (ea)')
+  ) {
+    return { rateNumber: 3, rateType: 'Rate 3' };
   }
-  
-  // Rate 4 variations
-  if (normalizedText.includes('rate 4') || 
-      normalizedText.includes('rate4') ||
-      normalizedText.includes('r4')) {
-    return {
-      rateNumber: 4,
-      rateType: 'Rate 4'
-    };
+
+  // Overtime 1 (Standard Overtime) -> Rate 2 (employee.rate_2)
+  const ot1Regex = /\bot\s*1\b/; // matches "ot1" or "ot 1"
+  if (
+    normalizedText.includes('overtime 1') ||
+    normalizedText.includes('overtime1') ||
+    ot1Regex.test(normalizedText) ||
+    normalizedText.includes('standard overtime')
+  ) {
+    return { rateNumber: 2, rateType: 'Rate 2' };
   }
-  
-  // Default/basic rate (though this would be unusual for extra hours)
-  if (normalizedText.includes('basic') || 
-      normalizedText.includes('normal') ||
-      normalizedText.includes('regular')) {
-    return {
-      rateNumber: 1,
-      rateType: 'Rate 1'
-    };
+
+  // Standard/basic pay -> Rate 1 (employee.hourly_rate)
+  if (
+    normalizedText.includes('standard pay') ||
+    normalizedText.includes('basic pay') ||
+    normalizedText.includes('regular time') ||
+    normalizedText.includes('normal time')
+  ) {
+    return { rateNumber: 1, rateType: 'Rate 1' };
+  }
+
+  // Explicit textual rate numbers as fallback
+  if (
+    normalizedText.includes('rate 3') ||
+    normalizedText.includes('rate3') ||
+    normalizedText.includes('r3')
+  ) {
+    return { rateNumber: 3, rateType: 'Rate 3' };
+  }
+
+  if (
+    normalizedText.includes('rate 2') ||
+    normalizedText.includes('rate2') ||
+    normalizedText.includes('r2')
+  ) {
+    return { rateNumber: 2, rateType: 'Rate 2' };
+  }
+
+  if (
+    normalizedText.includes('rate 1') ||
+    normalizedText.includes('rate1') ||
+    normalizedText.includes('r1')
+  ) {
+    return { rateNumber: 1, rateType: 'Rate 1' };
+  }
+
+  // Default/basic synonyms
+  if (
+    normalizedText.includes('basic') ||
+    normalizedText.includes('normal') ||
+    normalizedText.includes('regular')
+  ) {
+    return { rateNumber: 1, rateType: 'Rate 1' };
   }
   
   return null;
@@ -97,5 +132,12 @@ export function isRateDescriptionColumn(columnName: string): boolean {
          normalizedName.includes('rate description') ||
          normalizedName.includes('rate_type') ||
          normalizedName.includes('payrate') ||
+         normalizedName.includes('overtime type') ||
+         normalizedName.includes('ot type') ||
+         normalizedName.includes('overtime description') ||
+         normalizedName.includes('ot description') ||
+         normalizedName.includes('pay description') ||
+         normalizedName.includes('pay code') ||
+         normalizedName.includes('rate code') ||
          normalizedName === 'rate';
 }
