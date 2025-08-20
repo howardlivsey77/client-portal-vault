@@ -21,18 +21,17 @@ export const SicknessReport = () => {
   const handleExportToExcel = () => {
     try {
       const exportData = reportData.map(data => ({
-        'Employee Name': `${data.employee.first_name} ${data.employee.last_name}`,
+        'Payroll ID': data.employee.payroll_id || 'N/A',
+        'First Name': data.employee.first_name,
+        'Surname': data.employee.last_name,
         'Department': data.employee.department,
+        'Hire Date': data.employee.hire_date,
         'Service Months': data.entitlementSummary?.service_months || 0,
-        'Current Tier': data.entitlementSummary?.current_tier || 'N/A',
         'Sickness Used (Current Year)': data.entitlementSummary?.full_pay_used || 0,
         'Sickness Used (Rolling 12 Months)': data.entitlementSummary?.full_pay_used_rolling_12_months || 0,
         'Full Pay Remaining': data.entitlementSummary?.full_pay_remaining || 0,
         'Half Pay Remaining': data.entitlementSummary?.half_pay_remaining || 0,
-        'SSP Remaining': data.entitlementSummary?.ssp_remaining_days || 0,
-        'Email': data.employee.email || 'N/A',
-        'Hire Date': data.employee.hire_date,
-        'Payroll ID': data.employee.payroll_id || 'N/A'
+        'SSP Remaining': data.entitlementSummary?.ssp_remaining_days || 0
       }));
 
       const ws = XLSX.utils.json_to_sheet(exportData);
