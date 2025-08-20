@@ -8,6 +8,7 @@ import { ErrorState } from "./ErrorState";
 import { NoDataState } from "./NoDataState";
 import { SuccessState } from "./SuccessState";
 import { ExportCSVButton } from "./ExportCSVButton";
+import { ExportPDFButton } from "./ExportPDFButton";
 
 interface UploadSummaryProps {
   file: File | null;
@@ -74,7 +75,10 @@ export function UploadSummary({ file, type, getSummary, isProcessing }: UploadSu
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <FileSummary file={file} />
-        <ExportCSVButton summary={summary} />
+        <div className="flex items-center gap-2">
+          <ExportCSVButton summary={summary} />
+          <ExportPDFButton summary={summary} />
+        </div>
       </div>
       <SummaryCards summary={summary} />
       <EmployeeHoursTable employeeDetails={summary.employeeDetails} />
