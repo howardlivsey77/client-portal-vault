@@ -26,7 +26,7 @@ export function EmployeeCard({
   const displayCandidates = isExpanded ? match.candidates : match.candidates.slice(0, 2);
 
   return (
-    <Card key={employeeName} className="mb-3 bg-white">
+    <Card className="mb-3 bg-white">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm">

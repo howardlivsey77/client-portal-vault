@@ -143,9 +143,9 @@ export function EmployeeMappingDialog({
               </h3>
               <ScrollArea className="h-full pr-2">
                 <div className="space-y-2">
-                  {allPendingMatches.map(match => (
+                  {allPendingMatches.map((match, index) => (
                     <EmployeeCard
-                      key={match.employeeData.employeeName}
+                      key={`${match.employeeData.employeeName}-${match.employeeData.employeeId || index}-${match.matchType}`}
                       match={match}
                       userMappings={userMappings}
                       allDatabaseEmployees={matchingResults.allDatabaseEmployees}
