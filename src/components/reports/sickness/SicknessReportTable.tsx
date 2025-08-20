@@ -49,6 +49,11 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
     return days.toFixed(1);
   };
 
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString();
+  };
+
   const getStatusBadge = (remaining: number | undefined | null, type: string) => {
     if (remaining === undefined || remaining === null) return null;
     
@@ -74,8 +79,11 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Employee</TableHead>
+              <TableHead>Payroll ID</TableHead>
+              <TableHead>First Name</TableHead>
+              <TableHead>Surname</TableHead>
               <TableHead>Department</TableHead>
+              <TableHead>Hire Date</TableHead>
               <TableHead>Service</TableHead>
               <TableHead>Used (Current)</TableHead>
               <TableHead>Used (Rolling)</TableHead>
@@ -88,7 +96,7 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
           <TableBody>
             {[...Array(5)].map((_, i) => (
               <TableRow key={i}>
-                {[...Array(9)].map((_, j) => (
+                {[...Array(12)].map((_, j) => (
                   <TableCell key={j}>
                     <div className="h-4 bg-muted animate-pulse rounded" />
                   </TableCell>
@@ -116,8 +124,11 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Employee</TableHead>
+            <TableHead>Payroll ID</TableHead>
+            <TableHead>First Name</TableHead>
+            <TableHead>Surname</TableHead>
             <TableHead>Department</TableHead>
+            <TableHead>Hire Date</TableHead>
             <TableHead>Service</TableHead>
             <TableHead>Used (Current)</TableHead>
             <TableHead>Used (Rolling 12m)</TableHead>
@@ -130,10 +141,19 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
         <TableBody>
           {data.map((reportData) => (
             <TableRow key={reportData.employee.id}>
+              <TableCell>
+                {reportData.employee.payroll_id || 'N/A'}
+              </TableCell>
               <TableCell className="font-medium">
-                {reportData.employee.first_name} {reportData.employee.last_name}
+                {reportData.employee.first_name}
+              </TableCell>
+              <TableCell className="font-medium">
+                {reportData.employee.last_name}
               </TableCell>
               <TableCell>{reportData.employee.department}</TableCell>
+              <TableCell>
+                {formatDate(reportData.employee.hire_date)}
+              </TableCell>
               <TableCell>
                 {reportData.entitlementSummary?.service_months || 0} months
               </TableCell>
