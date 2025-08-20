@@ -2,6 +2,7 @@
 import { WizardStep } from "./types";
 import { FileUploader } from "./FileUploader";
 import { UploadSummary, FinalSummary } from "./upload-summary";
+import { SicknessImportCore } from "@/components/sickness-import/SicknessImportCore";
 
 interface CreateWizardStepsProps {
   uploadedFiles: any;
@@ -13,6 +14,7 @@ interface CreateWizardStepsProps {
   matchingResults?: any;
   onEmployeeMappingConfirm?: (mappings: Record<string, string>) => void;
   onEmployeeMappingCancel?: () => void;
+  onSicknessImportComplete?: (count: number) => void;
 }
 
 export function createWizardSteps({
@@ -20,7 +22,8 @@ export function createWizardSteps({
   handleFileUpload,
   getSummary,
   isProcessing,
-  processedData
+  processedData,
+  onSicknessImportComplete
 }: CreateWizardStepsProps): WizardStep[] {
   const steps: WizardStep[] = [
     {
@@ -46,13 +49,11 @@ export function createWizardSteps({
       ),
     },
     {
-      title: "Upload Absences File",
+      title: "Import Absences",
       component: (
-        <FileUploader
-          uploadedFile={uploadedFiles.absences}
-          onFileChange={(file) => handleFileUpload('absences', file)}
-          acceptedFileTypes=".csv,.xlsx,.xls"
-          description="Select your absences file (CSV, Excel) - Optional"
+        <SicknessImportCore
+          mode="embedded"
+          onComplete={onSicknessImportComplete}
         />
       ),
     },
