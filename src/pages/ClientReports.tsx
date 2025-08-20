@@ -1,8 +1,8 @@
 import { PageContainer } from "@/components/layout/PageContainer";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { Home, FileBarChart } from "lucide-react";
+import { Home } from "lucide-react";
 import { Link } from "react-router-dom";
+import { SicknessReport } from "@/components/reports/sickness/SicknessReport";
 
 const ClientReports = () => {
   return (
@@ -26,26 +26,8 @@ const ClientReports = () => {
           </BreadcrumbList>
         </Breadcrumb>
 
-        {/* Main Content */}
-        <div className="grid gap-6">
-          <Card>
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                <FileBarChart className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle>Client Reports</CardTitle>
-              <CardDescription>
-                Generate and manage reports for your clients
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center text-muted-foreground">
-                <p>Client reporting functionality will be available here.</p>
-                <p className="mt-2">This section will allow you to create custom reports for your clients including payroll summaries, employee data, and compliance reports.</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Sickness Report */}
+        <SicknessReport />
       </div>
     </PageContainer>
   );
