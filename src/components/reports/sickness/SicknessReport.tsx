@@ -27,7 +27,10 @@ export const SicknessReport = () => {
         'Department': data.employee.department,
         'Hire Date': data.employee.hire_date,
         'Service Months': data.entitlementSummary?.service_months || 0,
-        'Sickness Used (Rolling 12 Months)': data.entitlementSummary?.full_pay_used_rolling_12_months || 0,
+        'Total Used (Rolling 12 Months)': data.entitlementSummary?.total_used_rolling_12_months || 0,
+        'Full Used (Rolling 12 Months)': data.entitlementSummary?.full_pay_used_rolling_12_months || 0,
+        'Half Used (Rolling 12 Months)': data.entitlementSummary?.half_pay_used_rolling_12_months || 0,
+        'SSP Used (Rolling 12 Months)': data.entitlementSummary?.ssp_used_rolling_12_months || 0,
         'Full Pay Remaining': data.entitlementSummary?.full_pay_remaining || 0,
         'Half Pay Remaining': data.entitlementSummary?.half_pay_remaining || 0,
         'SSP Remaining': data.entitlementSummary?.ssp_remaining_days || 0
@@ -60,7 +63,7 @@ export const SicknessReport = () => {
     (data.entitlementSummary?.full_pay_remaining || 0) <= 5
   ).length;
   const averageUsage = totalEmployees > 0 
-    ? reportData.reduce((sum, data) => sum + (data.entitlementSummary?.full_pay_used || 0), 0) / totalEmployees
+    ? reportData.reduce((sum, data) => sum + (data.entitlementSummary?.total_used_rolling_12_months || 0), 0) / totalEmployees
     : 0;
 
   return (

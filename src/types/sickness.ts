@@ -57,6 +57,7 @@ export interface SicknessEntitlementSummary {
   half_pay_used: number;
   full_pay_used_rolling_12_months: number;
   half_pay_used_rolling_12_months: number;
+  total_used_rolling_12_months: number;
   opening_balance_full_pay: number;
   opening_balance_half_pay: number;
   current_tier: string;

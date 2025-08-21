@@ -60,6 +60,7 @@ export const useSicknessReport = () => {
                 half_pay_used: entitlementUsage.half_pay_used_days,
                 full_pay_used_rolling_12_months: rolling12MonthUsage.fullPayUsed,
                 half_pay_used_rolling_12_months: rolling12MonthUsage.halfPayUsed,
+                total_used_rolling_12_months: rolling12MonthUsage.totalUsed,
                 opening_balance_full_pay: entitlementUsage.opening_balance_full_pay || 0,
                 opening_balance_half_pay: entitlementUsage.opening_balance_half_pay || 0,
                 current_tier: `Tier ${entitlementUsage.current_service_months || 0} months`,

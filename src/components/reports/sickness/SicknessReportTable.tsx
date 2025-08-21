@@ -85,7 +85,10 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
               <TableHead>Department</TableHead>
               <TableHead>Hire Date</TableHead>
               <TableHead>Service</TableHead>
-              <TableHead>Used (Rolling 12m)</TableHead>
+              <TableHead>Total Used (12m)</TableHead>
+              <TableHead>Full Used (12m)</TableHead>
+              <TableHead>Half Used (12m)</TableHead>
+              <TableHead>SSP Used (12m)</TableHead>
               <TableHead>Full Pay Left</TableHead>
               <TableHead>Half Pay Left</TableHead>
               <TableHead>SSP Left</TableHead>
@@ -95,7 +98,7 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
           <TableBody>
             {[...Array(5)].map((_, i) => (
               <TableRow key={i}>
-                {[...Array(11)].map((_, j) => (
+                {[...Array(14)].map((_, j) => (
                   <TableCell key={j}>
                     <div className="h-4 bg-muted animate-pulse rounded" />
                   </TableCell>
@@ -129,7 +132,10 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
             <TableHead>Department</TableHead>
             <TableHead>Hire Date</TableHead>
             <TableHead>Service</TableHead>
-            <TableHead>Used (Rolling 12m)</TableHead>
+            <TableHead>Total Used (12m)</TableHead>
+            <TableHead>Full Used (12m)</TableHead>
+            <TableHead>Half Used (12m)</TableHead>
+            <TableHead>SSP Used (12m)</TableHead>
             <TableHead>Full Pay Left</TableHead>
             <TableHead>Half Pay Left</TableHead>
             <TableHead>SSP Left</TableHead>
@@ -156,7 +162,16 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
                 {reportData.entitlementSummary?.service_months || 0} months
               </TableCell>
               <TableCell>
+                {formatDays(reportData.entitlementSummary?.total_used_rolling_12_months)} days
+              </TableCell>
+              <TableCell>
                 {formatDays(reportData.entitlementSummary?.full_pay_used_rolling_12_months)} days
+              </TableCell>
+              <TableCell>
+                {formatDays(reportData.entitlementSummary?.half_pay_used_rolling_12_months)} days
+              </TableCell>
+              <TableCell>
+                {formatDays(reportData.entitlementSummary?.ssp_used_rolling_12_months)} days
               </TableCell>
               <TableCell>
                 {formatDays(reportData.entitlementSummary?.full_pay_remaining)} days

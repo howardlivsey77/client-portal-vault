@@ -146,6 +146,7 @@ export const useSicknessData = (
         half_pay_used: yearHalfUsed,
         full_pay_used_rolling_12_months: rollingFullUsed,
         half_pay_used_rolling_12_months: rollingHalfUsed,
+        total_used_rolling_12_months: rollingTotalUsed,
         opening_balance_full_pay: openingBalanceFullPay,
         opening_balance_half_pay: openingBalanceHalfPay,
         current_tier: entitlementUsage.current_rule_id || 'No tier',
