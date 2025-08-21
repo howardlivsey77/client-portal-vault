@@ -43,7 +43,7 @@ export const balanceService = {
     // Allocation into full/half happens at a higher level
     return {
       totalUsed,
-      fullPayUsed: 0,
+      fullPayUsed: totalUsed,
       halfPayUsed: 0
     };
   },
