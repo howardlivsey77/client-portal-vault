@@ -117,18 +117,14 @@ export const SicknessEntitlementCard = ({
           <Progress value={fullPayUsagePercent} className="h-2" />
           
           {/* Breakdown */}
-          <div className="text-xs text-muted-foreground space-y-1">
-            <div className="flex justify-between">
-              <span>Current year:</span>
-              <span>{summary.full_pay_used} days</span>
-            </div>
-            {summary.opening_balance_full_pay > 0 && (
+          {summary.opening_balance_full_pay > 0 && (
+            <div className="text-xs text-muted-foreground">
               <div className="flex justify-between">
                 <span>Opening balance:</span>
                 <span>{summary.opening_balance_full_pay} days</span>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Half Pay Entitlement */}
@@ -151,18 +147,14 @@ export const SicknessEntitlementCard = ({
           <Progress value={halfPayUsagePercent} className="h-2" />
           
           {/* Breakdown */}
-          <div className="text-xs text-muted-foreground space-y-1">
-            <div className="flex justify-between">
-              <span>Current year:</span>
-              <span>{summary.half_pay_used} days</span>
-            </div>
-            {summary.opening_balance_half_pay > 0 && (
+          {summary.opening_balance_half_pay > 0 && (
+            <div className="text-xs text-muted-foreground">
               <div className="flex justify-between">
                 <span>Opening balance:</span>
                 <span>{summary.opening_balance_half_pay} days</span>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* SSP Entitlement (Statutory Sick Pay) */}
@@ -185,17 +177,11 @@ export const SicknessEntitlementCard = ({
             </div>
             <Progress value={sspUsagePercent} className="h-2" />
             {/* Breakdown */}
-            <div className="text-xs text-muted-foreground space-y-1">
+            <div className="text-xs text-muted-foreground">
               <div className="flex justify-between">
                 <span>Entitled:</span>
                 <span>{summary.ssp_entitled_days ?? 0} days</span>
               </div>
-              {(summary.ssp_used_current_year ?? 0) > 0 && (
-                <div className="flex justify-between">
-                  <span>Current year:</span>
-                  <span>{summary.ssp_used_current_year}</span>
-                </div>
-              )}
             </div>
           </div>
         )}

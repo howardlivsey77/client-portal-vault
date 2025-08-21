@@ -105,7 +105,7 @@ export const useSicknessReport = () => {
           comparison = (a.entitlementSummary?.service_months || 0) - (b.entitlementSummary?.service_months || 0);
           break;
         case 'usedDays':
-          comparison = (a.entitlementSummary?.full_pay_used || 0) - (b.entitlementSummary?.full_pay_used || 0);
+          comparison = (a.entitlementSummary?.total_used_rolling_12_months || 0) - (b.entitlementSummary?.total_used_rolling_12_months || 0);
           break;
         case 'remainingFullPay':
           comparison = (a.entitlementSummary?.full_pay_remaining || 0) - (b.entitlementSummary?.full_pay_remaining || 0);

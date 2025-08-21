@@ -215,18 +215,16 @@ export const generateSicknessReportPDF = async (
     // Entitlement table
     autoTable(doc, {
       startY: currentY,
-      head: [['Pay Type', 'Used (Current Year)', 'Used (Rolling 12m)', 'Remaining', 'Opening Balance']],
+      head: [['Pay Type', 'Used (Rolling 12m)', 'Remaining', 'Opening Balance']],
       body: [
         [
           'Full Pay',
-          `${entitlementSummary.full_pay_used} days`,
           `${entitlementSummary.full_pay_used_rolling_12_months} days`,
           `${entitlementSummary.full_pay_remaining} days`,
           `${entitlementSummary.opening_balance_full_pay} days`
         ],
         [
           'Half Pay',
-          `${entitlementSummary.half_pay_used} days`,
           `${entitlementSummary.half_pay_used_rolling_12_months} days`,
           `${entitlementSummary.half_pay_remaining} days`,
           `${entitlementSummary.opening_balance_half_pay} days`

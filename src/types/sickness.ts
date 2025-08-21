@@ -53,8 +53,6 @@ export interface HistoricalBalance {
 export interface SicknessEntitlementSummary {
   full_pay_remaining: number;
   half_pay_remaining: number;
-  full_pay_used: number;
-  half_pay_used: number;
   full_pay_used_rolling_12_months: number;
   half_pay_used_rolling_12_months: number;
   total_used_rolling_12_months: number;
@@ -66,7 +64,6 @@ export interface SicknessEntitlementSummary {
   rolling_period_end: string;
   // SSP fields (optional for backward compatibility)
   ssp_entitled_days?: number;
-  ssp_used_current_year?: number;
   ssp_used_rolling_12_months?: number;
   ssp_remaining_days?: number;
 }

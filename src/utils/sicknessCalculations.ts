@@ -33,14 +33,9 @@ export const calculateSicknessEntitlementSummary = async (
     const fullAllowance = (entitlementUsage.full_pay_entitled_days || 0) + openingBalanceFullPay;
     const halfAllowance = (entitlementUsage.half_pay_entitled_days || 0) + openingBalanceHalfPay;
 
-    const yearTotalUsed = yearUsage.totalUsed || 0;
     const rollingTotalUsed = rollingUsage.totalUsed || 0;
 
     // Allocate used days to full then half for display (OSP logic)
-    const yearFullUsed = Math.min(yearTotalUsed, fullAllowance);
-    const yearRemainingAfterFull = Math.max(0, yearTotalUsed - yearFullUsed);
-    const yearHalfUsed = Math.min(yearRemainingAfterFull, halfAllowance);
-
     const rollingFullUsed = Math.min(rollingTotalUsed, fullAllowance);
     const rollingRemainingAfterFull = Math.max(0, rollingTotalUsed - rollingFullUsed);
     const rollingHalfUsed = Math.min(rollingRemainingAfterFull, halfAllowance);
@@ -48,8 +43,6 @@ export const calculateSicknessEntitlementSummary = async (
     return {
       full_pay_remaining: Math.max(0, fullAllowance - rollingFullUsed),
       half_pay_remaining: Math.max(0, halfAllowance - rollingHalfUsed),
-      full_pay_used: yearFullUsed,
-      half_pay_used: yearHalfUsed,
       full_pay_used_rolling_12_months: rollingFullUsed,
       half_pay_used_rolling_12_months: rollingHalfUsed,
       total_used_rolling_12_months: rollingTotalUsed,
@@ -61,7 +54,6 @@ export const calculateSicknessEntitlementSummary = async (
       rolling_period_end: rollingPeriod.end,
       // SSP fields based on proper PIW/linking rules
       ssp_entitled_days: ssp.sspEntitledDays,
-      ssp_used_current_year: ssp.sspUsedCurrentYear,
       ssp_used_rolling_12_months: ssp.sspUsedRolling12,
       ssp_remaining_days: Math.max(0, ssp.sspEntitledDays - ssp.sspUsedRolling12)
     };
