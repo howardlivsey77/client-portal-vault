@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { Employee } from "@/types/employee-types";
 import { SicknessEntitlementSummary } from "@/types/sickness";
 import { useEmployees } from "@/hooks/useEmployees";
-import { sicknessService } from "@/services/sicknessService";
 import { useToast } from "@/hooks/use-toast";
+import { calculateSicknessEntitlementSummary } from "@/utils/sicknessCalculations";
 
 export interface SicknessReportData {
   employee: Employee;
@@ -40,39 +40,8 @@ export const useSicknessReport = () => {
       const sicknessData = await Promise.all(
         employees.map(async (employee) => {
           try {
-            // Get entitlement usage for the employee
-            const entitlementUsage = await sicknessService.getEntitlementUsage(employee.id);
-            
-            let entitlementSummary: SicknessEntitlementSummary | null = null;
-            
-            if (entitlementUsage) {
-              // Calculate rolling 12 month usage
-              const rolling12MonthUsage = await sicknessService.calculateRolling12MonthUsage(employee.id);
-              
-              // Calculate SSP usage
-              const sspUsage = await sicknessService.calculateSspUsage(employee.id);
-              
-              // Build the entitlement summary
-              entitlementSummary = {
-                full_pay_remaining: Math.max(0, entitlementUsage.full_pay_entitled_days - entitlementUsage.full_pay_used_days),
-                half_pay_remaining: Math.max(0, entitlementUsage.half_pay_entitled_days - entitlementUsage.half_pay_used_days),
-                full_pay_used: entitlementUsage.full_pay_used_days,
-                half_pay_used: entitlementUsage.half_pay_used_days,
-                full_pay_used_rolling_12_months: rolling12MonthUsage.fullPayUsed,
-                half_pay_used_rolling_12_months: rolling12MonthUsage.halfPayUsed,
-                total_used_rolling_12_months: rolling12MonthUsage.totalUsed,
-                opening_balance_full_pay: entitlementUsage.opening_balance_full_pay || 0,
-                opening_balance_half_pay: entitlementUsage.opening_balance_half_pay || 0,
-                current_tier: `Tier ${entitlementUsage.current_service_months || 0} months`,
-                service_months: entitlementUsage.current_service_months || 0,
-                rolling_period_start: sicknessService.getRolling12MonthPeriod().start,
-                rolling_period_end: sicknessService.getRolling12MonthPeriod().end,
-                ssp_entitled_days: sspUsage.qualifyingDaysPerWeek * 28, // 28 weeks max
-                ssp_used_current_year: sspUsage.sspUsedCurrentYear,
-                ssp_used_rolling_12_months: sspUsage.sspUsedRolling12,
-                ssp_remaining_days: Math.max(0, (sspUsage.qualifyingDaysPerWeek * 28) - sspUsage.sspUsedRolling12)
-              };
-            }
+            // Use the shared calculation utility for consistency
+            const entitlementSummary = await calculateSicknessEntitlementSummary(employee);
 
             return {
               employee,
