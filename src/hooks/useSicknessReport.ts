@@ -36,28 +36,31 @@ export const useSicknessReport = () => {
     }
 
     setLoading(true);
+    setReportData([]);
     try {
-      const sicknessData = await Promise.all(
-        employees.map(async (employee) => {
-          try {
-            // Use the shared calculation utility for consistency
-            const entitlementSummary = await calculateSicknessEntitlementSummary(employee);
+      const allResults: SicknessReportData[] = [];
+      const total = employees.length;
+      const batchSize = 20; // limit concurrency to avoid timeouts
 
-            return {
-              employee,
-              entitlementSummary
-            };
-          } catch (error) {
-            console.error(`Error fetching sickness data for employee ${employee.id}:`, error);
-            return {
-              employee,
-              entitlementSummary: null
-            };
-          }
-        })
-      );
+      for (let i = 0; i < total; i += batchSize) {
+        const batch = employees.slice(i, i + batchSize);
+        const batchResults = await Promise.all(
+          batch.map(async (employee) => {
+            try {
+              // Use the shared calculation utility for consistency
+              const entitlementSummary = await calculateSicknessEntitlementSummary(employee);
+              return { employee, entitlementSummary };
+            } catch (error) {
+              console.error(`Error fetching sickness data for employee ${employee.id}:`, error);
+              return { employee, entitlementSummary: null };
+            }
+          })
+        );
 
-      setReportData(sicknessData);
+        allResults.push(...batchResults);
+        // Update incrementally so UI stays responsive
+        setReportData([...allResults]);
+      }
     } catch (error) {
       console.error("Error fetching sickness report data:", error);
       toast({
