@@ -9,6 +9,8 @@ import { SicknessRecord } from "@/types/sickness";
 import { sicknessRecordSchema, SicknessRecordFormData } from "./SicknessRecordFormSchema";
 import { SicknessRecordFormFields } from "./SicknessRecordFormFields";
 import { getDefaultTotalDays } from "./utils/dateCalculations";
+import { calculateWorkingDaysForRecord } from "./utils/workingDaysCalculations";
+import { fetchWorkPatterns } from "@/components/employees/details/work-pattern/services/fetchPatterns";
 
 interface SicknessRecordFormProps {
   open: boolean;
@@ -45,14 +47,20 @@ export const SicknessRecordForm = ({
   const onSubmit = async (data: SicknessRecordFormData) => {
     setLoading(true);
     try {
-      const totalDays = getDefaultTotalDays(data.start_date, data.end_date || "", data.total_days);
+      // Fetch employee's work pattern to calculate working days
+      const workPattern = await fetchWorkPatterns(employeeId);
+      const workingDays = calculateWorkingDaysForRecord(
+        data.start_date,
+        data.end_date || null,
+        workPattern
+      );
 
       const recordData = {
         employee_id: employeeId,
         company_id: companyId,
         start_date: data.start_date,
         end_date: data.end_date || undefined,
-        total_days: totalDays,
+        total_days: workingDays, // Use calculated working days
         is_certified: data.is_certified,
         certification_required_from_day: data.certification_required_from_day,
         reason: data.reason || undefined,

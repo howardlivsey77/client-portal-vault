@@ -9,10 +9,11 @@ import { SicknessRecordForm } from "./SicknessRecordForm";
 import { OpeningBalanceDialog } from "./OpeningBalanceDialog";
 import { useSicknessData } from "@/hooks/useSicknessData";
 import { SicknessRecord, SicknessEntitlementSummary, OpeningBalanceData } from "@/types/sickness";
-import { SicknessScheme } from "@/components/employees/details/work-pattern/types";
+import { SicknessScheme, WorkDay } from "@/components/employees/details/work-pattern/types";
 import { Employee } from "@/types/employee-types";
 import { Activity, AlertCircle } from "lucide-react";
 import { SicknessReportPDFButton } from "./SicknessReportPDFButton";
+import { fetchWorkPatterns } from "@/components/employees/details/work-pattern/services/fetchPatterns";
 
 interface SicknessTrackingCardProps {
   employee: Employee;
@@ -29,17 +30,34 @@ export const SicknessTrackingCard = ({
   const [openingBalanceDialogOpen, setOpeningBalanceDialogOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<SicknessRecord | null>(null);
   const [entitlementSummary, setEntitlementSummary] = useState<SicknessEntitlementSummary | null>(null);
+  const [workPattern, setWorkPattern] = useState<WorkDay[]>([]);
 
   const {
     sicknessRecords,
     entitlementUsage,
     loading,
+    fetchSicknessData,
     calculateEntitlementSummary,
     setOpeningBalance,
     addSicknessRecord,
     updateSicknessRecord,
     deleteSicknessRecord
   } = useSicknessData(employee, sicknessScheme);
+
+  // Fetch work pattern
+  useEffect(() => {
+    const loadWorkPattern = async () => {
+      if (employee?.id) {
+        try {
+          const patterns = await fetchWorkPatterns(employee.id);
+          setWorkPattern(patterns);
+        } catch (error) {
+          console.error('Error loading work pattern:', error);
+        }
+      }
+    };
+    loadWorkPattern();
+  }, [employee?.id]);
 
   useEffect(() => {
     const loadSummary = async () => {
@@ -143,9 +161,12 @@ export const SicknessTrackingCard = ({
               records={sicknessRecords}
               loading={loading}
               isAdmin={isAdmin}
+              workPattern={workPattern}
+              employeeId={employee.id}
               onAddRecord={handleAddRecord}
               onEditRecord={handleEditRecord}
               onDeleteRecord={handleDeleteRecord}
+              onRecordsUpdated={fetchSicknessData}
             />
           </TabsContent>
         </Tabs>

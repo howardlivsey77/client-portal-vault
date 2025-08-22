@@ -46,13 +46,15 @@ export const SicknessRecordFormFields = ({ control }: SicknessRecordFormFieldsPr
         name="total_days"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Total Days</FormLabel>
+            <FormLabel>Working Days (calculated automatically)</FormLabel>
             <FormControl>
               <Input 
                 type="number" 
                 step="0.5"
                 {...field} 
                 onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                placeholder="Will be calculated based on work pattern"
+                disabled
               />
             </FormControl>
             <FormMessage />
