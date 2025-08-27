@@ -3,14 +3,34 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Control } from "react-hook-form";
+import { UseFormReturn, useWatch } from "react-hook-form";
 import { SicknessRecordFormData } from "./SicknessRecordFormSchema";
+import { WorkDay } from "@/components/employees/details/work-pattern/types";
+import { calculateWorkingDaysForRecord } from "./utils/workingDaysCalculations";
+import { useEffect } from "react";
 
 interface SicknessRecordFormFieldsProps {
-  control: Control<SicknessRecordFormData>;
+  form: UseFormReturn<SicknessRecordFormData>;
+  workPattern?: WorkDay[];
 }
 
-export const SicknessRecordFormFields = ({ control }: SicknessRecordFormFieldsProps) => {
+export const SicknessRecordFormFields = ({ form, workPattern }: SicknessRecordFormFieldsProps) => {
+  const { control } = form;
+  const startDate = useWatch({ control, name: "start_date" });
+  const endDate = useWatch({ control, name: "end_date" });
+
+  // Calculate working days in real-time as dates change
+  useEffect(() => {
+    if (startDate && workPattern) {
+      const workingDays = calculateWorkingDaysForRecord(startDate, endDate || null, workPattern);
+      form.setValue('total_days', workingDays);
+    }
+  }, [startDate, endDate, workPattern, form]);
+
+  const calculatedWorkingDays = startDate && workPattern 
+    ? calculateWorkingDaysForRecord(startDate, endDate || null, workPattern)
+    : 0;
+
   return (
     <>
       <FormField
@@ -51,10 +71,10 @@ export const SicknessRecordFormFields = ({ control }: SicknessRecordFormFieldsPr
               <Input 
                 type="number" 
                 step="0.5"
-                {...field} 
-                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                value={calculatedWorkingDays}
                 placeholder="Will be calculated based on work pattern"
                 disabled
+                className="bg-muted"
               />
             </FormControl>
             <FormMessage />

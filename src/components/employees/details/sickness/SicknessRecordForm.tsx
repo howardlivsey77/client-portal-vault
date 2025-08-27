@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -30,6 +30,7 @@ export const SicknessRecordForm = ({
   onSave
 }: SicknessRecordFormProps) => {
   const [loading, setLoading] = useState(false);
+  const [workPattern, setWorkPattern] = useState<any[]>([]);
 
   const form = useForm<SicknessRecordFormData>({
     resolver: zodResolver(sicknessRecordSchema),
@@ -44,11 +45,17 @@ export const SicknessRecordForm = ({
     }
   });
 
+  // Fetch work pattern when form opens
+  useEffect(() => {
+    if (open && employeeId) {
+      fetchWorkPatterns(employeeId).then(setWorkPattern);
+    }
+  }, [open, employeeId]);
+
   const onSubmit = async (data: SicknessRecordFormData) => {
     setLoading(true);
     try {
-      // Fetch employee's work pattern to calculate working days
-      const workPattern = await fetchWorkPatterns(employeeId);
+      // Use already fetched work pattern
       const workingDays = calculateWorkingDaysForRecord(
         data.start_date,
         data.end_date || null,
@@ -89,7 +96,7 @@ export const SicknessRecordForm = ({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <SicknessRecordFormFields control={form.control} />
+            <SicknessRecordFormFields form={form} workPattern={workPattern} />
 
             <div className="flex justify-end gap-2 pt-4">
               <Button 
