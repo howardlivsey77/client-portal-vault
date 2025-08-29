@@ -147,6 +147,21 @@ const calculateLogoSize = (originalWidth: number, originalHeight: number, maxWid
 };
 
 /**
+ * Helper function to check if a sickness record is within the rolling 12-month entitlement period
+ */
+const isRecordWithinEntitlementPeriod = (record: SicknessRecord, entitlementSummary: SicknessEntitlementSummary | null): boolean => {
+  if (!entitlementSummary) return true; // If no summary, treat all records as current
+  
+  const recordStart = new Date(record.start_date);
+  const recordEnd = new Date(record.end_date || record.start_date);
+  const rangeStart = new Date(entitlementSummary.rolling_period_start);
+  const rangeEnd = new Date(entitlementSummary.rolling_period_end);
+  
+  // Record overlaps with entitlement period if recordStart <= rangeEnd and recordEnd >= rangeStart
+  return recordStart <= rangeEnd && recordEnd >= rangeStart;
+};
+
+/**
  * Generate a PDF sickness report for an employee
  */
 export const generateSicknessReportPDF = async (
@@ -244,6 +259,10 @@ export const generateSicknessReportPDF = async (
     doc.setFontSize(10);
     doc.text('No sickness records found', 14, currentY);
   } else {
+    // Separate current and expired records for legend
+    const currentRecords = sicknessRecords.filter(record => isRecordWithinEntitlementPeriod(record, entitlementSummary));
+    const expiredRecords = sicknessRecords.filter(record => !isRecordWithinEntitlementPeriod(record, entitlementSummary));
+    
     // Records table
     const tableData = sicknessRecords.map(record => [
       formatDate(record.start_date),
@@ -265,8 +284,56 @@ export const generateSicknessReportPDF = async (
       columnStyles: {
         4: { cellWidth: 25 }, // Reason column
         5: { cellWidth: 30 }  // Notes column
+      },
+      didParseCell: (data) => {
+        // Apply strikethrough styling to expired records
+        if (data.section === 'body') {
+          const rowIndex = data.row.index;
+          const record = sicknessRecords[rowIndex];
+          
+          if (!isRecordWithinEntitlementPeriod(record, entitlementSummary)) {
+            // Apply strikethrough and muted styling for expired records
+            data.cell.styles.textColor = [128, 128, 128]; // Gray text
+            data.cell.styles.fontStyle = 'italic';
+            
+            // Add strikethrough effect by drawing a line
+            if (data.cell.raw) {
+              const originalText = data.cell.text;
+              data.cell.text = originalText; // Keep original text, we'll add line in willDrawCell
+            }
+          }
+        }
+      },
+      willDrawCell: (data) => {
+        // Draw strikethrough line for expired records
+        if (data.section === 'body') {
+          const rowIndex = data.row.index;
+          const record = sicknessRecords[rowIndex];
+          
+          if (!isRecordWithinEntitlementPeriod(record, entitlementSummary)) {
+            const { x, y, width, height } = data.cell;
+            const centerY = y + height / 2;
+            
+            // Draw strikethrough line
+            doc.setDrawColor(128, 128, 128);
+            doc.setLineWidth(0.3);
+            doc.line(x + 1, centerY, x + width - 1, centerY);
+          }
+        }
       }
     });
+    
+    currentY = (doc as any).lastAutoTable.finalY + 10;
+    
+    // Add legend if there are expired records
+    if (expiredRecords.length > 0 && entitlementSummary) {
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text('Note: Records with strikethrough are outside the current entitlement period', 14, currentY);
+      doc.text(`(${formatDate(entitlementSummary.rolling_period_start)} - ${formatDate(entitlementSummary.rolling_period_end)})`, 14, currentY + 8);
+      doc.text(`${expiredRecords.length} of ${sicknessRecords.length} records are historical and not counted in current entitlements.`, 14, currentY + 16);
+      doc.setTextColor(0, 0, 0); // Reset to black
+    }
   }
   
   // Footer
