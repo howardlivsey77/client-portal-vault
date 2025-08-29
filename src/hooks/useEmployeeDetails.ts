@@ -34,8 +34,13 @@ export const useEmployeeDetails = (employeeId: string | undefined): EmployeeDeta
     try {
       setLoading(true);
       
-      const { employee, nextEmployeeId, prevEmployeeId } = await fetchEmployeeWithNavigation(employeeId);
+      const response = await fetchEmployeeWithNavigation(employeeId);
       
+      if (!response.success || !response.data) {
+        throw new Error(response.error?.message || "Failed to fetch employee data");
+      }
+      
+      const { employee, nextEmployeeId, prevEmployeeId } = response.data;
       setEmployee(employee);
       setNextEmployeeId(nextEmployeeId);
       setPrevEmployeeId(prevEmployeeId);
@@ -76,7 +81,11 @@ export const useEmployeeDetails = (employeeId: string | undefined): EmployeeDeta
       setLoading(true);
       
       if (!employeeId) return;
-      await deleteEmployeeById(employeeId);
+      const response = await deleteEmployeeById(employeeId);
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || "Failed to delete employee");
+      }
       
       toast({
         title: "Employee deleted",
@@ -109,7 +118,11 @@ export const useEmployeeDetails = (employeeId: string | undefined): EmployeeDeta
     try {
       setLoading(true);
       
-      await updateEmployeeFieldById(employeeId, fieldName, value);
+      const response = await updateEmployeeFieldById(employeeId, fieldName, value);
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || "Failed to update employee");
+      }
       
       toast({
         title: "Update successful",
