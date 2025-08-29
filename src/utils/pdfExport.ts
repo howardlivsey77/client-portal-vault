@@ -230,19 +230,17 @@ export const generateSicknessReportPDF = async (
     // Entitlement table
     autoTable(doc, {
       startY: currentY,
-      head: [['Pay Type', 'Used (Rolling 12m)', 'Remaining', 'Opening Balance']],
+      head: [['Pay Type', 'Used (Rolling 12m)', 'Remaining']],
       body: [
         [
           'Full Pay',
           `${entitlementSummary.full_pay_used_rolling_12_months} days`,
-          `${entitlementSummary.full_pay_remaining} days`,
-          `${entitlementSummary.opening_balance_full_pay} days`
+          `${entitlementSummary.full_pay_remaining} days`
         ],
         [
           'Half Pay',
           `${entitlementSummary.half_pay_used_rolling_12_months} days`,
-          `${entitlementSummary.half_pay_remaining} days`,
-          `${entitlementSummary.opening_balance_half_pay} days`
+          `${entitlementSummary.half_pay_remaining} days`
         ]
       ]
     });
@@ -282,8 +280,8 @@ export const generateSicknessReportPDF = async (
         cellPadding: 2
       },
       columnStyles: {
-        4: { cellWidth: 25 }, // Reason column
-        5: { cellWidth: 30 }  // Notes column
+        4: { cellWidth: 30 }, // Reason column
+        5: { cellWidth: 35 }  // Notes column
       },
       didParseCell: (data) => {
         // Apply strikethrough styling to expired records

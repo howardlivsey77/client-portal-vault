@@ -20,7 +20,6 @@ export const sicknessService = {
   getEntitlementUsage: entitlementService.getEntitlementUsage,
   recalculateExistingEntitlement: entitlementService.recalculateExistingEntitlement,
   createOrUpdateEntitlementUsage: entitlementService.createOrUpdateEntitlementUsage,
-  setOpeningBalance: entitlementService.setOpeningBalance,
   updateUsedDays: entitlementService.updateUsedDays,
   syncAllEmployeeEntitlements: entitlementService.syncAllEmployeeEntitlements,
   recalculateAllUsedDays: entitlementService.recalculateAllUsedDays,

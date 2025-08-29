@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { sicknessService } from '@/services/sicknessService';
-import { SicknessRecord, EntitlementUsage, SicknessEntitlementSummary, OpeningBalanceData } from '@/types/sickness';
+import { SicknessRecord, EntitlementUsage, SicknessEntitlementSummary } from '@/types/sickness';
 import { EligibilityRule, SicknessScheme } from '@/components/employees/details/work-pattern/types';
 import { Employee } from '@/types/employee-types';
 import { calculateSicknessEntitlementSummary } from '@/utils/sicknessCalculations';
@@ -114,30 +114,6 @@ export const useSicknessData = (
     return calculateSicknessEntitlementSummary(employee);
   };
 
-  const setOpeningBalance = async (openingBalance: OpeningBalanceData) => {
-    if (!employee) return;
-
-    try {
-      const updatedUsage = await sicknessService.setOpeningBalance(
-        employee.id,
-        employee.company_id || '',
-        openingBalance
-      );
-      
-      setEntitlementUsage(updatedUsage);
-      
-      toast({
-        title: "Opening balance set",
-        description: "The opening sickness balance has been updated successfully."
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error setting opening balance",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
 
   const addSicknessRecord = async (recordData: Omit<SicknessRecord, 'id' | 'created_at' | 'updated_at'>) => {
     try {
@@ -215,7 +191,6 @@ export const useSicknessData = (
     loading,
     fetchSicknessData,
     calculateEntitlementSummary,
-    setOpeningBalance,
     addSicknessRecord,
     updateSicknessRecord,
     deleteSicknessRecord

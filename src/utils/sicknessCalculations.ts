@@ -26,12 +26,8 @@ export const calculateSicknessEntitlementSummary = async (
 
     const rollingPeriod = sicknessService.getRolling12MonthPeriod();
 
-    // Include opening balance in allowances
-    const openingBalanceFullPay = entitlementUsage.opening_balance_full_pay || 0;
-    const openingBalanceHalfPay = entitlementUsage.opening_balance_half_pay || 0;
-
-    const fullAllowance = (entitlementUsage.full_pay_entitled_days || 0) + openingBalanceFullPay;
-    const halfAllowance = (entitlementUsage.half_pay_entitled_days || 0) + openingBalanceHalfPay;
+    const fullAllowance = entitlementUsage.full_pay_entitled_days || 0;
+    const halfAllowance = entitlementUsage.half_pay_entitled_days || 0;
 
     const rollingTotalUsed = rollingUsage.totalUsed || 0;
 
@@ -46,8 +42,6 @@ export const calculateSicknessEntitlementSummary = async (
       full_pay_used_rolling_12_months: rollingFullUsed,
       half_pay_used_rolling_12_months: rollingHalfUsed,
       total_used_rolling_12_months: rollingTotalUsed,
-      opening_balance_full_pay: openingBalanceFullPay,
-      opening_balance_half_pay: openingBalanceHalfPay,
       current_tier: entitlementUsage.current_rule_id || 'No tier',
       service_months: entitlementUsage.current_service_months,
       rolling_period_start: rollingPeriod.start,

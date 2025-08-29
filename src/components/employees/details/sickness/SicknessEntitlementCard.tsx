@@ -4,21 +4,17 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { SicknessEntitlementSummary } from "@/types/sickness";
-import { Calendar, AlertTriangle, CheckCircle, Clock, Settings } from "lucide-react";
+import { Calendar, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
 
 interface SicknessEntitlementCardProps {
   summary: SicknessEntitlementSummary | null;
   loading?: boolean;
-  isAdmin?: boolean;
-  onSetOpeningBalance?: () => void;
 }
 
 export const SicknessEntitlementCard = ({ 
   summary, 
-  loading, 
-  isAdmin,
-  onSetOpeningBalance 
+  loading
 }: SicknessEntitlementCardProps) => {
   if (loading) {
     return (
@@ -65,17 +61,11 @@ export const SicknessEntitlementCard = ({
 
   return (
     <Card className="border-[1.5px] border-foreground">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 justify-center">
           <Calendar className="h-5 w-5" />
           Sickness Entitlement
         </CardTitle>
-        {isAdmin && onSetOpeningBalance && (
-          <Button variant="outline" size="sm" onClick={onSetOpeningBalance}>
-            <Settings className="h-4 w-4 mr-2" />
-            Opening Balance
-          </Button>
-        )}
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Rolling Period Information */}
@@ -115,16 +105,6 @@ export const SicknessEntitlementCard = ({
             </div>
           </div>
           <Progress value={fullPayUsagePercent} className="h-2" />
-          
-          {/* Breakdown */}
-          {summary.opening_balance_full_pay > 0 && (
-            <div className="text-xs text-muted-foreground">
-              <div className="flex justify-between">
-                <span>Opening balance:</span>
-                <span>{summary.opening_balance_full_pay} days</span>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Half Pay Entitlement */}
@@ -145,16 +125,6 @@ export const SicknessEntitlementCard = ({
             </div>
           </div>
           <Progress value={halfPayUsagePercent} className="h-2" />
-          
-          {/* Breakdown */}
-          {summary.opening_balance_half_pay > 0 && (
-            <div className="text-xs text-muted-foreground">
-              <div className="flex justify-between">
-                <span>Opening balance:</span>
-                <span>{summary.opening_balance_half_pay} days</span>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* SSP Entitlement (Statutory Sick Pay) */}

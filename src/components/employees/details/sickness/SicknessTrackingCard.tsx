@@ -6,9 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SicknessEntitlementCard } from "./SicknessEntitlementCard";
 import { SicknessRecordsList } from "./SicknessRecordsList";
 import { SicknessRecordForm } from "./SicknessRecordForm";
-import { OpeningBalanceDialog } from "./OpeningBalanceDialog";
 import { useSicknessData } from "@/hooks/useSicknessData";
-import { SicknessRecord, SicknessEntitlementSummary, OpeningBalanceData } from "@/types/sickness";
+import { SicknessRecord, SicknessEntitlementSummary } from "@/types/sickness";
 import { SicknessScheme, WorkDay } from "@/components/employees/details/work-pattern/types";
 import { Employee } from "@/types/employee-types";
 import { Activity, AlertCircle } from "lucide-react";
@@ -27,7 +26,6 @@ export const SicknessTrackingCard = ({
   isAdmin
 }: SicknessTrackingCardProps) => {
   const [formOpen, setFormOpen] = useState(false);
-  const [openingBalanceDialogOpen, setOpeningBalanceDialogOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<SicknessRecord | null>(null);
   const [entitlementSummary, setEntitlementSummary] = useState<SicknessEntitlementSummary | null>(null);
   const [workPattern, setWorkPattern] = useState<WorkDay[]>([]);
@@ -38,7 +36,6 @@ export const SicknessTrackingCard = ({
     loading,
     fetchSicknessData,
     calculateEntitlementSummary,
-    setOpeningBalance,
     addSicknessRecord,
     updateSicknessRecord,
     deleteSicknessRecord
@@ -94,13 +91,6 @@ export const SicknessTrackingCard = ({
     }
   };
 
-  const handleSetOpeningBalance = () => {
-    setOpeningBalanceDialogOpen(true);
-  };
-
-  const handleSaveOpeningBalance = async (data: OpeningBalanceData) => {
-    await setOpeningBalance(data);
-  };
 
   if (!sicknessScheme) {
     return (
@@ -151,8 +141,6 @@ export const SicknessTrackingCard = ({
             <SicknessEntitlementCard 
               summary={entitlementSummary} 
               loading={loading}
-              isAdmin={isAdmin}
-              onSetOpeningBalance={handleSetOpeningBalance}
             />
           </TabsContent>
 
@@ -180,17 +168,6 @@ export const SicknessTrackingCard = ({
           onSave={handleSaveRecord}
         />
 
-        <OpeningBalanceDialog
-          open={openingBalanceDialogOpen}
-          onOpenChange={setOpeningBalanceDialogOpen}
-          currentBalance={{
-            full_pay: entitlementUsage?.opening_balance_full_pay || 0,
-            half_pay: entitlementUsage?.opening_balance_half_pay || 0,
-            date: entitlementUsage?.opening_balance_date || '',
-            notes: entitlementUsage?.opening_balance_notes || ''
-          }}
-          onSave={handleSaveOpeningBalance}
-        />
       </CardContent>
     </Card>
   );

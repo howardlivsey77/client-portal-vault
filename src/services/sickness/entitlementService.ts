@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { EntitlementUsage, OpeningBalanceData } from "@/types/sickness";
+import { EntitlementUsage } from "@/types/sickness";
 import { EligibilityRule } from "@/components/employees/details/work-pattern/types";
 import { calculationUtils } from "./calculationUtils";
 
@@ -34,9 +34,6 @@ export const entitlementService = {
     const periodStart = `${currentYear}-01-01`;
     const periodEnd = `${currentYear}-12-31`;
 
-    // Get existing record to preserve opening balance
-    const existing = await this.getEntitlementUsage(employeeId);
-    
     const entitlements = rule ? await calculationUtils.calculateEntitlements(rule, employeeId) : { fullPayDays: 0, halfPayDays: 0 };
 
     const entitlementData = {
@@ -48,12 +45,7 @@ export const entitlementService = {
       full_pay_entitled_days: entitlements.fullPayDays,
       half_pay_entitled_days: entitlements.halfPayDays,
       current_service_months: serviceMonths,
-      current_rule_id: rule?.id || null,
-      // Preserve existing opening balance data
-      opening_balance_full_pay: existing?.opening_balance_full_pay || 0,
-      opening_balance_half_pay: existing?.opening_balance_half_pay || 0,
-      opening_balance_date: existing?.opening_balance_date || null,
-      opening_balance_notes: existing?.opening_balance_notes || null
+      current_rule_id: rule?.id || null
     };
 
     console.log('Updating entitlement with data:', entitlementData);
@@ -87,33 +79,6 @@ export const entitlementService = {
     return this.recalculateExistingEntitlement(employeeId, companyId, schemeId, serviceMonths, rule);
   },
 
-  // Set opening balance for an employee
-  async setOpeningBalance(
-    employeeId: string,
-    companyId: string,
-    openingBalance: OpeningBalanceData
-  ): Promise<EntitlementUsage> {
-    const currentYear = new Date().getFullYear();
-    const periodStart = `${currentYear}-01-01`;
-
-    const updateData = {
-      opening_balance_full_pay: openingBalance.full_pay_days,
-      opening_balance_half_pay: openingBalance.half_pay_days,
-      opening_balance_date: openingBalance.reference_date,
-      opening_balance_notes: openingBalance.notes || null
-    };
-
-    const { data, error } = await supabase
-      .from('employee_sickness_entitlement_usage')
-      .update(updateData)
-      .eq('employee_id', employeeId)
-      .eq('entitlement_period_start', periodStart)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
-  },
 
   // Update used days in entitlement record
   async updateUsedDays(
