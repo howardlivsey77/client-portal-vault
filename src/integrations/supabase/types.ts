@@ -1287,6 +1287,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: {
+        Args: { _invite_code: string; _user_id: string }
+        Returns: Json
+      }
       create_invitation: {
         Args:
           | {
