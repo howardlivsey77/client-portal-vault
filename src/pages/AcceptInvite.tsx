@@ -1,88 +1,107 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle, XCircle, Mail } from "lucide-react";
 import { AuthContainer } from "@/components/auth/AuthContainer";
+
+interface InvitationDetails {
+  email: string;
+  role: string;
+  company_id: string;
+}
+
+interface AcceptInvitationResponse {
+  success: boolean;
+  error?: string;
+  invitation?: InvitationDetails;
+}
 
 const AcceptInvite = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, isLoading } = useAuth();
+  const { user } = useAuth();
   
   const [loading, setLoading] = useState(false);
-  const [invitation, setInvitation] = useState<any>(null);
-  const [status, setStatus] = useState<'checking' | 'auth_needed' | 'processing' | 'success' | 'error'>('checking');
-  const [error, setError] = useState<string>("");
-  
-  const inviteCode = searchParams.get('code');
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [invitationDetails, setInvitationDetails] = useState<InvitationDetails | null>(null);
+  const [status, setStatus] = useState<'checking' | 'pending_auth' | 'processing' | 'success' | 'error'>('checking');
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
-    if (!inviteCode) {
+    const code = searchParams.get('code');
+    if (!code) {
       setStatus('error');
-      setError('No invitation code provided');
+      setErrorMessage('No invitation code provided');
       return;
     }
+    setInviteCode(code);
+  }, [searchParams]);
 
-    if (isLoading) return;
-
-    if (!user) {
-      setStatus('auth_needed');
-      return;
+  useEffect(() => {
+    if (inviteCode && user) {
+      handleAcceptInvitation();
+    } else if (inviteCode && !user) {
+      setStatus('pending_auth');
     }
+  }, [inviteCode, user]);
 
-    acceptInvitation();
-  }, [inviteCode, user, isLoading]);
-
-  const acceptInvitation = async () => {
+  const handleAcceptInvitation = async () => {
     if (!inviteCode || !user) return;
-    
-    setStatus('processing');
+
     setLoading(true);
-    
+    setStatus('processing');
+
     try {
       const { data, error } = await supabase.rpc('accept_invitation', {
         _invite_code: inviteCode,
         _user_id: user.id
       });
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      const result = data as any;
+      const result = data as unknown as AcceptInvitationResponse;
       
-      if (result?.success) {
-        setInvitation(result.invitation);
-        setStatus('success');
-        toast({
-          title: "Welcome!",
-          description: `You have successfully joined as ${result.invitation.role}`
-        });
-        
-        // Redirect to main app after 3 seconds
-        setTimeout(() => {
-          navigate('/');
-        }, 3000);
-      } else {
+      if (!result.success) {
         setStatus('error');
-        setError(result?.error || 'Failed to accept invitation');
+        setErrorMessage(result.error || 'Unknown error occurred');
         toast({
-          title: "Error",
-          description: result?.error || 'Failed to accept invitation',
+          title: "Invitation Error",
+          description: result.error || 'Unknown error occurred',
           variant: "destructive"
         });
+        return;
       }
-    } catch (error: any) {
+
+      if (result.invitation) {
+        setInvitationDetails(result.invitation);
+      }
+      setStatus('success');
+      
+      toast({
+        title: "Welcome!",
+        description: `You've successfully joined as ${result.invitation?.role || 'team member'}`,
+      });
+
+      // Redirect to main app after a short delay
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
+
+    } catch (error) {
       console.error('Error accepting invitation:', error);
       setStatus('error');
-      setError(error.message || 'An unexpected error occurred');
+      setErrorMessage('Failed to accept invitation. Please try again.');
       toast({
         title: "Error",
-        description: error.message || 'An unexpected error occurred',
+        description: "Failed to accept invitation. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -90,109 +109,91 @@ const AcceptInvite = () => {
     }
   };
 
-  const handleAuthSuccess = async () => {
-    // After successful auth, the useEffect will trigger acceptInvitation
-    setStatus('checking');
+  const handleAuthSuccess = async (userId: string) => {
+    // Auth success will trigger useEffect to process invitation
   };
 
-  if (status === 'checking' || isLoading) {
-    return (
-      <PageContainer>
-        <div className="flex justify-center items-center min-h-[50vh]">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+  const renderContent = () => {
+    switch (status) {
+      case 'checking':
+        return (
+          <div className="flex flex-col items-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="text-muted-foreground">Checking invitation...</p>
           </div>
-        </div>
-      </PageContainer>
-    );
-  }
+        );
 
-  if (status === 'auth_needed') {
-    return (
-      <PageContainer>
-        <div className="max-w-md mx-auto mt-8">
-          <Card>
-            <CardHeader className="text-center">
-              <Mail className="h-12 w-12 mx-auto text-primary mb-4" />
-              <CardTitle>Accept Invitation</CardTitle>
-              <CardDescription>
-                Please sign in or create an account to accept this invitation
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AuthContainer onSuccess={handleAuthSuccess} />
-            </CardContent>
-          </Card>
-        </div>
-      </PageContainer>
-    );
-  }
+      case 'pending_auth':
+        return (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <Mail className="h-12 w-12 text-primary mx-auto" />
+              <h2 className="text-2xl font-semibold">You've been invited!</h2>
+              <p className="text-muted-foreground">
+                Please sign in or create an account to accept this invitation.
+              </p>
+            </div>
+            <AuthContainer onSuccess={handleAuthSuccess} />
+          </div>
+        );
 
-  if (status === 'processing') {
-    return (
-      <PageContainer>
-        <div className="flex justify-center items-center min-h-[50vh]">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+      case 'processing':
+        return (
+          <div className="flex flex-col items-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="text-muted-foreground">Processing invitation...</p>
           </div>
-        </div>
-      </PageContainer>
-    );
-  }
+        );
 
-  if (status === 'success') {
-    return (
-      <PageContainer>
-        <div className="max-w-md mx-auto mt-8">
-          <Card>
-            <CardHeader className="text-center">
-              <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-4" />
-              <CardTitle>Welcome!</CardTitle>
-              <CardDescription>
-                You have successfully accepted the invitation
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              {invitation && (
-                <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">Role</p>
-                  <p className="font-medium capitalize">{invitation.role}</p>
-                </div>
+      case 'success':
+        return (
+          <div className="flex flex-col items-center space-y-4 text-center">
+            <CheckCircle className="h-12 w-12 text-green-500" />
+            <h2 className="text-2xl font-semibold text-green-700">Welcome!</h2>
+            <div className="space-y-2">
+              <p className="text-muted-foreground">
+                You've successfully accepted the invitation.
+              </p>
+              {invitationDetails && (
+                <p className="text-sm text-muted-foreground">
+                  Role: <span className="font-medium">{invitationDetails.role}</span>
+                </p>
               )}
               <p className="text-sm text-muted-foreground">
-                Redirecting you to the application in a few seconds...
+                Redirecting you to the application...
               </p>
-              <Button onClick={() => navigate('/')} className="w-full">
-                Continue to App
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </PageContainer>
-    );
-  }
+            </div>
+          </div>
+        );
 
-  // Error state
+      case 'error':
+        return (
+          <div className="flex flex-col items-center space-y-4 text-center">
+            <XCircle className="h-12 w-12 text-red-500" />
+            <h2 className="text-2xl font-semibold text-red-700">Invitation Error</h2>
+            <div className="space-y-4">
+              <p className="text-muted-foreground">{errorMessage}</p>
+              <Button onClick={() => navigate('/')} variant="outline">
+                Go to Home
+              </Button>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   return (
     <PageContainer>
-      <div className="max-w-md mx-auto mt-8">
-        <Card>
-          <CardHeader className="text-center">
-            <XCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
-            <CardTitle>Invitation Error</CardTitle>
-            <CardDescription>
-              There was a problem with your invitation
-            </CardDescription>
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center">Team Invitation</CardTitle>
           </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <div className="p-4 bg-destructive/10 rounded-lg">
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
-            <Button onClick={() => navigate('/')} variant="outline" className="w-full">
-              Go to Home
-            </Button>
+          <CardContent>
+            {renderContent()}
           </CardContent>
         </Card>
       </div>
