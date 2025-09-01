@@ -9,6 +9,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const FROM = Deno.env.get("RESEND_FROM") || "Invites <onboarding@resend.dev>";
+
 interface InvitePayload {
   email: string;
   inviteCode: string;
@@ -54,7 +56,7 @@ serve(async (req) => {
     `;
 
     const { error } = await resend.emails.send({
-      from: "Invites <onboarding@resend.dev>",
+      from: FROM,
       to: [email],
       subject: "You're invited to join",
       html,
