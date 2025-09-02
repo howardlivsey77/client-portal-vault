@@ -63,7 +63,7 @@ serve(async (req) => {
       );
     }
 
-    const base = appUrl ? String(appUrl).replace(/\/+$\/, "") : "";
+    const base = appUrl ? String(appUrl).replace(/\/+$/, "") : "";
     const acceptUrl = `${base}${base ? "" : ""}/accept-invite?code=${encodeURIComponent(inviteCode)}`;
 
     const html = `
