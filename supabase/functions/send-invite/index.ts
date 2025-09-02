@@ -29,16 +29,42 @@ serve(async (req) => {
   }
 
   try {
-    const { email, inviteCode, role, appUrl }: InvitePayload = await req.json();
-
-    if (!email || !inviteCode) {
+    let raw: any = null;
+    try {
+      raw = await req.json();
+    } catch (e) {
+      console.error("send-invite: invalid JSON body", e);
       return new Response(
-        JSON.stringify({ error: "Missing required fields: email, inviteCode" }),
+        JSON.stringify({ error: "Invalid JSON body" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    const acceptUrl = `${appUrl ?? ''}/accept-invite?code=${inviteCode}`;
+    const payloadKeys = raw && typeof raw === "object" ? Object.keys(raw) : [];
+    console.log("send-invite: received payload keys:", payloadKeys);
+
+    // Normalize keys: support camelCase and snake_case
+    const email = raw?.email ?? raw?.Email ?? raw?.email_address ?? raw?.emailAddress;
+    const inviteCode = raw?.inviteCode ?? raw?.invite_code;
+    const role = raw?.role ?? raw?.Role ?? undefined;
+    const appUrl = raw?.appUrl ?? raw?.app_url ?? undefined;
+
+    const missing: string[] = [];
+    if (!email) missing.push("email");
+    if (!inviteCode) missing.push("inviteCode");
+
+    if (missing.length) {
+      return new Response(
+        JSON.stringify({
+          error: `Missing required field(s): ${missing.join(", ")}`,
+          receivedKeys: payloadKeys
+        }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const base = appUrl ? String(appUrl).replace(/\/+$\/, "") : "";
+    const acceptUrl = `${base}${base ? "" : ""}/accept-invite?code=${encodeURIComponent(inviteCode)}`;
 
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; color: #333;">
