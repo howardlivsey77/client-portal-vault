@@ -132,23 +132,30 @@ export const useInvites = () => {
         return false;
         } else {
           try {
+            const payload = {
+              email: email.toLowerCase().trim(),
+              inviteCode,
+              role: selectedRole,
+              appUrl: window.location.origin
+            };
+            console.log("Invites: sending payload to send-invite:", payload);
             const { data: sendData, error: sendError } = await supabase.functions.invoke('send-invite', {
-              body: {
-                email: email.toLowerCase().trim(),
-                inviteCode,
-                role: selectedRole,
-                appUrl: window.location.origin
-              },
-              headers: {
-                'Content-Type': 'application/json'
-              }
+              body: payload
             });
 
             if (sendError) {
               console.error("send-invite error:", sendError);
+              let detail = '' as string;
+              const ctxBody = (sendError as any)?.context?.body;
+              try {
+                const parsed = typeof ctxBody === 'string' ? JSON.parse(ctxBody) : ctxBody;
+                detail = parsed?.error || parsed?.message || (parsed ? JSON.stringify(parsed) : '');
+              } catch {
+                detail = typeof ctxBody === 'string' ? ctxBody : '';
+              }
               toast({
                 title: "Invitation created (email not sent)",
-                description: sendError.message ?? "Invite created, but email sending failed.",
+                description: `${sendError.message}${detail ? ` - ${detail}` : ''}`,
                 variant: "destructive"
               });
             } else {

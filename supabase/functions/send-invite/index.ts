@@ -29,19 +29,55 @@ serve(async (req) => {
   }
 
   try {
-    let raw: any = null;
-    try {
-      raw = await req.json();
-    } catch (e) {
-      console.error("send-invite: invalid JSON body", e);
-      return new Response(
-        JSON.stringify({ error: "Invalid JSON body" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
+      const contentType = req.headers.get("content-type") || "";
+      let rawText = "";
+      try {
+        rawText = await req.text();
+      } catch (e) {
+        console.error("send-invite: error reading body as text", e);
+      }
 
-    const payloadKeys = raw && typeof raw === "object" ? Object.keys(raw) : [];
-    console.log("send-invite: received payload keys:", payloadKeys);
+      console.log(
+        "send-invite: content-type:",
+        contentType,
+        "bodyLength:",
+        (rawText?.length ?? 0)
+      );
+
+      let raw: any = null;
+      if (rawText && rawText.trim().length > 0) {
+        if (contentType.includes("application/json")) {
+          try {
+            raw = JSON.parse(rawText);
+          } catch (e) {
+            console.error("send-invite: invalid JSON body", e);
+          }
+        } else if (contentType.includes("application/x-www-form-urlencoded")) {
+          raw = Object.fromEntries(new URLSearchParams(rawText));
+        } else {
+          // Try JSON as a last resort
+          try {
+            raw = JSON.parse(rawText);
+          } catch (_e) {
+            raw = null;
+          }
+        }
+      }
+
+      if (!raw || typeof raw !== "object") {
+        return new Response(
+          JSON.stringify({
+            error: "Invalid request body",
+            detail: "Expected JSON or x-www-form-urlencoded payload",
+            contentType,
+            bodyLength: rawText?.length ?? 0,
+          }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      const payloadKeys = raw && typeof raw === "object" ? Object.keys(raw) : [];
+      console.log("send-invite: received payload keys:", payloadKeys);
 
     // Normalize keys: support camelCase and snake_case
     const email = raw?.email ?? raw?.Email ?? raw?.email_address ?? raw?.emailAddress;
