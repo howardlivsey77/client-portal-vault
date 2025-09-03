@@ -9,7 +9,31 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const FROM = Deno.env.get("RESEND_FROM") || "Invites <onboarding@resend.dev>";
+// Resolve and validate FROM address and API key
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const mailboxRegex = /^([^<>]+)\s*<([^<>]+)>$/;
+
+function resolveFrom(raw: string | null): { from: string; usedDefault: boolean; reason?: string } {
+  const fallback = "Invites <onboarding@resend.dev>";
+  if (!raw || !raw.trim()) {
+    return { from: fallback, usedDefault: true, reason: "missing RESEND_FROM" };
+  }
+  const v = raw.trim();
+  const mailboxMatch = v.match(mailboxRegex);
+  if (mailboxMatch) {
+    const email = mailboxMatch[2].trim();
+    if (emailRegex.test(email)) return { from: v, usedDefault: false };
+    return { from: fallback, usedDefault: true, reason: "invalid email in mailbox format" };
+  }
+  if (emailRegex.test(v)) {
+    return { from: `Invites <${v}>`, usedDefault: false };
+  }
+  return { from: fallback, usedDefault: true, reason: "invalid format" };
+}
+
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const FROM_INFO = resolveFrom(Deno.env.get("RESEND_FROM"));
+const FROM = FROM_INFO.from;
 
 interface InvitePayload {
   email: string;
@@ -117,19 +141,61 @@ serve(async (req) => {
       </div>
     `;
 
-    const { error } = await resend.emails.send({
-      from: FROM,
-      to: [email],
-      subject: "You're invited to join",
-      html,
-    });
+    // Verify email service configuration
+    if (!RESEND_API_KEY) {
+      console.warn("send-invite: RESEND_API_KEY is missing");
+      return new Response(
+        JSON.stringify({
+          error: "Email service not configured",
+          detail: "Missing RESEND_API_KEY Supabase secret",
+          action: "Add RESEND_API_KEY in Supabase Functions settings and verify your Resend domain",
+        }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
-    if (error) throw error;
+    console.log(
+      "send-invite: using FROM:",
+      FROM,
+      "usedDefault:",
+      FROM_INFO.usedDefault ? `true (${FROM_INFO.reason})` : "false"
+    );
 
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
+    let sendResp: any;
+    try {
+      sendResp = await resend.emails.send({
+        from: FROM,
+        to: [email],
+        subject: "You're invited to join",
+        html,
+      });
+    } catch (e: any) {
+      console.error("send-invite: exception while sending email", e);
+      return new Response(
+        JSON.stringify({
+          error: "Email sending failed",
+          provider_error: e?.message ?? String(e),
+        }),
+        { status: 502, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (sendResp?.error) {
+      console.error("send-invite: Resend send error", sendResp.error);
+      return new Response(
+        JSON.stringify({
+          error: "Email sending failed",
+          provider_error: sendResp.error?.message ?? String(sendResp.error),
+          hint: "Check RESEND_FROM, verify domain in Resend, and ensure API key is valid",
+        }),
+        { status: 502, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ ok: true, id: sendResp?.data?.id ?? null }),
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
   } catch (error: any) {
     console.error("send-invite error:", error);
     return new Response(
