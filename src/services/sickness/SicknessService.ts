@@ -36,4 +36,13 @@ export class SicknessService {
   getHistoricalBalances = balanceService.getHistoricalBalances;
   calculateRolling12MonthUsage = balanceService.calculateRolling12MonthUsage;
   calculateUsedDays = balanceService.calculateUsedDays;
+
+  // New reference date aware methods
+  async calculateRolling12MonthUsageFromDate(employeeId: string, referenceDate: string | Date) {
+    return balanceService.calculateRolling12MonthUsage(employeeId, referenceDate);
+  }
+
+  async calculateSspUsageFromDate(employeeId: string, referenceDate: string | Date) {
+    return sspService.calculateSspUsage(employeeId, referenceDate);
+  }
 }

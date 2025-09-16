@@ -5,10 +5,10 @@ import { fetchWorkPatterns } from "@/components/employees/details/work-pattern/s
 import { calculateWorkingDaysPerWeek, convertEntitlementToDays } from "@/components/employees/details/sickness/utils/workPatternCalculations";
 
 export const calculationUtils = {
-  // Calculate rolling 12-month period
-  getRolling12MonthPeriod(): { start: string; end: string } {
-    const end = new Date();
-    const start = new Date();
+  // Calculate rolling 12-month period from reference date (defaults to current date)
+  getRolling12MonthPeriod(referenceDate?: string | Date): { start: string; end: string } {
+    const end = referenceDate ? new Date(referenceDate) : new Date();
+    const start = new Date(end);
     start.setFullYear(start.getFullYear() - 1);
     start.setDate(start.getDate() + 1); // Start from tomorrow last year
     

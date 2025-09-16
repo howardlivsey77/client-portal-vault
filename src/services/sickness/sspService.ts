@@ -127,7 +127,7 @@ function countSspDaysInRangeForChain(chain: Chain, qualifyingSet: Set<number>, q
 
 export const sspService = {
   // Calculate SSP usage using PIW and linking rules
-  async calculateSspUsage(employeeId: string): Promise<{
+  async calculateSspUsage(employeeId: string, referenceDate?: string | Date): Promise<{
     qualifyingDaysPerWeek: number;
     sspEntitledDays: number;
     sspUsedCurrentYear: number;
@@ -149,13 +149,13 @@ export const sspService = {
     const piws = buildPiws(data || [], qualifyingSet);
     const chains = buildLinkedChains(piws);
 
-    const now = new Date();
-    const currentYear = now.getFullYear();
+    const refDate = referenceDate ? new Date(referenceDate) : new Date();
+    const currentYear = refDate.getFullYear();
     const yearStart = new Date(currentYear, 0, 1);
     const yearEnd = new Date(currentYear, 11, 31);
 
-    // Rolling 12-month period from calculation utils replicated here to avoid circular dep
-    const rollingEnd = normalizeDate(now);
+    // Rolling 12-month period from reference date
+    const rollingEnd = normalizeDate(refDate);
     const rollingStart = addDays(new Date(rollingEnd.getFullYear() - 1, rollingEnd.getMonth(), rollingEnd.getDate()), 1);
 
     let usedCurrentYear = 0;

@@ -26,7 +26,11 @@ export const recordsService = {
       .maybeSingle();
 
     if (error) throw error;
-    if (data) return data as SicknessRecord;
+    if (data) {
+      // Trigger entitlement recalculation using the sickness start date as reference
+      await this.recalculateEntitlementWithReference(record.employee_id, record.start_date);
+      return data as SicknessRecord;
+    }
 
     // Fallback: fetch the most recent record for this employee (assumes sequential inserts)
     const { data: fallback, error: fallbackError } = await supabase
@@ -39,7 +43,42 @@ export const recordsService = {
 
     if (fallbackError) throw fallbackError;
     if (!fallback) throw new Error('Sickness record inserted but no row returned');
+    
+    // Trigger entitlement recalculation using the sickness start date as reference
+    await this.recalculateEntitlementWithReference(record.employee_id, record.start_date);
     return fallback as SicknessRecord;
+  },
+
+  // Helper method to recalculate entitlements using reference date
+  async recalculateEntitlementWithReference(employeeId: string, referenceDate: string) {
+    // Import services to avoid circular dependencies
+    const { sicknessService } = await import("../sicknessService");
+    const { calculateSicknessEntitlementSummary } = await import("../../utils/sicknessCalculations");
+    
+    // Get employee details
+    const { data: employeeData, error } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('id', employeeId)
+      .maybeSingle();
+    
+    if (error || !employeeData) {
+      console.warn('Could not fetch employee for entitlement recalculation:', employeeId, error);
+      return;
+    }
+
+    try {
+      // Cast to Employee type with default monthly_salary (not in database but required by interface)
+      const employee = {
+        ...employeeData,
+        monthly_salary: null
+      } as any; // Type assertion to handle database vs interface differences
+      
+      // Recalculate using the reference date
+      await calculateSicknessEntitlementSummary(employee, referenceDate);
+    } catch (error) {
+      console.error('Error recalculating entitlements with reference date:', error);
+    }
   },
 
   // Update sickness record
@@ -52,7 +91,13 @@ export const recordsService = {
       .maybeSingle();
 
     if (error) throw error;
-    if (data) return data as SicknessRecord;
+    if (data) {
+      // If start_date was updated, recalculate using new date as reference
+      if (updates.start_date) {
+        await this.recalculateEntitlementWithReference(data.employee_id, updates.start_date);
+      }
+      return data as SicknessRecord;
+    }
 
     // Fallback: fetch the record by id
     const { data: fallback, error: fallbackError } = await supabase
@@ -63,6 +108,11 @@ export const recordsService = {
 
     if (fallbackError) throw fallbackError;
     if (!fallback) throw new Error('Sickness record updated but no row returned');
+    
+    // If start_date was updated, recalculate using new date as reference
+    if (updates.start_date) {
+      await this.recalculateEntitlementWithReference(fallback.employee_id, updates.start_date);
+    }
     return fallback as SicknessRecord;
   },
 

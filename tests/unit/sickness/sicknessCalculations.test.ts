@@ -9,6 +9,8 @@ const mockSicknessService = {
   calculateRolling12MonthUsage: vi.fn(),
   calculateSspUsage: vi.fn(),
   getRolling12MonthPeriod: vi.fn(),
+  calculateRolling12MonthUsageFromDate: vi.fn(),
+  calculateSspUsageFromDate: vi.fn(),
 }
 
 vi.mock('@/services/sicknessService', () => ({
@@ -208,6 +210,56 @@ describe('sicknessCalculations', () => {
       expect(result?.total_used_rolling_12_months).toBe(0)
       expect(result?.ssp_used_rolling_12_months).toBe(0)
       expect(result?.ssp_remaining_days).toBe(140)
+    })
+
+    it('should use reference date when provided', async () => {
+      const referenceDate = '2025-08-30'
+      
+      const mockEntitlementUsage = {
+        full_pay_entitled_days: 30,
+        half_pay_entitled_days: 40,
+        current_rule_id: 'tier3',
+        current_service_months: 24,
+      }
+
+      const mockYearUsage = { totalUsed: 5 }
+      const mockRollingUsage = { totalUsed: 8 }
+      const mockSspUsage = {
+        sspEntitledDays: 140,
+        sspUsedRolling12: 3,
+      }
+
+      const mockRollingPeriod = {
+        start: '2024-08-31',
+        end: '2025-08-30',
+      }
+
+      mockSicknessService.getEntitlementUsage.mockResolvedValue(mockEntitlementUsage)
+      mockSicknessService.calculateUsedDays.mockResolvedValue(mockYearUsage)
+      mockSicknessService.calculateRolling12MonthUsageFromDate.mockResolvedValue(mockRollingUsage)
+      mockSicknessService.calculateSspUsageFromDate.mockResolvedValue(mockSspUsage)
+      mockSicknessService.getRolling12MonthPeriod.mockReturnValue(mockRollingPeriod)
+
+      const result = await calculateSicknessEntitlementSummary(mockEmployee, referenceDate)
+
+      expect(mockSicknessService.calculateRolling12MonthUsageFromDate).toHaveBeenCalledWith('emp1', referenceDate)
+      expect(mockSicknessService.calculateSspUsageFromDate).toHaveBeenCalledWith('emp1', referenceDate)
+      expect(mockSicknessService.getRolling12MonthPeriod).toHaveBeenCalledWith(referenceDate)
+
+      expect(result).toEqual({
+        full_pay_remaining: 22, // 30 - 8
+        half_pay_remaining: 40, // No half pay used
+        full_pay_used_rolling_12_months: 8,
+        half_pay_used_rolling_12_months: 0,
+        total_used_rolling_12_months: 8,
+        current_tier: 'tier3',
+        service_months: 24,
+        rolling_period_start: '2024-08-31',
+        rolling_period_end: '2025-08-30',
+        ssp_entitled_days: 140,
+        ssp_used_rolling_12_months: 3,
+        ssp_remaining_days: 137,
+      })
     })
   })
 })

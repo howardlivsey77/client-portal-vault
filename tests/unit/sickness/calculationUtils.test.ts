@@ -27,6 +27,24 @@ describe('calculationUtils', () => {
       expect(result.end).toBe('2024-06-15')
     })
 
+    it('should return correct 12-month period from reference date string', () => {
+      const referenceDate = '2025-08-30'
+      
+      const result = calculationUtils.getRolling12MonthPeriod(referenceDate)
+      
+      expect(result.start).toBe('2024-08-31')
+      expect(result.end).toBe('2025-08-30')
+    })
+
+    it('should return correct 12-month period from reference Date object', () => {
+      const referenceDate = new Date('2025-08-30')
+      
+      const result = calculationUtils.getRolling12MonthPeriod(referenceDate)
+      
+      expect(result.start).toBe('2024-08-31')
+      expect(result.end).toBe('2025-08-30')
+    })
+
     it('should handle year boundary correctly', () => {
       mockDate('2024-01-15')
       

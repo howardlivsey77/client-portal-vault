@@ -17,8 +17,8 @@ export const balanceService = {
   },
 
   // Calculate rolling 12-month sickness days used (overlap-aware)
-  async calculateRolling12MonthUsage(employeeId: string): Promise<{ totalUsed: number; fullPayUsed: number; halfPayUsed: number }> {
-    const { start, end } = calculationUtils.getRolling12MonthPeriod();
+  async calculateRolling12MonthUsage(employeeId: string, referenceDate?: string | Date): Promise<{ totalUsed: number; fullPayUsed: number; halfPayUsed: number }> {
+    const { start, end } = calculationUtils.getRolling12MonthPeriod(referenceDate);
 
     // Fetch candidate records up to range end; filter overlaps in code to catch spells that start before the window
     const { data, error } = await supabase

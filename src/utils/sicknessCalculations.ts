@@ -7,7 +7,8 @@ import { sicknessService } from "@/services/sicknessService";
  * This ensures consistency between individual employee pages and reports
  */
 export const calculateSicknessEntitlementSummary = async (
-  employee: Employee
+  employee: Employee,
+  referenceDate?: string | Date
 ): Promise<SicknessEntitlementSummary | null> => {
   try {
     // Get entitlement usage (this contains the entitled amounts and opening balances)
@@ -20,11 +21,15 @@ export const calculateSicknessEntitlementSummary = async (
     // Calculate real-time usage from actual sickness records
     const [yearUsage, rollingUsage, ssp] = await Promise.all([
       sicknessService.calculateUsedDays(employee.id),
-      sicknessService.calculateRolling12MonthUsage(employee.id),
-      sicknessService.calculateSspUsage(employee.id)
+      referenceDate 
+        ? sicknessService.calculateRolling12MonthUsageFromDate(employee.id, referenceDate)
+        : sicknessService.calculateRolling12MonthUsage(employee.id),
+      referenceDate
+        ? sicknessService.calculateSspUsageFromDate(employee.id, referenceDate)
+        : sicknessService.calculateSspUsage(employee.id)
     ]);
 
-    const rollingPeriod = sicknessService.getRolling12MonthPeriod();
+    const rollingPeriod = sicknessService.getRolling12MonthPeriod(referenceDate);
 
     const fullAllowance = entitlementUsage.full_pay_entitled_days || 0;
     const halfAllowance = entitlementUsage.half_pay_entitled_days || 0;
