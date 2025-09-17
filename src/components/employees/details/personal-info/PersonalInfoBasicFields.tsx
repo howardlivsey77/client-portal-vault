@@ -3,9 +3,12 @@ import { Control } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { ExternalLink } from "lucide-react";
 import { genderOptions } from "@/types/employee";
 import { useDepartments } from "@/hooks/useDepartments";
 import { PersonalInfoFormValues } from "./types";
+import { useNavigate } from "react-router-dom";
 
 interface PersonalInfoBasicFieldsProps {
   control: Control<PersonalInfoFormValues>;
@@ -13,6 +16,7 @@ interface PersonalInfoBasicFieldsProps {
 
 export const PersonalInfoBasicFields = ({ control }: PersonalInfoBasicFieldsProps) => {
   const { departmentNames, loading } = useDepartments();
+  const navigate = useNavigate();
 
   return (
     <>
@@ -67,6 +71,11 @@ export const PersonalInfoBasicFields = ({ control }: PersonalInfoBasicFieldsProp
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
+                  {departmentNames.length === 0 && !loading && (
+                    <SelectItem value="" disabled>
+                      No departments found
+                    </SelectItem>
+                  )}
                   {departmentNames.map((dept) => (
                     <SelectItem key={dept} value={dept}>
                       {dept}
@@ -75,6 +84,23 @@ export const PersonalInfoBasicFields = ({ control }: PersonalInfoBasicFieldsProp
                 </SelectContent>
               </Select>
               <FormMessage />
+              {departmentNames.length === 0 && !loading && (
+                <div className="flex items-center gap-2 mt-2">
+                  <p className="text-sm text-muted-foreground">
+                    No departments found.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/settings/company/departments')}
+                    className="text-xs"
+                  >
+                    Create Departments
+                    <ExternalLink className="ml-1 h-3 w-3" />
+                  </Button>
+                </div>
+              )}
             </FormItem>
           )}
         />
