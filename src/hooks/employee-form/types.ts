@@ -30,6 +30,8 @@ export interface EmployeeFormData {
   nhs_pension_tier: number | null;
   nhs_pension_employee_rate: number | null;
   monthly_salary: number | null;
+  leave_date: Date | null;
+  status: "active" | "on-hold" | "leaver";
 }
 
 export interface UseEmployeeFormReturn {

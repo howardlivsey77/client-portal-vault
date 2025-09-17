@@ -36,7 +36,9 @@ export const availableFields = [
   "rate_3",
   "rate_4",
   "national_insurance_number",
-  "nic_code"
+  "nic_code",
+  "leave_date",
+  "status"
 ];
 
 // Human-readable field labels
@@ -60,5 +62,7 @@ export const fieldLabels: Record<string, string> = {
   rate_3: "Rate 3",
   rate_4: "Rate 4",
   national_insurance_number: "National Insurance Number",
-  nic_code: "NIC Code"
+  nic_code: "NIC Code",
+  leave_date: "Leave Date",
+  status: "Status"
 };

@@ -191,7 +191,7 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[], i
           }
         }
         // Handle date fields specifically based on file type
-        else if (mapping.targetField === 'date_of_birth' || mapping.targetField === 'hire_date') {
+        else if (mapping.targetField === 'date_of_birth' || mapping.targetField === 'hire_date' || mapping.targetField === 'leave_date') {
           let isoDate: string | null = null;
           
           if (isCSVFile) {
@@ -235,6 +235,16 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[], i
     if (!transformedRow.hourly_rate) transformedRow.hourly_rate = 0;
     // Set default department if not provided
     if (!transformedRow.department) transformedRow.department = 'General';
+    
+    // Auto-determine status based on leave_date if not explicitly set
+    if (!transformedRow.status && transformedRow.leave_date) {
+      const leaveDate = new Date(transformedRow.leave_date);
+      const today = new Date();
+      transformedRow.status = leaveDate <= today ? 'leaver' : 'active';
+      console.log(`Row ${index + 1}: Auto-set status to "${transformedRow.status}" based on leave_date "${transformedRow.leave_date}"`);
+    } else if (!transformedRow.status) {
+      transformedRow.status = 'active';
+    }
     
     // Convert numeric fields with validation
     if (transformedRow.hours_per_week) {

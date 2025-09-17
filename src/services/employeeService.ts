@@ -50,6 +50,9 @@ export const createEmployee = async (employeeData: EmployeeFormValues, userId: s
     previous_year_pensionable_pay: employeeData.previous_year_pensionable_pay || null,
     nhs_pension_tier: employeeData.nhs_pension_tier || null,
     nhs_pension_employee_rate: employeeData.nhs_pension_employee_rate || null,
+    // Employee status management
+    leave_date: employeeData.leave_date ? employeeData.leave_date.toISOString().split('T')[0] : null,
+    status: employeeData.status || 'active',
   };
 
   const { data, error } = await supabase
@@ -98,6 +101,9 @@ export const updateEmployee = async (id: string, employeeData: EmployeeFormValue
     previous_year_pensionable_pay: employeeData.previous_year_pensionable_pay || null,
     nhs_pension_tier: employeeData.nhs_pension_tier || null,
     nhs_pension_employee_rate: employeeData.nhs_pension_employee_rate || null,
+    // Employee status management
+    leave_date: employeeData.leave_date ? employeeData.leave_date.toISOString().split('T')[0] : null,
+    status: employeeData.status || 'active',
   };
 
   const { data, error } = await supabase

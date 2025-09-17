@@ -42,6 +42,10 @@ export interface Employee {
   previous_year_pensionable_pay: number | null;
   nhs_pension_tier: number | null;
   nhs_pension_employee_rate: number | null;
+  
+  // Employee status management
+  leave_date: string | null;
+  status: string | null;
 }
 
 /**
