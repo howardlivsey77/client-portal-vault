@@ -62,8 +62,7 @@ export const useEmployeeImport = (onSuccess: () => void) => {
   // Apply mappings and generate preview data
   const applyMappings = (
     transformData: (data: EmployeeData[], mappings: ColumnMapping[], isCSVFile?: boolean) => EmployeeData[], 
-    saveMappings: (mappings: ColumnMapping[]) => void,
-    isXMLFile?: boolean
+    saveMappings: (mappings: ColumnMapping[]) => void
   ) => {
     // Note: We'll need to detect file type from the original file name
     // For now, we'll pass false as default since the file type detection happens in FileUploader
@@ -102,14 +101,8 @@ export const useEmployeeImport = (onSuccess: () => void) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     
     try {
-      // Check if this is an XML import by looking for XML-specific fields
-      const isXMLImport = state.preview.length > 0 && 
-        state.preview[0].national_insurance_number && 
-        state.preview[0].payroll_id &&
-        !state.preview[0].department; // XML doesn't include department
-        
-      const comparisonResult = compareEmployees(state.preview, state.existingEmployees, isXMLImport);
-      const { newEmployees, updatedEmployees, conflicts = [], unmatchedXML = [] } = comparisonResult;
+      const comparisonResult = compareEmployees(state.preview, state.existingEmployees);
+      const { newEmployees, updatedEmployees, conflicts = [] } = comparisonResult;
       
       // Validate the import data
       const validation = await validateImportData(newEmployees, updatedEmployees, conflicts);
@@ -137,21 +130,9 @@ export const useEmployeeImport = (onSuccess: () => void) => {
       
       if (newEmployees.length > 0 || updatedEmployees.length > 0) {
         dispatch({ type: 'SET_SHOW_CONFIRM_DIALOG', payload: true });
-        
-        let description = `${newEmployees.length} new employees and ${updatedEmployees.length} updates ready for import.`;
-        if (unmatchedXML.length > 0) {
-          description += ` ${unmatchedXML.length} employees from XML need manual review (missing department/email/hire date).`;
-        }
-        
         toast({
           title: "Import ready",
-          description: description
-        });
-      } else if (unmatchedXML.length > 0) {
-        toast({
-          title: "Manual review required",
-          description: `${unmatchedXML.length} employees from XML need manual review. They are missing required fields like department, email, or hire date.`,
-          variant: "destructive"
+          description: `${newEmployees.length} new employees and ${updatedEmployees.length} updates ready for import.`
         });
       } else {
         toast({

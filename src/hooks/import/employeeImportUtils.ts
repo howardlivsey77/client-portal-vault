@@ -1,7 +1,6 @@
 
 import { EmployeeData, ColumnMapping, requiredFields } from "@/components/employees/import/ImportConstants";
 import { compareEmployeesEnhanced, EmployeeConflict } from "./enhancedEmployeeMatching";
-import { matchXMLEmployees } from "./xmlEmployeeMatching";
 
 // Check if required fields are mapped
 export const areRequiredFieldsMapped = (mappings: ColumnMapping[]): boolean => {
@@ -13,22 +12,12 @@ export const areRequiredFieldsMapped = (mappings: ColumnMapping[]): boolean => {
 // Enhanced compare employees using the new matching logic
 export const compareEmployees = (
   preview: EmployeeData[],
-  existingEmployees: EmployeeData[],
-  isXMLImport: boolean = false
+  existingEmployees: EmployeeData[]
 ): {
   newEmployees: EmployeeData[];
   updatedEmployees: {existing: EmployeeData; imported: EmployeeData}[];
   conflicts?: EmployeeConflict[];
-  unmatchedXML?: EmployeeData[];
 } => {
-  if (isXMLImport) {
-    const xmlResult = matchXMLEmployees(preview, existingEmployees);
-    return {
-      newEmployees: xmlResult.newEmployees,
-      updatedEmployees: xmlResult.updatedEmployees,
-      unmatchedXML: xmlResult.unmatchedXML
-    };
-  }
   return compareEmployeesEnhanced(preview, existingEmployees);
 };
 
