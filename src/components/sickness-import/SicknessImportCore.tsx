@@ -115,14 +115,24 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
     return processedResults;
   };
 
-  const findSchemeMatch = (schemeName: string) => {
-    if (!schemeName) return null;
-    
-    const results = schemeFuse.search(schemeName);
-    
-    if (results.length > 0 && results[0].score! < 0.6) {
-      return results[0].item.name;
+  const findSchemeMatch = (schemeName: string, employeeId?: string) => {
+    // First try to match from import file if scheme is provided
+    if (schemeName?.trim()) {
+      const results = schemeFuse.search(schemeName);
+      if (results.length > 0 && results[0].score! < 0.6) {
+        return results[0].item.name;
+      }
     }
+    
+    // Fall back to employee's existing assigned scheme
+    if (employeeId) {
+      const employee = employees.find(e => e.id === employeeId);
+      if (employee?.sickness_scheme_id) {
+        const assignedScheme = schemes.find(s => s.id === employee.sickness_scheme_id);
+        return assignedScheme?.name || null;
+      }
+    }
+    
     return null;
   };
 
@@ -211,8 +221,8 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
           const employeeMatches = findEmployeeMatches(employeeName);
           const bestEmployeeMatch = employeeMatches.length > 0 ? employeeMatches[0] : null;
 
-          // Find scheme match
-          const matchedSchemeName = findSchemeMatch(schemeAllocation);
+          // Find scheme match - try import data first, then fall back to employee's assigned scheme
+          const matchedSchemeName = findSchemeMatch(schemeAllocation, bestEmployeeMatch?.id);
 
           // Determine status - more flexible criteria
           let status: 'ready' | 'needs_attention' | 'skipped' = 'ready';
