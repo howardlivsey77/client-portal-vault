@@ -5,12 +5,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 import { SicknessRecord } from "@/types/sickness";
 import { sicknessRecordSchema, SicknessRecordFormData } from "./SicknessRecordFormSchema";
 import { SicknessRecordFormFields } from "./SicknessRecordFormFields";
 import { getDefaultTotalDays } from "./utils/dateCalculations";
 import { calculateWorkingDaysForRecord } from "./utils/workingDaysCalculations";
 import { fetchWorkPatterns } from "@/components/employees/details/work-pattern/services/fetchPatterns";
+import { overlapService } from "@/services/sickness/overlapService";
 
 interface SicknessRecordFormProps {
   open: boolean;
@@ -31,6 +34,7 @@ export const SicknessRecordForm = ({
 }: SicknessRecordFormProps) => {
   const [loading, setLoading] = useState(false);
   const [workPattern, setWorkPattern] = useState<any[]>([]);
+  const [overlapError, setOverlapError] = useState<string | null>(null);
 
   const form = useForm<SicknessRecordFormData>({
     resolver: zodResolver(sicknessRecordSchema),
@@ -52,7 +56,44 @@ export const SicknessRecordForm = ({
     }
   }, [open, employeeId]);
 
+  // Check for overlapping records when dates change
+  const checkForOverlaps = async (startDate: string, endDate?: string) => {
+    if (!startDate || !employeeId) return;
+
+    try {
+      const result = await overlapService.checkForOverlappingSickness(
+        employeeId,
+        startDate,
+        endDate,
+        record?.id // Exclude current record when editing
+      );
+
+      if (result.hasOverlap) {
+        setOverlapError(result.message || "This period overlaps with existing sickness records");
+      } else {
+        setOverlapError(null);
+      }
+    } catch (error) {
+      console.error('Error checking for overlaps:', error);
+    }
+  };
+
+  // Watch for date changes to check overlaps
+  const startDate = form.watch('start_date');
+  const endDate = form.watch('end_date');
+
+  useEffect(() => {
+    if (startDate) {
+      checkForOverlaps(startDate, endDate);
+    }
+  }, [startDate, endDate, employeeId]);
+
   const onSubmit = async (data: SicknessRecordFormData) => {
+    // Prevent submission if there are overlaps
+    if (overlapError) {
+      return;
+    }
+
     setLoading(true);
     try {
       // Use already fetched work pattern
@@ -78,6 +119,7 @@ export const SicknessRecordForm = ({
       await onSave(recordData);
       onOpenChange(false);
       form.reset();
+      setOverlapError(null);
     } catch (error) {
       console.error('Error saving sickness record:', error);
     } finally {
@@ -98,6 +140,13 @@ export const SicknessRecordForm = ({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <SicknessRecordFormFields form={form} workPattern={workPattern} />
 
+            {overlapError && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{overlapError}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="flex justify-end gap-2 pt-4">
               <Button 
                 type="button" 
@@ -107,7 +156,10 @@ export const SicknessRecordForm = ({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button 
+                type="submit" 
+                disabled={loading || !!overlapError}
+              >
                 {loading ? 'Saving...' : record ? 'Update' : 'Add'} Record
               </Button>
             </div>
