@@ -4,6 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.55.0";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 interface InvitationRequest {
@@ -14,12 +15,19 @@ interface InvitationRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  // Log request details for debugging
+  const origin = req.headers.get("origin") || "unknown";
+  const userAgent = req.headers.get("user-agent") || "unknown";
+  console.log(`Request from origin: ${origin}, User-Agent: ${userAgent}`);
+
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log("CORS preflight request received");
     return new Response(null, { headers: corsHeaders });
   }
 
   if (req.method !== "POST") {
+    console.log(`Invalid method: ${req.method}`);
     return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   }
 
@@ -46,10 +54,17 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     console.log("Sending invitation email to:", email);
+    
+    // Determine the correct base URL for redirect
+    const requestOrigin = req.headers.get("origin");
+    const baseUrl = requestOrigin || "https://0fda5de4-397f-460e-8be4-56e3718a981f.lovableproject.com";
+    const redirectUrl = `${baseUrl}/accept-invitation?code=${inviteCode}`;
+    
+    console.log(`Using redirect URL: ${redirectUrl}`);
 
     // Use admin client to send invitation email
     const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email.toLowerCase().trim(), {
-      redirectTo: `${req.headers.get("origin") || "http://localhost:5173"}/accept-invitation?code=${inviteCode}`,
+      redirectTo: redirectUrl,
       data: {
         inviteCode: inviteCode,
         role: role,
@@ -59,12 +74,17 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (error) {
       console.error("Error sending invitation email:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
       return new Response(
         JSON.stringify({ 
           error: "Failed to send invitation email", 
           details: error.message,
           user_message: "Failed to send invitation email. Please check your SMTP configuration in Supabase.",
-          setup_instructions: "Configure SMTP settings in Supabase Dashboard: Authentication > Settings > SMTP Settings"
+          setup_instructions: "Configure SMTP settings in Supabase Dashboard: Authentication > Settings > SMTP Settings",
+          debug_info: {
+            origin: requestOrigin,
+            redirectUrl: redirectUrl
+          }
         }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
@@ -79,11 +99,16 @@ const handler = async (req: Request): Promise<Response> => {
 
   } catch (error: any) {
     console.error("Error in send-invitation-email function:", error);
+    console.error("Full error stack:", error.stack);
     return new Response(
       JSON.stringify({ 
         error: "Internal server error", 
         details: error.message,
-        user_message: "Failed to send invitation email due to server error."
+        user_message: "Failed to send invitation email due to server error.",
+        debug_info: {
+          origin: req.headers.get("origin"),
+          timestamp: new Date().toISOString()
+        }
       }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
