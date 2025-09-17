@@ -1,6 +1,7 @@
 import { Employee } from "@/types/employee-types";
 import { SicknessEntitlementSummary } from "@/types/sickness";
 import { sicknessService } from "@/services/sicknessService";
+import { formatEntitlementTier } from "./formatters";
 
 /**
  * Shared utility to calculate sickness entitlement summary from raw data
@@ -47,7 +48,7 @@ export const calculateSicknessEntitlementSummary = async (
       full_pay_used_rolling_12_months: rollingFullUsed,
       half_pay_used_rolling_12_months: rollingHalfUsed,
       total_used_rolling_12_months: rollingTotalUsed,
-      current_tier: entitlementUsage.current_rule_id || 'No tier',
+      current_tier: formatEntitlementTier(fullAllowance, halfAllowance),
       service_months: entitlementUsage.current_service_months,
       rolling_period_start: rollingPeriod.start,
       rolling_period_end: rollingPeriod.end,
