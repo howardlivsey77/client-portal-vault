@@ -51,26 +51,45 @@ export const parseHMRCXML = async (file: File): Promise<{data: EmployeeData[], h
           return;
         }
 
-        // Try different XML structures - HMRC FPS vs simple Employee list
-        let employeeElements: NodeListOf<Element>;
+        // Debug: Log the XML structure for analysis
+        console.log("XML Root element:", xmlDoc.documentElement.tagName);
+        console.log("XML namespace URI:", xmlDoc.documentElement.namespaceURI);
+        logXMLStructure(xmlDoc.documentElement, 0, 3); // Log first 3 levels
+
+        // Try different XML structures with namespace support
+        let employeeElements: Element[];
         let xmlFormat = "unknown";
 
-        // First try HMRC FPS structure
-        const irenvelopeElements = xmlDoc.querySelectorAll("irenvelope");
-        if (irenvelopeElements.length > 0) {
-          xmlFormat = "HMRC_FPS";
-          employeeElements = xmlDoc.querySelectorAll("irenvelope");
+        // Enhanced HMRC FPS structure detection with namespace support
+        employeeElements = findElementsWithNamespace(xmlDoc, [
+          "irenvelope", "iREnvelope", "IREnvelope",
+          "gov:irenvelope", "hmrc:irenvelope", "fps:irenvelope",
+          "employee", "Employee", "EMPLOYEE"
+        ]);
+
+        if (employeeElements.length > 0) {
+          xmlFormat = "HMRC_FPS_ENHANCED";
+          console.log(`Found ${employeeElements.length} employee elements using namespace-aware search`);
         } else {
           // Fallback to simple Employee structure
-          employeeElements = xmlDoc.querySelectorAll("Employee");
+          employeeElements = Array.from(xmlDoc.querySelectorAll("Employee"));
           if (employeeElements.length > 0) {
             xmlFormat = "simple";
           }
         }
 
         if (employeeElements.length === 0) {
-          reject("No employee data found in XML file. Expected either HMRC FPS format with 'irenvelope' elements or simple format with 'Employee' elements.");
-          return;
+          // Final attempt: search for any element that might contain employee data
+          const possibleEmployeeElements = findPossibleEmployeeElements(xmlDoc);
+          if (possibleEmployeeElements.length > 0) {
+            employeeElements = possibleEmployeeElements;
+            xmlFormat = "auto_detected";
+            console.log(`Auto-detected ${employeeElements.length} possible employee elements`);
+          } else {
+            const availableElements = getAvailableElements(xmlDoc);
+            reject(`No employee data found in XML file. Available elements: ${availableElements.join(', ')}. Expected employee data in elements like 'irenvelope', 'Employee', or similar.`);
+            return;
+          }
         }
 
         console.log(`Detected XML format: ${xmlFormat}, found ${employeeElements.length} employee records`);
@@ -81,7 +100,9 @@ export const parseHMRCXML = async (file: File): Promise<{data: EmployeeData[], h
           try {
             let employee: EmployeeData | null = null;
             
-            if (xmlFormat === "HMRC_FPS") {
+            if (xmlFormat === "HMRC_FPS_ENHANCED" || xmlFormat === "auto_detected") {
+              employee = extractEmployeeFromHMRCElementEnhanced(employeeEl);
+            } else if (xmlFormat === "HMRC_FPS") {
               employee = extractEmployeeFromHMRCElement(employeeEl);
             } else {
               employee = extractEmployeeFromXMLElement(employeeEl);
@@ -89,6 +110,9 @@ export const parseHMRCXML = async (file: File): Promise<{data: EmployeeData[], h
             
             if (employee) {
               parsedData.push(employee);
+              console.log(`Successfully parsed employee ${index + 1}: ${employee.first_name} ${employee.last_name}`);
+            } else {
+              console.warn(`Failed to extract employee data from element ${index + 1}`);
             }
           } catch (error) {
             console.warn(`Error parsing employee element ${index + 1}:`, error);
@@ -96,7 +120,7 @@ export const parseHMRCXML = async (file: File): Promise<{data: EmployeeData[], h
         });
 
         if (parsedData.length === 0) {
-          reject("No valid employee data could be extracted from the XML file. Please check the file format and content.");
+          reject("No valid employee data could be extracted from the XML file. Check console for detailed parsing information.");
           return;
         }
 
@@ -262,7 +286,7 @@ const getXMLElementText = (parent: Element, tagName: string): string => {
   return element?.textContent?.trim() || "";
 };
 
-// Helper function to search for text content in multiple possible tag names (for HMRC flexibility)
+// Enhanced helper function to search for text content with namespace support
 const getNestedXMLElementText = (parent: Element, tagNames: string[]): string => {
   for (const tagName of tagNames) {
     // Try direct child first
@@ -276,8 +300,281 @@ const getNestedXMLElementText = (parent: Element, tagNames: string[]): string =>
     if (nestedElement?.textContent?.trim()) {
       return nestedElement.textContent.trim();
     }
+    
+    // Try case-insensitive search
+    const caseInsensitiveElement = findElementByTagNameIgnoreCase(parent, tagName);
+    if (caseInsensitiveElement?.textContent?.trim()) {
+      return caseInsensitiveElement.textContent.trim();
+    }
   }
   return "";
+};
+
+// Enhanced extraction for any HMRC element with better namespace and structure support
+const extractEmployeeFromHMRCElementEnhanced = (element: Element): EmployeeData | null => {
+  try {
+    console.log(`Parsing element: ${element.tagName}, namespace: ${element.namespaceURI}`);
+    
+    // Enhanced field extraction with more flexible searching
+    const forename = getFlexibleElementText(element, [
+      "Forename", "forename", "FORENAME",
+      "GivenName", "givenname", "GIVENNAME", 
+      "FirstName", "firstname", "FIRSTNAME",
+      "Name1", "name1", "NAME1"
+    ]);
+    
+    const surname = getFlexibleElementText(element, [
+      "Surname", "surname", "SURNAME",
+      "FamilyName", "familyname", "FAMILYNAME",
+      "LastName", "lastname", "LASTNAME", 
+      "Name2", "name2", "NAME2"
+    ]);
+    
+    console.log(`Found name: ${forename} ${surname}`);
+    
+    if (!forename || !surname) {
+      console.warn("Employee missing name, trying to find any name fields...");
+      logElementContents(element);
+      return null;
+    }
+
+    // Extract other fields with enhanced searching
+    const nino = getFlexibleElementText(element, [
+      "NINO", "nino", "Nino",
+      "NationalInsuranceNumber", "nationalinsurancenumber",
+      "NINumber", "ninumber", "NI_Number"
+    ]);
+    
+    const payId = getFlexibleElementText(element, [
+      "PayId", "payid", "PAYID",
+      "PayrollNumber", "payrollnumber", "PAYROLLNUMBER",
+      "EmployeeNumber", "employeenumber", "EMPLOYEENUMBER",
+      "EmpRef", "empref", "EMPREF"
+    ]);
+    
+    const gender = transformGender(getFlexibleElementText(element, [
+      "Gender", "gender", "GENDER",
+      "Sex", "sex", "SEX"
+    ]));
+    
+    const dateOfBirth = transformDate(getFlexibleElementText(element, [
+      "DateOfBirth", "dateofbirth", "DATEOFBIRTH",
+      "BirthDate", "birthdate", "BIRTHDATE",
+      "DOB", "dob"
+    ]));
+    
+    // Address extraction with flexible searching
+    const address1 = getFlexibleElementText(element, [
+      "Line1", "line1", "LINE1",
+      "AddressLine1", "addressline1", "ADDRESSLINE1",
+      "Address1", "address1", "ADDRESS1"
+    ]);
+    
+    const address2 = getFlexibleElementText(element, [
+      "Line2", "line2", "LINE2",
+      "AddressLine2", "addressline2", "ADDRESSLINE2", 
+      "Address2", "address2", "ADDRESS2"
+    ]);
+    
+    const address3 = getFlexibleElementText(element, [
+      "Line3", "line3", "LINE3",
+      "AddressLine3", "addressline3", "ADDRESSLINE3",
+      "Address3", "address3", "ADDRESS3"
+    ]);
+    
+    const address4 = getFlexibleElementText(element, [
+      "Line4", "line4", "LINE4", 
+      "AddressLine4", "addressline4", "ADDRESSLINE4",
+      "Address4", "address4", "ADDRESS4"
+    ]);
+    
+    const postcode = getFlexibleElementText(element, [
+      "PostCode", "postcode", "POSTCODE",
+      "PostalCode", "postalcode", "POSTALCODE",
+      "Postcode", "ZIP", "zip"
+    ]);
+
+    // Employment details
+    const taxCode = getFlexibleElementText(element, [
+      "TaxCode", "taxcode", "TAXCODE",
+      "TaxCodeBasisNonCumulative", "TaxCodeBasisCumulative"
+    ]);
+    
+    const nicCategory = getFlexibleElementText(element, [
+      "NICCategory", "niccategory", "NICCATEGORY",
+      "NICategory", "nicategory", "NICATEGORY",
+      "NationalInsuranceCategory", "nationalinsurancecategory"
+    ]);
+
+    const employeeData = {
+      first_name: forename,
+      last_name: surname,
+      national_insurance_number: nino,
+      payroll_id: payId,
+      gender: gender,
+      date_of_birth: dateOfBirth,
+      address1: address1,
+      address2: address2,
+      address3: address3,
+      address4: address4,
+      postcode: postcode,
+      tax_code: taxCode,
+      nic_code: nicCategory,
+      department: "",
+      email: "",
+      hire_date: "",
+      hours_per_week: "",
+      hourly_rate: "",
+    };
+    
+    console.log("Extracted employee data:", employeeData);
+    return employeeData;
+    
+  } catch (error) {
+    console.error("Error extracting employee from enhanced HMRC XML element:", error);
+    return null;
+  }
+};
+
+// Find elements with namespace support
+const findElementsWithNamespace = (xmlDoc: Document, elementNames: string[]): Element[] => {
+  const elements: Element[] = [];
+  
+  for (const elementName of elementNames) {
+    // Try direct query first
+    const found = xmlDoc.querySelectorAll(elementName);
+    if (found.length > 0) {
+      elements.push(...Array.from(found));
+      continue;
+    }
+    
+    // Try with wildcard namespace
+    const namespacedFound = xmlDoc.querySelectorAll(`*|${elementName}`);
+    if (namespacedFound.length > 0) {
+      elements.push(...Array.from(namespacedFound));
+      continue;
+    }
+    
+    // Try case-insensitive search
+    const allElements = xmlDoc.querySelectorAll("*");
+    for (const el of allElements) {
+      if (el.tagName.toLowerCase() === elementName.toLowerCase() || 
+          el.localName?.toLowerCase() === elementName.toLowerCase()) {
+        elements.push(el);
+      }
+    }
+  }
+  
+  return elements;
+};
+
+// Find possible employee elements by analyzing structure
+const findPossibleEmployeeElements = (xmlDoc: Document): Element[] => {
+  const elements: Element[] = [];
+  const allElements = xmlDoc.querySelectorAll("*");
+  
+  for (const el of allElements) {
+    // Look for elements that contain name-like fields
+    const hasName = el.querySelector("*") && (
+      findElementByTagNameIgnoreCase(el, "forename") ||
+      findElementByTagNameIgnoreCase(el, "firstname") ||
+      findElementByTagNameIgnoreCase(el, "givenname") ||
+      findElementByTagNameIgnoreCase(el, "surname") ||
+      findElementByTagNameIgnoreCase(el, "lastname") ||
+      findElementByTagNameIgnoreCase(el, "familyname")
+    );
+    
+    if (hasName) {
+      elements.push(el);
+    }
+  }
+  
+  return elements;
+};
+
+// Get all available elements for error reporting
+const getAvailableElements = (xmlDoc: Document): string[] => {
+  const elementNames = new Set<string>();
+  const allElements = xmlDoc.querySelectorAll("*");
+  
+  for (const el of allElements) {
+    elementNames.add(el.tagName);
+  }
+  
+  return Array.from(elementNames).slice(0, 20); // Limit to first 20 for readability
+};
+
+// Flexible element text extraction with multiple search strategies
+const getFlexibleElementText = (parent: Element, tagNames: string[]): string => {
+  for (const tagName of tagNames) {
+    // Try exact match
+    let element = parent.querySelector(tagName);
+    if (element?.textContent?.trim()) {
+      return element.textContent.trim();
+    }
+    
+    // Try case-insensitive match
+    element = findElementByTagNameIgnoreCase(parent, tagName);
+    if (element?.textContent?.trim()) {
+      return element.textContent.trim();
+    }
+    
+    // Try nested search
+    element = parent.querySelector(`* ${tagName}`);
+    if (element?.textContent?.trim()) {
+      return element.textContent.trim();
+    }
+    
+    // Try with any namespace prefix
+    const namespacedElements = parent.querySelectorAll(`*|${tagName}`);
+    for (const nsEl of namespacedElements) {
+      if (nsEl.textContent?.trim()) {
+        return nsEl.textContent.trim();
+      }
+    }
+  }
+  return "";
+};
+
+// Case-insensitive element finder
+const findElementByTagNameIgnoreCase = (parent: Element, tagName: string): Element | null => {
+  const children = parent.querySelectorAll("*");
+  for (const child of children) {
+    if (child.tagName.toLowerCase() === tagName.toLowerCase() || 
+        child.localName?.toLowerCase() === tagName.toLowerCase()) {
+      return child;
+    }
+  }
+  return null;
+};
+
+// Debug helper to log XML structure
+const logXMLStructure = (element: Element, depth: number, maxDepth: number): void => {
+  if (depth > maxDepth) return;
+  
+  const indent = "  ".repeat(depth);
+  console.log(`${indent}${element.tagName} (namespace: ${element.namespaceURI || 'none'})`);
+  
+  if (depth < maxDepth) {
+    const children = Array.from(element.children);
+    children.slice(0, 5).forEach(child => { // Limit to first 5 children per level
+      logXMLStructure(child, depth + 1, maxDepth);
+    });
+    if (children.length > 5) {
+      console.log(`${indent}  ... and ${children.length - 5} more children`);
+    }
+  }
+};
+
+// Debug helper to log element contents
+const logElementContents = (element: Element): void => {
+  console.log("Element contents:", {
+    tagName: element.tagName,
+    namespace: element.namespaceURI,
+    textContent: element.textContent?.substring(0, 200) + (element.textContent && element.textContent.length > 200 ? "..." : ""),
+    childElementCount: element.children.length,
+    childElements: Array.from(element.children).slice(0, 10).map(child => child.tagName)
+  });
 };
 
 // Transform gender from XML format to our format
