@@ -5,10 +5,10 @@ import { ColumnMapping, availableFields, requiredFields } from "./ImportConstant
 // Enhanced mapping patterns for common field variations
 const fieldMappingPatterns: Record<string, string[]> = {
   "first_name": [
-    "first name", "firstname", "name", "given name", "forename", "christian name"
+    "first name", "firstname", "name", "given name", "forename", "christian name", "first", "fname"
   ],
   "last_name": [
-    "last name", "lastname", "surname", "family name", "last"
+    "last name", "lastname", "surname", "family name", "last", "lname"
   ],
   "department": [
     "department", "dept", "division", "section", "team", "job title", "position", "role"
@@ -92,10 +92,13 @@ const isSimilar = (str1: string, str2: string): boolean => {
 const findBestFieldMatch = (header: string): string | null => {
   const normalizedHeader = normalizeText(header);
   
+  console.log(`Trying to match header: "${header}" (normalized: "${normalizedHeader}")`);
+  
   // First, try exact matches with our mapping patterns
   for (const [field, patterns] of Object.entries(fieldMappingPatterns)) {
     for (const pattern of patterns) {
       if (isSimilar(header, pattern)) {
+        console.log(`Matched "${header}" to ${field} via pattern "${pattern}"`);
         return field;
       }
     }
@@ -104,10 +107,12 @@ const findBestFieldMatch = (header: string): string | null => {
   // If no pattern match, try direct field name matching
   for (const field of availableFields) {
     if (isSimilar(header, field.replace(/_/g, ' '))) {
+      console.log(`Direct match: "${header}" to ${field}`);
       return field;
     }
   }
   
+  console.log(`No match found for "${header}"`);
   return null;
 };
 
