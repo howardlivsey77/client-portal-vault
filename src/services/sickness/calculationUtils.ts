@@ -18,6 +18,51 @@ export const calculationUtils = {
     };
   },
 
+  // Calculate actual rolling period based on sickness events within the rolling window
+  async getActualRollingPeriod(employeeId: string, referenceDate?: string | Date): Promise<{ start: string; end: string }> {
+    try {
+      // Import here to avoid circular dependencies
+      const { supabase } = await import("@/integrations/supabase/client");
+      
+      // Get the generic rolling period first
+      const genericPeriod = this.getRolling12MonthPeriod(referenceDate);
+      
+      // Fetch sickness records within the rolling window
+      const { data: records, error } = await supabase
+        .from('employee_sickness_records')
+        .select('start_date')
+        .eq('employee_id', employeeId)
+        .gte('start_date', genericPeriod.start)
+        .lte('start_date', genericPeriod.end)
+        .order('start_date', { ascending: false });
+
+      if (error) throw error;
+
+      // If no sickness records in the period, return the generic period
+      if (!records || records.length === 0) {
+        return genericPeriod;
+      }
+
+      // Find the latest sickness event date within the rolling window
+      const latestSicknessDate = records[0].start_date;
+      
+      // Calculate the period ending on the latest sickness event
+      const end = new Date(latestSicknessDate);
+      const start = new Date(end);
+      start.setFullYear(start.getFullYear() - 1);
+      start.setDate(start.getDate() + 1); // Start from tomorrow last year
+
+      return {
+        start: start.toISOString().split('T')[0],
+        end: end.toISOString().split('T')[0]
+      };
+    } catch (error) {
+      console.error('Error calculating actual rolling period:', error);
+      // Fallback to generic period
+      return this.getRolling12MonthPeriod(referenceDate);
+    }
+  },
+
   // Calculate service months from hire date
   calculateServiceMonths(hireDate: string): number {
     const hire = new Date(hireDate);

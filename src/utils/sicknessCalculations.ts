@@ -30,7 +30,7 @@ export const calculateSicknessEntitlementSummary = async (
         : sicknessService.calculateSspUsage(employee.id)
     ]);
 
-    const rollingPeriod = sicknessService.getRolling12MonthPeriod(referenceDate);
+    const rollingPeriod = await sicknessService.getActualRollingPeriod(employee.id, referenceDate);
 
     const fullAllowance = entitlementUsage.full_pay_entitled_days || 0;
     const halfAllowance = entitlementUsage.half_pay_entitled_days || 0;

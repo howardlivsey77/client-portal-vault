@@ -10,6 +10,7 @@ import { sspService } from "./sspService";
 export class SicknessService {
   // Calculation utilities
   getRolling12MonthPeriod = calculationUtils.getRolling12MonthPeriod;
+  getActualRollingPeriod = calculationUtils.getActualRollingPeriod;
   calculateServiceMonths = calculationUtils.calculateServiceMonths;
   findApplicableRule = calculationUtils.findApplicableRule;
   calculateEntitlements = calculationUtils.calculateEntitlements;
