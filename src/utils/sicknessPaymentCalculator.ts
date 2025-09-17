@@ -51,9 +51,9 @@ export const calculateSicknessRecordPayments = (
   const totalFullPayDays = entitlementSummary.full_pay_used_rolling_12_months + entitlementSummary.full_pay_remaining;
   const totalHalfPayDays = entitlementSummary.half_pay_used_rolling_12_months + entitlementSummary.half_pay_remaining;
 
-  // Track allocation
-  let remainingFullPay = entitlementSummary.full_pay_remaining;
-  let remainingHalfPay = entitlementSummary.half_pay_remaining;
+  // Track usage chronologically from zero
+  let usedFullPay = 0;
+  let usedHalfPay = 0;
 
   const results: SicknessRecordPayment[] = [];
 
@@ -76,20 +76,24 @@ export const calculateSicknessRecordPayments = (
     let noPayDays = 0;
     let remainingDays = record.total_days;
 
+    // Calculate available entitlement for this record
+    const availableFullPay = Math.max(0, totalFullPayDays - usedFullPay);
+    const availableHalfPay = Math.max(0, totalHalfPayDays - usedHalfPay);
+
     // Allocate to full pay first
-    if (remainingDays > 0 && remainingFullPay > 0) {
-      const allocateToFullPay = Math.min(remainingDays, remainingFullPay);
+    if (remainingDays > 0 && availableFullPay > 0) {
+      const allocateToFullPay = Math.min(remainingDays, availableFullPay);
       fullPayDays = allocateToFullPay;
       remainingDays -= allocateToFullPay;
-      remainingFullPay -= allocateToFullPay;
+      usedFullPay += allocateToFullPay;
     }
 
     // Then allocate to half pay
-    if (remainingDays > 0 && remainingHalfPay > 0) {
-      const allocateToHalfPay = Math.min(remainingDays, remainingHalfPay);
+    if (remainingDays > 0 && availableHalfPay > 0) {
+      const allocateToHalfPay = Math.min(remainingDays, availableHalfPay);
       halfPayDays = allocateToHalfPay;
       remainingDays -= allocateToHalfPay;
-      remainingHalfPay -= allocateToHalfPay;
+      usedHalfPay += allocateToHalfPay;
     }
 
     // Remaining days are no pay
