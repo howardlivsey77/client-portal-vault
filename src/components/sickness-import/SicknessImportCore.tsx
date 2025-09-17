@@ -58,59 +58,126 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
     includeScore: true
   });
 
-  // Enhanced name parsing and matching
+  // Enhanced name parsing and matching with multiple strategies
   const parseEmployeeName = (fullName: string) => {
-    const parts = fullName.trim().split(/\s+/);
-    if (parts.length >= 2) {
-      // Assume last part is surname, everything else is first/middle names
-      const surname = parts[parts.length - 1];
-      const firstName = parts.slice(0, -1).join(' ');
-      return { firstName, surname };
-    }
-    return { firstName: fullName, surname: '' };
-  };
-
-  const findEmployeeMatches = (employeeName: string) => {
-    const { firstName, surname } = parseEmployeeName(employeeName);
+    const normalized = fullName.trim().toLowerCase().replace(/[.,'"]/g, '');
     
-    // Search with surname first for better matching
-    const searchQuery = surname ? `${surname} ${firstName}` : firstName;
-    const results = employeeFuse.search(searchQuery);
+    let firstName = '';
+    let surname = '';
     
-    // Also try with payroll ID if the name looks like an ID
-    const payrollResults = /^\d+$/.test(employeeName.trim()) 
-      ? employeeFuse.search(employeeName.trim()) 
-      : [];
-    
-    // Try more flexible searches if no good matches found
-    let flexibleResults: any[] = [];
-    if (results.length === 0 || (results[0].score && results[0].score > 0.6)) {
-      // Try first name only
-      flexibleResults = employeeFuse.search(firstName);
-      
-      // Try surname only if we have one
-      if (surname) {
-        const surnameResults = employeeFuse.search(surname);
-        flexibleResults = [...flexibleResults, ...surnameResults];
+    if (normalized.includes(', ')) {
+      // "Surname, First Name" format
+      const [lastPart, firstPart] = normalized.split(', ');
+      surname = lastPart.trim();
+      firstName = firstPart.trim();
+    } else {
+      // "First Name Surname" or single name format
+      const nameParts = normalized.split(' ').filter(part => part.length > 0);
+      if (nameParts.length === 1) {
+        // Single name - could be first or last
+        firstName = nameParts[0];
+        surname = nameParts[0]; // Try as both
+      } else {
+        firstName = nameParts[0];
+        surname = nameParts.slice(1).join(' ');
       }
     }
     
-    // Combine and deduplicate results
-    const allResults = [...results, ...payrollResults, ...flexibleResults];
-    const uniqueResults = allResults.filter((result, index, self) => 
-      index === self.findIndex(r => r.item.id === result.item.id)
-    );
+    return { firstName, surname, normalized };
+  };
+
+  const findEmployeeMatches = (employeeName: string) => {
+    if (!employeeName?.trim()) return [];
     
-    const processedResults = uniqueResults
-      .sort((a, b) => (a.score || 0) - (b.score || 0))
-      .slice(0, 5)
-      .map(result => ({
-        id: result.item.id,
-        name: `${result.item.last_name}, ${result.item.first_name}`,
-        confidence: Math.round((1 - (result.score || 0)) * 100),
-        payrollId: result.item.payroll_id,
-        score: result.score || 0
+    const { firstName, surname, normalized } = parseEmployeeName(employeeName);
+    
+    // Multiple search strategies with different weights
+    const searchStrategies = [
+      // Strategy 1: Full name as provided
+      { query: normalized, weight: 1.0, type: 'full_name' },
+      
+      // Strategy 2: Exact surname match (high priority)
+      { query: surname, weight: 1.2, type: 'surname_exact' },
+      
+      // Strategy 3: "Surname, First" format
+      ...(firstName && surname && firstName !== surname ? [{ query: `${surname}, ${firstName}`, weight: 1.1, type: 'surname_first' }] : []),
+      
+      // Strategy 4: "First Surname" format
+      ...(firstName && surname && firstName !== surname ? [{ query: `${firstName} ${surname}`, weight: 1.0, type: 'first_surname' }] : []),
+      
+      // Strategy 5: First name + surname initial
+      ...(firstName && surname && firstName !== surname && surname.length > 1 ? [{ query: `${firstName} ${surname.charAt(0)}`, weight: 0.8, type: 'first_initial' }] : []),
+      
+      // Strategy 6: Payroll ID if it looks like one
+      ...((/^\d+$/.test(employeeName.trim())) ? [{ query: employeeName.trim(), weight: 1.3, type: 'payroll_id' }] : []),
+      
+      // Strategy 7: First name only (fallback)
+      { query: firstName, weight: 0.6, type: 'first_name_only' },
+    ];
+    
+    let allResults: any[] = [];
+    
+    // Execute all search strategies
+    for (const strategy of searchStrategies) {
+      if (!strategy.query) continue;
+      
+      const results = employeeFuse.search(strategy.query);
+      
+      // Add strategy metadata to results
+      const strategyResults = results.map(result => ({
+        ...result,
+        strategyWeight: strategy.weight,
+        strategyType: strategy.type,
+        adjustedScore: (result.score || 0) / strategy.weight
       }));
+      
+      allResults = [...allResults, ...strategyResults];
+    }
+    
+    // Deduplicate and score results
+    const uniqueResults = new Map();
+    
+    for (const result of allResults) {
+      const employeeId = result.item.id;
+      const existingResult = uniqueResults.get(employeeId);
+      
+      if (!existingResult || result.adjustedScore < existingResult.adjustedScore) {
+        // Calculate enhanced confidence with bonuses
+        let confidence = Math.round((1 - result.adjustedScore) * 100);
+        
+        // Bonus for exact surname match
+        const employeeLastName = result.item.last_name?.toLowerCase() || '';
+        if (employeeLastName === surname) {
+          confidence = Math.min(100, confidence + 15);
+        }
+        
+        // Bonus for payroll ID match
+        if (result.strategyType === 'payroll_id') {
+          confidence = Math.min(100, confidence + 20);
+        }
+        
+        // Bonus for exact first name match
+        const employeeFirstName = result.item.first_name?.toLowerCase() || '';
+        if (employeeFirstName === firstName && firstName !== surname) {
+          confidence = Math.min(100, confidence + 10);
+        }
+        
+        uniqueResults.set(employeeId, {
+          id: result.item.id,
+          name: `${result.item.last_name}, ${result.item.first_name}`,
+          confidence: Math.max(0, confidence),
+          payrollId: result.item.payroll_id,
+          score: result.adjustedScore,
+          matchType: result.strategyType
+        });
+      }
+    }
+    
+    // Convert to array, sort by confidence (descending), and take top 5
+    const processedResults = Array.from(uniqueResults.values())
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, 5)
+      .filter(result => result.confidence >= 35); // Lowered threshold from 50% to 35%
 
     return processedResults;
   };
