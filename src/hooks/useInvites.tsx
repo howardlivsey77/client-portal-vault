@@ -145,17 +145,27 @@ export const useInvites = () => {
 
             if (sendError) {
               console.error("send-invite error:", sendError);
-              let detail = '' as string;
+              let detail = '';
+              let setupInstructions = '';
               const ctxBody = (sendError as any)?.context?.body;
+              
               try {
                 const parsed = typeof ctxBody === 'string' ? JSON.parse(ctxBody) : ctxBody;
-                detail = parsed?.error || parsed?.message || (parsed ? JSON.stringify(parsed) : '');
+                detail = parsed?.user_message || parsed?.error || parsed?.message || '';
+                setupInstructions = parsed?.setup_instructions || '';
               } catch {
-                detail = typeof ctxBody === 'string' ? ctxBody : '';
+                detail = typeof ctxBody === 'string' ? ctxBody : sendError.message;
               }
+              
+              // Show user-friendly error message with setup instructions
+              const description = detail || sendError.message;
+              const fullMessage = setupInstructions 
+                ? `${description}\n\nSetup: ${setupInstructions}`
+                : description;
+              
               toast({
                 title: "Invitation created (email not sent)",
-                description: `${sendError.message}${detail ? ` - ${detail}` : ''}`,
+                description: fullMessage,
                 variant: "destructive"
               });
             } else {

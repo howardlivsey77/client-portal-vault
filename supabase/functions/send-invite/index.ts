@@ -182,10 +182,31 @@ serve(async (req) => {
 
     if (sendResp?.error) {
       console.error("send-invite: Resend send error", sendResp.error);
+      
+      let errorMessage = "Email sending failed";
+      let userFriendlyMessage = sendResp.error?.message ?? String(sendResp.error);
+      let setupInstructions = "";
+      
+      // Check for common Resend errors and provide helpful guidance
+      const errorStr = String(sendResp.error?.message || sendResp.error).toLowerCase();
+      
+      if (errorStr.includes("can only send to your account")) {
+        setupInstructions = "Resend is in testing mode. Go to https://resend.com/domains to verify your domain, or temporarily test with your account owner's email address.";
+        userFriendlyMessage = "Email provider is in testing mode - domain verification required";
+      } else if (errorStr.includes("domain") || errorStr.includes("unauthorized")) {
+        setupInstructions = "Verify your domain at https://resend.com/domains and ensure RESEND_FROM uses a verified domain email.";
+        userFriendlyMessage = "Email domain not verified";
+      } else if (errorStr.includes("api key") || errorStr.includes("forbidden")) {
+        setupInstructions = "Check your RESEND_API_KEY in Supabase secrets and ensure it's valid.";
+        userFriendlyMessage = "Invalid email service API key";
+      }
+      
       return new Response(
         JSON.stringify({
-          error: "Email sending failed",
+          error: errorMessage,
+          user_message: userFriendlyMessage,
           provider_error: sendResp.error?.message ?? String(sendResp.error),
+          setup_instructions: setupInstructions,
           hint: "Check RESEND_FROM, verify domain in Resend, and ensure API key is valid",
         }),
         { status: 502, headers: { "Content-Type": "application/json", ...corsHeaders } }
