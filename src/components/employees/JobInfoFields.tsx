@@ -35,7 +35,7 @@ export const JobInfoFields = ({ form, readOnly }: JobInfoFieldsProps) => {
             <SelectContent>
               {departmentNames.length === 0 && !loading && (
                 <SelectItem value="" disabled>
-                  No departments found
+                  No departments found - Create departments in Department Management
                 </SelectItem>
               )}
               {departmentNames.map((dept) => (
