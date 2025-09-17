@@ -34,7 +34,7 @@ export const calculationUtils = {
         .eq('employee_id', employeeId)
         .gte('start_date', genericPeriod.start)
         .lte('start_date', genericPeriod.end)
-        .order('start_date', { ascending: false });
+        .order('start_date', { ascending: true });
 
       if (error) throw error;
 
@@ -43,14 +43,14 @@ export const calculationUtils = {
         return genericPeriod;
       }
 
-      // Find the latest sickness event date within the rolling window
-      const latestSicknessDate = records[0].start_date;
+      // Find the earliest sickness event date within the rolling window
+      const earliestSicknessDate = records[0].start_date;
       
-      // Calculate the period ending on the latest sickness event
-      const end = new Date(latestSicknessDate);
-      const start = new Date(end);
-      start.setFullYear(start.getFullYear() - 1);
-      start.setDate(start.getDate() + 1); // Start from tomorrow last year
+      // Calculate the period starting from the earliest sickness event
+      const start = new Date(earliestSicknessDate);
+      const end = new Date(start);
+      end.setFullYear(end.getFullYear() + 1);
+      end.setDate(end.getDate() - 1); // End date is one day before anniversary
 
       return {
         start: start.toISOString().split('T')[0],
