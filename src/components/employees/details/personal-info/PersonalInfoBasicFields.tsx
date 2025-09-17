@@ -72,7 +72,7 @@ export const PersonalInfoBasicFields = ({ control }: PersonalInfoBasicFieldsProp
                 </FormControl>
                 <SelectContent>
                   {departmentNames.length === 0 && !loading && (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="no-departments" disabled>
                       No departments found
                     </SelectItem>
                   )}
