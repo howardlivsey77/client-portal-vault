@@ -131,22 +131,42 @@ export const useInvites = () => {
         }
         return false;
         } else {
-          // Send invitation email using Supabase's built-in email system
+          // Send invitation email using edge function with service role key
           try {
-            const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email.toLowerCase().trim(), {
-              redirectTo: `${window.location.origin}/accept-invitation?code=${inviteCode}`,
-              data: {
-                inviteCode: inviteCode,
-                role: selectedRole,
-                companyId: companyId
-              }
+            const payload = {
+              email: email.toLowerCase().trim(),
+              inviteCode,
+              role: selectedRole,
+              companyId: companyId
+            };
+            console.log("Invites: sending payload to send-invitation-email:", payload);
+            const { data: sendData, error: sendError } = await supabase.functions.invoke('send-invitation-email', {
+              body: payload
             });
 
-            if (inviteError) {
-              console.error("Invitation email error:", inviteError);
+            if (sendError) {
+              console.error("send-invitation-email error:", sendError);
+              let detail = '';
+              let setupInstructions = '';
+              const ctxBody = (sendError as any)?.context?.body;
+              
+              try {
+                const parsed = typeof ctxBody === 'string' ? JSON.parse(ctxBody) : ctxBody;
+                detail = parsed?.user_message || parsed?.error || parsed?.message || '';
+                setupInstructions = parsed?.setup_instructions || '';
+              } catch {
+                detail = typeof ctxBody === 'string' ? ctxBody : sendError.message;
+              }
+              
+              // Show user-friendly error message with setup instructions
+              const description = detail || sendError.message;
+              const fullMessage = setupInstructions 
+                ? `${description}\n\nSetup: ${setupInstructions}`
+                : description;
+              
               toast({
                 title: "Invitation created (email not sent)",
-                description: `Failed to send invitation email: ${inviteError.message}. Please check your SMTP configuration in Supabase.`,
+                description: fullMessage,
                 variant: "destructive"
               });
             } else {
