@@ -86,116 +86,242 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
     return { firstName, surname, normalized };
   };
 
+  // Helper function to calculate Levenshtein distance
+  const levenshteinDistance = (str1: string, str2: string): number => {
+    const m = str1.length;
+    const n = str2.length;
+    const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+    
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        if (str1[i - 1] === str2[j - 1]) {
+          dp[i][j] = dp[i - 1][j - 1];
+        } else {
+          dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+        }
+      }
+    }
+    return dp[m][n];
+  };
+
+  // Helper function to check if two names are similar
+  const areNamesSimilar = (name1: string, name2: string): boolean => {
+    if (!name1 || !name2) return false;
+    
+    // Exact match
+    if (name1 === name2) return true;
+    
+    // One contains the other (for nicknames)
+    if (name1.includes(name2) || name2.includes(name1)) return true;
+    
+    // Check Levenshtein distance (max 2 character differences for names 3+ chars)
+    if (name1.length >= 3 && name2.length >= 3) {
+      const distance = levenshteinDistance(name1, name2);
+      const maxDistance = Math.min(2, Math.floor(Math.max(name1.length, name2.length) * 0.3));
+      return distance <= maxDistance;
+    }
+    
+    return false;
+  };
+
   const findEmployeeMatches = (employeeName: string) => {
     if (!employeeName?.trim()) return [];
     
-    const { firstName, surname, normalized } = parseEmployeeName(employeeName);
+    const { firstName, surname } = parseEmployeeName(employeeName);
     
-    // Multiple search strategies with different weights
-    const searchStrategies = [
-      // Strategy 1: Full name as provided
-      { query: normalized, weight: 1.0, type: 'full_name' },
-      
-      // Strategy 2: Exact surname match (high priority)
-      { query: surname, weight: 1.2, type: 'surname_exact' },
-      
-      // Strategy 3: "Surname, First" format
-      ...(firstName && surname && firstName !== surname ? [{ query: `${surname}, ${firstName}`, weight: 1.1, type: 'surname_first' }] : []),
-      
-      // Strategy 4: "First Surname" format
-      ...(firstName && surname && firstName !== surname ? [{ query: `${firstName} ${surname}`, weight: 1.0, type: 'first_surname' }] : []),
-      
-      // Strategy 5: First name + surname initial
-      ...(firstName && surname && firstName !== surname && surname.length > 1 ? [{ query: `${firstName} ${surname.charAt(0)}`, weight: 0.8, type: 'first_initial' }] : []),
-      
-      // Strategy 6: Payroll ID if it looks like one
-      ...((/^\d+$/.test(employeeName.trim())) ? [{ query: employeeName.trim(), weight: 1.3, type: 'payroll_id' }] : []),
-      
-      // Strategy 7: First name only (fallback)
-      { query: firstName, weight: 0.6, type: 'first_name_only' },
-    ];
+    if (!surname) return [];
     
-    let allResults: any[] = [];
+    const results: Array<{
+      id: string;
+      name: string;
+      confidence: number;
+      payrollId: string | null;
+      score: number;
+      matchType: string;
+    }> = [];
     
-    // Execute all search strategies
-    for (const strategy of searchStrategies) {
-      if (!strategy.query) continue;
+    // Strategy 1: Exact full name match (highest priority)
+    for (const employee of employees) {
+      const empFirstName = employee.first_name?.toLowerCase() || '';
+      const empLastName = employee.last_name?.toLowerCase() || '';
+      const empFullName = `${empFirstName} ${empLastName}`.trim();
+      const searchFullName = `${firstName || ''} ${surname}`.trim();
       
-      const results = employeeFuse.search(strategy.query);
-      
-      // Add strategy metadata to results
-      const strategyResults = results.map(result => ({
-        ...result,
-        strategyWeight: strategy.weight,
-        strategyType: strategy.type,
-        adjustedScore: (result.score || 0) / strategy.weight
-      }));
-      
-      allResults = [...allResults, ...strategyResults];
-    }
-    
-    // Deduplicate and score results
-    const uniqueResults = new Map();
-    
-    for (const result of allResults) {
-      const employeeId = result.item.id;
-      const existingResult = uniqueResults.get(employeeId);
-      
-      if (!existingResult || result.adjustedScore < existingResult.adjustedScore) {
-        // Calculate enhanced confidence with bonuses
-        let confidence = Math.round((1 - result.adjustedScore) * 100);
-        
-        const employeeLastName = result.item.last_name?.toLowerCase() || '';
-        const employeeFirstName = result.item.first_name?.toLowerCase() || '';
-        
-        // Check if first names are completely different (no similarity)
-        const firstNamesSimilar = firstName && employeeFirstName && (
-          employeeFirstName === firstName ||
-          employeeFirstName.includes(firstName) ||
-          firstName.includes(employeeFirstName) ||
-          // Check for common letters (at least 50% overlap for short names)
-          (firstName.length >= 3 && employeeFirstName.length >= 3 && 
-           [...firstName].filter(char => employeeFirstName.includes(char)).length >= Math.min(firstName.length, employeeFirstName.length) * 0.5)
-        );
-        
-        // Penalty for completely different first names when surname matches
-        if (employeeLastName === surname && firstName && employeeFirstName && !firstNamesSimilar) {
-          confidence = Math.max(0, confidence - 25); // Significant penalty
-        }
-        
-        // Bonus for exact surname match (only if first names are similar or not applicable)
-        if (employeeLastName === surname && (firstNamesSimilar || !firstName || !employeeFirstName)) {
-          confidence = Math.min(100, confidence + 10); // Reduced from 15
-        }
-        
-        // Bonus for payroll ID match
-        if (result.strategyType === 'payroll_id') {
-          confidence = Math.min(100, confidence + 20);
-        }
-        
-        // Bonus for exact first name match
-        if (employeeFirstName === firstName && firstName !== surname) {
-          confidence = Math.min(100, confidence + 10);
-        }
-        
-        uniqueResults.set(employeeId, {
-          id: result.item.id,
-          name: `${result.item.last_name}, ${result.item.first_name}`,
-          confidence: Math.max(0, confidence),
-          payrollId: result.item.payroll_id,
-          score: result.adjustedScore,
-          matchType: result.strategyType
+      if (empFullName === searchFullName) {
+        results.push({
+          id: employee.id,
+          name: `${employee.last_name}, ${employee.first_name}`,
+          confidence: 100,
+          payrollId: employee.payroll_id,
+          score: 0,
+          matchType: 'exact_full_name'
         });
       }
     }
     
-    // Convert to array, sort by confidence (descending), and take top 5
-    const processedResults = Array.from(uniqueResults.values())
+    // If we found exact matches, return only those
+    if (results.length > 0) {
+      return results;
+    }
+    
+    // Strategy 2: Exact surname + exact first name match
+    if (firstName) {
+      for (const employee of employees) {
+        const empFirstName = employee.first_name?.toLowerCase() || '';
+        const empLastName = employee.last_name?.toLowerCase() || '';
+        
+        if (empLastName === surname && empFirstName === firstName) {
+          results.push({
+            id: employee.id,
+            name: `${employee.last_name}, ${employee.first_name}`,
+            confidence: 95,
+            payrollId: employee.payroll_id,
+            score: 0,
+            matchType: 'exact_names'
+          });
+        }
+      }
+      
+      if (results.length > 0) {
+        return results;
+      }
+    }
+    
+    // Strategy 3: Exact surname + similar first name
+    if (firstName) {
+      for (const employee of employees) {
+        const empFirstName = employee.first_name?.toLowerCase() || '';
+        const empLastName = employee.last_name?.toLowerCase() || '';
+        
+        if (empLastName === surname && areNamesSimilar(empFirstName, firstName)) {
+          // Calculate similarity score for confidence
+          const distance = levenshteinDistance(empFirstName, firstName);
+          const maxLen = Math.max(empFirstName.length, firstName.length);
+          const similarity = 1 - (distance / maxLen);
+          const confidence = Math.round(60 + (similarity * 20)); // 60-80% range
+          
+          results.push({
+            id: employee.id,
+            name: `${employee.last_name}, ${employee.first_name}`,
+            confidence: Math.min(80, confidence),
+            payrollId: employee.payroll_id,
+            score: distance,
+            matchType: 'exact_surname_similar_first'
+          });
+        }
+      }
+    }
+    
+    // Strategy 4: Similar surname + exact first name
+    if (firstName) {
+      for (const employee of employees) {
+        const empFirstName = employee.first_name?.toLowerCase() || '';
+        const empLastName = employee.last_name?.toLowerCase() || '';
+        
+        if (empFirstName === firstName && areNamesSimilar(empLastName, surname)) {
+          // Calculate similarity score for confidence
+          const distance = levenshteinDistance(empLastName, surname);
+          const maxLen = Math.max(empLastName.length, surname.length);
+          const similarity = 1 - (distance / maxLen);
+          const confidence = Math.round(50 + (similarity * 20)); // 50-70% range
+          
+          results.push({
+            id: employee.id,
+            name: `${employee.last_name}, ${employee.first_name}`,
+            confidence: Math.min(70, confidence),
+            payrollId: employee.payroll_id,
+            score: distance,
+            matchType: 'similar_surname_exact_first'
+          });
+        }
+      }
+    }
+    
+    // Strategy 5: Exact surname only (when we have multiple Williams, be very careful)
+    const surnameMatches = employees.filter(emp => 
+      emp.last_name?.toLowerCase() === surname
+    );
+    
+    if (surnameMatches.length === 1 && !firstName) {
+      // Only one person with this surname and no first name provided
+      const employee = surnameMatches[0];
+      results.push({
+        id: employee.id,
+        name: `${employee.last_name}, ${employee.first_name}`,
+        confidence: 75,
+        payrollId: employee.payroll_id,
+        score: 0,
+        matchType: 'unique_surname'
+      });
+    } else if (surnameMatches.length > 1 && firstName) {
+      // Multiple people with same surname - check if any first names are reasonably close
+      for (const employee of surnameMatches) {
+        const empFirstName = employee.first_name?.toLowerCase() || '';
+        
+        // Only include if first names have some similarity (at least reasonable match)
+        if (empFirstName && areNamesSimilar(empFirstName, firstName)) {
+          const distance = levenshteinDistance(empFirstName, firstName);
+          const maxLen = Math.max(empFirstName.length, firstName.length);
+          const similarity = 1 - (distance / maxLen);
+          
+          // Lower confidence for surname-only context when multiple people exist
+          const confidence = Math.round(30 + (similarity * 20)); // 30-50% range
+          
+          results.push({
+            id: employee.id,
+            name: `${employee.last_name}, ${employee.first_name}`,
+            confidence: Math.min(50, confidence),
+            payrollId: employee.payroll_id,
+            score: distance,
+            matchType: 'surname_with_similar_first'
+          });
+        }
+      }
+    }
+    
+    // Strategy 6: Fuzzy search as last resort (very low confidence)
+    if (results.length === 0) {
+      const fuse = new Fuse(employees, {
+        keys: ['last_name', 'first_name'],
+        threshold: 0.4,
+        includeScore: true,
+        ignoreLocation: true,
+        findAllMatches: true
+      });
+      
+      const fuzzyResults = fuse.search(employeeName);
+      
+      for (const result of fuzzyResults.slice(0, 3)) {
+        const confidence = Math.round((1 - (result.score || 0)) * 40); // Max 40% for fuzzy
+        
+        if (confidence >= 20) {
+          results.push({
+            id: result.item.id,
+            name: `${result.item.last_name}, ${result.item.first_name}`,
+            confidence,
+            payrollId: result.item.payroll_id,
+            score: result.score || 0,
+            matchType: 'fuzzy'
+          });
+        }
+      }
+    }
+    
+    // Remove duplicates and sort by confidence
+    const uniqueResults = new Map();
+    for (const result of results) {
+      const existing = uniqueResults.get(result.id);
+      if (!existing || result.confidence > existing.confidence) {
+        uniqueResults.set(result.id, result);
+      }
+    }
+    
+    return Array.from(uniqueResults.values())
       .sort((a, b) => b.confidence - a.confidence)
-      .slice(0, 5)
-      .filter(result => result.confidence >= 35); // Lowered threshold from 50% to 35%
-
-    return processedResults;
+      .slice(0, 5);
   };
 
   const findSchemeMatch = (schemeName: string, employeeId?: string) => {
