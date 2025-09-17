@@ -482,7 +482,6 @@ export type Database = {
           hours_per_week: number | null
           id: string
           last_name: string
-          leave_date: string | null
           national_insurance_number: string | null
           nhs_pension_employee_rate: number | null
           nhs_pension_member: boolean | null
@@ -495,7 +494,6 @@ export type Database = {
           rate_3: number | null
           rate_4: number | null
           sickness_scheme_id: string | null
-          status: string | null
           student_loan_plan: number | null
           tax_code: string | null
           updated_at: string
@@ -520,7 +518,6 @@ export type Database = {
           hours_per_week?: number | null
           id?: string
           last_name: string
-          leave_date?: string | null
           national_insurance_number?: string | null
           nhs_pension_employee_rate?: number | null
           nhs_pension_member?: boolean | null
@@ -533,7 +530,6 @@ export type Database = {
           rate_3?: number | null
           rate_4?: number | null
           sickness_scheme_id?: string | null
-          status?: string | null
           student_loan_plan?: number | null
           tax_code?: string | null
           updated_at?: string
@@ -558,7 +554,6 @@ export type Database = {
           hours_per_week?: number | null
           id?: string
           last_name?: string
-          leave_date?: string | null
           national_insurance_number?: string | null
           nhs_pension_employee_rate?: number | null
           nhs_pension_member?: boolean | null
@@ -571,7 +566,6 @@ export type Database = {
           rate_3?: number | null
           rate_4?: number | null
           sickness_scheme_id?: string | null
-          status?: string | null
           student_loan_plan?: number | null
           tax_code?: string | null
           updated_at?: string
