@@ -11,7 +11,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Trash2, UserCog } from "lucide-react";
+import { Trash2, UserCog, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Employee } from "@/types/employee-types";
 
@@ -39,6 +39,15 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
 
   return (
     <div className="rounded-md border-[1.5px] border-foreground bg-white">
+      <div className="flex justify-between items-center p-4 border-b border-muted">
+        <h3 className="text-lg font-semibold">Employee Directory</h3>
+        {isAdmin && (
+          <Button onClick={() => navigate("/employee/new")} size="sm">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Employee
+          </Button>
+        )}
+      </div>
       <Table>
         <TableHeader>
           <TableRow>
