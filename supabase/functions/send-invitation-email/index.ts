@@ -5,6 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
 };
 
 interface InvitationRequest {
@@ -15,10 +16,24 @@ interface InvitationRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Log request details for debugging
+  // Enhanced logging for debugging custom domain issues
   const origin = req.headers.get("origin") || "unknown";
   const userAgent = req.headers.get("user-agent") || "unknown";
-  console.log(`Request from origin: ${origin}, User-Agent: ${userAgent}`);
+  const host = req.headers.get("host") || "unknown";
+  const referer = req.headers.get("referer") || "unknown";
+  
+  console.log(`=== EDGE FUNCTION CALLED ===`);
+  console.log(`Method: ${req.method}`);
+  console.log(`Origin: ${origin}`);
+  console.log(`Host: ${host}`);
+  console.log(`Referer: ${referer}`);
+  console.log(`User-Agent: ${userAgent}`);
+  console.log(`URL: ${req.url}`);
+  
+  // Log all environment variables (without secrets)
+  console.log(`Environment check:`);
+  console.log(`- SUPABASE_URL: ${Deno.env.get("SUPABASE_URL") ? 'SET' : 'NOT SET'}`);
+  console.log(`- SUPABASE_SERVICE_ROLE_KEY: ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ? 'SET' : 'NOT SET'}`);
 
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -32,9 +47,13 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, inviteCode, role, companyId }: InvitationRequest = await req.json();
+    const requestBody = await req.json();
+    console.log(`Request body received:`, JSON.stringify(requestBody, null, 2));
+    
+    const { email, inviteCode, role, companyId }: InvitationRequest = requestBody;
 
     if (!email || !inviteCode) {
+      console.error(`Missing required fields - email: ${email}, inviteCode: ${inviteCode}`);
       return new Response(
         JSON.stringify({ error: "Email and invite code are required" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -42,9 +61,29 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Create Supabase client with service role key for admin operations
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error('Missing required environment variables:', {
+        supabaseUrl: !!supabaseUrl,
+        serviceRoleKey: !!serviceRoleKey
+      });
+      return new Response(
+        JSON.stringify({ 
+          error: "Server configuration error", 
+          details: "Missing required environment variables",
+          user_message: "Server configuration error. Please contact support."
+        }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
+    console.log(`Creating Supabase admin client with URL: ${supabaseUrl}`);
+    
     const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      supabaseUrl,
+      serviceRoleKey,
       {
         auth: {
           autoRefreshToken: false,

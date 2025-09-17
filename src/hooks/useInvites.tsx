@@ -139,10 +139,17 @@ export const useInvites = () => {
               role: selectedRole,
               companyId: companyId
             };
+            
+            console.log("=== FRONTEND DEBUGGING ===");
+            console.log("Current window.location:", window.location.href);
+            console.log("Current origin:", window.location.origin);
             console.log("Invites: sending payload to send-invitation-email:", payload);
+            
             const { data: sendData, error: sendError } = await supabase.functions.invoke('send-invitation-email', {
               body: payload
             });
+            
+            console.log("Edge function response:", { sendData, sendError });
 
             if (sendError) {
               console.error("send-invitation-email error:", sendError);
