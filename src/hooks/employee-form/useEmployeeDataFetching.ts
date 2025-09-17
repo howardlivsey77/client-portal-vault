@@ -63,6 +63,7 @@ export const useEmployeeDataFetching = (
       // Process the data before setting form values
       const dateOfBirth = parseDateFromDatabase(employeeData.date_of_birth);
       const hireDate = parseDateFromDatabase(employeeData.hire_date) || new Date();
+      const leaveDate = parseDateFromDatabase((employeeData as any).leave_date);
       
       // Validate gender to ensure it matches one of the allowed values
       const validGender = employeeData.gender && 
@@ -102,6 +103,8 @@ export const useEmployeeDataFetching = (
         nhs_pension_tier: employeeData.nhs_pension_tier,
         nhs_pension_employee_rate: employeeData.nhs_pension_employee_rate,
         monthly_salary: (employeeData as any).monthly_salary || null,
+        status: (employeeData as any).status || "active",
+        leave_date: leaveDate,
       });
 
       // Sync work patterns after form is populated (not during)
