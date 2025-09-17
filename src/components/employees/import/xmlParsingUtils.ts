@@ -22,25 +22,126 @@ interface HMRCEmployee {
   nicCategory: string;
 }
 
-// Parse HMRC XML Full Payment Submission file
+// Parse HMRC XML Full Payment Submission file with encoding detection
 export const parseHMRCXML = async (file: File): Promise<{data: EmployeeData[], headers: string[]}> => {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
+    // First, read as ArrayBuffer to detect encoding
+    const arrayReader = new FileReader();
+    arrayReader.onload = (e) => {
       try {
-        const xmlContent = e.target?.result as string;
-        if (!xmlContent) {
+        const arrayBuffer = e.target?.result as ArrayBuffer;
+        if (!arrayBuffer) {
           reject("No data found in XML file");
           return;
         }
 
-        // Check if this is actually a PDF file
-        if (xmlContent.startsWith('%PDF')) {
-          reject("File appears to be a PDF. Please upload the actual XML file, not a PDF containing XML data.");
-          return;
-        }
+        // Detect encoding from file content
+        const encoding = detectXMLEncoding(arrayBuffer);
+        console.log(`Detected XML encoding: ${encoding}`);
 
-        // Parse XML using DOMParser
+        // Now read with correct encoding
+        const textReader = new FileReader();
+        textReader.onload = (textEvent) => {
+          try {
+            const xmlContent = textEvent.target?.result as string;
+            if (!xmlContent) {
+              reject("No data found in XML file");
+              return;
+            }
+
+            // Check if this is actually a PDF file
+            if (xmlContent.startsWith('%PDF')) {
+              reject("File appears to be a PDF. Please upload the actual XML file, not a PDF containing XML data.");
+              return;
+            }
+
+            // Validate this is actually XML content
+            if (!xmlContent.trim().startsWith('<')) {
+              reject("File does not appear to contain valid XML data. Check the file format and encoding.");
+              return;
+            }
+
+            parseXMLContent(xmlContent, resolve, reject);
+          } catch (error) {
+            console.error("Error reading XML content:", error);
+            reject(`Failed to read XML content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
+        };
+
+        textReader.onerror = (error) => reject(`Failed to read file as text: ${error}`);
+        
+        // Read with detected encoding
+        if (encoding === 'utf-16le' || encoding === 'utf-16be') {
+          // For UTF-16, we need to use readAsText without encoding parameter
+          // and let the browser handle it
+          textReader.readAsText(file);
+        } else {
+          // For UTF-8 and other encodings
+          textReader.readAsText(file, encoding);
+        }
+      } catch (error) {
+        console.error("Error detecting encoding:", error);
+        reject(`Failed to detect file encoding: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    };
+    
+    arrayReader.onerror = (error) => reject(`Failed to read file: ${error}`);
+    arrayReader.readAsArrayBuffer(file);
+  });
+};
+
+// Detect XML file encoding from BOM or XML declaration
+const detectXMLEncoding = (arrayBuffer: ArrayBuffer): string => {
+  const bytes = new Uint8Array(arrayBuffer);
+  const first4Bytes = bytes.slice(0, 4);
+  
+  // Check for BOM (Byte Order Mark)
+  if (first4Bytes[0] === 0xFF && first4Bytes[1] === 0xFE) {
+    return 'utf-16le';
+  }
+  if (first4Bytes[0] === 0xFE && first4Bytes[1] === 0xFF) {
+    return 'utf-16be';
+  }
+  if (first4Bytes[0] === 0xEF && first4Bytes[1] === 0xBB && first4Bytes[2] === 0xBF) {
+    return 'utf-8';
+  }
+
+  // Try to read the first few hundred bytes as UTF-8 to look for XML declaration
+  try {
+    const decoder = new TextDecoder('utf-8', { fatal: true });
+    const firstPart = decoder.decode(bytes.slice(0, Math.min(200, bytes.length)));
+    
+    // Look for XML declaration with encoding
+    const xmlDeclMatch = firstPart.match(/<?xml[^>]*encoding\s*=\s*["']([^"']+)["']/i);
+    if (xmlDeclMatch) {
+      const declaredEncoding = xmlDeclMatch[1].toLowerCase();
+      console.log(`Found XML declaration encoding: ${declaredEncoding}`);
+      
+      // Map common encoding names
+      const encodingMap: Record<string, string> = {
+        'utf-8': 'utf-8',
+        'utf8': 'utf-8',
+        'utf-16': 'utf-16',
+        'utf16': 'utf-16',
+        'iso-8859-1': 'iso-8859-1',
+        'windows-1252': 'windows-1252'
+      };
+      
+      return encodingMap[declaredEncoding] || declaredEncoding;
+    }
+  } catch (error) {
+    console.log("Could not decode as UTF-8, trying other encodings");
+  }
+
+  // Default to UTF-8 if no encoding detected
+  console.log("No encoding detected, defaulting to UTF-8");
+  return 'utf-8';
+};
+
+// Parse XML content (extracted from main function for clarity)
+const parseXMLContent = (xmlContent: string, resolve: Function, reject: Function) => {
+  try {
+    // Parse XML using DOMParser
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlContent, "text/xml");
         
@@ -147,15 +248,10 @@ export const parseHMRCXML = async (file: File): Promise<{data: EmployeeData[], h
           data: parsedData,
           headers: headers
         });
-      } catch (error) {
-        console.error("Error parsing XML file:", error);
-        reject(`Failed to parse XML file: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
-    };
-    
-    reader.onerror = (error) => reject(`Failed to read file: ${error}`);
-    reader.readAsText(file);
-  });
+    } catch (error) {
+      console.error("Error parsing XML file:", error);
+      reject(`Failed to parse XML file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
 };
 
 // Extract employee data from HMRC FPS XML irenvelope element
