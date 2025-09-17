@@ -34,6 +34,12 @@ export const parseHMRCXML = async (file: File): Promise<{data: EmployeeData[], h
           return;
         }
 
+        // Check if this is actually a PDF file
+        if (xmlContent.startsWith('%PDF')) {
+          reject("File appears to be a PDF. Please upload the actual XML file, not a PDF containing XML data.");
+          return;
+        }
+
         // Parse XML using DOMParser
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlContent, "text/xml");
@@ -41,24 +47,58 @@ export const parseHMRCXML = async (file: File): Promise<{data: EmployeeData[], h
         // Check for parsing errors
         const parseError = xmlDoc.querySelector("parsererror");
         if (parseError) {
-          reject("Invalid XML format");
+          reject("Invalid XML format: " + parseError.textContent);
           return;
         }
 
-        // Extract employee data from XML structure
-        const employeeElements = xmlDoc.querySelectorAll("Employee");
+        // Try different XML structures - HMRC FPS vs simple Employee list
+        let employeeElements: NodeListOf<Element>;
+        let xmlFormat = "unknown";
+
+        // First try HMRC FPS structure
+        const irenvelopeElements = xmlDoc.querySelectorAll("irenvelope");
+        if (irenvelopeElements.length > 0) {
+          xmlFormat = "HMRC_FPS";
+          employeeElements = xmlDoc.querySelectorAll("irenvelope");
+        } else {
+          // Fallback to simple Employee structure
+          employeeElements = xmlDoc.querySelectorAll("Employee");
+          if (employeeElements.length > 0) {
+            xmlFormat = "simple";
+          }
+        }
+
+        if (employeeElements.length === 0) {
+          reject("No employee data found in XML file. Expected either HMRC FPS format with 'irenvelope' elements or simple format with 'Employee' elements.");
+          return;
+        }
+
+        console.log(`Detected XML format: ${xmlFormat}, found ${employeeElements.length} employee records`);
+
         const parsedData: EmployeeData[] = [];
 
-        employeeElements.forEach((employeeEl) => {
+        employeeElements.forEach((employeeEl, index) => {
           try {
-            const employee = extractEmployeeFromXMLElement(employeeEl);
+            let employee: EmployeeData | null = null;
+            
+            if (xmlFormat === "HMRC_FPS") {
+              employee = extractEmployeeFromHMRCElement(employeeEl);
+            } else {
+              employee = extractEmployeeFromXMLElement(employeeEl);
+            }
+            
             if (employee) {
               parsedData.push(employee);
             }
           } catch (error) {
-            console.warn("Error parsing employee element:", error);
+            console.warn(`Error parsing employee element ${index + 1}:`, error);
           }
         });
+
+        if (parsedData.length === 0) {
+          reject("No valid employee data could be extracted from the XML file. Please check the file format and content.");
+          return;
+        }
 
         // Define headers based on available fields
         const headers = [
@@ -77,8 +117,7 @@ export const parseHMRCXML = async (file: File): Promise<{data: EmployeeData[], h
           "nic_code"
         ];
 
-        console.log("Parsed XML employee data:", parsedData);
-        console.log("XML headers:", headers);
+        console.log(`Successfully parsed ${parsedData.length} employees from ${xmlFormat} XML format`);
 
         resolve({
           data: parsedData,
@@ -86,16 +125,81 @@ export const parseHMRCXML = async (file: File): Promise<{data: EmployeeData[], h
         });
       } catch (error) {
         console.error("Error parsing XML file:", error);
-        reject(error);
+        reject(`Failed to parse XML file: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     };
     
-    reader.onerror = (error) => reject(error);
+    reader.onerror = (error) => reject(`Failed to read file: ${error}`);
     reader.readAsText(file);
   });
 };
 
-// Extract employee data from XML element
+// Extract employee data from HMRC FPS XML irenvelope element
+const extractEmployeeFromHMRCElement = (irenvelopeEl: Element): EmployeeData | null => {
+  try {
+    // HMRC FPS structure is more complex - data can be in various nested elements
+    // Look for employee information in different possible locations
+    
+    // Try to find name elements (could be nested in different structures)
+    const forename = getNestedXMLElementText(irenvelopeEl, ["Forename", "GivenName", "FirstName"]) || "";
+    const surname = getNestedXMLElementText(irenvelopeEl, ["Surname", "FamilyName", "LastName"]) || "";
+    
+    if (!forename || !surname) {
+      console.warn("HMRC employee missing name, skipping");
+      return null;
+    }
+
+    // Extract NINO (National Insurance Number)
+    const nino = getNestedXMLElementText(irenvelopeEl, ["NINO", "NationalInsuranceNumber"]) || "";
+    
+    // Extract payroll ID (could be in various fields)
+    const payId = getNestedXMLElementText(irenvelopeEl, ["PayId", "PayrollNumber", "EmployeeNumber"]) || "";
+    
+    // Extract gender
+    const gender = transformGender(getNestedXMLElementText(irenvelopeEl, ["Gender", "Sex"]) || "");
+    
+    // Extract date of birth
+    const dateOfBirth = transformDate(getNestedXMLElementText(irenvelopeEl, ["DateOfBirth", "BirthDate"]) || "");
+    
+    // Extract address - HMRC address structure can be complex
+    const address1 = getNestedXMLElementText(irenvelopeEl, ["Line1", "AddressLine1", "Address1"]) || "";
+    const address2 = getNestedXMLElementText(irenvelopeEl, ["Line2", "AddressLine2", "Address2"]) || "";
+    const address3 = getNestedXMLElementText(irenvelopeEl, ["Line3", "AddressLine3", "Address3"]) || "";
+    const address4 = getNestedXMLElementText(irenvelopeEl, ["Line4", "AddressLine4", "Address4"]) || "";
+    const postcode = getNestedXMLElementText(irenvelopeEl, ["PostCode", "PostalCode", "Postcode"]) || "";
+
+    // Extract employment details
+    const taxCode = getNestedXMLElementText(irenvelopeEl, ["TaxCode", "TaxCodeBasisNonCumulative", "TaxCodeBasisCumulative"]) || "";
+    const nicCategory = getNestedXMLElementText(irenvelopeEl, ["NICCategory", "NICategory", "NationalInsuranceCategory"]) || "";
+
+    return {
+      first_name: forename,
+      last_name: surname,
+      national_insurance_number: nino,
+      payroll_id: payId,
+      gender: gender,
+      date_of_birth: dateOfBirth,
+      address1: address1,
+      address2: address2,
+      address3: address3,
+      address4: address4,
+      postcode: postcode,
+      tax_code: taxCode,
+      nic_code: nicCategory,
+      // Note: HMRC XML doesn't contain department, email, hire_date, hours_per_week, rates
+      department: "", // Will need to be set manually
+      email: "", // Will need to be set manually
+      hire_date: "", // Will need to be set manually
+      hours_per_week: "", // Will need to be set manually
+      hourly_rate: "", // Will need to be set manually
+    };
+  } catch (error) {
+    console.error("Error extracting employee from HMRC XML element:", error);
+    return null;
+  }
+};
+
+// Extract employee data from simple XML element (original format)
 const extractEmployeeFromXMLElement = (employeeEl: Element): EmployeeData | null => {
   try {
     // Extract basic info
@@ -156,6 +260,24 @@ const extractEmployeeFromXMLElement = (employeeEl: Element): EmployeeData | null
 const getXMLElementText = (parent: Element, tagName: string): string => {
   const element = parent.querySelector(tagName);
   return element?.textContent?.trim() || "";
+};
+
+// Helper function to search for text content in multiple possible tag names (for HMRC flexibility)
+const getNestedXMLElementText = (parent: Element, tagNames: string[]): string => {
+  for (const tagName of tagNames) {
+    // Try direct child first
+    const directElement = parent.querySelector(tagName);
+    if (directElement?.textContent?.trim()) {
+      return directElement.textContent.trim();
+    }
+    
+    // Try nested search with wildcard
+    const nestedElement = parent.querySelector(`* ${tagName}`);
+    if (nestedElement?.textContent?.trim()) {
+      return nestedElement.textContent.trim();
+    }
+  }
+  return "";
 };
 
 // Transform gender from XML format to our format
