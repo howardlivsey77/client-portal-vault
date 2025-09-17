@@ -5,6 +5,7 @@ import { formatCurrency, formatDate } from '@/lib/formatters';
 import { ExtraHoursSummary } from '@/components/payroll/types';
 import { SicknessRecord, SicknessEntitlementSummary } from '@/types/sickness';
 import { Employee } from '@/types/employee-types';
+import { calculateSicknessRecordPayments } from './sicknessPaymentCalculator';
 
 /**
  * Generate a PDF from the extra hours summary data
@@ -261,27 +262,27 @@ export const generateSicknessReportPDF = async (
     const currentRecords = sicknessRecords.filter(record => isRecordWithinEntitlementPeriod(record, entitlementSummary));
     const expiredRecords = sicknessRecords.filter(record => !isRecordWithinEntitlementPeriod(record, entitlementSummary));
     
-    // Records table
-    const tableData = sicknessRecords.map(record => [
+    // Calculate payment information for each record
+    const paymentInfo = calculateSicknessRecordPayments(sicknessRecords, entitlementSummary);
+    
+    // Records table with payment information instead of certified/reason/notes
+    const tableData = sicknessRecords.map((record, index) => [
       formatDate(record.start_date),
       record.end_date ? formatDate(record.end_date) : 'Ongoing',
       `${record.total_days} days`,
-      record.is_certified ? 'Yes' : 'No',
-      record.reason || 'Not specified',
-      record.notes || '-'
+      paymentInfo[index].paymentDescription
     ]);
     
     autoTable(doc, {
       startY: currentY,
-      head: [['Start Date', 'End Date', 'Duration', 'Certified', 'Reason', 'Notes']],
+      head: [['Start Date', 'End Date', 'Duration', 'Payment Status']],
       body: tableData,
       styles: {
         fontSize: 8,
         cellPadding: 2
       },
       columnStyles: {
-        4: { cellWidth: 30 }, // Reason column
-        5: { cellWidth: 35 }  // Notes column
+        3: { cellWidth: 50 } // Payment Status column
       },
       didParseCell: (data) => {
         // Apply strikethrough styling to expired records
