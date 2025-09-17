@@ -1,9 +1,15 @@
 
 import * as XLSX from "xlsx";
 import { EmployeeData } from "./ImportConstants";
+import { parseHMRCXML, isXMLFile } from "./xmlParsingUtils";
 
 // Read and parse file data
 export const readFileData = async (file: File): Promise<{data: EmployeeData[], headers: string[]}> => {
+  // Handle XML files directly without FileReader promise wrapper
+  if (isXMLFile(file)) {
+    return parseHMRCXML(file);
+  }
+  
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {

@@ -48,9 +48,10 @@ export const FileUploader = ({
         return;
       }
 
-      // Detect if this is a CSV file
+      // Detect file type
       const isCSVFile = selectedFile.name.toLowerCase().endsWith('.csv');
-      console.log("File type detected - CSV:", isCSVFile);
+      const isXMLFile = selectedFile.name.toLowerCase().endsWith('.xml');
+      console.log("File type detected - CSV:", isCSVFile, "XML:", isXMLFile);
 
       // Attempt automatic mapping
       const mappings = autoMapColumns(headers);
@@ -69,7 +70,7 @@ export const FileUploader = ({
       console.error("Error processing file:", error);
       toast({
         title: "Error parsing file",
-        description: error.message || "Please make sure your file is a valid Excel or CSV file.",
+        description: error.message || "Please make sure your file is a valid Excel, CSV, or XML file.",
         variant: "destructive"
       });
     }
@@ -77,18 +78,20 @@ export const FileUploader = ({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="file">Upload Excel or CSV file</Label>
+      <Label htmlFor="file">Upload Excel, CSV, or XML file</Label>
       <Input 
         id="file" 
         type="file" 
-        accept=".xlsx,.xls,.csv" 
+        accept=".xlsx,.xls,.csv,.xml" 
         onChange={handleFileChange} 
         disabled={disabled} 
         className="px-0 my-[2px] mx-0" 
       />
       <p className="text-sm text-muted-foreground">
-        File must contain columns for first name, last name, department.
+        <strong>Excel/CSV files:</strong> Must contain columns for first name, last name, department.
         Additional fields like email, address, hourly rates, etc. can also be imported.
+        <br />
+        <strong>XML files:</strong> HMRC Full Payment Submission format supported. Will populate personal details, addresses, and payroll information.
         <br />
         <strong>CSV files:</strong> Use DD/MM/YYYY format for dates (e.g., 22/04/2025 for April 22, 2025)
       </p>
