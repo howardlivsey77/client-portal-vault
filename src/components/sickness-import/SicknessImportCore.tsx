@@ -145,10 +145,27 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
         // Calculate enhanced confidence with bonuses
         let confidence = Math.round((1 - result.adjustedScore) * 100);
         
-        // Bonus for exact surname match
         const employeeLastName = result.item.last_name?.toLowerCase() || '';
-        if (employeeLastName === surname) {
-          confidence = Math.min(100, confidence + 15);
+        const employeeFirstName = result.item.first_name?.toLowerCase() || '';
+        
+        // Check if first names are completely different (no similarity)
+        const firstNamesSimilar = firstName && employeeFirstName && (
+          employeeFirstName === firstName ||
+          employeeFirstName.includes(firstName) ||
+          firstName.includes(employeeFirstName) ||
+          // Check for common letters (at least 50% overlap for short names)
+          (firstName.length >= 3 && employeeFirstName.length >= 3 && 
+           [...firstName].filter(char => employeeFirstName.includes(char)).length >= Math.min(firstName.length, employeeFirstName.length) * 0.5)
+        );
+        
+        // Penalty for completely different first names when surname matches
+        if (employeeLastName === surname && firstName && employeeFirstName && !firstNamesSimilar) {
+          confidence = Math.max(0, confidence - 25); // Significant penalty
+        }
+        
+        // Bonus for exact surname match (only if first names are similar or not applicable)
+        if (employeeLastName === surname && (firstNamesSimilar || !firstName || !employeeFirstName)) {
+          confidence = Math.min(100, confidence + 10); // Reduced from 15
         }
         
         // Bonus for payroll ID match
@@ -157,7 +174,6 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
         }
         
         // Bonus for exact first name match
-        const employeeFirstName = result.item.first_name?.toLowerCase() || '';
         if (employeeFirstName === firstName && firstName !== surname) {
           confidence = Math.min(100, confidence + 10);
         }
