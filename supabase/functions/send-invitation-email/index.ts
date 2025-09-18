@@ -74,10 +74,38 @@ const handler = async (req: Request): Promise<Response> => {
     
     // Determine the correct base URL for redirect
     const requestOrigin = req.headers.get("origin");
-    const baseUrl = requestOrigin || "https://0fda5de4-397f-460e-8be4-56e3718a981f.lovableproject.com";
+    const referer = req.headers.get("referer");
+    
+    // Known valid domains
+    const validDomains = [
+      "https://0fda5de4-397f-460e-8be4-56e3718a981f.lovableproject.com",
+      "https://payroll.dootsons.com"
+    ];
+    
+    let baseUrl = "https://0fda5de4-397f-460e-8be4-56e3718a981f.lovableproject.com"; // default fallback
+    
+    // Try to determine the correct base URL from origin first
+    if (requestOrigin && validDomains.includes(requestOrigin)) {
+      baseUrl = requestOrigin;
+    } else if (referer) {
+      // Try to extract from referer as fallback
+      try {
+        const refererUrl = new URL(referer);
+        const potentialOrigin = `${refererUrl.protocol}//${refererUrl.host}`;
+        if (validDomains.includes(potentialOrigin)) {
+          baseUrl = potentialOrigin;
+        }
+      } catch (e) {
+        console.log("Could not parse referer URL:", referer);
+      }
+    }
+    
     const acceptUrl = `${baseUrl}/accept-invitation?code=${inviteCode}`;
     
-    console.log(`Using acceptance URL: ${acceptUrl}`);
+    console.log(`Request origin: ${requestOrigin}`);
+    console.log(`Referer: ${referer}`);
+    console.log(`Selected base URL: ${baseUrl}`);
+    console.log(`Final acceptance URL: ${acceptUrl}`);
 
     // Create HTML email template
     const htmlTemplate = `
