@@ -54,27 +54,20 @@ const handler = async (req: Request): Promise<Response> => {
     
     const { email, inviteCode, role, companyId, test, skipSend }: InvitationRequest & { test?: boolean; skipSend?: boolean } = requestBody;
 
-    // Enhanced logging for debugging
-    console.log(`Parsed fields:`, {
-      email: email || 'undefined',
-      inviteCode: inviteCode || 'undefined',
-      role: role || 'undefined',
-      companyId: companyId || 'undefined',
-      test: test || 'undefined',
-      skipSend: skipSend || 'undefined'
-    });
+    // Check for string "undefined" values and treat them as actual undefined
+    const cleanEmail = email === "undefined" ? undefined : email;
+    const cleanInviteCode = inviteCode === "undefined" ? undefined : inviteCode;
+    const cleanRole = role === "undefined" ? undefined : role;
+    const cleanCompanyId = companyId === "undefined" ? undefined : companyId;
 
-    if (!email || !inviteCode) {
-      console.error(`Missing required fields - email: ${email}, inviteCode: ${inviteCode}`);
-      return new Response(
-        JSON.stringify({ 
-          error: "Email and invite code are required",
-          received_fields: Object.keys(requestBody),
-          debug_payload: requestBody
-        }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
+    console.log(`Cleaned fields:`, {
+      email: cleanEmail,
+      inviteCode: cleanInviteCode,
+      role: cleanRole,
+      companyId: cleanCompanyId,
+      test,
+      skipSend
+    });
 
     // Handle test mode - validate payload without sending email
     if (test && skipSend) {
@@ -83,10 +76,25 @@ const handler = async (req: Request): Promise<Response> => {
         JSON.stringify({ 
           success: true, 
           test_mode: true,
-          message: "Payload validation successful - email would be sent in production",
-          validated_fields: { email, inviteCode, role, companyId }
+          message: "Test mode - payload validation successful",
+          validated_fields: { email: cleanEmail, inviteCode: cleanInviteCode, role: cleanRole, companyId: cleanCompanyId }
         }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (!cleanEmail || !cleanInviteCode) {
+      console.error(`Missing required fields - email: ${cleanEmail}, inviteCode: ${cleanInviteCode}`);
+      return new Response(
+        JSON.stringify({ 
+          error: "Email and invite code are required",
+          received_fields: Object.keys(requestBody),
+          debug_info: {
+            original: { email, inviteCode, role, companyId },
+            cleaned: { email: cleanEmail, inviteCode: cleanInviteCode, role: cleanRole, companyId: cleanCompanyId }
+          }
+        }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
@@ -152,7 +160,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.log("[send-invitation-email] Using default fallback URL");
     }
     
-    const acceptUrl = `${baseUrl}/accept-invitation?code=${inviteCode}`;
+    const acceptUrl = `${baseUrl}/accept-invitation?code=${cleanInviteCode}`;
     
     console.log(`[send-invitation-email] Request origin: ${requestOrigin}`);
     console.log(`[send-invitation-email] Referer: ${referer}`);
@@ -177,7 +185,7 @@ const handler = async (req: Request): Promise<Response> => {
                             <td style="padding: 40px;">
                                 <h1 style="color: #333; margin: 0 0 20px 0; font-size: 24px;">You're Invited!</h1>
                                 <p style="color: #666; margin: 0 0 20px 0; font-size: 16px; line-height: 1.5;">
-                                    You have been invited to join our platform with the role of <strong>${role}</strong>.
+                                    You have been invited to join our platform with the role of <strong>${cleanRole || 'user'}</strong>.
                                 </p>
                                 <p style="color: #666; margin: 0 0 30px 0; font-size: 16px; line-height: 1.5;">
                                     Click the button below to accept your invitation and get started:
@@ -210,12 +218,12 @@ const handler = async (req: Request): Promise<Response> => {
     // Prepare Mailgun API request
     const formData = new FormData();
     formData.append('from', `Company Invitations <noreply@${mailgunDomain}>`);
-    formData.append('to', email.toLowerCase().trim());
+    formData.append('to', cleanEmail.toLowerCase().trim());
     formData.append('subject', 'You\'ve been invited to join our platform');
     formData.append('html', htmlTemplate);
-    formData.append('text', `You've been invited to join our platform with the role of ${role}. Click this link to accept: ${acceptUrl}`);
+    formData.append('text', `You've been invited to join our platform with the role of ${cleanRole || 'user'}. Click this link to accept: ${acceptUrl}`);
 
-    console.log("Sending invitation email via Mailgun to:", email);
+    console.log("Sending invitation email via Mailgun to:", cleanEmail);
     
     // Send email via Mailgun API
     const mailgunResponse = await fetch(`https://api.mailgun.net/v3/${mailgunDomain}/messages`, {

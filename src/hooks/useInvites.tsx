@@ -133,6 +133,22 @@ export const useInvites = () => {
         } else {
           // Send invitation email using edge function with service role key
           try {
+            // Validate payload before sending
+            if (!email || !inviteCode || !selectedRole || !companyId) {
+              console.error("Invalid payload - missing required fields:", {
+                email: !!email,
+                inviteCode: !!inviteCode,
+                selectedRole: !!selectedRole,
+                companyId: !!companyId
+              });
+              toast({
+                title: "Invalid invitation data",
+                description: "Missing required fields for invitation.",
+                variant: "destructive"
+              });
+              return false;
+            }
+
             const payload = {
               email: email.toLowerCase().trim(),
               inviteCode,
