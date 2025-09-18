@@ -140,9 +140,11 @@ export const useInvites = () => {
               companyId: companyId
             };
             
-            console.log("=== FRONTEND DEBUGGING ===");
+            console.log("=== FRONTEND DEBUGGING (ENHANCED) ===");
             console.log("Current window.location:", window.location.href);
             console.log("Current origin:", window.location.origin);
+            console.log("Is custom domain:", window.location.origin.includes('payroll.dootsons.com'));
+            console.log("User agent:", navigator.userAgent);
             console.log("Invites: sending payload to send-invitation-email:", payload);
             
             const { data: sendData, error: sendError } = await supabase.functions.invoke('send-invitation-email', {

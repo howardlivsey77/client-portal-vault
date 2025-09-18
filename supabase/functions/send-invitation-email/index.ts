@@ -76,28 +76,41 @@ const handler = async (req: Request): Promise<Response> => {
     const requestOrigin = req.headers.get("origin");
     const referer = req.headers.get("referer");
     
-    // Known valid domains
+    // Known valid domains (updated with correct project ID)
     const validDomains = [
-      "https://0fda5de4-397f-460e-8be4-56e3718a981f.lovableproject.com",
-      "https://payroll.dootsons.com"
+      "https://qdpktyyvqejdpxiegooe.lovableproject.com",
+      "https://payroll.dootsons.com",
+      "http://localhost:3000",
+      "https://localhost:3000"
     ];
     
-    let baseUrl = "https://0fda5de4-397f-460e-8be4-56e3718a981f.lovableproject.com"; // default fallback
+    let baseUrl = "https://qdpktyyvqejdpxiegooe.lovableproject.com"; // default fallback
     
     // Try to determine the correct base URL from origin first
+    console.log(`[send-invitation-email] Checking origin: ${requestOrigin}`);
+    console.log(`[send-invitation-email] Valid domains:`, validDomains);
+    
     if (requestOrigin && validDomains.includes(requestOrigin)) {
       baseUrl = requestOrigin;
+      console.log(`[send-invitation-email] Origin matched exactly: ${baseUrl}`);
     } else if (referer) {
       // Try to extract from referer as fallback
+      console.log(`[send-invitation-email] Trying referer: ${referer}`);
       try {
         const refererUrl = new URL(referer);
         const potentialOrigin = `${refererUrl.protocol}//${refererUrl.host}`;
+        console.log(`[send-invitation-email] Extracted potential origin: ${potentialOrigin}`);
         if (validDomains.includes(potentialOrigin)) {
           baseUrl = potentialOrigin;
+          console.log(`[send-invitation-email] Referer matched: ${baseUrl}`);
         }
       } catch (e) {
-        console.log("Could not parse referer URL:", referer);
+        console.log("[send-invitation-email] Could not parse referer URL:", referer, e);
       }
+    }
+    
+    if (baseUrl === "https://qdpktyyvqejdpxiegooe.lovableproject.com") {
+      console.log("[send-invitation-email] Using default fallback URL");
     }
     
     const acceptUrl = `${baseUrl}/accept-invitation?code=${inviteCode}`;
