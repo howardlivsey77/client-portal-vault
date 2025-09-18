@@ -134,7 +134,7 @@ export const useInvites = () => {
         return false;
         } else {
           try {
-            // Send invitation email via Mailgun SMTP
+            // Send invitation email via Supabase Edge Function
             const emailPayload = {
               email: email.toLowerCase().trim(),
               inviteCode,
