@@ -134,34 +134,36 @@ export const useInvites = () => {
         // Generate invitation URL for manual sharing
         const inviteUrl = `${window.location.origin}/accept-invitation?code=${inviteCode}`;
 
-        // Use mailto link to open user's email client with pre-filled invitation
+        // Send invitation email via Supabase edge function
         try {
-          const emailSubject = encodeURIComponent('You have been invited to join our platform');
-          const emailBody = encodeURIComponent(`Hi there!
-
-You have been invited to join our platform as a ${selectedRole}.
-
-Click the link below to accept your invitation:
-${inviteUrl}
-
-This invitation will expire in 7 days.
-
-If you have any questions, please contact our support team.
-
-Best regards,
-The Team`);
-
-          const mailtoLink = `mailto:${email}?subject=${emailSubject}&body=${emailBody}`;
+          console.log('Calling send-invitation-email edge function...');
           
-          // Open user's email client
-          window.open(mailtoLink, '_blank');
-          
-          toast({
-            title: "Email Client Opened",
-            description: `Email draft created for ${email}. Please send the email from your email client.`,
+          const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-invitation-email', {
+            body: {
+              email: email.toLowerCase().trim(),
+              inviteCode,
+              role: selectedRole,
+              companyId: companyId,
+            }
           });
+
+          if (emailError) {
+            console.error('Edge function error:', emailError);
+            throw new Error(emailError.message || 'Failed to call email service');
+          }
+
+          if (emailResult?.success) {
+            console.log('Email sent successfully via edge function:', emailResult);
+            toast({
+              title: "Invitation Sent",
+              description: `Invitation email sent successfully to ${email}`,
+            });
+          } else {
+            console.error('Email service returned error:', emailResult);
+            throw new Error(emailResult?.error || 'Email service failed');
+          }
         } catch (emailError) {
-          console.error('Direct email sending failed:', emailError);
+          console.error('Failed to send invitation email:', emailError);
           
           // Enhanced manual fallback - show invitation details modal
           const shouldCopy = window.confirm(
