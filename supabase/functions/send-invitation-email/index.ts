@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.55.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,24 +15,16 @@ interface InvitationRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Enhanced logging for debugging custom domain issues
   const origin = req.headers.get("origin") || "unknown";
-  const userAgent = req.headers.get("user-agent") || "unknown";
-  const host = req.headers.get("host") || "unknown";
-  const referer = req.headers.get("referer") || "unknown";
   
-  console.log(`=== EDGE FUNCTION CALLED ===`);
+  console.log(`=== MAILGUN INVITATION EMAIL FUNCTION ===`);
   console.log(`Method: ${req.method}`);
   console.log(`Origin: ${origin}`);
-  console.log(`Host: ${host}`);
-  console.log(`Referer: ${referer}`);
-  console.log(`User-Agent: ${userAgent}`);
-  console.log(`URL: ${req.url}`);
   
-  // Log all environment variables (without secrets)
+  // Log environment variables (without secrets)
   console.log(`Environment check:`);
-  console.log(`- SUPABASE_URL: ${Deno.env.get("SUPABASE_URL") ? 'SET' : 'NOT SET'}`);
-  console.log(`- SUPABASE_SERVICE_ROLE_KEY: ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ? 'SET' : 'NOT SET'}`);
+  console.log(`- MAILGUN_API_KEY: ${Deno.env.get("MAILGUN_API_KEY") ? 'SET' : 'NOT SET'}`);
+  console.log(`- MAILGUN_DOMAIN: ${Deno.env.get("MAILGUN_DOMAIN") ? 'SET' : 'NOT SET'}`);
 
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -60,79 +51,129 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Create Supabase client with service role key for admin operations
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    // Get Mailgun configuration
+    const mailgunApiKey = Deno.env.get("MAILGUN_API_KEY");
+    const mailgunDomain = Deno.env.get("MAILGUN_DOMAIN");
     
-    if (!supabaseUrl || !serviceRoleKey) {
-      console.error('Missing required environment variables:', {
-        supabaseUrl: !!supabaseUrl,
-        serviceRoleKey: !!serviceRoleKey
+    if (!mailgunApiKey || !mailgunDomain) {
+      console.error('Missing Mailgun configuration:', {
+        mailgunApiKey: !!mailgunApiKey,
+        mailgunDomain: !!mailgunDomain
       });
       return new Response(
         JSON.stringify({ 
           error: "Server configuration error", 
-          details: "Missing required environment variables",
-          user_message: "Server configuration error. Please contact support."
+          details: "Missing Mailgun configuration",
+          user_message: "Email service not configured. Please contact support."
         }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
     
-    console.log(`Creating Supabase admin client with URL: ${supabaseUrl}`);
-    
-    const supabaseAdmin = createClient(
-      supabaseUrl,
-      serviceRoleKey,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    );
-
-    console.log("Sending invitation email to:", email);
+    console.log(`Using Mailgun domain: ${mailgunDomain}`);
     
     // Determine the correct base URL for redirect
     const requestOrigin = req.headers.get("origin");
     const baseUrl = requestOrigin || "https://0fda5de4-397f-460e-8be4-56e3718a981f.lovableproject.com";
-    const redirectUrl = `${baseUrl}/accept-invitation?code=${inviteCode}`;
+    const acceptUrl = `${baseUrl}/accept-invitation?code=${inviteCode}`;
     
-    console.log(`Using redirect URL: ${redirectUrl}`);
+    console.log(`Using acceptance URL: ${acceptUrl}`);
 
-    // Use admin client to send invitation email
-    const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email.toLowerCase().trim(), {
-      redirectTo: redirectUrl,
-      data: {
-        inviteCode: inviteCode,
-        role: role,
-        companyId: companyId
-      }
+    // Create HTML email template
+    const htmlTemplate = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>You're Invited!</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
+            <tr>
+                <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <tr>
+                            <td style="padding: 40px;">
+                                <h1 style="color: #333; margin: 0 0 20px 0; font-size: 24px;">You're Invited!</h1>
+                                <p style="color: #666; margin: 0 0 20px 0; font-size: 16px; line-height: 1.5;">
+                                    You have been invited to join our platform with the role of <strong>${role}</strong>.
+                                </p>
+                                <p style="color: #666; margin: 0 0 30px 0; font-size: 16px; line-height: 1.5;">
+                                    Click the button below to accept your invitation and get started:
+                                </p>
+                                <table cellpadding="0" cellspacing="0">
+                                    <tr>
+                                        <td style="background-color: #007bff; border-radius: 4px;">
+                                            <a href="${acceptUrl}" style="display: inline-block; padding: 12px 24px; color: #ffffff; text-decoration: none; font-weight: bold;">
+                                                Accept Invitation
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <p style="color: #999; margin: 30px 0 0 0; font-size: 14px; line-height: 1.5;">
+                                    Or copy and paste this link into your browser:<br>
+                                    <a href="${acceptUrl}" style="color: #007bff; word-break: break-all;">${acceptUrl}</a>
+                                </p>
+                                <p style="color: #999; margin: 20px 0 0 0; font-size: 14px;">
+                                    This invitation will expire in 7 days.
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>`;
+
+    // Prepare Mailgun API request
+    const formData = new FormData();
+    formData.append('from', `Company Invitations <noreply@${mailgunDomain}>`);
+    formData.append('to', email.toLowerCase().trim());
+    formData.append('subject', 'You\'ve been invited to join our platform');
+    formData.append('html', htmlTemplate);
+    formData.append('text', `You've been invited to join our platform with the role of ${role}. Click this link to accept: ${acceptUrl}`);
+
+    console.log("Sending invitation email via Mailgun to:", email);
+    
+    // Send email via Mailgun API
+    const mailgunResponse = await fetch(`https://api.mailgun.net/v3/${mailgunDomain}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`api:${mailgunApiKey}`)}`,
+      },
+      body: formData
     });
 
-    if (error) {
-      console.error("Error sending invitation email:", error);
-      console.error("Error details:", JSON.stringify(error, null, 2));
+    const mailgunResult = await mailgunResponse.json();
+    
+    if (!mailgunResponse.ok) {
+      console.error("Mailgun API error:", mailgunResult);
       return new Response(
         JSON.stringify({ 
           error: "Failed to send invitation email", 
-          details: error.message,
-          user_message: "Failed to send invitation email. Please check your SMTP configuration in Supabase.",
-          setup_instructions: "Configure SMTP settings in Supabase Dashboard: Authentication > Settings > SMTP Settings",
+          details: mailgunResult.message || "Unknown Mailgun error",
+          user_message: "Failed to send invitation email. Please try again or contact support.",
           debug_info: {
             origin: requestOrigin,
-            redirectUrl: redirectUrl
+            mailgunError: mailgunResult
           }
         }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    console.log("Invitation email sent successfully:", data);
+    console.log("Invitation email sent successfully via Mailgun:", mailgunResult);
 
     return new Response(
-      JSON.stringify({ success: true, data }),
+      JSON.stringify({ 
+        success: true, 
+        data: { 
+          messageId: mailgunResult.id,
+          provider: "mailgun"
+        }
+      }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
 
