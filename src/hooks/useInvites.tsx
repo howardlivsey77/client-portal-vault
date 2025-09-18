@@ -133,49 +133,11 @@ export const useInvites = () => {
         }
         return false;
         } else {
-          try {
-            // Send invitation email via Supabase Edge Function
-            const emailPayload = {
-              email: email.toLowerCase().trim(),
-              inviteCode,
-              role: selectedRole,
-              companyName: companyId ? companies?.find(c => c.id === companyId)?.name : 'our team',
-              appUrl: window.location.origin
-            };
-            
-            console.log("Sending invitation email with payload:", emailPayload);
-            
-            const { data: emailData, error: emailError } = await supabase.functions.invoke('send-invitation-email', {
-              body: emailPayload
-            });
-
-            if (emailError) {
-              console.error("Email sending error:", emailError);
-              toast({
-                title: "Invitation created (email failed)",
-                description: `Invitation created but email couldn't be sent: ${emailError.message}`,
-                variant: "destructive"
-              });
-            } else if (emailData?.success) {
-              toast({
-                title: "Invitation sent successfully",
-                description: `Invitation email sent to ${email} for ${selectedRole} role`,
-              });
-            } else {
-              toast({
-                title: "Invitation created (email failed)",
-                description: `Invitation created but email sending failed: ${emailData?.error || 'Unknown error'}`,
-                variant: "destructive"
-              });
-            }
-          } catch (emailErr: any) {
-            console.error("Error calling email function:", emailErr);
-            toast({
-              title: "Invitation created (email failed)",
-              description: `Invitation created but email couldn't be sent: ${emailErr.message}`,
-              variant: "destructive"
-            });
-          }
+          console.log('Invitation created successfully (no email sent)');
+          toast({
+            title: "Invitation created",
+            description: `Invitation created for ${email}. Please share the invitation code manually: ${inviteCode}`,
+          });
           
           await fetchInvitations();
           return true;
