@@ -134,40 +134,32 @@ export const useInvites = () => {
         // Generate invitation URL for manual sharing
         const inviteUrl = `${window.location.origin}/accept-invitation?code=${inviteCode}`;
 
-        // Try direct Mailgun API call from frontend
+        // Use mailto link to open user's email client with pre-filled invitation
         try {
-          const mailgunDomain = 'mg.dootsons.com'; // Your verified domain
-          const mailgunApiKey = 'key-your-mailgun-api-key'; // You'll need to set this
+          const emailSubject = encodeURIComponent('You have been invited to join our platform');
+          const emailBody = encodeURIComponent(`Hi there!
+
+You have been invited to join our platform as a ${selectedRole}.
+
+Click the link below to accept your invitation:
+${inviteUrl}
+
+This invitation will expire in 7 days.
+
+If you have any questions, please contact our support team.
+
+Best regards,
+The Team`);
+
+          const mailtoLink = `mailto:${email}?subject=${emailSubject}&body=${emailBody}`;
           
-          const formData = new FormData();
-          formData.append('from', `Noreply <noreply@${mailgunDomain}>`);
-          formData.append('to', email.toLowerCase().trim());
-          formData.append('subject', 'You have been invited to join our platform');
-          formData.append('html', `
-            <h2>You're Invited!</h2>
-            <p>You have been invited to join our platform as a ${selectedRole}.</p>
-            <p>Click the link below to accept your invitation:</p>
-            <a href="${inviteUrl}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Accept Invitation</a>
-            <p>This invitation will expire in 7 days.</p>
-            <p>If the button doesn't work, copy and paste this link: ${inviteUrl}</p>
-          `);
-
-          const response = await fetch(`https://api.mailgun.net/v3/${mailgunDomain}/messages`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Basic ${btoa(`api:${mailgunApiKey}`)}`,
-            },
-            body: formData
+          // Open user's email client
+          window.open(mailtoLink, '_blank');
+          
+          toast({
+            title: "Email Client Opened",
+            description: `Email draft created for ${email}. Please send the email from your email client.`,
           });
-
-          if (response.ok) {
-            toast({
-              title: "Invitation Sent",
-              description: `Invitation sent successfully to ${email}`,
-            });
-          } else {
-            throw new Error(`Mailgun API error: ${response.status}`);
-          }
         } catch (emailError) {
           console.error('Direct email sending failed:', emailError);
           
