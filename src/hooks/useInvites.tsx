@@ -131,82 +131,48 @@ export const useInvites = () => {
         }
         return false;
         } else {
-        // Generate invitation URL for manual sharing
-        const inviteUrl = `${window.location.origin}/accept-invitation?code=${inviteCode}`;
-
-        // Send invitation email via Supabase edge function
-        try {
-          console.log('Calling send-invitation-email edge function...');
-          
-          const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-invitation-email', {
-            body: {
+          try {
+            const payload = {
               email: email.toLowerCase().trim(),
               inviteCode,
               role: selectedRole,
-              companyId: companyId,
-            }
-          });
-
-          if (emailError) {
-            console.error('Edge function error:', emailError);
-            throw new Error(emailError.message || 'Failed to call email service');
-          }
-
-          if (emailResult?.success) {
-            console.log('Email sent successfully via edge function:', emailResult);
-            toast({
-              title: "Invitation Sent",
-              description: `Invitation email sent successfully to ${email}`,
+              appUrl: window.location.origin
+            };
+            console.log("Invites: sending payload to send-invite:", payload);
+            const { data: sendData, error: sendError } = await supabase.functions.invoke('send-invite', {
+              body: payload
             });
-          } else {
-            console.error('Email service returned error:', emailResult);
-            throw new Error(emailResult?.error || 'Email service failed');
-          }
-        } catch (emailError) {
-          console.error('Failed to send invitation email:', emailError);
-          
-          // Enhanced manual fallback - show invitation details modal
-          const shouldCopy = window.confirm(
-            `Email sending failed. The invitation has been created successfully.\n\nWould you like to copy the invitation link to send manually?\n\nInvitation Link: ${inviteUrl}\n\nClick OK to copy, or Cancel to continue.`
-          );
-          
-          if (shouldCopy) {
-            try {
-              await navigator.clipboard.writeText(inviteUrl);
-              toast({
-                title: "Link Copied",
-                description: "Invitation link copied to clipboard. Send this link to the user via email or another communication method.",
-              });
-            } catch (clipboardError) {
-              // Fallback selection method
-              const textArea = document.createElement('textarea');
-              textArea.value = inviteUrl;
-              textArea.style.position = 'fixed';
-              textArea.style.left = '-999999px';
-              textArea.style.top = '-999999px';
-              document.body.appendChild(textArea);
-              textArea.focus();
-              textArea.select();
-              
+
+            if (sendError) {
+              console.error("send-invite error:", sendError);
+              let detail = '' as string;
+              const ctxBody = (sendError as any)?.context?.body;
               try {
-                document.execCommand('copy');
-                toast({
-                  title: "Link Copied",
-                  description: "Invitation link copied to clipboard.",
-                });
-              } catch (fallbackError) {
-                alert(`Please copy this invitation link manually:\n\n${inviteUrl}`);
+                const parsed = typeof ctxBody === 'string' ? JSON.parse(ctxBody) : ctxBody;
+                detail = parsed?.error || parsed?.message || (parsed ? JSON.stringify(parsed) : '');
+              } catch {
+                detail = typeof ctxBody === 'string' ? ctxBody : '';
               }
-              
-              document.body.removeChild(textArea);
+              toast({
+                title: "Invitation created (email not sent)",
+                description: `${sendError.message}${detail ? ` - ${detail}` : ''}`,
+                variant: "destructive"
+              });
+            } else {
+              toast({
+                title: "Invitation created",
+                description: `Invitation sent to ${email} with ${selectedRole} role`,
+              });
             }
-          } else {
+          } catch (e: any) {
+            console.error("Error sending invite email:", e);
+            const message = e?.message ?? "Invite created, but email sending failed.";
             toast({
-              title: "Invitation Created",
-              description: "Invitation created successfully. Please send the link manually to the user.",
+              title: "Invitation created (email not sent)",
+              description: message,
+              variant: "destructive"
             });
           }
-        }
           await fetchInvitations();
           return true;
         }

@@ -20,7 +20,6 @@ import CompanyManagement from "./features/company-management/CompanyManagement";
 import NotFound from "./pages/NotFound";
 import SicknessImport from "./pages/SicknessImport";
 import ClientReports from "./pages/ClientReports";
-import { DebugDashboard } from "./components/debug/DebugDashboard";
 import AuthProvider from "./providers/AuthProvider";
 import CompanyProvider from "./providers/CompanyProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -62,9 +61,6 @@ const App = () => (
                 
                 {/* Company Management Route - allow all authenticated users */}
                 <Route path="/settings/companies" element={<ProtectedRoute><CompanyManagement /></ProtectedRoute>} />
-                
-                {/* Debug Dashboard Route - admin only */}
-                <Route path="/debug" element={<ProtectedRoute adminOnly={true}><DebugDashboard /></ProtectedRoute>} />
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

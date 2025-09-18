@@ -19,21 +19,14 @@ export const useDepartments = () => {
   const { toast } = useToast();
 
   const fetchDepartments = async () => {
-    console.log("useDepartments: fetchDepartments called, currentCompany?.id:", currentCompany?.id);
-    
-    if (!currentCompany?.id) {
-      console.log("useDepartments: No currentCompany.id, skipping fetch");
-      return;
-    }
+    if (!currentCompany?.id) return;
     
     try {
       setLoading(true);
-      console.log("useDepartments: Fetching departments for company:", currentCompany.id);
       const data = await fetchDepartmentsByCompany(currentCompany.id);
-      console.log("useDepartments: Received departments:", data.length, "departments");
       setDepartments(data);
     } catch (error: any) {
-      console.error("useDepartments: Error fetching departments:", error);
+      console.error("Error fetching departments:", error);
       toast({
         title: "Error fetching departments",
         description: error.message,
@@ -124,7 +117,6 @@ export const useDepartments = () => {
   const departmentNames = departments.map(dept => dept.name);
 
   useEffect(() => {
-    console.log("useDepartments: useEffect triggered, currentCompany?.id:", currentCompany?.id);
     fetchDepartments();
   }, [currentCompany?.id]);
 

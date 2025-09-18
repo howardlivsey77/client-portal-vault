@@ -18,7 +18,6 @@ import { PayrollIdField } from "@/components/employees/PayrollIdField";
 import { EmployeeFormActions } from "@/components/employees/EmployeeFormActions";
 import { HmrcFields } from "@/components/employees/HmrcFields";
 import { NhsPensionFields } from "@/components/employees/NhsPensionFields";
-import { StatusFields } from "./StatusFields";
 import { UseFormReturn } from "react-hook-form";
 import { EmployeeFormValues } from "@/types/employee";
 import { useNavigate } from "react-router-dom";
@@ -76,9 +75,6 @@ export const EmployeeFormContainer = ({
             <div className="max-w-xs">
               <PayrollIdField form={form} readOnly={readOnly} />
             </div>
-            
-            {/* Employment Status */}
-            <StatusFields form={form} readOnly={readOnly} />
             
             {/* HMRC Section */}
             <HmrcFields control={form.control} readOnly={readOnly} />

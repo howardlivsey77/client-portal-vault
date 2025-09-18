@@ -72,9 +72,6 @@ export const employeeSchema = z.object({
   // New fields
   national_insurance_number: nationalInsuranceNumberValidation.nullable(),
   monthly_salary: z.coerce.number().min(0, "Monthly salary must be a positive number").optional().nullable(),
-  // Status and leave date fields
-  status: z.enum(["active", "on-hold", "leaver"]).default("active"),
-  leave_date: z.date().optional().nullable(),
 });
 
 export type EmployeeFormValues = z.infer<typeof employeeSchema>;
@@ -114,10 +111,4 @@ export const nicCodeOptions = [
   { label: "J - Under 21", value: "J" },
   { label: "M - Under 21 Deferment", value: "M" },
   { label: "Z - No NI Contribution", value: "Z" },
-];
-
-export const statusOptions = [
-  { label: "Active", value: "active" },
-  { label: "On Hold", value: "on-hold" },
-  { label: "Leaver", value: "leaver" },
 ];
