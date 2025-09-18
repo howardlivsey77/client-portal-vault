@@ -131,48 +131,11 @@ export const useInvites = () => {
         }
         return false;
         } else {
-          try {
-            const payload = {
-              email: email.toLowerCase().trim(),
-              inviteCode,
-              role: selectedRole,
-              appUrl: window.location.origin
-            };
-            console.log("Invites: sending payload to send-invite:", payload);
-            const { data: sendData, error: sendError } = await supabase.functions.invoke('send-invite', {
-              body: payload
-            });
-
-            if (sendError) {
-              console.error("send-invite error:", sendError);
-              let detail = '' as string;
-              const ctxBody = (sendError as any)?.context?.body;
-              try {
-                const parsed = typeof ctxBody === 'string' ? JSON.parse(ctxBody) : ctxBody;
-                detail = parsed?.error || parsed?.message || (parsed ? JSON.stringify(parsed) : '');
-              } catch {
-                detail = typeof ctxBody === 'string' ? ctxBody : '';
-              }
-              toast({
-                title: "Invitation created (email not sent)",
-                description: `${sendError.message}${detail ? ` - ${detail}` : ''}`,
-                variant: "destructive"
-              });
-            } else {
-              toast({
-                title: "Invitation created",
-                description: `Invitation sent to ${email} with ${selectedRole} role`,
-              });
-            }
-          } catch (e: any) {
-            console.error("Error sending invite email:", e);
-            const message = e?.message ?? "Invite created, but email sending failed.";
-            toast({
-              title: "Invitation created (email not sent)",
-              description: message,
-              variant: "destructive"
-            });
-          }
+          // Note: Email sending will be implemented with Mailgun SMTP later
+          toast({
+            title: "Invitation created successfully",
+            description: `Invitation created for ${email}. Share this code manually: ${inviteCode}`,
+          });
           await fetchInvitations();
           return true;
         }
