@@ -134,43 +134,57 @@ export const useInvites = () => {
         // Generate invitation URL for manual sharing
         const inviteUrl = `${window.location.origin}/accept-invitation?code=${inviteCode}`;
 
-        // Try direct Mailgun email sending first
+        // Try direct Mailgun API call from frontend
         try {
-          const { data: emailData, error: emailError } = await supabase.functions.invoke('send-invitation-email-direct', {
-            body: {
-              email: email.toLowerCase().trim(),
-              inviteCode,
-              role: selectedRole,
-              companyName: 'the company',
-              companyId
-            }
+          const mailgunDomain = 'mg.dootsons.com'; // Your verified domain
+          const mailgunApiKey = 'key-your-mailgun-api-key'; // You'll need to set this
+          
+          const formData = new FormData();
+          formData.append('from', `Noreply <noreply@${mailgunDomain}>`);
+          formData.append('to', email.toLowerCase().trim());
+          formData.append('subject', 'You have been invited to join our platform');
+          formData.append('html', `
+            <h2>You're Invited!</h2>
+            <p>You have been invited to join our platform as a ${selectedRole}.</p>
+            <p>Click the link below to accept your invitation:</p>
+            <a href="${inviteUrl}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Accept Invitation</a>
+            <p>This invitation will expire in 7 days.</p>
+            <p>If the button doesn't work, copy and paste this link: ${inviteUrl}</p>
+          `);
+
+          const response = await fetch(`https://api.mailgun.net/v3/${mailgunDomain}/messages`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Basic ${btoa(`api:${mailgunApiKey}`)}`,
+            },
+            body: formData
           });
 
-          if (emailError) {
-            throw emailError;
+          if (response.ok) {
+            toast({
+              title: "Invitation Sent",
+              description: `Invitation sent successfully to ${email}`,
+            });
+          } else {
+            throw new Error(`Mailgun API error: ${response.status}`);
           }
-
-          toast({
-            title: "Invitation Sent",
-            description: `Invitation sent successfully to ${email}`,
-          });
         } catch (emailError) {
           console.error('Direct email sending failed:', emailError);
           
-          // Show copy-paste dialog with invitation URL
-          const userChoice = window.confirm(
-            `Email sending failed. Would you like to copy the invitation link to send manually?\n\nLink: ${inviteUrl}\n\nClick OK to copy to clipboard, or Cancel to continue without copying.`
+          // Enhanced manual fallback - show invitation details modal
+          const shouldCopy = window.confirm(
+            `Email sending failed. The invitation has been created successfully.\n\nWould you like to copy the invitation link to send manually?\n\nInvitation Link: ${inviteUrl}\n\nClick OK to copy, or Cancel to continue.`
           );
           
-          if (userChoice) {
+          if (shouldCopy) {
             try {
               await navigator.clipboard.writeText(inviteUrl);
               toast({
                 title: "Link Copied",
-                description: "Invitation link copied to clipboard. Please send it manually via email.",
+                description: "Invitation link copied to clipboard. Send this link to the user via email or another communication method.",
               });
             } catch (clipboardError) {
-              // Fallback for browsers that don't support clipboard API
+              // Fallback selection method
               const textArea = document.createElement('textarea');
               textArea.value = inviteUrl;
               textArea.style.position = 'fixed';
@@ -184,14 +198,10 @@ export const useInvites = () => {
                 document.execCommand('copy');
                 toast({
                   title: "Link Copied",
-                  description: "Invitation link copied to clipboard. Please send it manually via email.",
+                  description: "Invitation link copied to clipboard.",
                 });
               } catch (fallbackError) {
-                toast({
-                  title: "Invitation Created",
-                  description: `Copy this link manually: ${inviteUrl}`,
-                  variant: "destructive",
-                });
+                alert(`Please copy this invitation link manually:\n\n${inviteUrl}`);
               }
               
               document.body.removeChild(textArea);
@@ -199,8 +209,7 @@ export const useInvites = () => {
           } else {
             toast({
               title: "Invitation Created",
-              description: `Email failed. Manual link: ${inviteUrl}`,
-              variant: "destructive",
+              description: "Invitation created successfully. Please send the link manually to the user.",
             });
           }
         }
