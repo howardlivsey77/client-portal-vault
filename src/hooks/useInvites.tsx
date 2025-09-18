@@ -131,120 +131,79 @@ export const useInvites = () => {
         }
         return false;
         } else {
-          // Send invitation email using edge function with service role key
-          try {
-            // Validate payload before sending
-            if (!email || !inviteCode || !selectedRole || !companyId) {
-              console.error("Invalid payload - missing required fields:", {
-                email: !!email,
-                inviteCode: !!inviteCode,
-                selectedRole: !!selectedRole,
-                companyId: !!companyId
-              });
-              toast({
-                title: "Invalid invitation data",
-                description: "Missing required fields for invitation.",
-                variant: "destructive"
-              });
-              return false;
-            }
+        // Generate invitation URL for manual sharing
+        const inviteUrl = `${window.location.origin}/accept-invitation?code=${inviteCode}`;
 
-            const payload = {
+        // Try direct Mailgun email sending first
+        try {
+          const { data: emailData, error: emailError } = await supabase.functions.invoke('send-invitation-email-direct', {
+            body: {
               email: email.toLowerCase().trim(),
               inviteCode,
               role: selectedRole,
-              companyId: companyId
-            };
-            
-            console.log("=== FRONTEND DEBUGGING (ENHANCED) ===");
-            console.log("Current window.location:", window.location.href);
-            console.log("Current origin:", window.location.origin);
-            console.log("Is custom domain:", window.location.origin.includes('payroll.dootsons.com'));
-            console.log("User agent:", navigator.userAgent);
-            console.log("Invites: sending payload to send-invitation-email:", payload);
-            
-            // Log the Supabase session and auth state
-            const session = await supabase.auth.getSession();
-            console.log("Auth session exists:", !!session.data.session);
-            console.log("User authenticated:", !!session.data.session?.user);
-            console.log("Access token present:", !!session.data.session?.access_token);
-            
-            // Add network request interceptor for this specific call
-            const originalFetch = window.fetch;
-            window.fetch = async (...args) => {
-              console.log("=== NETWORK INTERCEPTOR ===");
-              console.log("Request URL:", args[0]);
-              console.log("Request options:", args[1]);
-              
-              const response = await originalFetch(...args);
-              console.log("Response status:", response.status);
-              console.log("Response headers:", Object.fromEntries(response.headers.entries()));
-              
-              // Clone response to read body without consuming it
-              const clonedResponse = response.clone();
-              try {
-                const responseText = await clonedResponse.text();
-                console.log("Response body:", responseText);
-              } catch (e) {
-                console.log("Could not read response body:", e);
-              }
-              
-              return response;
-            };
-            
-            const { data: sendData, error: sendError } = await supabase.functions.invoke('send-invitation-email', {
-              body: payload,
-              headers: {
-                'Content-Type': 'application/json',
-                'x-requested-with': 'XMLHttpRequest'
-              }
-            });
-            
-            // Restore original fetch
-            window.fetch = originalFetch;
-            
-            console.log("Edge function response:", { sendData, sendError });
-
-            if (sendError) {
-              console.error("send-invitation-email error:", sendError);
-              let detail = '';
-              let setupInstructions = '';
-              const ctxBody = (sendError as any)?.context?.body;
-              
-              try {
-                const parsed = typeof ctxBody === 'string' ? JSON.parse(ctxBody) : ctxBody;
-                detail = parsed?.user_message || parsed?.error || parsed?.message || '';
-                setupInstructions = parsed?.setup_instructions || '';
-              } catch {
-                detail = typeof ctxBody === 'string' ? ctxBody : sendError.message;
-              }
-              
-              // Show user-friendly error message with setup instructions
-              const description = detail || sendError.message;
-              const fullMessage = setupInstructions 
-                ? `${description}\n\nSetup: ${setupInstructions}`
-                : description;
-              
-              toast({
-                title: "Invitation created (email not sent)",
-                description: fullMessage,
-                variant: "destructive"
-              });
-            } else {
-              toast({
-                title: "Invitation created",
-                description: `Invitation sent to ${email} with ${selectedRole} role`,
-              });
+              companyName: 'the company',
+              companyId
             }
-          } catch (e: any) {
-            console.error("Error sending invite email:", e);
-            const message = e?.message ?? "Invite created, but email sending failed.";
+          });
+
+          if (emailError) {
+            throw emailError;
+          }
+
+          toast({
+            title: "Invitation Sent",
+            description: `Invitation sent successfully to ${email}`,
+          });
+        } catch (emailError) {
+          console.error('Direct email sending failed:', emailError);
+          
+          // Show copy-paste dialog with invitation URL
+          const userChoice = window.confirm(
+            `Email sending failed. Would you like to copy the invitation link to send manually?\n\nLink: ${inviteUrl}\n\nClick OK to copy to clipboard, or Cancel to continue without copying.`
+          );
+          
+          if (userChoice) {
+            try {
+              await navigator.clipboard.writeText(inviteUrl);
+              toast({
+                title: "Link Copied",
+                description: "Invitation link copied to clipboard. Please send it manually via email.",
+              });
+            } catch (clipboardError) {
+              // Fallback for browsers that don't support clipboard API
+              const textArea = document.createElement('textarea');
+              textArea.value = inviteUrl;
+              textArea.style.position = 'fixed';
+              textArea.style.left = '-999999px';
+              textArea.style.top = '-999999px';
+              document.body.appendChild(textArea);
+              textArea.focus();
+              textArea.select();
+              
+              try {
+                document.execCommand('copy');
+                toast({
+                  title: "Link Copied",
+                  description: "Invitation link copied to clipboard. Please send it manually via email.",
+                });
+              } catch (fallbackError) {
+                toast({
+                  title: "Invitation Created",
+                  description: `Copy this link manually: ${inviteUrl}`,
+                  variant: "destructive",
+                });
+              }
+              
+              document.body.removeChild(textArea);
+            }
+          } else {
             toast({
-              title: "Invitation created (email not sent)",
-              description: message,
-              variant: "destructive"
+              title: "Invitation Created",
+              description: `Email failed. Manual link: ${inviteUrl}`,
+              variant: "destructive",
             });
           }
+        }
           await fetchInvitations();
           return true;
         }
