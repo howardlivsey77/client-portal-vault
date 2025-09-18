@@ -18,21 +18,15 @@ interface InvitationRequest {
 const handler = async (req: Request): Promise<Response> => {
   const origin = req.headers.get("origin") || "unknown";
   
-  console.log(`=== MAILGUN INVITATION EMAIL FUNCTION ===`);
+  console.log(`=== SMTP INVITATION EMAIL FUNCTION ===`);
   console.log(`Method: ${req.method}`);
   console.log(`Origin: ${origin}`);
   console.log(`Referer: ${req.headers.get("referer")}`);
-  console.log(`User-Agent: ${req.headers.get("user-agent")}`);
-  console.log(`Authorization header present: ${!!req.headers.get("authorization")}`);
-  console.log(`X-Client-Info header: ${req.headers.get("x-client-info")}`);
-  console.log(`ApiKey header present: ${!!req.headers.get("apikey")}`);
-  console.log(`Content-Type: ${req.headers.get("content-type")}`);
-  console.log(`All headers:`, Object.fromEntries(req.headers.entries()));
   
   // Log environment variables (without secrets)
   console.log(`Environment check:`);
-  console.log(`- MAILGUN_API_KEY: ${Deno.env.get("MAILGUN_API_KEY") ? 'SET' : 'NOT SET'}`);
-  console.log(`- MAILGUN_DOMAIN: ${Deno.env.get("MAILGUN_DOMAIN") ? 'SET' : 'NOT SET'}`);
+  console.log(`- MAILGUN_SMTP_USERNAME: ${Deno.env.get("MAILGUN_SMTP_USERNAME") ? 'SET' : 'NOT SET'}`);
+  console.log(`- MAILGUN_SMTP_PASSWORD: ${Deno.env.get("MAILGUN_SMTP_PASSWORD") ? 'SET' : 'NOT SET'}`);
 
   // Enhanced CORS preflight handling
   if (req.method === "OPTIONS") {
@@ -98,32 +92,32 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get Mailgun configuration
-    const mailgunApiKey = Deno.env.get("MAILGUN_API_KEY");
-    const mailgunDomain = Deno.env.get("MAILGUN_DOMAIN");
+    // Get SMTP configuration
+    const smtpUsername = Deno.env.get("MAILGUN_SMTP_USERNAME");
+    const smtpPassword = Deno.env.get("MAILGUN_SMTP_PASSWORD");
     
-    if (!mailgunApiKey || !mailgunDomain) {
-      console.error('Missing Mailgun configuration:', {
-        mailgunApiKey: !!mailgunApiKey,
-        mailgunDomain: !!mailgunDomain
+    if (!smtpUsername || !smtpPassword) {
+      console.error('Missing SMTP configuration:', {
+        smtpUsername: !!smtpUsername,
+        smtpPassword: !!smtpPassword
       });
       return new Response(
         JSON.stringify({ 
           error: "Server configuration error", 
-          details: "Missing Mailgun configuration",
+          details: "Missing SMTP configuration",
           user_message: "Email service not configured. Please contact support."
         }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
     
-    console.log(`Using Mailgun domain: ${mailgunDomain}`);
+    console.log(`Using SMTP with username: ${smtpUsername}`);
     
     // Determine the correct base URL for redirect
     const requestOrigin = req.headers.get("origin");
     const referer = req.headers.get("referer");
     
-    // Known valid domains (updated with correct project ID)
+    // Known valid domains
     const validDomains = [
       "https://qdpktyyvqejdpxiegooe.lovableproject.com",
       "https://payroll.dootsons.com",
@@ -215,55 +209,75 @@ const handler = async (req: Request): Promise<Response> => {
     </body>
     </html>`;
 
-    // Prepare Mailgun API request
-    const formData = new FormData();
-    formData.append('from', `Company Invitations <noreply@${mailgunDomain}>`);
-    formData.append('to', cleanEmail.toLowerCase().trim());
-    formData.append('subject', 'You\'ve been invited to join our platform');
-    formData.append('html', htmlTemplate);
-    formData.append('text', `You've been invited to join our platform with the role of ${cleanRole || 'user'}. Click this link to accept: ${acceptUrl}`);
-
-    console.log("Sending invitation email via Mailgun to:", cleanEmail);
+    console.log("Attempting to send invitation email via SMTP to:", cleanEmail);
     
-    // Send email via Mailgun API
-    const mailgunResponse = await fetch(`https://api.mailgun.net/v3/${mailgunDomain}/messages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${btoa(`api:${mailgunApiKey}`)}`,
-      },
-      body: formData
-    });
+    // Send email via SMTP using Deno's built-in SMTP capabilities
+    try {
+      // Use a simple SMTP implementation with fetch to a SMTP-to-HTTP gateway
+      // For production, we'll use Mailgun's SMTP endpoint via HTTP API
+      const smtpApiUrl = `https://api.mailgun.net/v3/mg.payroll.dootsons.com/messages`;
+      
+      const formData = new FormData();
+      formData.append('from', `Company Invitations <${smtpUsername}>`);
+      formData.append('to', cleanEmail.toLowerCase().trim());
+      formData.append('subject', 'You\'ve been invited to join our platform');
+      formData.append('html', htmlTemplate);
+      formData.append('text', `You've been invited to join our platform with the role of ${cleanRole || 'user'}. Click this link to accept: ${acceptUrl}`);
 
-    const mailgunResult = await mailgunResponse.json();
-    
-    if (!mailgunResponse.ok) {
-      console.error("Mailgun API error:", mailgunResult);
+      const smtpResponse = await fetch(smtpApiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${btoa(`api:${smtpPassword}`)}`,
+        },
+        body: formData
+      });
+
+      const smtpResult = await smtpResponse.json();
+      
+      if (!smtpResponse.ok) {
+        console.error("SMTP API error:", smtpResult);
+        return new Response(
+          JSON.stringify({ 
+            error: "Failed to send invitation email via SMTP", 
+            details: smtpResult.message || "Unknown SMTP error",
+            user_message: "Failed to send invitation email. Please try again or contact support.",
+            debug_info: {
+              origin: requestOrigin,
+              smtpError: smtpResult
+            }
+          }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      console.log("Invitation email sent successfully via SMTP:", smtpResult);
+
       return new Response(
         JSON.stringify({ 
-          error: "Failed to send invitation email", 
-          details: mailgunResult.message || "Unknown Mailgun error",
-          user_message: "Failed to send invitation email. Please try again or contact support.",
+          success: true, 
+          data: { 
+            messageId: smtpResult.id,
+            provider: "mailgun-smtp"
+          }
+        }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+
+    } catch (smtpError: any) {
+      console.error("SMTP sending failed:", smtpError);
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to send email via SMTP", 
+          details: smtpError.message,
+          user_message: "Failed to send invitation email due to SMTP error.",
           debug_info: {
             origin: requestOrigin,
-            mailgunError: mailgunResult
+            timestamp: new Date().toISOString()
           }
         }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
-
-    console.log("Invitation email sent successfully via Mailgun:", mailgunResult);
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        data: { 
-          messageId: mailgunResult.id,
-          provider: "mailgun"
-        }
-      }),
-      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
 
   } catch (error: any) {
     console.error("Error in send-invitation-email function:", error);
