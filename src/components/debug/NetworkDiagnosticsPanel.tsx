@@ -30,6 +30,7 @@ export function NetworkDiagnosticsPanel() {
       email: 'test@example.com',
       inviteCode: 'test-code-123',
       role: 'user',
+      companyId: 'test-company-id',
       test: true,
       skipSend: true
     };

@@ -52,13 +52,41 @@ const handler = async (req: Request): Promise<Response> => {
     const requestBody = await req.json();
     console.log(`Request body received:`, JSON.stringify(requestBody, null, 2));
     
-    const { email, inviteCode, role, companyId }: InvitationRequest = requestBody;
+    const { email, inviteCode, role, companyId, test, skipSend }: InvitationRequest & { test?: boolean; skipSend?: boolean } = requestBody;
+
+    // Enhanced logging for debugging
+    console.log(`Parsed fields:`, {
+      email: email || 'undefined',
+      inviteCode: inviteCode || 'undefined',
+      role: role || 'undefined',
+      companyId: companyId || 'undefined',
+      test: test || 'undefined',
+      skipSend: skipSend || 'undefined'
+    });
 
     if (!email || !inviteCode) {
       console.error(`Missing required fields - email: ${email}, inviteCode: ${inviteCode}`);
       return new Response(
-        JSON.stringify({ error: "Email and invite code are required" }),
+        JSON.stringify({ 
+          error: "Email and invite code are required",
+          received_fields: Object.keys(requestBody),
+          debug_payload: requestBody
+        }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Handle test mode - validate payload without sending email
+    if (test && skipSend) {
+      console.log('Test mode: Payload validation successful, skipping email send');
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          test_mode: true,
+          message: "Payload validation successful - email would be sent in production",
+          validated_fields: { email, inviteCode, role, companyId }
+        }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
