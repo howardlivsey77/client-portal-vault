@@ -147,9 +147,45 @@ export const useInvites = () => {
             console.log("User agent:", navigator.userAgent);
             console.log("Invites: sending payload to send-invitation-email:", payload);
             
+            // Log the Supabase session and auth state
+            const session = await supabase.auth.getSession();
+            console.log("Auth session exists:", !!session.data.session);
+            console.log("User authenticated:", !!session.data.session?.user);
+            console.log("Access token present:", !!session.data.session?.access_token);
+            
+            // Add network request interceptor for this specific call
+            const originalFetch = window.fetch;
+            window.fetch = async (...args) => {
+              console.log("=== NETWORK INTERCEPTOR ===");
+              console.log("Request URL:", args[0]);
+              console.log("Request options:", args[1]);
+              
+              const response = await originalFetch(...args);
+              console.log("Response status:", response.status);
+              console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+              
+              // Clone response to read body without consuming it
+              const clonedResponse = response.clone();
+              try {
+                const responseText = await clonedResponse.text();
+                console.log("Response body:", responseText);
+              } catch (e) {
+                console.log("Could not read response body:", e);
+              }
+              
+              return response;
+            };
+            
             const { data: sendData, error: sendError } = await supabase.functions.invoke('send-invitation-email', {
-              body: payload
+              body: payload,
+              headers: {
+                'Content-Type': 'application/json',
+                'x-requested-with': 'XMLHttpRequest'
+              }
             });
+            
+            // Restore original fetch
+            window.fetch = originalFetch;
             
             console.log("Edge function response:", { sendData, sendError });
 

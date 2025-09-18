@@ -2,8 +2,9 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-requested-with, accept, accept-language, cache-control, pragma",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Credentials": "true",
   "Access-Control-Max-Age": "86400",
 };
 
@@ -20,16 +21,26 @@ const handler = async (req: Request): Promise<Response> => {
   console.log(`=== MAILGUN INVITATION EMAIL FUNCTION ===`);
   console.log(`Method: ${req.method}`);
   console.log(`Origin: ${origin}`);
+  console.log(`Referer: ${req.headers.get("referer")}`);
+  console.log(`User-Agent: ${req.headers.get("user-agent")}`);
+  console.log(`Authorization header present: ${!!req.headers.get("authorization")}`);
+  console.log(`X-Client-Info header: ${req.headers.get("x-client-info")}`);
+  console.log(`ApiKey header present: ${!!req.headers.get("apikey")}`);
+  console.log(`Content-Type: ${req.headers.get("content-type")}`);
+  console.log(`All headers:`, Object.fromEntries(req.headers.entries()));
   
   // Log environment variables (without secrets)
   console.log(`Environment check:`);
   console.log(`- MAILGUN_API_KEY: ${Deno.env.get("MAILGUN_API_KEY") ? 'SET' : 'NOT SET'}`);
   console.log(`- MAILGUN_DOMAIN: ${Deno.env.get("MAILGUN_DOMAIN") ? 'SET' : 'NOT SET'}`);
 
-  // Handle CORS preflight requests
+  // Enhanced CORS preflight handling
   if (req.method === "OPTIONS") {
-    console.log("CORS preflight request received");
-    return new Response(null, { headers: corsHeaders });
+    console.log("Handling CORS preflight request with enhanced headers");
+    return new Response(null, { 
+      status: 200,
+      headers: corsHeaders 
+    });
   }
 
   if (req.method !== "POST") {
