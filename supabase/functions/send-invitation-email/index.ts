@@ -102,10 +102,10 @@ const handler = async (req: Request): Promise<Response> => {
     
     const acceptUrl = `${baseUrl}/accept-invitation?code=${inviteCode}`;
     
-    console.log(`Request origin: ${requestOrigin}`);
-    console.log(`Referer: ${referer}`);
-    console.log(`Selected base URL: ${baseUrl}`);
-    console.log(`Final acceptance URL: ${acceptUrl}`);
+    console.log(`[send-invitation-email] Request origin: ${requestOrigin}`);
+    console.log(`[send-invitation-email] Referer: ${referer}`);
+    console.log(`[send-invitation-email] Selected base URL: ${baseUrl}`);
+    console.log(`[send-invitation-email] Final acceptance URL: ${acceptUrl}`);
 
     // Create HTML email template
     const htmlTemplate = `
