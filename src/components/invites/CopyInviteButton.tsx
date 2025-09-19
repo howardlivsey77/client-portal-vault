@@ -51,7 +51,7 @@ export function CopyInviteButton({
       {showIcon && (
         copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />
       )}
-      {copied ? "Copied!" : "Copy Link"}
+      {copied ? "Copied!" : "Copy Activation Link"}
     </Button>
   );
 }

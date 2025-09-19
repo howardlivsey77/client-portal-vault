@@ -1,18 +1,15 @@
 
 import React from "react";
-import { formatDistanceToNow } from "date-fns";
-import { Button } from "@/components/ui/button";
 import { 
   Table, 
   TableBody, 
-  TableCell, 
   TableHead, 
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Loader2, Mail, ShieldCheck, Trash2, User, Copy } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import { InvitationMetadata } from "@/hooks/useInvites";
-import { CopyInviteButton } from "./CopyInviteButton";
+import { ExpandableInviteRow } from "./ExpandableInviteRow";
 
 interface InvitationsTableProps {
   invitations: InvitationMetadata[];
@@ -59,62 +56,11 @@ export const InvitationsTable = ({
       </TableHeader>
       <TableBody>
         {invitations.map((invitation) => (
-          <TableRow key={invitation.id}>
-            <TableCell className="flex items-center">
-              <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-              {invitation.invited_email}
-            </TableCell>
-            <TableCell>
-              {invitation.role === "admin" ? (
-                <span className="flex items-center">
-                  <ShieldCheck className="h-4 w-4 mr-1 text-monday-blue" />
-                  Administrator
-                </span>
-              ) : (
-                <span className="flex items-center">
-                  <User className="h-4 w-4 mr-1 text-monday-gray" />
-                  Regular User
-                </span>
-              )}
-            </TableCell>
-            <TableCell>
-              <span 
-                className={`inline-block px-2 py-1 text-xs rounded-full ${
-                  invitation.is_accepted 
-                    ? "bg-green-100 text-green-800" 
-                    : "bg-amber-100 text-amber-800"
-                }`}
-              >
-                {invitation.is_accepted ? "Accepted" : "Pending"}
-              </span>
-            </TableCell>
-            <TableCell>
-              {formatDistanceToNow(new Date(invitation.created_at), { addSuffix: true })}
-            </TableCell>
-            <TableCell>
-              Native Email Invitation
-            </TableCell>
-            <TableCell className="text-right">
-              <div className="flex items-center gap-2 justify-end">
-                {!invitation.is_accepted && invitation.token && (
-                  <CopyInviteButton 
-                    inviteUrl={`${window.location.origin}/invite/accept?token=${invitation.token}`}
-                    variant="ghost"
-                    size="sm"
-                  />
-                )}
-                {!invitation.is_accepted && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onDelete(invitation.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                )}
-              </div>
-            </TableCell>
-          </TableRow>
+          <ExpandableInviteRow 
+            key={invitation.id}
+            invitation={invitation}
+            onDelete={onDelete}
+          />
         ))}
       </TableBody>
     </Table>
