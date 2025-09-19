@@ -16,6 +16,8 @@ import { InviteManagementTabs } from "@/components/invites/InviteManagementTabs"
 import { UserRoleDialog } from "@/components/invites/UserRoleDialog";
 
 const InviteManagement = () => {
+  // Force rebuild timestamp: 2025-01-02
+  console.log("InviteManagement component loaded - using admin-invite edge function");
   const [email, setEmail] = useState("");
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
