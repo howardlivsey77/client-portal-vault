@@ -133,11 +133,50 @@ export const useInvites = () => {
         }
         return false;
         } else {
-          console.log('Invitation created successfully (no email sent)');
-          toast({
-            title: "Invitation created",
-            description: `Invitation created for ${email}. Please share the invitation code manually: ${inviteCode}`,
-          });
+          try {
+            // Send invitation email via Mailgun SMTP
+            const inviteLink = `${window.location.origin}/auth?invite=${inviteCode}`;
+            const emailPayload = {
+              email: email.toLowerCase().trim(),
+              invite_link: inviteLink,
+              name: email.split('@')[0],
+              from_name: "Dootsons Payroll",
+              message: `You've been invited to join as a ${selectedRole}.`
+            };
+            
+            console.log("Sending invitation email with payload:", emailPayload);
+            
+            const { data: emailData, error: emailError } = await supabase.functions.invoke('invite', {
+              body: emailPayload
+            });
+
+            if (emailError) {
+              console.error("Email sending error:", emailError);
+              toast({
+                title: "Invitation created (email failed)",
+                description: `Invitation created but email couldn't be sent: ${emailError.message}`,
+                variant: "destructive"
+              });
+            } else if (emailData?.success) {
+              toast({
+                title: "Invitation sent successfully",
+                description: `Invitation email sent to ${email} for ${selectedRole} role`,
+              });
+            } else {
+              toast({
+                title: "Invitation created (email failed)",
+                description: `Invitation created but email sending failed: ${emailData?.error || 'Unknown error'}`,
+                variant: "destructive"
+              });
+            }
+          } catch (emailErr: any) {
+            console.error("Error calling email function:", emailErr);
+            toast({
+              title: "Invitation created (email failed)",
+              description: `Invitation created but email couldn't be sent: ${emailErr.message}`,
+              variant: "destructive"
+            });
+          }
           
           await fetchInvitations();
           return true;
