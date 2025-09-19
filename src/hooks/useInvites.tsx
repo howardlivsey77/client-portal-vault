@@ -143,7 +143,7 @@ export const useInvites = () => {
             message: `You've been invited to join as a ${selectedRole}.`
           };
           
-           console.log("=== INVITE DEBUG: Starting email send process (FIXED VERSION) ===");
+           console.log(`=== INVITE DEBUG: Starting email send process (FIXED VERSION ${Date.now()}) ===`);
            console.log("Email payload:", emailPayload);
           
           try {
