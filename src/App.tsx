@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
-import ClerkAuth from "./pages/ClerkAuth";
+import Auth from "./pages/Auth";
 import AcceptInvite from "./pages/AcceptInvite";
 import InviteManagement from "./pages/InviteManagement";
 import Employees from "./pages/Employees";
@@ -20,7 +20,7 @@ import CompanyManagement from "./features/company-management/CompanyManagement";
 import NotFound from "./pages/NotFound";
 import SicknessImport from "./pages/SicknessImport";
 import ClientReports from "./pages/ClientReports";
-import { ClerkAuthProvider } from "./providers/ClerkAuthProvider";
+import AuthProvider from "./providers/AuthProvider";
 import CompanyProvider from "./providers/CompanyProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { NotificationsProvider } from "./components/notifications/NotificationsContext";
@@ -33,11 +33,11 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <ClerkAuthProvider>
+        <AuthProvider>
           <CompanyProvider>
             <NotificationsProvider>
               <Routes>
-                <Route path="/auth" element={<ClerkAuth />} />
+                <Route path="/auth" element={<Auth />} />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
                 <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                 <Route path="/invites" element={<ProtectedRoute adminOnly={true}><InviteManagement /></ProtectedRoute>} />
@@ -67,7 +67,7 @@ const App = () => (
               </Routes>
             </NotificationsProvider>
           </CompanyProvider>
-        </ClerkAuthProvider>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

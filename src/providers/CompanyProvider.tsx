@@ -1,6 +1,7 @@
 
 import { createContext, useState, useEffect, useContext, ReactNode, useCallback } from "react";
-import { useAuth } from "./ClerkAuthProvider";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "./AuthProvider";
 import { Company, CompanyWithRole } from "@/types/company";
 import { useToast } from "@/hooks/use-toast";
 
@@ -29,7 +30,7 @@ interface CompanyProviderProps {
 }
 
 const CompanyProvider = ({ children }: CompanyProviderProps) => {
-  const { user, isAdmin, supabase } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
   const [companies, setCompanies] = useState<CompanyWithRole[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);

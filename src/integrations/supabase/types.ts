@@ -76,7 +76,6 @@ export type Database = {
       }
       company_access: {
         Row: {
-          clerk_user_id: string | null
           company_id: string
           created_at: string
           id: string
@@ -85,7 +84,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          clerk_user_id?: string | null
           company_id: string
           created_at?: string
           id?: string
@@ -94,7 +92,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          clerk_user_id?: string | null
           company_id?: string
           created_at?: string
           id?: string
@@ -485,7 +482,6 @@ export type Database = {
           hours_per_week: number | null
           id: string
           last_name: string
-          leave_date: string | null
           national_insurance_number: string | null
           nhs_pension_employee_rate: number | null
           nhs_pension_member: boolean | null
@@ -498,7 +494,6 @@ export type Database = {
           rate_3: number | null
           rate_4: number | null
           sickness_scheme_id: string | null
-          status: string | null
           student_loan_plan: number | null
           tax_code: string | null
           updated_at: string
@@ -523,7 +518,6 @@ export type Database = {
           hours_per_week?: number | null
           id?: string
           last_name: string
-          leave_date?: string | null
           national_insurance_number?: string | null
           nhs_pension_employee_rate?: number | null
           nhs_pension_member?: boolean | null
@@ -536,7 +530,6 @@ export type Database = {
           rate_3?: number | null
           rate_4?: number | null
           sickness_scheme_id?: string | null
-          status?: string | null
           student_loan_plan?: number | null
           tax_code?: string | null
           updated_at?: string
@@ -561,7 +554,6 @@ export type Database = {
           hours_per_week?: number | null
           id?: string
           last_name?: string
-          leave_date?: string | null
           national_insurance_number?: string | null
           nhs_pension_employee_rate?: number | null
           nhs_pension_member?: boolean | null
@@ -574,7 +566,6 @@ export type Database = {
           rate_3?: number | null
           rate_4?: number | null
           sickness_scheme_id?: string | null
-          status?: string | null
           student_loan_plan?: number | null
           tax_code?: string | null
           updated_at?: string
@@ -1330,10 +1321,6 @@ export type Database = {
           role: string | null
         }
       }
-      current_clerk_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
       delete_invitation: {
         Args: { _id: string; _user_id: string }
         Returns: boolean
@@ -1371,10 +1358,6 @@ export type Database = {
       }
       is_user_admin: {
         Args: { user_id: string }
-        Returns: boolean
-      }
-      role_meets: {
-        Args: { actual_role: string; min_role: string }
         Returns: boolean
       }
       sync_timesheet_entries_payroll_ids: {

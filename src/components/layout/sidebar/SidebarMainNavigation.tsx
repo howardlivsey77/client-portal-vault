@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CheckSquare, ChartBar, Clock, FileText, Home, Receipt, Users, Building, UserCog, Stethoscope, FileBarChart } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useAuth } from "@/providers/ClerkAuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 
 interface SidebarMainNavigationProps {
   location: { pathname: string; search: string };

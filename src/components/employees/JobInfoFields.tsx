@@ -12,6 +12,8 @@ interface JobInfoFieldsProps {
 
 export const JobInfoFields = ({ form, readOnly }: JobInfoFieldsProps) => {
   const { departmentNames, loading } = useDepartments();
+  
+  console.log("JobInfoFields: departmentNames:", departmentNames, "loading:", loading);
 
   return (
     <FormField
@@ -31,6 +33,11 @@ export const JobInfoFields = ({ form, readOnly }: JobInfoFieldsProps) => {
               </SelectTrigger>
             </FormControl>
             <SelectContent>
+              {departmentNames.length === 0 && !loading && (
+                <SelectItem value="" disabled>
+                  No departments found - Create departments in Department Management
+                </SelectItem>
+              )}
               {departmentNames.map((dept) => (
                 <SelectItem key={dept} value={dept}>
                   {dept}

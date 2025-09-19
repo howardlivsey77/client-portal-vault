@@ -6,7 +6,7 @@ import { EmployeeSearch } from "@/components/employees/EmployeeSearch";
 import { EmployeeActions } from "@/components/employees/EmployeeActions";
 import { EmptyEmployeeState } from "@/components/employees/EmptyEmployeeState";
 import { useEmployees } from "@/hooks/useEmployees";
-import { useAuth } from "@/providers/ClerkAuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import { useCompany } from "@/providers/CompanyProvider";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";

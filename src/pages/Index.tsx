@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { DocumentUploadModal } from "@/components/dashboard/DocumentUploadModal";
-import { useAuth } from "@/providers/ClerkAuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "react-router-dom";
 import { TaskList } from "@/components/dashboard/tasks/TaskList";
 import { ReportsNavigation } from "@/components/dashboard/reports/ReportsNavigation";

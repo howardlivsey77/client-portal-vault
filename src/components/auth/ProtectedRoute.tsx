@@ -1,7 +1,7 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "@/providers/ClerkAuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {

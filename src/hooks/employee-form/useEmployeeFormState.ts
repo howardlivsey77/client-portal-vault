@@ -35,6 +35,8 @@ export const useEmployeeFormState = () => {
       nhs_pension_tier: null,
       nhs_pension_employee_rate: null,
       monthly_salary: null,
+      status: "active",
+      leave_date: null,
     },
   });
 

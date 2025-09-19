@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useDepartments } from "@/hooks/useDepartments";
-import { useAuth } from "@/providers/ClerkAuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import { Department } from "@/services/departmentService";
 
 const DepartmentsSettingsTab = () => {

@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/providers/ClerkAuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle, XCircle, Mail } from "lucide-react";
-import { SignIn, SignUp } from '@clerk/clerk-react';
+import { AuthContainer } from "@/components/auth/AuthContainer";
 
 interface InvitationDetails {
   email: string;
@@ -133,19 +133,7 @@ const AcceptInvite = () => {
                 Please sign in or create an account to accept this invitation.
               </p>
             </div>
-            <div className="space-y-4">
-              <SignIn 
-                appearance={{
-                  elements: {
-                    rootBox: "mx-auto",
-                    card: "shadow-lg border border-border",
-                  }
-                }}
-                routing="path"
-                path="/accept-invite"
-                redirectUrl={`/accept-invite?code=${inviteCode}`}
-              />
-            </div>
+            <AuthContainer onSuccess={handleAuthSuccess} />
           </div>
         );
 
