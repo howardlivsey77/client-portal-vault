@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { invokeFunction } from "@/supabase-invoke-guard";
 
 export interface InvitationMetadata {
   id: string;
@@ -109,7 +110,7 @@ export const useInvites = () => {
       });
 
       // Enhanced invocation with compatibility shim for cache debugging
-      let { data, error } = await supabase.functions.invoke('admin-invite', { body: payload });
+      let { data, error } = await invokeFunction('admin-invite', { body: payload });
       
       // Compatibility shim - detect if old cached code is still trying send-invite
       if (error && (error.message?.includes("Function not found") || error.message?.includes("404"))) {
@@ -117,7 +118,7 @@ export const useInvites = () => {
         console.error("❌ [CACHE DEBUG] This means old cached code is still active!");
         
         try {
-          const fallbackResult = await supabase.functions.invoke('send-invite', { body: payload });
+          const fallbackResult = await invokeFunction('send-invite', { body: payload });
           console.warn("🔄 [CACHE DEBUG] send-invite fallback succeeded - cache issue confirmed");
           data = fallbackResult.data;
           error = fallbackResult.error;

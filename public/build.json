@@ -1,0 +1,5 @@
+{
+  "commit": "$VITE_GIT_SHA",
+  "builtAt": "$VITE_BUILD_TIME", 
+  "version": "v2.1.0-admin-invite-only"
+}
