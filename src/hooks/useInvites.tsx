@@ -147,12 +147,39 @@ export const useInvites = () => {
           console.log("Email payload:", emailPayload);
           
           try {
-            console.log("=== INVITE DEBUG: Calling supabase.functions.invoke ===");
-            const { data: emailData, error: emailError } = await supabase.functions.invoke('invite', {
-              body: emailPayload
+            console.log("=== INVITE DEBUG: Calling direct function URL ===");
+            
+            // Get session for authorization header
+            const { data: sessionData } = await supabase.auth.getSession();
+            const accessToken = sessionData.session?.access_token;
+            
+            const response = await fetch('https://qdpktyyvqejdpxiegooe.supabase.co/functions/v1/invite', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkcGt0eXl2cWVqZHB4aWVnb29lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxODM1ODcsImV4cCI6MjA2MTc1OTU4N30.JobbkKyPjZN04H2YX4XKAUWcpSmViLNpbFs02u8GrU0',
+                ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
+              },
+              body: JSON.stringify(emailPayload)
             });
 
             console.log("=== INVITE DEBUG: Response received ===");
+            console.log("Response status:", response.status);
+            
+            let emailData, emailError;
+            if (response.ok) {
+              emailData = await response.json();
+              emailError = null;
+            } else {
+              emailError = { message: `HTTP ${response.status}: ${response.statusText}` };
+              try {
+                const errorData = await response.json();
+                emailError.message += ` - ${errorData.error || errorData.message || 'Unknown error'}`;
+              } catch (e) {
+                // If response isn't JSON, keep the basic error message
+              }
+            }
+            
             console.log("Email data:", emailData);
             console.log("Email error:", emailError);
 
