@@ -146,9 +146,20 @@ export const useInvites = () => {
             
             console.log("Sending invitation email with payload:", emailPayload);
             
-            const { data: emailData, error: emailError } = await supabase.functions.invoke('invite', {
-              body: emailPayload
+            // Use direct POST method to call the invite function
+            const session = await supabase.auth.getSession();
+            const response = await fetch('https://qdpktyyvqejdpxiegooe.supabase.co/functions/v1/invite', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${session.data.session?.access_token}`,
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkcGt0eXl2cWVqZHB4aWVnb29lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxODM1ODcsImV4cCI6MjA2MTc1OTU4N30.JobbkKyPjZN04H2YX4XKAUWcpSmViLNpbFs02u8GrU0',
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(emailPayload)
             });
+
+            const emailData = await response.json();
+            const emailError = !response.ok ? new Error(emailData.error || 'Email sending failed') : null;
 
             if (emailError) {
               console.error("Email sending error:", emailError);
