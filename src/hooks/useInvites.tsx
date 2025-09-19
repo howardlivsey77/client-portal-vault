@@ -101,7 +101,7 @@ export const useInvites = () => {
         redirect_to: 'https://payroll.dootsons.com/auth'
       };
 
-      console.info("🔧 [CACHE DEBUG] Invoking invitation function", {
+      console.info("📤 [INVITES] Calling admin-invite for", {
         email: payload.email,
         role: selectedRole,
         companyId,
@@ -111,6 +111,13 @@ export const useInvites = () => {
 
       // Enhanced invocation with compatibility shim for cache debugging
       let { data, error } = await invokeFunction('admin-invite', { body: payload });
+      
+      console.info("📬 [INVITES] admin-invite result:", { 
+        success: !error, 
+        data, 
+        error, 
+        timestamp: new Date().toISOString() 
+      });
       
       // Compatibility shim - detect if old cached code is still trying send-invite
       if (error && (error.message?.includes("Function not found") || error.message?.includes("404"))) {
@@ -127,14 +134,13 @@ export const useInvites = () => {
         }
       }
 
-      console.info("📡 [CACHE DEBUG] Function invocation result", { 
-        success: !error,
-        hasData: !!data,
-        errorType: error?.message || 'none'
-      });
-
       if (error) {
-        console.error("Admin invite error:", error);
+        console.error("📧 [INVITES] Invitation creation failed:", { 
+          error, 
+          email, 
+          payload,
+          timestamp: new Date().toISOString()
+        });
         throw new Error(error.message || 'Failed to send invitation');
       }
 
@@ -142,10 +148,26 @@ export const useInvites = () => {
         throw new Error(data.error || 'Failed to send invitation');
       }
 
+      console.log("✅ [INVITES] Invitation created successfully:", { 
+        data, 
+        email, 
+        duration: data?.duration_ms,
+        inviteUrl: data?.invite_url,
+        timestamp: new Date().toISOString() 
+      });
+
+      // Show success with invite URL option
       toast({
         title: "Invitation sent",
-        description: `Invitation sent to ${email} with ${selectedRole} role using Supabase native auth`,
+        description: data?.invite_url 
+          ? `Invitation sent to ${email}. You can also copy the invite link directly.`
+          : `Invitation sent to ${email} with ${selectedRole} role`,
       });
+
+      // Log invite URL for admin convenience
+      if (data?.invite_url) {
+        console.info(`🔗 [INVITES] Direct invite URL: ${data.invite_url}`);
+      }
 
       await fetchInvitations();
       return true;
