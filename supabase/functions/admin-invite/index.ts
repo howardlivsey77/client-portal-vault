@@ -89,6 +89,15 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Store invitation metadata first
+    console.log(JSON.stringify({
+      evt: "invite.metadata_insert_attempt",
+      reqId,
+      email: email.toLowerCase().trim(),
+      company_id,
+      role,
+      timestamp: new Date().toISOString()
+    }));
+
     const { data: metadataResult, error: metadataError } = await supabaseAdmin
       .from('invitation_metadata')
       .insert({
@@ -106,12 +115,16 @@ const handler = async (req: Request): Promise<Response> => {
         reqId,
         email: email.toLowerCase().trim(),
         error: metadataError,
+        errorCode: metadataError.code,
+        errorMessage: metadataError.message,
+        errorDetails: metadataError.details,
+        errorHint: metadataError.hint,
         timestamp: new Date().toISOString()
       }));
       if (metadataError.code === '23505') {
         throw new Error('User already has an active invitation for this company');
       }
-      throw new Error(`Failed to create invitation metadata: ${metadataError.message}`);
+      throw new Error(`Failed to create invitation metadata: ${metadataError.message} (Code: ${metadataError.code})`);
     }
 
     console.log(JSON.stringify({

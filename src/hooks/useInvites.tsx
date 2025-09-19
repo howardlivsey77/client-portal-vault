@@ -175,17 +175,39 @@ export const useInvites = () => {
     } catch (error: any) {
       console.error("Error creating invitation:", error);
       
-      if (error.message.includes("already has an active invitation")) {
+      // Parse error details from the response
+      const errorMessage = error.message || 'Failed to send invitation. Please try again.';
+      
+      // Check if it's a specific error we can handle
+      if (errorMessage.includes('already has an active invitation')) {
         toast({
-          title: "Duplicate invitation",
-          description: "This email already has an active invitation for this company.",
-          variant: "destructive"
+          title: "Invitation Failed",
+          description: "This user already has an active invitation for this company.",
+          variant: "destructive",
+        });
+      } else if (errorMessage.includes('A user with this email address has already been registered')) {
+        toast({
+          title: "User Already Exists",
+          description: "A user with this email address already exists. They may need to be manually added to the company.",
+          variant: "destructive",
+        });
+      } else if (errorMessage.includes('permission') || errorMessage.includes('access')) {
+        toast({
+          title: "Permission Denied",
+          description: "You don't have permission to invite users to this company.",
+          variant: "destructive",
+        });
+      } else if (errorMessage.includes('Failed to create invitation metadata')) {
+        toast({
+          title: "Database Error",
+          description: "There was a problem creating the invitation. Please contact support if this persists.",
+          variant: "destructive",
         });
       } else {
         toast({
-          title: "Error creating invitation",
-          description: error.message,
-          variant: "destructive"
+          title: "Invitation Failed",
+          description: errorMessage,
+          variant: "destructive",
         });
       }
       return { success: false };
