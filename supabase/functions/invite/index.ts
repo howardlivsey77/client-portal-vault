@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0'
+import { Resend } from "npm:resend@2.0.0";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -49,27 +51,20 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get SMTP configuration from environment
-    const smtpHost = Deno.env.get('MAILGUN_SMTP_HOST') || 'smtp.mailgun.org';
-    const smtpPort = parseInt(Deno.env.get('MAILGUN_SMTP_PORT') || '587');
-    const smtpUser = Deno.env.get('MAILGUN_SMTP_USER');
-    const smtpPass = Deno.env.get('MAILGUN_SMTP_PASS');
-    const fromEmail = Deno.env.get('INVITE_FROM_EMAIL') || 'no-reply@payroll.dootsons.com';
-
-    console.log('SMTP Configuration:');
-    console.log('- Host:', smtpHost);
-    console.log('- Port:', smtpPort);
-    console.log('- User:', smtpUser ? `${smtpUser.substring(0, 10)}...` : 'NOT SET');
-    console.log('- Pass:', smtpPass ? 'SET' : 'NOT SET');
-    console.log('- From Email:', fromEmail);
-
-    if (!smtpUser || !smtpPass) {
-      console.error('SMTP credentials not configured');
+    // Check if Resend API key is configured
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      console.error("RESEND_API_KEY not configured");
       return new Response(
-        JSON.stringify({ success: false, error: 'SMTP credentials not configured' }),
-        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        JSON.stringify({ success: false, error: "Email service not configured" }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
       );
     }
+
+    console.log("Using Resend API for email delivery");
 
     // Create email content
     const recipientName = name || email.split('@')[0];
@@ -152,168 +147,37 @@ If you weren't expecting this email, you can safely ignore it.
 ${from_name}
     `;
 
-    // Send email using SMTP
-    const emailData = {
-      from: fromEmail,
-      to: email,
-      subject: subject,
-      text: textContent,
-      html: htmlContent
-    };
+    console.log("Sending email via Resend...");
 
-    // Create the SMTP message
-    const boundary = `----boundary_${Date.now()}`;
-    const smtpMessage = [
-      `From: ${emailData.from}`,
-      `To: ${emailData.to}`,
-      `Subject: ${emailData.subject}`,
-      `MIME-Version: 1.0`,
-      `Content-Type: multipart/alternative; boundary="${boundary}"`,
-      ``,
-      `--${boundary}`,
-      `Content-Type: text/plain; charset=utf-8`,
-      ``,
-      emailData.text,
-      ``,
-      `--${boundary}`,
-      `Content-Type: text/html; charset=utf-8`,
-      ``,
-      emailData.html,
-      ``,
-      `--${boundary}--`
-    ].join('\r\n');
-
-    console.log('=== ATTEMPTING SMTP CONNECTION ===');
-    console.log('Connecting to:', `${smtpHost}:${smtpPort}`);
-    
-    // Connect to SMTP server with timeout
-    const connectPromise = Deno.connect({
-      hostname: smtpHost,
-      port: smtpPort,
-    });
-    
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Connection timeout after 10 seconds')), 10000);
-    });
-    
-    const conn = await Promise.race([connectPromise, timeoutPromise]) as Deno.Conn;
-    console.log('SMTP connection established');
-
-    const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
-
-    // Helper function to send SMTP command and read response
-    async function sendCommand(command: string): Promise<string> {
-      console.log('SMTP Command:', command || '[INITIAL CONNECTION]');
-      await conn.write(encoder.encode(command + '\r\n'));
-      const buffer = new Uint8Array(1024);
-      const bytesRead = await conn.read(buffer);
-      const response = decoder.decode(buffer.subarray(0, bytesRead || 0));
-      console.log('SMTP Response:', response.trim());
-      return response;
-    }
-
-    console.log('=== STARTING SMTP CONNECTION ===');
-    
     try {
-      // SMTP handshake
-      console.log('Step 1: Initial connection...');
-      const initialResponse = await sendCommand('');
-      
-      console.log('Step 2: EHLO handshake...');
-      const ehloResponse = await sendCommand(`EHLO ${smtpHost}`);
-      
-      console.log('Step 3: Starting TLS...');
-      const startTlsResponse = await sendCommand('STARTTLS');
-      
-      console.log('Step 4: Upgrading to TLS connection...');
-      // Upgrade to TLS connection
-      const tlsConn = await Deno.startTls(conn, { hostname: smtpHost });
-      conn.close();
-      console.log('TLS upgrade successful');
-      
-      // Continue with TLS connection
-      async function sendTlsCommand(command: string): Promise<string> {
-        console.log('TLS Command:', command);
-        await tlsConn.write(encoder.encode(command + '\r\n'));
-        const buffer = new Uint8Array(1024);
-        const bytesRead = await tlsConn.read(buffer);
-        const response = decoder.decode(buffer.subarray(0, bytesRead || 0));
-        console.log('TLS Response:', response.trim());
-        return response;
-      }
+      const emailResponse = await resend.emails.send({
+        from: `${from_name} <noreply@resend.dev>`,
+        to: [email],
+        subject: subject,
+        html: htmlContent,
+        text: textContent,
+      });
 
-      console.log('Step 5: TLS EHLO...');
-      const tlsEhloResponse = await sendTlsCommand(`EHLO ${smtpHost}`);
-      
-      console.log('Step 6: Authentication...');
-      const authResponse = await sendTlsCommand('AUTH LOGIN');
-      const userResponse = await sendTlsCommand(btoa(smtpUser));
-      const passResponse = await sendTlsCommand(btoa(smtpPass));
-      
-      console.log('Step 7: Setting sender...');
-      const mailFromResponse = await sendTlsCommand(`MAIL FROM:<${emailData.from}>`);
-      
-      console.log('Step 8: Setting recipient...');
-      const rcptToResponse = await sendTlsCommand(`RCPT TO:<${emailData.to}>`);
-      
-      console.log('Step 9: Starting data transmission...');
-      const dataResponse = await sendTlsCommand('DATA');
-      
-      console.log('Step 10: Sending email content...');
-      const messageResponse = await sendTlsCommand(smtpMessage + '\r\n.');
-      
-      console.log('Step 11: Closing connection...');
-      const quitResponse = await sendTlsCommand('QUIT');
-      
-      tlsConn.close();
-      console.log('=== SMTP CONNECTION COMPLETED SUCCESSFULLY ===');
+      console.log("Email sent successfully:", emailResponse);
 
-      console.log(`Invitation email sent successfully to: ${email}`);
-      
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: `Invitation email sent to ${email}` 
+          message: `Invitation email sent to ${email}`,
+          id: emailResponse.data?.id
         }),
-        { 
-          status: 200, 
-          headers: { 'Content-Type': 'application/json', ...corsHeaders } 
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
         }
       );
 
-    } catch (smtpError) {
-      console.error('=== SMTP ERROR OCCURRED ===');
-      console.error('Error type:', smtpError.constructor.name);
-      console.error('Error message:', smtpError.message);
-      console.error('Error stack:', smtpError.stack);
-      
-      try {
-        conn.close();
-      } catch (closeError) {
-        console.error('Error closing connection:', closeError);
-      }
-      
-      // Provide more specific error messages
-      let errorMessage = `SMTP Error: ${smtpError.message}`;
-      if (smtpError.message.includes('timeout')) {
-        errorMessage = 'Email sending timed out - please check SMTP server availability';
-      } else if (smtpError.message.includes('authentication')) {
-        errorMessage = 'SMTP authentication failed - please check credentials';
-      } else if (smtpError.message.includes('connection')) {
-        errorMessage = 'Failed to connect to SMTP server - please check server settings';
-      }
-      
+    } catch (emailError) {
+      console.error("Resend Email Error:", emailError);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: errorMessage,
-          debug: {
-            smtp_host: smtpHost,
-            smtp_port: smtpPort,
-            smtp_user: smtpUser ? 'configured' : 'missing',
-            error_type: smtpError.constructor.name
-          }
+          error: `Failed to send email: ${emailError.message}` 
         }),
         { 
           status: 500, 
