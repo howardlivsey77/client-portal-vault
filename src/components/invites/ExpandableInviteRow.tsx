@@ -29,6 +29,14 @@ export const ExpandableInviteRow = ({ invitation, onDelete }: ExpandableInviteRo
     ? `${window.location.origin}/invite/accept?token=${invitation.token}`
     : null;
 
+  // Debug logging
+  console.log('ExpandableInviteRow render:', {
+    email: invitation.invited_email,
+    isAccepted: invitation.is_accepted,
+    hasToken: !!invitation.token,
+    showDeleteButton: !invitation.is_accepted
+  });
+
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
       <CollapsibleTrigger asChild>
