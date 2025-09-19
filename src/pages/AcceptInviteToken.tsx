@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle, XCircle, UserPlus } from "lucide-react";
 import { AuthContainer } from "@/components/auth/AuthContainer";
+import { PasswordSetupForm } from "@/components/auth/PasswordSetupForm";
 
 interface InvitationDetails {
   email: string;
@@ -16,7 +17,7 @@ interface InvitationDetails {
   invited_by_name?: string;
 }
 
-type Status = 'loading' | 'needs_auth' | 'processing' | 'success' | 'error';
+type Status = 'loading' | 'needs_auth' | 'needs_password' | 'processing' | 'success' | 'error';
 
 export default function AcceptInviteToken() {
   const [searchParams] = useSearchParams();
@@ -88,7 +89,14 @@ export default function AcceptInviteToken() {
           return;
         }
 
-        // Auto-accept if authenticated with correct email
+        // Check if user needs to set password (invited users)
+        const needsPassword = await checkIfPasswordSetupNeeded(session.user);
+        if (needsPassword) {
+          setStatus('needs_password');
+          return;
+        }
+
+        // Auto-accept if authenticated with correct email and password is set
         await acceptInvitation(session.user.id, token);
 
       } catch (error: any) {
@@ -154,16 +162,45 @@ export default function AcceptInviteToken() {
     }
   };
 
+  // Check if user needs to set up password (for invited users)
+  const checkIfPasswordSetupNeeded = async (user: any) => {
+    try {
+      // Check if user was created via invitation and hasn't set password yet
+      // Users created via invitation won't have password_set_via_invitation flag
+      const hasPasswordFlag = user.user_metadata?.password_set_via_invitation;
+      
+      // If they don't have the flag, they likely need to set up password
+      return !hasPasswordFlag;
+    } catch (error) {
+      console.error('Error checking password setup status:', error);
+      return false; // Default to not requiring password setup if check fails
+    }
+  };
+
   const handleAuthSuccess = async () => {
     // Re-check everything after successful auth
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user && invitation) {
       if (session.user.email === invitation.email) {
-        await acceptInvitation(session.user.id, token!);
+        // Check if password setup is needed
+        const needsPassword = await checkIfPasswordSetupNeeded(session.user);
+        if (needsPassword) {
+          setStatus('needs_password');
+        } else {
+          await acceptInvitation(session.user.id, token!);
+        }
       } else {
         setError(`This invitation was sent to ${invitation.email}. Please sign in with the correct email address.`);
         setStatus('error');
       }
+    }
+  };
+
+  const handlePasswordSetupComplete = async () => {
+    // After password is set, proceed with invitation acceptance
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user && token) {
+      await acceptInvitation(session.user.id, token);
     }
   };
 
@@ -192,6 +229,14 @@ export default function AcceptInviteToken() {
             </div>
             <AuthContainer onSuccess={handleAuthSuccess} />
           </div>
+        );
+
+      case 'needs_password':
+        return (
+          <PasswordSetupForm 
+            onSuccess={handlePasswordSetupComplete} 
+            userEmail={invitation?.email || ''} 
+          />
         );
 
       case 'processing':
