@@ -6,6 +6,7 @@ import { CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Shield, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface PasswordSetupFormProps {
   onSuccess: () => void;
@@ -19,6 +20,7 @@ export const PasswordSetupForm = ({ onSuccess, userEmail }: PasswordSetupFormPro
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const getPasswordStrength = (password: string) => {
     let strength = 0;
@@ -100,10 +102,14 @@ export const PasswordSetupForm = ({ onSuccess, userEmail }: PasswordSetupFormPro
       
       toast({
         title: "Password set successfully!",
-        description: "Your account is now secure. Welcome to the team!",
+        description: "Please sign in with your new password to complete the setup.",
       });
       
-      onSuccess();
+      // Sign out the user to force re-authentication with new password
+      await supabase.auth.signOut();
+      
+      // Redirect to auth page for re-login
+      navigate("/auth");
     } catch (error: any) {
       console.error("Password setup error:", error);
       toast({
