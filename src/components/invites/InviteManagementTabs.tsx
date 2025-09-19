@@ -9,14 +9,14 @@ import {
 import { InvitationsTable } from "@/components/invites/InvitationsTable";
 import { UsersTable } from "@/components/invites/UsersTable";
 import { UserProfile } from "@/hooks/useUsers";
-import { Invitation } from "@/hooks/useInvites";
+import { InvitationMetadata } from "@/hooks/useInvites";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
 interface InviteManagementTabsProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  invitations: Invitation[];
+  invitations: InvitationMetadata[];
   users: UserProfile[];
   invitationsLoading: boolean;
   usersLoading: boolean;

@@ -11,10 +11,10 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Loader2, Mail, ShieldCheck, Trash2, User } from "lucide-react";
-import { Invitation } from "@/hooks/useInvites";
+import { InvitationMetadata } from "@/hooks/useInvites";
 
 interface InvitationsTableProps {
-  invitations: Invitation[];
+  invitations: InvitationMetadata[];
   loading: boolean;
   onDelete: (id: string) => void;
 }
@@ -61,7 +61,7 @@ export const InvitationsTable = ({
           <TableRow key={invitation.id}>
             <TableCell className="flex items-center">
               <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-              {invitation.email}
+              {invitation.invited_email}
             </TableCell>
             <TableCell>
               {invitation.role === "admin" ? (
@@ -88,12 +88,10 @@ export const InvitationsTable = ({
               </span>
             </TableCell>
             <TableCell>
-              {formatDistanceToNow(new Date(invitation.issued_at), { addSuffix: true })}
+              {formatDistanceToNow(new Date(invitation.created_at), { addSuffix: true })}
             </TableCell>
             <TableCell>
-              {new Date(invitation.expires_at) < new Date() 
-                ? "Expired" 
-                : formatDistanceToNow(new Date(invitation.expires_at), { addSuffix: true })}
+              Native Email Invitation
             </TableCell>
             <TableCell className="text-right">
               {!invitation.is_accepted && (

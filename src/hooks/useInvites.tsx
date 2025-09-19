@@ -3,21 +3,19 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-export interface Invitation {
+export interface InvitationMetadata {
   id: string;
-  email: string;
-  invite_code: string;
-  issued_at: string;
-  expires_at: string;
-  is_accepted: boolean;
-  accepted_at: string | null;
+  invited_email: string;
+  invited_by: string;
+  company_id: string;
   role: string;
-  issued_by: string;
-  company_id?: string;
+  created_at: string;
+  accepted_at: string | null;
+  is_accepted: boolean;
 }
 
 export const useInvites = () => {
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [invitations, setInvitations] = useState<InvitationMetadata[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -27,7 +25,7 @@ export const useInvites = () => {
       setLoading(true);
       setError(null);
       
-      // Use admin-gated RPC to fetch invitations
+      // Use admin-gated RPC to fetch invitation metadata
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData.session?.user?.id;
       if (!userId) {
@@ -37,22 +35,16 @@ export const useInvites = () => {
       }
 
       const { data, error } = await supabase
-        .rpc('get_invitations', { _user_id: userId, _company_id: null });
+        .rpc('get_invitation_metadata', { _user_id: userId, _company_id: null });
         
       if (error) {
-        console.error("Invitations fetch error:", error);
+        console.error("Invitation metadata fetch error:", error);
         throw error;
       }
       
-      console.log("Invitations data:", data);
+      console.log("Invitation metadata:", data);
       
-      // Ensure all invitations have a role property (use default 'user' if none exists)
-      const invitationsWithRole = data?.map(invitation => ({
-        ...invitation,
-        role: invitation.role || 'user'
-      })) || [];
-      
-      setInvitations(invitationsWithRole);
+      setInvitations(data || []);
     } catch (error: any) {
       console.error("Error fetching invitations:", error);
       
@@ -100,88 +92,49 @@ export const useInvites = () => {
         });
         return false;
       }
-      
-      // Generate random invite code
-      const inviteCode = Math.random().toString(36).substring(2, 15) + 
-                       Math.random().toString(36).substring(2, 15);
-      
-      // Set expiration to 7 days from now
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
-      
-      const { data: createData, error } = await supabase
-        .rpc('create_invitation', {
-          _user_id: userId,
-          _email: email.toLowerCase().trim(),
-          _invite_code: inviteCode,
-          _company_id: companyId,
-          _expires_at: expiresAt.toISOString(),
-          _role: selectedRole
-        });
-      
-      if (error) {
-        if (error.code === "23505") {
-          toast({
-            title: "Duplicate invitation",
-            description: "This email already has an active invitation.",
-            variant: "destructive"
-          });
-        } else {
-          throw error;
-        }
-        return false;
-        } else {
-          try {
-            const payload = {
-              email: email.toLowerCase().trim(),
-              inviteCode,
-              role: selectedRole,
-              appUrl: window.location.origin
-            };
-            console.log("Invites: sending payload to send-invite:", payload);
-            const { data: sendData, error: sendError } = await supabase.functions.invoke('send-invite', {
-              body: payload
-            });
 
-            if (sendError) {
-              console.error("send-invite error:", sendError);
-              let detail = '' as string;
-              const ctxBody = (sendError as any)?.context?.body;
-              try {
-                const parsed = typeof ctxBody === 'string' ? JSON.parse(ctxBody) : ctxBody;
-                detail = parsed?.error || parsed?.message || (parsed ? JSON.stringify(parsed) : '');
-              } catch {
-                detail = typeof ctxBody === 'string' ? ctxBody : '';
-              }
-              toast({
-                title: "Invitation created (email not sent)",
-                description: `${sendError.message}${detail ? ` - ${detail}` : ''}`,
-                variant: "destructive"
-              });
-            } else {
-              toast({
-                title: "Invitation created",
-                description: `Invitation sent to ${email} with ${selectedRole} role`,
-              });
-            }
-          } catch (e: any) {
-            console.error("Error sending invite email:", e);
-            const message = e?.message ?? "Invite created, but email sending failed.";
-            toast({
-              title: "Invitation created (email not sent)",
-              description: message,
-              variant: "destructive"
-            });
-          }
-          await fetchInvitations();
-          return true;
+      // Use Supabase native invitation system via edge function
+      const { data, error } = await supabase.functions.invoke('admin-invite', {
+        body: {
+          email: email.toLowerCase().trim(),
+          company_id: companyId,
+          role: selectedRole,
+          redirect_to: `${window.location.origin}/auth`
         }
-    } catch (error: any) {
-      toast({
-        title: "Error creating invitation",
-        description: error.message,
-        variant: "destructive"
       });
+
+      if (error) {
+        console.error("Admin invite error:", error);
+        throw new Error(error.message || 'Failed to send invitation');
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to send invitation');
+      }
+
+      toast({
+        title: "Invitation sent",
+        description: `Invitation sent to ${email} with ${selectedRole} role using Supabase native auth`,
+      });
+
+      await fetchInvitations();
+      return true;
+    } catch (error: any) {
+      console.error("Error creating invitation:", error);
+      
+      if (error.message.includes("already has an active invitation")) {
+        toast({
+          title: "Duplicate invitation",
+          description: "This email already has an active invitation for this company.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Error creating invitation",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
       return false;
     } finally {
       setLoading(false);
@@ -195,12 +148,10 @@ export const useInvites = () => {
     
     setLoading(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData.session?.user?.id;
-      if (!userId) throw new Error("Not authenticated");
-
-      const { data: deletedOk, error } = await supabase
-        .rpc('delete_invitation', { _user_id: userId, _id: id });
+      const { error } = await supabase
+        .from('invitation_metadata')
+        .delete()
+        .eq('id', id);
       
       if (error) throw error;
       
