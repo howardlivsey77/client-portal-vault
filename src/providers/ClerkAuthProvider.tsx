@@ -2,8 +2,8 @@ import { ClerkProvider, useUser, useAuth as useClerkAuth } from '@clerk/clerk-re
 import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-// Clerk publishable key
-const CLERK_PUBLISHABLE_KEY = process.env.REACT_APP_CLERK_PUBLISHABLE_KEY || 'pk_test_Y29tcGV0ZW50LXNhaWxmaXNoLTI4LmNsZXJrLmFjY291bnRzLmRldiQ';
+// Clerk publishable key (hardcoded since env variables are not supported)
+const CLERK_PUBLISHABLE_KEY = 'pk_test_Y29tcGV0ZW50LXNhaWxmaXNoLTI4LmNsZXJrLmFjY291bnRzLmRldiQ';
 
 interface AuthContextType {
   user: any;
