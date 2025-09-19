@@ -93,14 +93,43 @@ export const useInvites = () => {
         return false;
       }
 
-      // Use Supabase native invitation system via admin-invite edge function
-      const { data, error } = await supabase.functions.invoke('admin-invite', {
-        body: {
-          email: email.toLowerCase().trim(),
-          company_id: companyId,
-          role: selectedRole,
-          redirect_to: 'https://payroll.dootsons.com/auth'
+      const payload = {
+        email: email.toLowerCase().trim(),
+        company_id: companyId,
+        role: selectedRole,
+        redirect_to: 'https://payroll.dootsons.com/auth'
+      };
+
+      console.info("🔧 [CACHE DEBUG] Invoking invitation function", {
+        email: payload.email,
+        role: selectedRole,
+        companyId,
+        timestamp: new Date().toISOString(),
+        buildInfo: (window as any).__BUILD_INFO__
+      });
+
+      // Enhanced invocation with compatibility shim for cache debugging
+      let { data, error } = await supabase.functions.invoke('admin-invite', { body: payload });
+      
+      // Compatibility shim - detect if old cached code is still trying send-invite
+      if (error && (error.message?.includes("Function not found") || error.message?.includes("404"))) {
+        console.warn("⚠️ [CACHE DEBUG] admin-invite failed, attempting send-invite fallback for telemetry");
+        console.error("❌ [CACHE DEBUG] This means old cached code is still active!");
+        
+        try {
+          const fallbackResult = await supabase.functions.invoke('send-invite', { body: payload });
+          console.warn("🔄 [CACHE DEBUG] send-invite fallback succeeded - cache issue confirmed");
+          data = fallbackResult.data;
+          error = fallbackResult.error;
+        } catch (fallbackError) {
+          console.info("✅ [CACHE DEBUG] send-invite also failed - this is expected, admin-invite should work");
         }
+      }
+
+      console.info("📡 [CACHE DEBUG] Function invocation result", { 
+        success: !error,
+        hasData: !!data,
+        errorType: error?.message || 'none'
       });
 
       if (error) {
