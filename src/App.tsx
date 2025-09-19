@@ -25,6 +25,8 @@ import AuthProvider from "./providers/AuthProvider";
 import CompanyProvider from "./providers/CompanyProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { NotificationsProvider } from "./components/notifications/NotificationsContext";
+import AuthInviteGuard from "./components/auth/AuthInviteGuard";
+import CreatePassword from "./pages/CreatePassword";
 
 const queryClient = new QueryClient();
 
@@ -37,8 +39,10 @@ const App = () => (
         <AuthProvider>
           <CompanyProvider>
             <NotificationsProvider>
+              <AuthInviteGuard />
               <Routes>
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/create-password" element={<CreatePassword />} />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
                 <Route path="/invite/accept" element={<AcceptInviteToken />} />
                 <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />

@@ -99,7 +99,8 @@ export const useInvites = () => {
         email: email.toLowerCase().trim(),
         company_id: companyId,
         role: selectedRole,
-        redirect_to: 'https://payroll.dootsons.com/auth'
+        redirect_to: 'https://payroll.dootsons.com/auth',
+        origin: window.location.origin
       };
 
       console.info("📤 [INVITES] Calling admin-invite for", {

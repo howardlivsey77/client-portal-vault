@@ -5,7 +5,7 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://payroll.dootsons.com',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
@@ -15,6 +15,7 @@ interface InviteRequest {
   company_id: string;
   role: string;
   redirect_to?: string;
+  origin?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -74,7 +75,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Insufficient permissions');
     }
 
-    const { email, company_id, role, redirect_to }: InviteRequest = await req.json();
+    const { email, company_id, role, redirect_to, origin }: InviteRequest = await req.json();
 
     console.log(JSON.stringify({ 
       evt: "invite.start", 
@@ -137,7 +138,7 @@ const handler = async (req: Request): Promise<Response> => {
     }));
 
     // Send Supabase native invitation
-    const redirectUrl = redirect_to || 'https://payroll.dootsons.com/auth';
+    const redirectUrl = redirect_to || `${origin || 'https://payroll.dootsons.com'}/auth`;
     
     console.log(JSON.stringify({
       evt: "invite.auth_call_start",
@@ -154,7 +155,8 @@ const handler = async (req: Request): Promise<Response> => {
         data: {
           company_id: company_id,
           role: role,
-          invited_by: user.id
+          invited_by: user.id,
+          must_set_password: true
         }
       }
     );
