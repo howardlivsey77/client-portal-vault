@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ShieldCheck, ShieldX } from "lucide-react";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers/ClerkAuthProvider";
 import { QRCodeSVG } from "qrcode.react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -22,7 +22,7 @@ const Security = () => {
   const [has2fa, setHas2fa] = useState(false);
   const [existingFactorId, setExistingFactorId] = useState<string | null>(null);
   const { toast } = useToast();
-  const { user, session } = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!user) return;

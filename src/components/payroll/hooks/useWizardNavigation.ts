@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { savePayrollData } from "@/services/payroll";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers/ClerkAuthProvider";
 import { ExtraHoursSummary, PayrollFiles } from "../types";
 
 export function useWizardNavigation() {

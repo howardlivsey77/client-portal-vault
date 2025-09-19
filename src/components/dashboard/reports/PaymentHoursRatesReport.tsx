@@ -7,7 +7,7 @@ import {
   fetchPayrollPeriods, 
   fetchPayrollEmployeeDetails 
 } from "@/services/payroll";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers/ClerkAuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 
 export function PaymentHoursRatesReport() {

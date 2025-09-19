@@ -1,5 +1,5 @@
 
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers/ClerkAuthProvider";
 import { CompanyAccessCard } from "./company-access/CompanyAccessCard";
 import { CheckingAccess } from "./company-access/CheckingAccess";
 import { HasAccessRedirect } from "./company-access/HasAccessRedirect";

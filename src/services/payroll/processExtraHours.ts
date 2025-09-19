@@ -3,7 +3,7 @@ import { parseExtraHoursFile } from '@/utils/fileParsingUtils';
 import { ExtraHoursSummary } from '@/components/payroll/types';
 import { enrichEmployeeData } from './employeeEnrichment';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/providers/ClerkAuthProvider';
 
 /**
  * Process an extra hours file and return summary data

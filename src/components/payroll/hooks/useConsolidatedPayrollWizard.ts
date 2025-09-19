@@ -4,7 +4,7 @@ import { toast } from "@/hooks/use-toast";
 import { processExtraHoursFile } from "@/services/payroll";
 import { matchEmployees, applyUserMappings, EmployeeMatchingResults } from "@/services/payroll/employeeMatching";
 import { savePayrollData } from "@/services/payroll";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers/ClerkAuthProvider";
 import { ExtraHoursSummary, PayrollFiles } from "../types";
 
 type WizardStep = 0 | 1 | 2 | 3; // Upload -> Review -> Absences -> Final Summary
