@@ -93,7 +93,7 @@ export const useInvites = () => {
         return false;
       }
 
-      // Use Supabase native invitation system via edge function
+      // Use Supabase native invitation system via admin-invite edge function
       const { data, error } = await supabase.functions.invoke('admin-invite', {
         body: {
           email: email.toLowerCase().trim(),
