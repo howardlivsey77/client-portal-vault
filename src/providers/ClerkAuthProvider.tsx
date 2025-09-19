@@ -1,6 +1,8 @@
-import { ClerkProvider, useUser, useAuth as useClerkAuth } from '@clerk/clerk-react';
+import { ClerkProvider, useUser, useAuth as useClerkAuth, useSession } from '@clerk/clerk-react';
 import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { createClerkSupabaseClient, supabaseClient } from '@/integrations/supabase/clerk-client';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/integrations/supabase/types';
 
 // Clerk publishable key (hardcoded since env variables are not supported)
 const CLERK_PUBLISHABLE_KEY = 'pk_test_Y29tcGV0ZW50LXNhaWxmaXNoLTI4LmNsZXJrLmFjY291bnRzLmRldiQ';
@@ -10,6 +12,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isLoading: boolean;
   signOut: () => Promise<void>;
+  supabase: any;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -17,6 +20,7 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   isLoading: true,
   signOut: async () => {},
+  supabase: supabaseClient,
 });
 
 export function useAuth() {
@@ -25,8 +29,27 @@ export function useAuth() {
 
 const AuthProviderInner = ({ children }: { children: ReactNode }) => {
   const { user, isLoaded } = useUser();
-  const { signOut: clerkSignOut } = useClerkAuth();
+  const { signOut: clerkSignOut, getToken } = useClerkAuth();
+  const { session } = useSession();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [supabase, setSupabase] = useState(supabaseClient);
+
+  // Create Supabase client with Clerk session token
+  useEffect(() => {
+    if (session && getToken) {
+      const clerkSupabase = createClerkSupabaseClient(async () => {
+        try {
+          return await getToken({ template: 'supabase' });
+        } catch (error) {
+          console.error('Error getting Clerk token:', error);
+          return null;
+        }
+      });
+      setSupabase(clerkSupabase);
+    } else {
+      setSupabase(supabaseClient);
+    }
+  }, [session, getToken]);
 
   // Check admin status using the existing security definer function
   const checkAdminStatus = async (userId: string) => {
@@ -68,6 +91,7 @@ const AuthProviderInner = ({ children }: { children: ReactNode }) => {
     isAdmin,
     isLoading: !isLoaded,
     signOut,
+    supabase,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

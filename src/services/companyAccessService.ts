@@ -2,6 +2,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getUserFromAuth } from "./profileService";
 
+// Note: This service uses the legacy supabase client and should be updated
+// to accept supabase client as parameter when called from components with auth context
+
 // Function to make sure user has access to at least one company
 export const ensureCompanyAccess = async (userId: string): Promise<void> => {
   try {
