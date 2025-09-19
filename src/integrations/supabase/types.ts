@@ -602,6 +602,7 @@ export type Database = {
           invited_email: string
           is_accepted: boolean
           role: string
+          token: string | null
         }
         Insert: {
           accepted_at?: string | null
@@ -612,6 +613,7 @@ export type Database = {
           invited_email: string
           is_accepted?: boolean
           role?: string
+          token?: string | null
         }
         Update: {
           accepted_at?: string | null
@@ -622,6 +624,7 @@ export type Database = {
           invited_email?: string
           is_accepted?: boolean
           role?: string
+          token?: string | null
         }
         Relationships: [
           {
@@ -1394,6 +1397,7 @@ export type Database = {
           invited_email: string
           is_accepted: boolean
           role: string
+          token: string | null
         }[]
       }
       get_invitations: {

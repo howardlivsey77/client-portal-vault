@@ -13,6 +13,7 @@ export interface InvitationMetadata {
   created_at: string;
   accepted_at: string | null;
   is_accepted: boolean;
+  token?: string;
 }
 
 export const useInvites = () => {
@@ -170,7 +171,7 @@ export const useInvites = () => {
       }
 
       await fetchInvitations();
-      return true;
+      return { success: true, inviteUrl: data?.invite_url };
     } catch (error: any) {
       console.error("Error creating invitation:", error);
       
@@ -187,7 +188,7 @@ export const useInvites = () => {
           variant: "destructive"
         });
       }
-      return false;
+      return { success: false };
     } finally {
       setLoading(false);
     }

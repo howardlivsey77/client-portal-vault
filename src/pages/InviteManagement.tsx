@@ -14,6 +14,7 @@ import { useCompany } from "@/providers/CompanyProvider";
 import { InviteManagementHeader } from "@/components/invites/InviteManagementHeader";
 import { InviteManagementTabs } from "@/components/invites/InviteManagementTabs";
 import { UserRoleDialog } from "@/components/invites/UserRoleDialog";
+import { InviteSuccessDialog } from "@/components/invites/InviteSuccessDialog";
 
 const InviteManagement = () => {
   // Force rebuild timestamp: 2025-01-02
@@ -25,9 +26,11 @@ const InviteManagement = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-  const [activeTab, setActiveTab] = useState("invitations");
+  const [lastInviteUrl, setLastInviteUrl] = useState<string | null>(null);
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   
+  const [activeTab, setActiveTab] = useState("invitations");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { currentCompany, companies } = useCompany();
@@ -97,8 +100,10 @@ const InviteManagement = () => {
   
   const handleCreateInvitation = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await createInvitation(email, selectedRole, userId, selectedCompanyId);
-    if (success) {
+    const result = await createInvitation(email, selectedRole, userId, selectedCompanyId);
+    if (result && typeof result === 'object' && result.success) {
+      setLastInviteUrl(result.inviteUrl || null);
+      setSuccessDialogOpen(true);
       setEmail("");
       setInviteDialogOpen(false);
     }
@@ -178,6 +183,14 @@ const InviteManagement = () => {
         setSelectedRole={setSelectedRole}
         loading={usersLoading}
         onSubmit={handleUpdateRole}
+      />
+      
+      <InviteSuccessDialog
+        open={successDialogOpen}
+        onOpenChange={setSuccessDialogOpen}
+        email={email}
+        inviteUrl={lastInviteUrl || undefined}
+        role={selectedRole}
       />
     </PageContainer>
   );

@@ -10,8 +10,9 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Loader2, Mail, ShieldCheck, Trash2, User } from "lucide-react";
+import { Loader2, Mail, ShieldCheck, Trash2, User, Copy } from "lucide-react";
 import { InvitationMetadata } from "@/hooks/useInvites";
+import { CopyInviteButton } from "./CopyInviteButton";
 
 interface InvitationsTableProps {
   invitations: InvitationMetadata[];
@@ -53,7 +54,7 @@ export const InvitationsTable = ({
           <TableHead>Status</TableHead>
           <TableHead>Issued</TableHead>
           <TableHead>Expires</TableHead>
-          <TableHead className="text-right">Action</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -94,15 +95,24 @@ export const InvitationsTable = ({
               Native Email Invitation
             </TableCell>
             <TableCell className="text-right">
-              {!invitation.is_accepted && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onDelete(invitation.id)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              )}
+              <div className="flex items-center gap-2 justify-end">
+                {!invitation.is_accepted && invitation.token && (
+                  <CopyInviteButton 
+                    inviteUrl={`${window.location.origin}/invite/accept?token=${invitation.token}`}
+                    variant="ghost"
+                    size="sm"
+                  />
+                )}
+                {!invitation.is_accepted && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onDelete(invitation.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                )}
+              </div>
             </TableCell>
           </TableRow>
         ))}

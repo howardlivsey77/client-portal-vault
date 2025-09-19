@@ -184,8 +184,8 @@ const handler = async (req: Request): Promise<Response> => {
       timestamp: new Date().toISOString()
     }));
 
-    // Generate invite URL for copy/paste backup
-    const inviteUrl = `${redirectUrl}?invitation_id=${metadataResult.id}&email=${encodeURIComponent(email.toLowerCase().trim())}`;
+    // Generate invite URL for copy/paste backup using token
+    const inviteUrl = `${redirectUrl}?token=${metadataResult.token}`;
 
     return new Response(
       JSON.stringify({
