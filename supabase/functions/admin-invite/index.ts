@@ -97,7 +97,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Send Supabase native invitation
-    const redirectUrl = redirect_to || `${new URL(req.url).origin}/auth`;
+    const redirectUrl = redirect_to || 'https://payroll.dootsons.com/auth';
     
     const { data: inviteResult, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       email.toLowerCase().trim(),
