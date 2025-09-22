@@ -3,6 +3,9 @@ import { Card } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Pencil, FolderPlus, MoreVertical, Trash, Folder } from "lucide-react";
 import { FolderItem as FolderItemType } from "../types/folder.types";
+import { useDraggable } from "@/hooks/useDraggable";
+import { useDroppable } from "@/hooks/useDroppable";
+import { cn } from "@/lib/utils";
 interface FolderTileProps {
   folder: FolderItemType;
   isSelected: boolean;
@@ -19,7 +22,36 @@ export function FolderTile({
   onAddSubfolder,
   onDeleteFolder
 }: FolderTileProps) {
-  return <Card className={`relative group cursor-pointer aspect-square flex flex-col items-center justify-center transition-all ${isSelected ? 'bg-muted' : 'hover:bg-muted/50'}`} onClick={() => onFolderSelect(folder.id)}>
+  const { isDraggingThis, dragProps } = useDraggable({
+    item: {
+      type: 'folder',
+      id: folder.id,
+      title: folder.name,
+      parentId: folder.parentId,
+    },
+  });
+
+  const { isOver, canDropHere, dropProps } = useDroppable({
+    target: {
+      type: 'folder',
+      id: folder.id,
+      name: folder.name,
+    },
+  });
+  return (
+    <Card 
+      {...dragProps}
+      {...dropProps}
+      className={cn(
+        "relative group cursor-pointer aspect-square flex flex-col items-center justify-center transition-all select-none",
+        isSelected && "bg-muted",
+        !isSelected && "hover:bg-muted/50",
+        isDraggingThis && "opacity-50 scale-95",
+        isOver && "ring-2 ring-primary/50 bg-primary/5",
+        canDropHere && "ring-1 ring-dashed ring-primary/30"
+      )}
+      onClick={() => onFolderSelect(folder.id)}
+    >
       <Folder className="h-12 w-12 text-blue-500 mb-3" />
       <span className="font-medium text-center text-sm">{folder.name}</span>
       
@@ -60,6 +92,11 @@ export function FolderTile({
       </div>
       
       {/* Display a badge showing number of subfolders/files if any */}
-      {folder.children && folder.children.length > 0}
-    </Card>;
+      {folder.children && folder.children.length > 0 && (
+        <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+          {folder.children.length}
+        </div>
+      )}
+    </Card>
+  );
 }

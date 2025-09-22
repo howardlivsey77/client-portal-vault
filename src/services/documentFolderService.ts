@@ -76,5 +76,48 @@ export const documentFolderService = {
     }
     
     return path.length > 0 ? path : ["Unknown Folder"];
+  },
+
+  // Move folder to a new parent
+  async moveFolder(folderId: string, newParentId: string | null): Promise<DatabaseFolder> {
+    // First check if this would create a circular reference
+    if (newParentId) {
+      const wouldCreateCircle = await this.wouldCreateCircularReference(folderId, newParentId);
+      if (wouldCreateCircle) {
+        throw new Error("Cannot move folder: this would create a circular reference");
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('document_folders')
+      .update({ parent_id: newParentId })
+      .eq('id', folderId)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Check if moving a folder would create a circular reference
+  async wouldCreateCircularReference(folderId: string, newParentId: string): Promise<boolean> {
+    let currentId = newParentId;
+    
+    while (currentId) {
+      if (currentId === folderId) {
+        return true; // Found a circular reference
+      }
+      
+      const { data, error } = await supabase
+        .from('document_folders')
+        .select('parent_id')
+        .eq('id', currentId)
+        .single();
+      
+      if (error || !data) break;
+      currentId = data.parent_id;
+    }
+    
+    return false;
   }
 };

@@ -6,6 +6,11 @@ import { SubfolderList } from "./documents/SubfolderList";
 import { DocumentList } from "./documents/DocumentList";
 import { EmptyFolder } from "./documents/EmptyFolder";
 import { DocumentGridProps } from "./documents/types";
+import { DragDropProvider } from "@/contexts/DragDropContext";
+import { documentFolderService } from "@/services/documentFolderService";
+import { toast } from "sonner";
+import { useDroppable } from "@/hooks/useDroppable";
+import { cn } from "@/lib/utils";
 
 // Convert database document to legacy format for compatibility
 const convertToLegacyDocument = (dbDoc: any) => ({
@@ -29,8 +34,34 @@ export function DocumentGrid({
   onFolderSelect,
   onAddFolder
 }: DocumentGridProps) {
-  const { documents: dbDocuments, loading } = useDocuments(selectedFolderId);
+  const { documents: dbDocuments, loading, moveDocument } = useDocuments(selectedFolderId);
   const subfolders = useSubfolders(selectedFolderId);
+
+  // Handle moving documents between folders
+  const handleMoveDocument = async (docId: string, targetFolderId: string | null) => {
+    try {
+      await moveDocument(docId, targetFolderId);
+      toast.success("Document moved successfully");
+    } catch (error) {
+      console.error('Failed to move document:', error);
+      toast.error("Failed to move document");
+      throw error;
+    }
+  };
+
+  // Handle moving folders
+  const handleMoveFolder = async (folderId: string, targetParentId: string | null) => {
+    try {
+      await documentFolderService.moveFolder(folderId, targetParentId);
+      toast.success("Folder moved successfully");
+      // Refresh the current view
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to move folder:', error);
+      toast.error("Failed to move folder");
+      throw error;
+    }
+  };
 
   // Convert database documents to legacy format
   const documents = dbDocuments.map(convertToLegacyDocument);
@@ -53,8 +84,37 @@ export function DocumentGrid({
     );
   }
 
+  // Root drop zone for documents grid
+  const RootDropZone = ({ children }: { children: React.ReactNode }) => {
+    const { isOver, canDropHere, dropProps } = useDroppable({
+      target: {
+        type: 'folder',
+        id: null, // root folder
+        name: 'All Documents',
+      },
+    });
+
+    return (
+      <div 
+        {...dropProps}
+        className={cn(
+          "min-h-[200px] transition-all",
+          isOver && "bg-primary/5 border-2 border-dashed border-primary/50 rounded-lg",
+          canDropHere && "border border-dashed border-primary/30 rounded-lg"
+        )}
+      >
+        {children}
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-6">
+    <DragDropProvider 
+      onMoveDocument={handleMoveDocument}
+      onMoveFolder={handleMoveFolder}
+    >
+      <RootDropZone>
+        <div className="space-y-6">
       {/* Header with breadcrumb and action buttons */}
       <DocumentGridHeader 
         selectedFolderId={selectedFolderId} 
@@ -87,8 +147,10 @@ export function DocumentGrid({
       {!selectedFolderId && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {/* This area would show root level documents */}
+          </div>
+        )}
         </div>
-      )}
-    </div>
+      </RootDropZone>
+    </DragDropProvider>
   );
 }

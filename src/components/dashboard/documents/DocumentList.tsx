@@ -29,6 +29,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { FileText, Edit, Trash2 } from "lucide-react";
 import { DocumentListProps } from "./types";
+import { useDraggable } from "@/hooks/useDraggable";
+import { cn } from "@/lib/utils";
+import { SendToMenu } from "./SendToMenu";
 
 export function DocumentList({ documents }: DocumentListProps) {
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
@@ -66,10 +69,27 @@ export function DocumentList({ documents }: DocumentListProps) {
   return (
     <>
       <div className="grid grid-cols-1 gap-4">
-        {documents.map((doc) => (
-          <ContextMenu key={doc.id}>
-            <ContextMenuTrigger>
-              <Card className="p-4 flex justify-between items-center hover:bg-accent/5 cursor-pointer">
+        {documents.map((doc) => {
+          const { isDraggingThis, dragProps } = useDraggable({
+            item: {
+              type: 'document',
+              id: doc.id,
+              title: doc.title,
+              folderId: doc.folderId,
+            },
+          });
+
+          return (
+            <ContextMenu key={doc.id}>
+              <ContextMenuTrigger>
+                <Card 
+                  {...dragProps}
+                  className={cn(
+                    "p-4 flex justify-between items-center hover:bg-accent/5 cursor-pointer transition-all",
+                    isDraggingThis && "opacity-50 scale-95",
+                    "select-none"
+                  )}
+                >
                 <div className="flex items-center">
                   <div className={`p-2 rounded-md mr-3 ${
                     doc.type === 'PDF' ? 'bg-red-100' : 
@@ -90,6 +110,15 @@ export function DocumentList({ documents }: DocumentListProps) {
                   </div>
                 </div>
                 <div className="flex space-x-2">
+                  <SendToMenu
+                    documentId={doc.id}
+                    currentFolderId={doc.folderId}
+                    onMove={(docId, targetFolderId) => {
+                      if (window.moveDocument) {
+                        window.moveDocument(docId, targetFolderId);
+                      }
+                    }}
+                  />
                   <Button 
                     variant="ghost" 
                     size="icon" 
@@ -114,8 +143,8 @@ export function DocumentList({ documents }: DocumentListProps) {
                     <span className="sr-only">Delete</span>
                   </Button>
                 </div>
-              </Card>
-            </ContextMenuTrigger>
+                </Card>
+              </ContextMenuTrigger>
             <ContextMenuContent>
               <ContextMenuItem onClick={() => handleRenameClick(doc.id, doc.title)}>
                 <Edit className="mr-2 h-4 w-4" />
@@ -129,8 +158,9 @@ export function DocumentList({ documents }: DocumentListProps) {
                 Delete
               </ContextMenuItem>
             </ContextMenuContent>
-          </ContextMenu>
-        ))}
+            </ContextMenu>
+          );
+        })}
       </div>
 
       {/* Rename Dialog */}
