@@ -28,3 +28,17 @@ export interface DocumentUploadData {
   file: File;
   folder_id?: string | null;
 }
+
+export interface FileWithPath {
+  file: File;
+  path: string;
+}
+
+export interface FolderUploadProgress {
+  completed: number;
+  total: number;
+  failed: number;
+  currentFile: string;
+  phase: 'uploading' | 'complete';
+  errors?: Array<{ file: FileWithPath; error: string }>;
+}

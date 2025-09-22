@@ -6,9 +6,10 @@ import { Upload } from "lucide-react";
 interface FileUploadAreaProps {
   file: File | null;
   onFileChange: (file: File | null) => void;
+  disabled?: boolean;
 }
 
-export function FileUploadArea({ file, onFileChange }: FileUploadAreaProps) {
+export function FileUploadArea({ file, onFileChange, disabled }: FileUploadAreaProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       onFileChange(e.target.files[0]);
@@ -27,6 +28,7 @@ export function FileUploadArea({ file, onFileChange }: FileUploadAreaProps) {
             variant="secondary" 
             className="mt-2" 
             onClick={() => onFileChange(null)}
+            disabled={disabled}
           >
             Choose Different File
           </Button>
@@ -36,7 +38,9 @@ export function FileUploadArea({ file, onFileChange }: FileUploadAreaProps) {
           <Upload className="mb-4 h-10 w-10 text-muted-foreground/70" />
           <label
             htmlFor="document-upload"
-            className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className={`rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground ${
+              disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-primary/90'
+            }`}
           >
             Choose File
           </label>
@@ -45,6 +49,7 @@ export function FileUploadArea({ file, onFileChange }: FileUploadAreaProps) {
             type="file"
             className="sr-only"
             onChange={handleFileChange}
+            disabled={disabled}
           />
           <p className="mt-2 text-xs text-muted-foreground">
             Max file size: 25MB

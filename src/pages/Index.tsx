@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { DocumentUploadModal } from "@/components/dashboard/DocumentUploadModal";
+import { FolderUploadModal } from "@/components/dashboard/FolderUploadModal";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "react-router-dom";
 import { TaskList } from "@/components/dashboard/tasks/TaskList";
@@ -91,7 +91,7 @@ const Index = () => {
         {renderContent()}
       </div>
       
-      <DocumentUploadModal 
+      <FolderUploadModal 
         open={uploadModalOpen} 
         onOpenChange={setUploadModalOpen}
         selectedFolderId={selectedFolderId}
