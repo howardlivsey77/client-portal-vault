@@ -1092,6 +1092,54 @@ export type Database = {
         }
         Relationships: []
       }
+      sickness_audit_log: {
+        Row: {
+          audit_type: string
+          calculated_total_days: number
+          created_at: string
+          difference: number
+          employee_id: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          record_id: string
+          resolved: boolean | null
+          resolved_at: string | null
+          start_date: string
+          stored_total_days: number
+        }
+        Insert: {
+          audit_type: string
+          calculated_total_days: number
+          created_at?: string
+          difference: number
+          employee_id: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          record_id: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          start_date: string
+          stored_total_days: number
+        }
+        Update: {
+          audit_type?: string
+          calculated_total_days?: number
+          created_at?: string
+          difference?: number
+          employee_id?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          record_id?: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          start_date?: string
+          stored_total_days?: number
+        }
+        Relationships: []
+      }
       sickness_schemes: {
         Row: {
           company_id: string | null
@@ -1438,6 +1486,18 @@ export type Database = {
       role_meets: {
         Args: { actual_role: string; min_role: string }
         Returns: boolean
+      }
+      run_sickness_integrity_check: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          calculated_days: number
+          difference: number
+          employee_id: string
+          end_date: string
+          record_id: string
+          start_date: string
+          stored_days: number
+        }[]
       }
       sync_timesheet_entries_payroll_ids: {
         Args: Record<PropertyKey, never>
