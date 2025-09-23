@@ -1482,6 +1482,29 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      get_employee_sensitive_data: {
+        Args: { employee_id: string }
+        Returns: {
+          address1: string
+          address2: string
+          address3: string
+          address4: string
+          date_of_birth: string
+          hourly_rate: number
+          national_insurance_number: string
+          nhs_pension_employee_rate: number
+          nhs_pension_tier: number
+          nic_code: string
+          payroll_id: string
+          postcode: string
+          previous_year_pensionable_pay: number
+          rate_2: number
+          rate_3: number
+          rate_4: number
+          student_loan_plan: number
+          tax_code: string
+        }[]
+      }
       get_invitation_metadata: {
         Args: { _company_id?: string; _user_id: string }
         Returns: {
