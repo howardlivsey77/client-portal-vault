@@ -38,6 +38,7 @@ export const createEmployee = async (employeeData: EmployeeFormValues, userId: s
     payroll_id: employeeData.payroll_id || null,
     gender: employeeData.gender || null,
     work_pattern: employeeData.work_pattern || null,
+    national_insurance_number: employeeData.national_insurance_number || null,
     user_id: userId,
     company_id: companyId,
     // HMRC fields
