@@ -426,40 +426,91 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
             const workPattern = workPatterns.map(wp => ({
               day: wp.day,
               isWorking: wp.is_working,
-              startTime: wp.start_time || '',
-              endTime: wp.end_time || '',
-              payrollId: ''
+              startTime: wp.start_time || null,
+              endTime: wp.end_time || null,
+              payrollId: null
             }));
             employeeWorkPatterns.set(employee.id, workPattern);
+            console.log(`Loaded work patterns for employee ${employee.id}:`, workPattern);
+          } else {
+            console.warn(`No work patterns found for employee ${employee.id}`);
           }
         } catch (error) {
-          console.warn(`Could not fetch work patterns for employee ${employee.id}:`, error);
+          console.error(`Failed to fetch work patterns for employee ${employee.id}:`, error);
+          // Set a default work pattern so import doesn't fail
+          const defaultWorkPattern = [
+            { day: 'Monday', isWorking: true, startTime: null, endTime: null, payrollId: null },
+            { day: 'Tuesday', isWorking: true, startTime: null, endTime: null, payrollId: null },
+            { day: 'Wednesday', isWorking: true, startTime: null, endTime: null, payrollId: null },
+            { day: 'Thursday', isWorking: true, startTime: null, endTime: null, payrollId: null },
+            { day: 'Friday', isWorking: true, startTime: null, endTime: null, payrollId: null },
+            { day: 'Saturday', isWorking: false, startTime: null, endTime: null, payrollId: null },
+            { day: 'Sunday', isWorking: false, startTime: null, endTime: null, payrollId: null }
+          ];
+          employeeWorkPatterns.set(employee.id, defaultWorkPattern);
+          console.log(`Using default work pattern for employee ${employee.id}`);
         }
       }
 
-      // Import the calculation function
-      const { calculateWorkingDaysForRecord } = await import('@/components/employees/details/sickness/utils/workingDaysCalculations');
+      // Import the calculation function with error handling
+      let calculateWorkingDaysForRecord;
+      try {
+        const module = await import('@/components/employees/details/sickness/utils/workingDaysCalculations');
+        calculateWorkingDaysForRecord = module.calculateWorkingDaysForRecord;
+        console.log('Successfully imported working days calculation function');
+      } catch (error) {
+        console.error('Failed to import working days calculation function:', error);
+        // Provide a fallback calculation function
+        calculateWorkingDaysForRecord = (startDate: string, endDate: string | null, workPattern: any[]) => {
+          const start = new Date(startDate);
+          const end = endDate ? new Date(endDate) : start;
+          let workingDays = 0;
+          const current = new Date(start);
+          
+          while (current <= end) {
+            const dayOfWeek = current.getDay();
+            if (dayOfWeek >= 1 && dayOfWeek <= 5) { // Monday to Friday
+              workingDays++;
+            }
+            current.setDate(current.getDate() + 1);
+          }
+          
+          return workingDays;
+        };
+      }
 
       // Process each row with enhanced matching
       const processedRecords: ProcessedSicknessRecord[] = rows
-        .filter(row => {
+        .filter((row, rowIndex) => {
           const nameCell = row[employeeNameIndex];
           const hasName = nameCell !== undefined && nameCell !== null && String(nameCell).trim() !== '';
+          
+          if (!hasName) {
+            console.log(`Row ${rowIndex + 2} skipped: No employee name`);
+            return false;
+          }
           
           // Accept rows with either valid sickness days OR valid start date
           if (hasSicknessDaysColumn) {
             const daysCell = row[sicknessDaysIndex];
             const daysNum = Number(daysCell);
-            const hasValidDays = !isNaN(daysNum) && daysNum > 0;
+            const hasValidDays = !isNaN(daysNum) && daysNum >= 0; // Allow 0 days
             const startDateCell = startDateIndex >= 0 ? String(row[startDateIndex] || '').trim() : '';
             const hasStartDate = startDateCell && startDateCell !== '';
             
-            return hasName && (hasValidDays || hasStartDate);
+            const isValid = hasValidDays || hasStartDate;
+            if (!isValid) {
+              console.log(`Row ${rowIndex + 2} skipped: No valid sickness days or start date`);
+            }
+            return isValid;
           } else {
             // No sickness days column - must have start date for calculation
             const startDateCell = startDateIndex >= 0 ? String(row[startDateIndex] || '').trim() : '';
             const hasStartDate = startDateCell && startDateCell !== '';
-            return hasName && hasStartDate;
+            if (!hasStartDate) {
+              console.log(`Row ${rowIndex + 2} skipped: No start date for calculation`);
+            }
+            return hasStartDate;
           }
         })
         .map((row, index) => {
@@ -550,7 +601,7 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
           } else if (bestEmployeeMatch.confidence < 50) {
             status = 'needs_attention';
             statusReason = `Low confidence employee match (${bestEmployeeMatch.confidence}%)`;
-          } else if (!startDate && (calculatedSicknessDays === undefined || calculatedSicknessDays === 0)) {
+          } else if (!startDate && calculatedSicknessDays === undefined) {
             status = 'needs_attention';
             statusReason = 'Either start date or sickness days must be provided';
           } else if (schemeAllocation && !matchedSchemeName && schemeAllocation.toLowerCase() !== 'none' && schemeAllocation.toLowerCase() !== 'n/a') {
