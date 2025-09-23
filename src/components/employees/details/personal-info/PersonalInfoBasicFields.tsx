@@ -72,7 +72,7 @@ export const PersonalInfoBasicFields = ({ control }: PersonalInfoBasicFieldsProp
                 </FormControl>
                 <SelectContent>
                   {departmentNames.length === 0 && !loading && (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="no-departments" disabled>
                       No departments found
                     </SelectItem>
                   )}
@@ -115,7 +115,7 @@ export const PersonalInfoBasicFields = ({ control }: PersonalInfoBasicFieldsProp
               <FormLabel>Gender</FormLabel>
               <Select 
                 onValueChange={field.onChange} 
-                value={field.value || ""}
+                value={field.value || undefined}
               >
                 <FormControl>
                   <SelectTrigger>

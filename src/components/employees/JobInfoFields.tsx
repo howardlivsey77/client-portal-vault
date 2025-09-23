@@ -34,7 +34,7 @@ export const JobInfoFields = ({ form, readOnly }: JobInfoFieldsProps) => {
             </FormControl>
             <SelectContent>
               {departmentNames.length === 0 && !loading && (
-                <SelectItem value="" disabled>
+                <SelectItem value="no-departments" disabled>
                   No departments found - Create departments in Department Management
                 </SelectItem>
               )}

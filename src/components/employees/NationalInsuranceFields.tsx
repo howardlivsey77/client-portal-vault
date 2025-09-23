@@ -45,7 +45,7 @@ export const NationalInsuranceFields = ({ control, readOnly }: NationalInsurance
               <Select
                 disabled={readOnly}
                 onValueChange={field.onChange}
-                value={field.value || ""}
+                value={field.value || undefined}
               >
                 <FormControl>
                   <SelectTrigger className={readOnly ? "bg-gray-100" : ""}>

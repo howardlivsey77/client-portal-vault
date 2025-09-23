@@ -41,7 +41,7 @@ export function GenderField({ form, readOnly }: GenderFieldProps) {
               <Select
                 disabled={readOnly}
                 onValueChange={field.onChange}
-                value={field.value || ""}
+                value={field.value || undefined}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select gender" />

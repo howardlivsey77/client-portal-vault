@@ -41,8 +41,8 @@ export const AuditLogViewer: React.FC = () => {
           offset: currentPage * pageSize,
         };
 
-        if (filters.eventType) params.eventType = filters.eventType;
-        if (filters.tableName) params.tableName = filters.tableName;
+        if (filters.eventType && filters.eventType !== 'all') params.eventType = filters.eventType;
+        if (filters.tableName && filters.tableName !== 'all') params.tableName = filters.tableName;
         if (filters.userId) params.userId = filters.userId;
         if (filters.dateFrom) params.dateFrom = new Date(filters.dateFrom);
         if (filters.dateTo) params.dateTo = new Date(filters.dateTo);
@@ -89,9 +89,9 @@ export const AuditLogViewer: React.FC = () => {
     try {
       const allData = await AuditLoggingService.getAuditLogs({ 
         limit: 10000, 
-        eventType: filters.eventType as any,
-        tableName: filters.tableName,
-        userId: filters.userId,
+        eventType: (filters.eventType && filters.eventType !== 'all') ? filters.eventType as any : undefined,
+        tableName: (filters.tableName && filters.tableName !== 'all') ? filters.tableName : undefined,
+        userId: filters.userId || undefined,
         dateFrom: filters.dateFrom ? new Date(filters.dateFrom) : undefined,
         dateTo: filters.dateTo ? new Date(filters.dateTo) : undefined,
       });
@@ -181,7 +181,7 @@ export const AuditLogViewer: React.FC = () => {
                   <SelectValue placeholder="All events" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All events</SelectItem>
+                  <SelectItem value="all">All events</SelectItem>
                   <SelectItem value="data_view">Data View</SelectItem>
                   <SelectItem value="data_edit">Data Edit</SelectItem>
                   <SelectItem value="data_delete">Data Delete</SelectItem>
@@ -199,7 +199,7 @@ export const AuditLogViewer: React.FC = () => {
                   <SelectValue placeholder="All tables" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All tables</SelectItem>
+                  <SelectItem value="all">All tables</SelectItem>
                   <SelectItem value="employees">Employees</SelectItem>
                   <SelectItem value="payroll_results">Payroll Results</SelectItem>
                   <SelectItem value="timesheet_entries">Timesheet Entries</SelectItem>

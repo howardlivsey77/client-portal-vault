@@ -26,7 +26,7 @@ export const EmployeeSelector = () => {
       <span className="text-sm font-medium">Select Employee:</span>
       
       <Select
-        value={currentEmployeeId || ""}
+        value={currentEmployeeId || undefined}
         onValueChange={(value) => setCurrentEmployeeId(value)}
         disabled={loading}
       >
