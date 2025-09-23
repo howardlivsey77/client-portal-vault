@@ -34,6 +34,13 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'ready' | 'needs_attention' | 'skipped'>('all');
   
+  // Import result states
+  const [importResult, setImportResult] = useState<{
+    processed: number;
+    failed: number;
+    failedRecords: Array<{record: ProcessedSicknessRecord, error: string}>;
+  } | null>(null);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { employees } = useEmployees();
@@ -662,6 +669,8 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
         console.log('Failed records:', failedRecords);
       }
 
+      // Store import results for display
+      setImportResult({ processed, failed, failedRecords });
       setCurrentStep('complete');
       
       if (processed > 0) {
@@ -705,6 +714,24 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
     setSchemeSkipAllUnmatched(false);
     setSearchTerm('');
     setFilterStatus('all');
+    setImportResult(null);
+  };
+
+  // Helper function to parse database error messages into user-friendly text
+  const parseErrorMessage = (error: string): string => {
+    if (error.includes('valid_date_range')) {
+      return 'Start date must be on or before end date';
+    }
+    if (error.includes('duplicate key value')) {
+      return 'A sickness record already exists for this employee and date range';
+    }
+    if (error.includes('foreign key constraint')) {
+      return 'Invalid employee or company reference';
+    }
+    if (error.includes('Invalid start date') || error.includes('Invalid end date')) {
+      return error; // Already user-friendly
+    }
+    return error;
   };
 
   // Filter records for display
@@ -1088,27 +1115,104 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
 
       {/* Complete Step */}
       {currentStep === 'complete' && (
-        <Card>
-          <CardContent className="p-6 text-center space-y-4">
-            <CheckCircle className="h-16 w-16 mx-auto text-success" />
-            <div>
-              <h3 className="text-lg font-semibold">Import Completed Successfully</h3>
-              <p className="text-muted-foreground">
-                Sickness records have been imported and employee schemes updated
-              </p>
-            </div>
-            <div className="flex gap-2 justify-center">
-              <Button onClick={handleReset}>
-                Import More Records
-              </Button>
-              {mode === 'embedded' && onComplete && (
-                <Button variant="outline" onClick={() => onComplete(stats.ready)}>
-                  Continue
+        <div className="space-y-6">
+          <Card>
+            <CardContent className="p-6 text-center space-y-4">
+              <CheckCircle className="h-16 w-16 mx-auto text-success" />
+              <div>
+                <h3 className="text-lg font-semibold">Import Completed</h3>
+                {importResult && (
+                  <div className="space-y-2">
+                    <p className="text-muted-foreground">
+                      {importResult.processed > 0 && (
+                        <span className="text-success font-medium">
+                          {importResult.processed} records imported successfully
+                        </span>
+                      )}
+                      {importResult.processed > 0 && importResult.failed > 0 && <br />}
+                      {importResult.failed > 0 && (
+                        <span className="text-destructive font-medium">
+                          {importResult.failed} records failed to import
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 justify-center">
+                <Button onClick={handleReset}>
+                  Import More Records
                 </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                {mode === 'embedded' && onComplete && (
+                  <Button variant="outline" onClick={() => onComplete(importResult?.processed || 0)}>
+                    Continue
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Failed Records Section */}
+          {importResult && importResult.failed > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                  <AlertCircle className="h-5 w-5" />
+                  Failed Import Records ({importResult.failed})
+                </CardTitle>
+                <CardDescription>
+                  The following records could not be imported. Please review and fix the issues before retrying.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  {importResult.failedRecords.map((failedItem, index) => (
+                    <div key={index} className="p-4 border rounded-lg bg-destructive/5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="destructive" className="text-xs">Failed</Badge>
+                            <span className="font-medium">{failedItem.record.employeeName}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground mb-2">
+                            <div>
+                              <span className="font-medium">Days:</span> {failedItem.record.sicknessDays}
+                            </div>
+                            <div>
+                              <span className="font-medium">Dates:</span> {failedItem.record.startDate || 'No start date'} 
+                              {failedItem.record.endDate && ` - ${failedItem.record.endDate}`}
+                            </div>
+                            {failedItem.record.reason && (
+                              <div className="col-span-2">
+                                <span className="font-medium">Reason:</span> {failedItem.record.reason}
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-2 bg-destructive/10 rounded text-sm">
+                            <span className="font-medium text-destructive">Error:</span> {parseErrorMessage(failedItem.error)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Common fixes:</strong>
+                    <ul className="mt-1 space-y-1 text-sm">
+                      <li>• Check that start dates are on or before end dates</li>
+                      <li>• Verify date formats are valid (DD/MM/YYYY)</li>
+                      <li>• Ensure no duplicate records exist for the same employee and dates</li>
+                      <li>• Confirm employee names match exactly</li>
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
     </div>
   );
