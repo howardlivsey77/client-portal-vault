@@ -2,7 +2,7 @@
 
 export interface SicknessRecord {
   employeeName: string;
-  sicknessDays: number;
+  sicknessDays?: number; // Made optional - can be calculated from dates and work patterns
   startDate?: string;
   endDate?: string;
   reason?: string;

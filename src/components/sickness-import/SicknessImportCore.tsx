@@ -407,25 +407,67 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
       if (employeeNameIndex === -1) {
         throw new Error('Could not find employee name column');
       }
-      if (sicknessDaysIndex === -1) {
-        throw new Error('Could not find sickness days column');
-      }
+      
+      // Sickness days column is now optional - can be calculated from dates and work patterns
+      const hasSicknessDaysColumn = sicknessDaysIndex !== -1;
 
       setImportProgress(50);
+
+      // Pre-process work patterns for employees to avoid async issues in map
+      const employeeWorkPatterns = new Map();
+      for (const employee of employees) {
+        try {
+          const { data: workPatterns } = await supabase
+            .from('work_patterns')
+            .select('day, is_working, start_time, end_time')
+            .eq('employee_id', employee.id);
+
+          if (workPatterns && workPatterns.length > 0) {
+            const workPattern = workPatterns.map(wp => ({
+              day: wp.day,
+              isWorking: wp.is_working,
+              startTime: wp.start_time || '',
+              endTime: wp.end_time || '',
+              payrollId: ''
+            }));
+            employeeWorkPatterns.set(employee.id, workPattern);
+          }
+        } catch (error) {
+          console.warn(`Could not fetch work patterns for employee ${employee.id}:`, error);
+        }
+      }
+
+      // Import the calculation function
+      const { calculateWorkingDaysForRecord } = await import('@/components/employees/details/sickness/utils/workingDaysCalculations');
 
       // Process each row with enhanced matching
       const processedRecords: ProcessedSicknessRecord[] = rows
         .filter(row => {
           const nameCell = row[employeeNameIndex];
-          const daysCell = row[sicknessDaysIndex];
           const hasName = nameCell !== undefined && nameCell !== null && String(nameCell).trim() !== '';
-          const daysNum = Number(daysCell);
-          const hasValidDays = !isNaN(daysNum) && daysNum > 0;
-          return hasName && hasValidDays;
+          
+          // Accept rows with either valid sickness days OR valid start date
+          if (hasSicknessDaysColumn) {
+            const daysCell = row[sicknessDaysIndex];
+            const daysNum = Number(daysCell);
+            const hasValidDays = !isNaN(daysNum) && daysNum > 0;
+            const startDateCell = startDateIndex >= 0 ? String(row[startDateIndex] || '').trim() : '';
+            const hasStartDate = startDateCell && startDateCell !== '';
+            
+            return hasName && (hasValidDays || hasStartDate);
+          } else {
+            // No sickness days column - must have start date for calculation
+            const startDateCell = startDateIndex >= 0 ? String(row[startDateIndex] || '').trim() : '';
+            const hasStartDate = startDateCell && startDateCell !== '';
+            return hasName && hasStartDate;
+          }
         })
         .map((row, index) => {
           const employeeName = String(row[employeeNameIndex]).trim();
-          const sicknessDays = Number(row[sicknessDaysIndex]) || 0;
+          
+          // Get sickness days from file if available, otherwise will be calculated
+          const importedSicknessDays = hasSicknessDaysColumn ? Number(row[sicknessDaysIndex]) || 0 : undefined;
+          
           const schemeAllocation = schemeIndex >= 0 ? String(row[schemeIndex] || '').trim() : '';
           const startDate = startDateIndex >= 0 ? String(row[startDateIndex] || '').trim() : '';
           const endDate = endDateIndex >= 0 ? String(row[endDateIndex] || '').trim() : '';
@@ -440,7 +482,31 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
           // Find scheme match - try import data first, then fall back to employee's assigned scheme
           const matchedSchemeName = findSchemeMatch(schemeAllocation, bestEmployeeMatch?.id);
 
-          // Determine status - more flexible criteria
+          // Calculate working days if we have employee match and dates
+          let calculatedSicknessDays = importedSicknessDays;
+          if (bestEmployeeMatch?.id && startDate) {
+            const workPattern = employeeWorkPatterns.get(bestEmployeeMatch.id);
+            if (workPattern) {
+              try {
+                const calculatedDays = calculateWorkingDaysForRecord(
+                  startDate,
+                  endDate || null,
+                  workPattern
+                );
+                
+                // Use calculated days if no imported days or as validation
+                if (importedSicknessDays === undefined) {
+                  calculatedSicknessDays = calculatedDays;
+                }
+                
+                console.log(`Calculated ${calculatedDays} working days for ${employeeName} (${startDate} to ${endDate || 'ongoing'})`);
+              } catch (error) {
+                console.warn('Could not calculate working days:', error);
+              }
+            }
+          }
+
+          // Determine status - enhanced validation
           let status: 'ready' | 'needs_attention' | 'skipped' = 'ready';
           let statusReason = '';
           
@@ -450,6 +516,9 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
           } else if (bestEmployeeMatch.confidence < 50) {
             status = 'needs_attention';
             statusReason = `Low confidence employee match (${bestEmployeeMatch.confidence}%)`;
+          } else if (!startDate && calculatedSicknessDays === undefined) {
+            status = 'needs_attention';
+            statusReason = 'Either start date or sickness days must be provided';
           } else if (schemeAllocation && !matchedSchemeName && schemeAllocation.toLowerCase() !== 'none' && schemeAllocation.toLowerCase() !== 'n/a') {
             status = 'needs_attention';
             statusReason = `Scheme "${schemeAllocation}" not found`;
@@ -458,7 +527,7 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
           return {
             id: `record-${index}`,
             employeeName,
-            sicknessDays,
+            sicknessDays: calculatedSicknessDays || 0,
             startDate: startDate || undefined,
             endDate: endDate || undefined,
             reason: reason || undefined,
@@ -847,8 +916,9 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                <strong>Required columns:</strong> Employee Name, Sickness Days<br />
-                <strong>Optional columns:</strong> Scheme Allocation, Start Date, End Date, Reason, Certified, Notes
+                <strong>Required columns:</strong> Employee Name<br />
+                <strong>Optional columns:</strong> Sickness Days, Start Date, End Date, Scheme Allocation, Reason, Certified, Notes<br />
+                <em>Note:</em> Working days will be calculated automatically from start/end dates and employee work patterns when available. Sickness days column is optional.
               </AlertDescription>
             </Alert>
 
