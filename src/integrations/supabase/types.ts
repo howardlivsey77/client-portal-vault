@@ -1344,6 +1344,10 @@ export type Database = {
         Args: { _invite_code: string; _user_id: string }
         Returns: Json
       }
+      calculate_working_days: {
+        Args: { employee_id: string; end_date: string; start_date: string }
+        Returns: number
+      }
       create_invitation: {
         Args:
           | {
