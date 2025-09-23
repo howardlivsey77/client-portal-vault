@@ -486,7 +486,9 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
           let calculatedSicknessDays = importedSicknessDays;
           if (bestEmployeeMatch?.id && startDate) {
             const workPattern = employeeWorkPatterns.get(bestEmployeeMatch.id);
-            if (workPattern) {
+            console.log(`Processing ${employeeName} - Employee ID: ${bestEmployeeMatch.id}, Work Pattern:`, workPattern);
+            
+            if (workPattern && workPattern.length > 0) {
               try {
                 const calculatedDays = calculateWorkingDaysForRecord(
                   startDate,
@@ -503,12 +505,44 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
               } catch (error) {
                 console.warn('Could not calculate working days:', error);
               }
+            } else {
+              console.warn(`No work pattern found for ${employeeName} (ID: ${bestEmployeeMatch.id})`);
+              // If no work pattern but we have dates, use a default calculation
+              if (importedSicknessDays === undefined && startDate) {
+                // Default to 5-day work week calculation
+                const start = new Date(startDate);
+                const end = endDate ? new Date(endDate) : start;
+                let workingDays = 0;
+                const current = new Date(start);
+                
+                while (current <= end) {
+                  const dayOfWeek = current.getDay();
+                  if (dayOfWeek >= 1 && dayOfWeek <= 5) { // Monday to Friday
+                    workingDays++;
+                  }
+                  current.setDate(current.getDate() + 1);
+                }
+                
+                calculatedSicknessDays = workingDays;
+                console.log(`Used default calculation for ${employeeName}: ${workingDays} working days`);
+              }
             }
+          } else {
+            console.warn(`Missing employee match or start date for ${employeeName}`);
           }
 
           // Determine status - enhanced validation
           let status: 'ready' | 'needs_attention' | 'skipped' = 'ready';
           let statusReason = '';
+          
+          console.log(`Validating record for ${employeeName}:`, {
+            bestEmployeeMatch: bestEmployeeMatch?.name,
+            confidence: bestEmployeeMatch?.confidence,
+            startDate,
+            calculatedSicknessDays,
+            schemeAllocation,
+            matchedSchemeName
+          });
           
           if (!bestEmployeeMatch) {
             status = 'needs_attention';
@@ -516,13 +550,16 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
           } else if (bestEmployeeMatch.confidence < 50) {
             status = 'needs_attention';
             statusReason = `Low confidence employee match (${bestEmployeeMatch.confidence}%)`;
-          } else if (!startDate && calculatedSicknessDays === undefined) {
+          } else if (!startDate && (calculatedSicknessDays === undefined || calculatedSicknessDays === 0)) {
             status = 'needs_attention';
             statusReason = 'Either start date or sickness days must be provided';
           } else if (schemeAllocation && !matchedSchemeName && schemeAllocation.toLowerCase() !== 'none' && schemeAllocation.toLowerCase() !== 'n/a') {
             status = 'needs_attention';
             statusReason = `Scheme "${schemeAllocation}" not found`;
           }
+          
+          console.log(`Record status for ${employeeName}: ${status} - ${statusReason || 'Ready for import'}`);
+          console.log(`Final sickness days for ${employeeName}: ${calculatedSicknessDays || 0}`);
 
           return {
             id: `record-${index}`,
@@ -649,7 +686,13 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
 
       for (const record of readyRecords) {
         try {
-          console.log(`Processing record for ${record.employeeName}: ${record.sicknessDays} days`);
+          console.log(`Processing record for ${record.employeeName}: ${record.sicknessDays} days, Start: ${record.startDate}, End: ${record.endDate}`);
+          console.log(`Record details:`, {
+            matchedEmployeeId: record.matchedEmployeeId,
+            matchedSchemeName: record.matchedSchemeName,
+            status: record.status,
+            confidence: record.confidence
+          });
           
           // Update employee's sickness scheme if provided and not skipped
           if (record.matchedSchemeName && record.matchedSchemeName !== "__skip__") {
@@ -707,6 +750,8 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
           // Calculate actual working days based on work pattern
           let calculatedWorkingDays = record.sicknessDays; // fallback to imported value
           
+          console.log(`Work patterns found for ${record.employeeName}:`, workPatterns?.length || 0);
+          
           if (workPatterns && workPatterns.length > 0) {
             const { calculateWorkingDaysForRecord } = await import('@/components/employees/details/sickness/utils/workingDaysCalculations');
             
@@ -718,6 +763,8 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
               payrollId: '' // not needed for calculation
             }));
             
+            console.log(`Work pattern for ${record.employeeName}:`, workPattern);
+            
             calculatedWorkingDays = calculateWorkingDaysForRecord(
               formatDateForDB(startDateParsed.date),
               endDateParsed.date ? formatDateForDB(endDateParsed.date) : null,
@@ -725,6 +772,26 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
             );
             
             console.log(`Calculated working days for ${record.employeeName}: ${calculatedWorkingDays} (was ${record.sicknessDays})`);
+          } else {
+            console.warn(`No work patterns found for ${record.employeeName}, using default calculation`);
+            // Use default 5-day work week if no pattern exists
+            if (calculatedWorkingDays === undefined || calculatedWorkingDays === 0) {
+              const start = new Date(formatDateForDB(startDateParsed.date));
+              const end = endDateParsed.date ? new Date(formatDateForDB(endDateParsed.date)) : start;
+              let workingDays = 0;
+              const current = new Date(start);
+              
+              while (current <= end) {
+                const dayOfWeek = current.getDay();
+                if (dayOfWeek >= 1 && dayOfWeek <= 5) { // Monday to Friday
+                  workingDays++;
+                }
+                current.setDate(current.getDate() + 1);
+              }
+              
+              calculatedWorkingDays = workingDays;
+              console.log(`Used default calculation for ${record.employeeName}: ${workingDays} working days`);
+            }
           }
 
           // Create actual sickness record
