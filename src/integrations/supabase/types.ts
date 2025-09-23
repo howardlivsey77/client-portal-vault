@@ -1478,6 +1478,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_current_user_is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       get_invitation_metadata: {
         Args: { _company_id?: string; _user_id: string }
         Returns: {
@@ -1514,6 +1518,10 @@ export type Database = {
           name: string
           role: string
         }[]
+      }
+      get_user_is_admin: {
+        Args: { user_id: string }
+        Returns: boolean
       }
       is_admin: {
         Args: { user_id: string }
