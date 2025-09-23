@@ -1739,6 +1739,14 @@ export type Database = {
         Args: { employee_id: string; end_date: string; start_date: string }
         Returns: number
       }
+      create_employee_with_system_user: {
+        Args: {
+          creator_user_id: string
+          employee_data: Json
+          target_company_id: string
+        }
+        Returns: string
+      }
       create_invitation: {
         Args:
           | {
