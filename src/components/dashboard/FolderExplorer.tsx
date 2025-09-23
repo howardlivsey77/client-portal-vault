@@ -9,6 +9,9 @@ import { EmptyFolderState } from "./folder/EmptyFolderState";
 import { FolderExplorerHeader } from "./folder/FolderExplorerHeader";
 import { FolderExplorerLoading } from "./folder/FolderExplorerLoading";
 import { useFolderExplorer } from "./folder/useFolderExplorer";
+import { DragDropProvider } from "@/contexts/DragDropContext";
+import { documentFolderService } from "@/services/documentFolderService";
+import { toast } from "sonner";
 
 export { type FolderItem } from "./types/folder.types";
 
@@ -72,12 +75,26 @@ export function FolderExplorer({
 
   const currentFolders = getCurrentFolderContents();
 
+  // Handle folder movement via drag and drop
+  const handleMoveFolder = async (folderId: string, targetParentId: string | null) => {
+    try {
+      await documentFolderService.moveFolder(folderId, targetParentId);
+      // Refresh the folder structure after successful move
+      window.location.reload(); // Simple refresh - could be optimized with state management
+      toast.success("Folder moved successfully");
+    } catch (error) {
+      console.error("Failed to move folder:", error);
+      toast.error("Failed to move folder");
+    }
+  };
+
   if (loading) {
     return <FolderExplorerLoading />;
   }
 
   return (
-    <div>
+    <DragDropProvider onMoveFolder={handleMoveFolder}>
+      <div>
       <FolderExplorerHeader
         currentFolderId={currentFolderId}
         onNavigateBack={navigateBack}
@@ -123,6 +140,7 @@ export function FolderExplorer({
         folderName={deletingFolderName}
         onDeleteFolder={handleDeleteFolder}
       />
-    </div>
+      </div>
+    </DragDropProvider>
   );
 }
