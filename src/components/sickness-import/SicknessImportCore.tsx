@@ -625,13 +625,46 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
             throw new Error(`Invalid end date: ${record.endDate}`);
           }
 
+          // Get employee's work pattern to calculate working days
+          const { data: workPatterns, error: workPatternError } = await supabase
+            .from('work_patterns')
+            .select('day, is_working, start_time, end_time')
+            .eq('employee_id', record.matchedEmployeeId);
+
+          if (workPatternError) {
+            console.warn(`Could not fetch work pattern for employee ${record.matchedEmployeeId}:`, workPatternError);
+          }
+
+          // Calculate actual working days based on work pattern
+          let calculatedWorkingDays = record.sicknessDays; // fallback to imported value
+          
+          if (workPatterns && workPatterns.length > 0) {
+            const { calculateWorkingDaysForRecord } = await import('@/components/employees/details/sickness/utils/workingDaysCalculations');
+            
+            const workPattern = workPatterns.map(wp => ({
+              day: wp.day,
+              isWorking: wp.is_working,
+              startTime: wp.start_time || '',
+              endTime: wp.end_time || '',
+              payrollId: '' // not needed for calculation
+            }));
+            
+            calculatedWorkingDays = calculateWorkingDaysForRecord(
+              formatDateForDB(startDateParsed.date),
+              endDateParsed.date ? formatDateForDB(endDateParsed.date) : null,
+              workPattern
+            );
+            
+            console.log(`Calculated working days for ${record.employeeName}: ${calculatedWorkingDays} (was ${record.sicknessDays})`);
+          }
+
           // Create actual sickness record
           const sicknessRecord = {
             employee_id: record.matchedEmployeeId!,
             company_id: employeeData.company_id,
             start_date: formatDateForDB(startDateParsed.date),
             end_date: endDateParsed.date ? formatDateForDB(endDateParsed.date) : null,
-            total_days: record.sicknessDays,
+            total_days: calculatedWorkingDays,
             is_certified: record.isCertified || false,
             certification_required_from_day: 8,
             reason: record.reason || null,

@@ -22,6 +22,12 @@ import NotFound from "./pages/NotFound";
 import SicknessImport from "./pages/SicknessImport";
 import ClientReports from "./pages/ClientReports";
 import AuthProvider from "./providers/AuthProvider";
+
+// Import and run the sickness data fix
+import { runSicknessDataFix } from "./utils/fixSicknessData";
+
+// Run fix once on app load
+runSicknessDataFix().catch(console.error);
 import CompanyProvider from "./providers/CompanyProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { NotificationsProvider } from "./components/notifications/NotificationsContext";
