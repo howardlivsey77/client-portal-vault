@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          change_reason: string | null
+          changed_by: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          new_admin_status: boolean
+          old_admin_status: boolean
+          target_user_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_by: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_admin_status: boolean
+          old_admin_status: boolean
+          target_user_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          change_reason?: string | null
+          changed_by?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_admin_status?: boolean
+          old_admin_status?: boolean
+          target_user_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           accounts_office_number: string | null
@@ -1074,21 +1110,21 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
-          is_admin: boolean | null
+          is_admin: boolean
         }
         Insert: {
           created_at?: string
           email: string
           full_name?: string | null
           id: string
-          is_admin?: boolean | null
+          is_admin?: boolean
         }
         Update: {
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
-          is_admin?: boolean | null
+          is_admin?: boolean
         }
         Relationships: []
       }
@@ -1434,6 +1470,10 @@ export type Database = {
         Args: { _id: string; _user_id: string }
         Returns: boolean
       }
+      demote_admin_user: {
+        Args: { _reason?: string; _target_user_id: string }
+        Returns: Json
+      }
       get_current_user_email: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1482,6 +1522,10 @@ export type Database = {
       is_user_admin: {
         Args: { user_id: string }
         Returns: boolean
+      }
+      promote_user_to_admin: {
+        Args: { _reason?: string; _target_user_id: string }
+        Returns: Json
       }
       role_meets: {
         Args: { actual_role: string; min_role: string }
