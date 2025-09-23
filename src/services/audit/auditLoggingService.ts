@@ -9,7 +9,8 @@ export type AuditEventType =
   | 'sensitive_access'
   | 'auth_event'
   | 'admin_action'
-  | 'privacy_request';
+  | 'privacy_request'
+  | string; // Allow any string for flexibility
 
 export type SensitiveDataType = 
   | 'employee_personal'

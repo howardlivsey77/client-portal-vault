@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '../loggingService';
 import { AuditLoggingService } from '../audit/auditLoggingService';
 
-export type ExportFormat = 'json' | 'csv' | 'xml' | 'pdf';
+export type ExportFormat = 'json' | 'csv' | 'pdf';
 export type ExportScope = 'personal_data' | 'employment_data' | 'payroll_data' | 'complete_profile';
 
 export interface DataExportRequest {
@@ -394,10 +394,6 @@ export class DataExportService {
         mimeType = 'text/csv';
         break;
 
-      case 'xml':
-        content = this.convertToXML(dataPackage);
-        mimeType = 'application/xml';
-        break;
 
       case 'pdf':
         // For PDF, we would use a library like jsPDF or similar
@@ -543,8 +539,21 @@ export class DataExportService {
 
       if (error) throw error;
 
+      // Transform string dates to Date objects and fix types
+      const transformedData = (data || []).map(item => ({
+        ...item,
+        request_date: new Date(item.request_date),
+        completion_date: item.completion_date ? new Date(item.completion_date) : undefined,
+        expires_at: new Date(item.expires_at),
+        status: item.status as 'pending' | 'processing' | 'completed' | 'failed',
+        export_format: item.export_format as ExportFormat,
+        export_scope: item.export_scope as ExportScope,
+        download_count: item.download_count || 0,
+        file_size: item.file_size || undefined,
+      }));
+
       return {
-        requests: data || [],
+        requests: transformedData,
         total: count || 0,
       };
     } catch (error) {
@@ -561,7 +570,7 @@ export class DataExportService {
       const { error } = await supabase
         .from('data_export_requests')
         .update({
-          download_count: supabase.sql`download_count + 1`
+          download_count: 1  // Simple increment for now
         })
         .eq('id', requestId);
 

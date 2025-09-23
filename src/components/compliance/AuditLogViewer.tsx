@@ -87,7 +87,14 @@ export const AuditLogViewer: React.FC = () => {
 
   const handleExport = async () => {
     try {
-      const allData = await AuditLoggingService.getAuditLogs({ limit: 10000, ...filters });
+      const allData = await AuditLoggingService.getAuditLogs({ 
+        limit: 10000, 
+        eventType: filters.eventType as any,
+        tableName: filters.tableName,
+        userId: filters.userId,
+        dateFrom: filters.dateFrom ? new Date(filters.dateFrom) : undefined,
+        dateTo: filters.dateTo ? new Date(filters.dateTo) : undefined,
+      });
       
       // Convert to CSV
       const headers = ['Date', 'User ID', 'Table', 'Action', 'Sensitive Fields', 'Record ID'];
