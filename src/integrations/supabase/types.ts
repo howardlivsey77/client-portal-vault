@@ -191,6 +191,162 @@ export type Database = {
         }
         Relationships: []
       }
+      data_export_requests: {
+        Row: {
+          completion_date: string | null
+          created_at: string | null
+          download_count: number | null
+          employee_id: string
+          error_message: string | null
+          expires_at: string
+          export_format: string
+          export_scope: string
+          file_path: string | null
+          file_size: number | null
+          id: string
+          include_historical: boolean | null
+          request_date: string
+          requester_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          completion_date?: string | null
+          created_at?: string | null
+          download_count?: number | null
+          employee_id: string
+          error_message?: string | null
+          expires_at: string
+          export_format: string
+          export_scope: string
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          include_historical?: boolean | null
+          request_date?: string
+          requester_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          completion_date?: string | null
+          created_at?: string | null
+          download_count?: number | null
+          employee_id?: string
+          error_message?: string | null
+          expires_at?: string
+          export_format?: string
+          export_scope?: string
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          include_historical?: boolean | null
+          request_date?: string
+          requester_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_export_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_retention_jobs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          execution_date: string | null
+          id: string
+          policy_id: string | null
+          records_identified: number
+          records_processed: number
+          scheduled_date: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          execution_date?: string | null
+          id?: string
+          policy_id?: string | null
+          records_identified?: number
+          records_processed?: number
+          scheduled_date: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          execution_date?: string | null
+          id?: string
+          policy_id?: string | null
+          records_identified?: number
+          records_processed?: number
+          scheduled_date?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_retention_jobs_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "data_retention_policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_retention_policies: {
+        Row: {
+          auto_delete: boolean
+          company_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          legal_hold_override: boolean
+          policy_type: string
+          retention_period_months: number
+          updated_at: string | null
+        }
+        Insert: {
+          auto_delete?: boolean
+          company_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          legal_hold_override?: boolean
+          policy_type: string
+          retention_period_months: number
+          updated_at?: string | null
+        }
+        Update: {
+          auto_delete?: boolean
+          company_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          legal_hold_override?: boolean
+          policy_type?: string
+          retention_period_months?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_retention_policies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           company_id: string
@@ -664,6 +820,74 @@ export type Database = {
           },
         ]
       }
+      erasure_requests: {
+        Row: {
+          affected_tables: string[] | null
+          completion_date: string | null
+          created_at: string | null
+          employee_id: string
+          erasure_method: string
+          id: string
+          legal_basis: string | null
+          notes: string | null
+          reason: string
+          records_processed: number | null
+          request_date: string
+          requester_id: string
+          retention_override: boolean | null
+          status: string
+          total_records: number | null
+          updated_at: string | null
+          verification_hash: string | null
+        }
+        Insert: {
+          affected_tables?: string[] | null
+          completion_date?: string | null
+          created_at?: string | null
+          employee_id: string
+          erasure_method: string
+          id?: string
+          legal_basis?: string | null
+          notes?: string | null
+          reason: string
+          records_processed?: number | null
+          request_date?: string
+          requester_id: string
+          retention_override?: boolean | null
+          status?: string
+          total_records?: number | null
+          updated_at?: string | null
+          verification_hash?: string | null
+        }
+        Update: {
+          affected_tables?: string[] | null
+          completion_date?: string | null
+          created_at?: string | null
+          employee_id?: string
+          erasure_method?: string
+          id?: string
+          legal_basis?: string | null
+          notes?: string | null
+          reason?: string
+          records_processed?: number | null
+          request_date?: string
+          requester_id?: string
+          retention_override?: boolean | null
+          status?: string
+          total_records?: number | null
+          updated_at?: string | null
+          verification_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "erasure_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitation_metadata: {
         Row: {
           accepted_at: string | null
@@ -751,6 +975,53 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_holds: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          employee_id: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          reason: string
+          record_id: string | null
+          table_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          employee_id?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          reason: string
+          record_id?: string | null
+          table_name: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          employee_id?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          reason?: string
+          record_id?: string | null
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_holds_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
