@@ -563,75 +563,121 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
     setIsProcessing(true);
     setImportProgress(0);
 
+    console.log(`Starting import of ${readyRecords.length} sickness records for The Swan Practice`);
+    
     try {
       let processed = 0;
+      let failed = 0;
       const total = readyRecords.length;
+      const failedRecords: Array<{record: ProcessedSicknessRecord, error: string}> = [];
 
       for (const record of readyRecords) {
-        // Update employee's sickness scheme if provided and not skipped
-        if (record.matchedSchemeName && record.matchedSchemeName !== "__skip__") {
-          const scheme = schemes.find(s => s.name === record.matchedSchemeName);
-          if (scheme) {
-            await supabase
-              .from('employees')
-              .update({ sickness_scheme_id: scheme.id })
-              .eq('id', record.matchedEmployeeId);
+        try {
+          console.log(`Processing record for ${record.employeeName}: ${record.sicknessDays} days`);
+          
+          // Update employee's sickness scheme if provided and not skipped
+          if (record.matchedSchemeName && record.matchedSchemeName !== "__skip__") {
+            const scheme = schemes.find(s => s.name === record.matchedSchemeName);
+            if (scheme) {
+              console.log(`Updating employee ${record.matchedEmployeeId} with scheme: ${scheme.name}`);
+              const { error: schemeError } = await supabase
+                .from('employees')
+                .update({ sickness_scheme_id: scheme.id })
+                .eq('id', record.matchedEmployeeId);
+              
+              if (schemeError) {
+                console.error(`Failed to update scheme for employee ${record.matchedEmployeeId}:`, schemeError);
+              }
+            }
           }
+
+          // Get employee data for company_id
+          const { data: employeeData, error: employeeError } = await supabase
+            .from('employees')
+            .select('company_id, first_name, last_name')
+            .eq('id', record.matchedEmployeeId)
+            .single();
+
+          if (employeeError || !employeeData) {
+            throw new Error(`Employee not found: ${employeeError?.message || 'Unknown error'}`);
+          }
+
+          console.log(`Found employee: ${employeeData.first_name} ${employeeData.last_name}, Company ID: ${employeeData.company_id}`);
+
+          // Parse and validate dates
+          const startDateParsed = parseDate(record.startDate);
+          const endDateParsed = record.endDate ? parseDate(record.endDate) : { date: null, isValid: true, originalValue: null };
+
+          // Skip record if start date is invalid
+          if (!startDateParsed.isValid || !startDateParsed.date) {
+            throw new Error(`Invalid start date: ${record.startDate}`);
+          }
+
+          // Skip record if end date is provided but invalid
+          if (record.endDate && !endDateParsed.isValid) {
+            throw new Error(`Invalid end date: ${record.endDate}`);
+          }
+
+          // Create actual sickness record
+          const sicknessRecord = {
+            employee_id: record.matchedEmployeeId!,
+            company_id: employeeData.company_id,
+            start_date: formatDateForDB(startDateParsed.date),
+            end_date: endDateParsed.date ? formatDateForDB(endDateParsed.date) : null,
+            total_days: record.sicknessDays,
+            is_certified: record.isCertified || false,
+            certification_required_from_day: 8,
+            reason: record.reason || null,
+            notes: record.notes || null
+          };
+
+          console.log('Creating sickness record:', sicknessRecord);
+
+          const { data: insertedRecord, error: sicknessError } = await supabase
+            .from('employee_sickness_records')
+            .insert(sicknessRecord)
+            .select()
+            .single();
+
+          if (sicknessError) {
+            throw new Error(`Failed to create sickness record: ${sicknessError.message}`);
+          }
+
+          console.log(`Successfully created sickness record with ID: ${insertedRecord.id}`);
+          processed++;
+          
+        } catch (recordError) {
+          const errorMessage = recordError instanceof Error ? recordError.message : 'Unknown error';
+          console.error(`Failed to import record for ${record.employeeName}:`, errorMessage);
+          failedRecords.push({ record, error: errorMessage });
+          failed++;
         }
 
-        // Get employee data for company_id
-        const { data: employeeData } = await supabase
-          .from('employees')
-          .select('company_id')
-          .eq('id', record.matchedEmployeeId)
-          .single();
+        setImportProgress(((processed + failed) / total) * 100);
+      }
 
-        // Parse and validate dates
-        const startDateParsed = parseDate(record.startDate);
-        const endDateParsed = record.endDate ? parseDate(record.endDate) : { date: null, isValid: true, originalValue: null };
+      console.log(`Import completed. Processed: ${processed}, Failed: ${failed}`);
 
-        // Skip record if start date is invalid
-        if (!startDateParsed.isValid || !startDateParsed.date) {
-          console.error(`Skipping record for employee ${record.matchedEmployeeId}: Invalid start date`);
-          continue;
-        }
-
-        // Skip record if end date is provided but invalid
-        if (record.endDate && !endDateParsed.isValid) {
-          console.error(`Skipping record for employee ${record.matchedEmployeeId}: Invalid end date`);
-          continue;
-        }
-
-        // Create actual sickness record
-        const sicknessRecord = {
-          employee_id: record.matchedEmployeeId!,
-          company_id: employeeData?.company_id,
-          start_date: formatDateForDB(startDateParsed.date),
-          end_date: endDateParsed.date ? formatDateForDB(endDateParsed.date) : null,
-          total_days: record.sicknessDays,
-          is_certified: record.isCertified || false,
-          certification_required_from_day: 8,
-          reason: record.reason || null,
-          notes: record.notes || null
-        };
-
-        const { error: sicknessError } = await supabase
-          .from('employee_sickness_records')
-          .insert(sicknessRecord);
-
-        if (sicknessError) {
-          throw new Error(`Failed to create sickness record: ${sicknessError.message}`);
-        }
-
-        processed++;
-        setImportProgress((processed / total) * 100);
+      if (failed > 0) {
+        console.log('Failed records:', failedRecords);
       }
 
       setCurrentStep('complete');
-      toast({
-        title: "Import completed successfully",
-        description: `Created ${processed} sickness records and updated employee schemes`
-      });
+      
+      if (processed > 0) {
+        toast({
+          title: "Import completed",
+          description: failed > 0 
+            ? `Created ${processed} sickness records. ${failed} records failed to import.`
+            : `Successfully created ${processed} sickness records and updated employee schemes`
+        });
+      } else {
+        toast({
+          title: "Import failed",
+          description: `No records were imported. ${failed} records failed validation.`,
+          variant: "destructive"
+        });
+      }
 
       // Call completion callback for embedded mode
       if (mode === 'embedded' && onComplete) {
@@ -639,7 +685,7 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
       }
 
     } catch (error) {
-      console.error('Error importing records:', error);
+      console.error('Error during import process:', error);
       toast({
         title: "Error during import",
         description: error instanceof Error ? error.message : "Unknown error occurred",
