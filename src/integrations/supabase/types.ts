@@ -155,6 +155,42 @@ export type Database = {
           },
         ]
       }
+      data_access_audit_log: {
+        Row: {
+          access_type: string
+          accessed_record_id: string | null
+          accessed_table: string
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          sensitive_fields: string[] | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          access_type: string
+          accessed_record_id?: string | null
+          accessed_table: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          sensitive_fields?: string[] | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          access_type?: string
+          accessed_record_id?: string | null
+          accessed_table?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          sensitive_fields?: string[] | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       departments: {
         Row: {
           company_id: string
@@ -1474,6 +1510,10 @@ export type Database = {
         Args: { _reason?: string; _target_user_id: string }
         Returns: Json
       }
+      get_current_user_admin_status: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       get_current_user_email: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1481,6 +1521,20 @@ export type Database = {
       get_current_user_is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      get_employee_safe_data: {
+        Args: { employee_id: string }
+        Returns: {
+          company_id: string
+          department: string
+          email: string
+          first_name: string
+          hire_date: string
+          hours_per_week: number
+          id: string
+          last_name: string
+          status: string
+        }[]
       }
       get_employee_sensitive_data: {
         Args: { employee_id: string }
@@ -1542,6 +1596,10 @@ export type Database = {
           role: string
         }[]
       }
+      get_user_company_role: {
+        Args: { company_id: string; user_id: string }
+        Returns: string
+      }
       get_user_is_admin: {
         Args: { user_id: string }
         Returns: boolean
@@ -1553,6 +1611,15 @@ export type Database = {
       is_user_admin: {
         Args: { user_id: string }
         Returns: boolean
+      }
+      log_sensitive_data_access: {
+        Args: {
+          access_type: string
+          record_id: string
+          sensitive_fields?: string[]
+          table_name: string
+        }
+        Returns: undefined
       }
       promote_user_to_admin: {
         Args: { _reason?: string; _target_user_id: string }
