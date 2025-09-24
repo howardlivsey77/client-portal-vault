@@ -116,7 +116,7 @@ export const entitlementService = {
     const { data: employeesWithSickness, error: sicknessError } = await supabase
       .from('employee_sickness_records')
       .select(`
-        employee_id,
+        employee_sickness_records.employee_id,
         employees!inner(
           id,
           company_id,
