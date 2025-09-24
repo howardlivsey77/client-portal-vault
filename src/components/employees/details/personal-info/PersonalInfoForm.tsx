@@ -35,6 +35,7 @@ export const PersonalInfoFormComponent = forwardRef<PersonalInfoFormRef, Persona
     gender: employee.gender as "Male" | "Female" | "Other" | "Prefer not to say" | null,
     payroll_id: employee.payroll_id,
     date_of_birth: employee.date_of_birth ? new Date(employee.date_of_birth) : null,
+    hire_date: employee.hire_date ? new Date(employee.hire_date) : new Date(),
     hours_per_week: employee.hours_per_week ?? 40,
     hourly_rate: employee.hourly_rate ?? 0,
     rate_2: employee.rate_2,

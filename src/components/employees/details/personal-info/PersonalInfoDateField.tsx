@@ -9,7 +9,7 @@ interface PersonalInfoDateFieldProps {
 
 export const PersonalInfoDateField = ({ control }: PersonalInfoDateFieldProps) => {
   return (
-    <div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <DateInputField
         control={control}
         name="date_of_birth"
@@ -18,6 +18,13 @@ export const PersonalInfoDateField = ({ control }: PersonalInfoDateFieldProps) =
         readOnly={false}
         maxDate={new Date()}
         minDate={new Date("1900-01-01")}
+      />
+      <DateInputField
+        control={control}
+        name="hire_date"
+        label="Hire Date"
+        required={true}
+        readOnly={false}
       />
     </div>
   );
