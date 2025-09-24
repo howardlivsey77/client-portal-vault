@@ -32,6 +32,7 @@ export class SicknessService {
   recordSicknessAbsence = recordsService.recordSicknessAbsence;
   updateSicknessRecord = recordsService.updateSicknessRecord;
   deleteSicknessRecord = recordsService.deleteSicknessRecord;
+  recalculateEntitlementWithReference = recordsService.recalculateEntitlementWithReference;
 
   // Balance calculations
   getHistoricalBalances = balanceService.getHistoricalBalances;
