@@ -17,8 +17,9 @@ import {
 import { ChartBar, ChevronDown } from "lucide-react";
 import { EmployeeChangesReport } from "./EmployeeChangesReport";
 import { PaymentHoursRatesReport } from "./PaymentHoursRatesReport";
+import { EmployeeDetailsReport } from "./employee-details/EmployeeDetailsReport";
 
-type ReportType = "employee-changes" | "payment-hours-rates" | "payroll-summary" | "time-off" | "performance";
+type ReportType = "employee-changes" | "employee-details" | "payment-hours-rates" | "payroll-summary" | "time-off" | "performance";
 
 export function ReportsNavigation() {
   const [selectedReport, setSelectedReport] = useState<ReportType>("employee-changes");
@@ -32,6 +33,8 @@ export function ReportsNavigation() {
     switch (selectedReport) {
       case "employee-changes":
         return <EmployeeChangesReport />;
+      case "employee-details":
+        return <EmployeeDetailsReport />;
       case "payment-hours-rates":
         return <PaymentHoursRatesReport />;
       case "payroll-summary":
@@ -60,6 +63,7 @@ export function ReportsNavigation() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="employee-changes">Employee Changes Report</SelectItem>
+              <SelectItem value="employee-details">Employee Details Report</SelectItem>
               <SelectItem value="payment-hours-rates">Payment Hours and Rates</SelectItem>
               <SelectItem value="payroll-summary">Payroll Summary Report</SelectItem>
               <SelectItem value="time-off">Time Off Report</SelectItem>
