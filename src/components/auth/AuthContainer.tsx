@@ -68,12 +68,7 @@ export const AuthContainer = ({ onSuccess }: AuthContainerProps) => {
                 className="h-28 md:h-32" 
               />
             </div>
-            <div className="space-y-2">
-              <CardTitle className="text-2xl">Welcome Back</CardTitle>
-              <CardDescription className="text-base">
-                Payroll Management Portal
-              </CardDescription>
-            </div>
+            <CardTitle className="text-2xl">Payroll Management Portal</CardTitle>
           </CardHeader>
           
           <LoginForm 
