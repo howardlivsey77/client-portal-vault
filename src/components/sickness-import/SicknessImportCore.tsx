@@ -17,6 +17,7 @@ import { parseDate, formatDateForDB } from "@/utils/dateParser";
 import * as XLSX from 'xlsx';
 import Fuse from 'fuse.js';
 import { SicknessImportCoreProps, ProcessedSicknessRecord } from './types';
+import { overlapService } from '@/services/sickness/overlapService';
 
 export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }: SicknessImportCoreProps) => {
   // File handling states
@@ -480,40 +481,41 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
       }
 
       // Process each row with enhanced matching
-      const processedRecords: ProcessedSicknessRecord[] = rows
-        .filter((row, rowIndex) => {
-          const nameCell = row[employeeNameIndex];
-          const hasName = nameCell !== undefined && nameCell !== null && String(nameCell).trim() !== '';
+      const filteredRows = rows.filter((row, rowIndex) => {
+        const nameCell = row[employeeNameIndex];
+        const hasName = nameCell !== undefined && nameCell !== null && String(nameCell).trim() !== '';
+        
+        if (!hasName) {
+          console.log(`Row ${rowIndex + 2} skipped: No employee name`);
+          return false;
+        }
+        
+        // Accept rows with either valid sickness days OR valid start date
+        if (hasSicknessDaysColumn) {
+          const daysCell = row[sicknessDaysIndex];
+          const daysNum = Number(daysCell);
+          const hasValidDays = !isNaN(daysNum) && daysNum >= 0; // Allow 0 days
+          const startDateCell = startDateIndex >= 0 ? String(row[startDateIndex] || '').trim() : '';
+          const hasStartDate = startDateCell && startDateCell !== '';
           
-          if (!hasName) {
-            console.log(`Row ${rowIndex + 2} skipped: No employee name`);
-            return false;
+          const isValid = hasValidDays || hasStartDate;
+          if (!isValid) {
+            console.log(`Row ${rowIndex + 2} skipped: No valid sickness days or start date`);
           }
-          
-          // Accept rows with either valid sickness days OR valid start date
-          if (hasSicknessDaysColumn) {
-            const daysCell = row[sicknessDaysIndex];
-            const daysNum = Number(daysCell);
-            const hasValidDays = !isNaN(daysNum) && daysNum >= 0; // Allow 0 days
-            const startDateCell = startDateIndex >= 0 ? String(row[startDateIndex] || '').trim() : '';
-            const hasStartDate = startDateCell && startDateCell !== '';
-            
-            const isValid = hasValidDays || hasStartDate;
-            if (!isValid) {
-              console.log(`Row ${rowIndex + 2} skipped: No valid sickness days or start date`);
-            }
-            return isValid;
-          } else {
-            // No sickness days column - must have start date for calculation
-            const startDateCell = startDateIndex >= 0 ? String(row[startDateIndex] || '').trim() : '';
-            const hasStartDate = startDateCell && startDateCell !== '';
-            if (!hasStartDate) {
-              console.log(`Row ${rowIndex + 2} skipped: No start date for calculation`);
-            }
-            return hasStartDate;
+          return isValid;
+        } else {
+          // No sickness days column - must have start date for calculation
+          const startDateCell = startDateIndex >= 0 ? String(row[startDateIndex] || '').trim() : '';
+          const hasStartDate = startDateCell && startDateCell !== '';
+          if (!hasStartDate) {
+            console.log(`Row ${rowIndex + 2} skipped: No start date for calculation`);
           }
-        })
-        .map((row, index) => {
+          return hasStartDate;
+        }
+      });
+
+      const processedRecords: ProcessedSicknessRecord[] = await Promise.all(
+        filteredRows.map(async (row, index) => {
           const employeeName = String(row[employeeNameIndex]).trim();
           
           // Get sickness days from file if available, otherwise will be calculated
@@ -582,6 +584,31 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
             console.warn(`Missing employee match or start date for ${employeeName}`);
           }
 
+          // Check for overlapping records if we have employee and start date
+          let hasOverlap = false;
+          let overlapDetails = undefined;
+          
+          if (bestEmployeeMatch?.id && startDate) {
+            try {
+              const overlapResult = await overlapService.checkForOverlappingSickness(
+                bestEmployeeMatch.id,
+                startDate,
+                endDate || undefined
+              );
+              
+              if (overlapResult.hasOverlap) {
+                hasOverlap = true;
+                overlapDetails = {
+                  overlappingRecords: overlapResult.overlappingRecords,
+                  message: overlapResult.message
+                };
+                console.log(`Overlap detected for ${employeeName}:`, overlapResult.message);
+              }
+            } catch (error) {
+              console.error(`Error checking overlaps for ${employeeName}:`, error);
+            }
+          }
+
           // Determine status - enhanced validation
           let status: 'ready' | 'needs_attention' | 'skipped' = 'ready';
           let statusReason = '';
@@ -592,7 +619,8 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
             startDate,
             calculatedSicknessDays,
             schemeAllocation,
-            matchedSchemeName
+            matchedSchemeName,
+            hasOverlap
           });
           
           if (!bestEmployeeMatch) {
@@ -607,6 +635,9 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
           } else if (schemeAllocation && !matchedSchemeName && schemeAllocation.toLowerCase() !== 'none' && schemeAllocation.toLowerCase() !== 'n/a') {
             status = 'needs_attention';
             statusReason = `Scheme "${schemeAllocation}" not found`;
+          } else if (hasOverlap) {
+            status = 'needs_attention';
+            statusReason = overlapDetails?.message || 'Overlaps with existing sickness record';
           }
           
           console.log(`Record status for ${employeeName}: ${status} - ${statusReason || 'Ready for import'}`);
@@ -627,9 +658,12 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
             status,
             statusReason,
             confidence: bestEmployeeMatch?.confidence,
-            suggestions: employeeMatches
+            suggestions: employeeMatches,
+            hasOverlap,
+            overlapDetails
           };
-        });
+        })
+      );
 
       setImportProgress(75);
       setSicknessRecords(processedRecords);
@@ -970,7 +1004,8 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
     total: sicknessRecords.length,
     ready: sicknessRecords.filter(r => r.status === 'ready').length,
     needsAttention: sicknessRecords.filter(r => r.status === 'needs_attention').length,
-    skipped: sicknessRecords.filter(r => r.status === 'skipped').length
+    skipped: sicknessRecords.filter(r => r.status === 'skipped').length,
+    withOverlaps: sicknessRecords.filter(r => r.hasOverlap).length
   };
 
   return (
@@ -1081,7 +1116,7 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
       {currentStep === 'review' && (
         <div className="space-y-6">
           {/* Statistics */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-5 gap-4">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-2">
@@ -1122,6 +1157,17 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
                   <div>
                     <p className="text-2xl font-bold text-muted-foreground">{stats.skipped}</p>
                     <p className="text-xs text-muted-foreground">Skipped</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-amber-500" />
+                  <div>
+                    <p className="text-2xl font-bold text-amber-500">{stats.withOverlaps}</p>
+                    <p className="text-xs text-muted-foreground">With Overlaps</p>
                   </div>
                 </div>
               </CardContent>
@@ -1173,6 +1219,28 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
                   Skip all unmatched schemes
                 </label>
               </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="skip-overlaps"
+                  checked={sicknessRecords.filter(r => r.hasOverlap && r.status === 'skipped').length === sicknessRecords.filter(r => r.hasOverlap).length && sicknessRecords.filter(r => r.hasOverlap).length > 0}
+                  onCheckedChange={(checked) => {
+                    setSicknessRecords(records =>
+                      records.map(record => {
+                        if (record.hasOverlap) {
+                          return {
+                            ...record,
+                            status: checked ? 'skipped' : (record.matchedEmployeeId ? 'needs_attention' : 'needs_attention')
+                          };
+                        }
+                        return record;
+                      })
+                    );
+                  }}
+                />
+                <label htmlFor="skip-overlaps" className="text-sm">
+                  Skip all with overlaps
+                </label>
+              </div>
             </div>
           </div>
 
@@ -1192,12 +1260,23 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
                 </TableHeader>
                 <TableBody>
                   {filteredRecords.map((record) => (
-                    <TableRow key={record.id}>
+                    <TableRow 
+                      key={record.id}
+                      className={record.hasOverlap ? 'bg-amber-50 dark:bg-amber-950/20' : ''}
+                    >
                       <TableCell>
                         <div>
                           <p className="font-medium">{record.employeeName}</p>
                           {record.reason && (
                             <p className="text-xs text-muted-foreground">{record.reason}</p>
+                          )}
+                          {record.hasOverlap && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <AlertCircle className="h-3 w-3 text-amber-500" />
+                              <p className="text-xs text-amber-600 dark:text-amber-400">
+                                {record.overlapDetails?.message}
+                              </p>
+                            </div>
                           )}
                         </div>
                       </TableCell>
@@ -1253,18 +1332,26 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={
-                            record.status === 'ready' ? 'default' :
-                            record.status === 'needs_attention' ? 'destructive' :
-                            'secondary'
-                          }
-                        >
-                          {record.status === 'ready' && <CheckCircle className="h-3 w-3 mr-1" />}
-                          {record.status === 'needs_attention' && <AlertCircle className="h-3 w-3 mr-1" />}
-                          {record.status === 'skipped' && <UserX className="h-3 w-3 mr-1" />}
-                          {record.status.replace('_', ' ')}
-                        </Badge>
+                        <div className="space-y-1">
+                          <Badge
+                            variant={
+                              record.status === 'ready' ? 'default' :
+                              record.status === 'needs_attention' ? 'destructive' :
+                              'secondary'
+                            }
+                          >
+                            {record.status === 'ready' && <CheckCircle className="h-3 w-3 mr-1" />}
+                            {record.status === 'needs_attention' && <AlertCircle className="h-3 w-3 mr-1" />}
+                            {record.status === 'skipped' && <UserX className="h-3 w-3 mr-1" />}
+                            {record.status.replace('_', ' ')}
+                          </Badge>
+                          {record.hasOverlap && (
+                            <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800">
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              Has Overlap
+                            </Badge>
+                          )}
+                        </div>
                         {record.statusReason && (
                           <p className="text-xs text-muted-foreground mt-1">
                             {record.statusReason}

@@ -24,6 +24,16 @@ export interface ProcessedSicknessRecord extends SicknessRecord {
     confidence: number;
     payrollId?: string;
   }>;
+  hasOverlap?: boolean;
+  overlapDetails?: {
+    overlappingRecords: Array<{
+      id: string;
+      start_date: string;
+      end_date?: string;
+      total_days: number;
+    }>;
+    message?: string;
+  };
 }
 
 export interface SicknessImportCoreProps {
