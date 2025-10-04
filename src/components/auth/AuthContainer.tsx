@@ -1,9 +1,7 @@
 
 import { useState } from "react";
-import { Card, CardHeader, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardHeader, CardDescription, CardTitle } from "@/components/ui/card";
 import { LoginForm } from "./LoginForm";
-import { SignupForm } from "./SignupForm";
 import { OTPVerification } from "./OTPVerification";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,7 +13,6 @@ export const AuthContainer = ({ onSuccess }: AuthContainerProps) => {
   const [showOtpVerification, setShowOtpVerification] = useState(false);
   const [factorId, setFactorId] = useState<string | null>(null);
   const [verificationEmail, setVerificationEmail] = useState("");
-  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   
   const handleOtpRequired = (factorId: string, email: string) => {
     setFactorId(factorId);
@@ -26,15 +23,6 @@ export const AuthContainer = ({ onSuccess }: AuthContainerProps) => {
   const cancelOtpVerification = () => {
     setShowOtpVerification(false);
     setFactorId(null);
-  };
-  
-  const resetForm = () => {
-    // Reset form state when changing tabs
-    setActiveTab(activeTab === "login" ? "signup" : "login");
-  };
-  
-  const handleTabChange = (value: string) => {
-    setActiveTab(value as "login" | "signup");
   };
 
   return (
@@ -72,39 +60,29 @@ export const AuthContainer = ({ onSuccess }: AuthContainerProps) => {
         />
       ) : (
         <Card className="w-full">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
+          <CardHeader className="text-center space-y-4">
+            <div className="flex justify-center">
               <img 
                 src="/lovable-uploads/3fca6e51-90f5-44c9-ae11-38b6db5ee9a0.png" 
                 alt="Dootsons Logo" 
                 className="h-28 md:h-32" 
               />
             </div>
-            <CardDescription className="text-lg text-inherit font-semibold">
-              Payroll Management Portal 
-            </CardDescription>
+            <div className="space-y-2">
+              <CardTitle className="text-2xl">Welcome Back</CardTitle>
+              <CardDescription className="text-base">
+                Payroll Management Portal
+              </CardDescription>
+              <p className="text-sm text-muted-foreground pt-2">
+                Access is by invitation only. Please contact your administrator if you need access.
+              </p>
+            </div>
           </CardHeader>
           
-          <Tabs defaultValue="login" value={activeTab} onValueChange={handleTabChange}>
-            <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
-              <LoginForm 
-                onSuccess={onSuccess}
-                onOtpRequired={handleOtpRequired}
-              />
-            </TabsContent>
-            
-            <TabsContent value="signup">
-              <SignupForm 
-                onSuccess={onSuccess}
-                onComplete={() => setActiveTab("login")}
-              />
-            </TabsContent>
-          </Tabs>
+          <LoginForm 
+            onSuccess={onSuccess}
+            onOtpRequired={handleOtpRequired}
+          />
         </Card>
       )}
     </div>

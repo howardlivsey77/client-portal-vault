@@ -91,7 +91,41 @@ export const LoginForm = ({ onSuccess, onOtpRequired }: LoginFormProps) => {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="login-password">Password</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="login-password">Password</Label>
+            <Button
+              type="button"
+              variant="link"
+              className="px-0 text-sm h-auto"
+              onClick={async () => {
+                if (!email) {
+                  toast({
+                    title: "Email required",
+                    description: "Please enter your email address first",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                  redirectTo: `${window.location.origin}/create-password`
+                });
+                if (error) {
+                  toast({
+                    title: "Error",
+                    description: error.message,
+                    variant: "destructive"
+                  });
+                } else {
+                  toast({
+                    title: "Check your email",
+                    description: "We've sent you a password reset link"
+                  });
+                }
+              }}
+            >
+              Forgot password?
+            </Button>
+          </div>
           <Input 
             id="login-password" 
             type="password" 
