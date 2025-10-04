@@ -527,8 +527,25 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
           const importedSicknessDays = hasSicknessDaysColumn ? Number(row[sicknessDaysIndex]) || 0 : undefined;
           
           const schemeAllocation = schemeIndex >= 0 ? String(row[schemeIndex] || '').trim() : '';
-          const startDate = startDateIndex >= 0 ? String(row[startDateIndex] || '').trim() : '';
-          const endDate = endDateIndex >= 0 ? String(row[endDateIndex] || '').trim() : '';
+          
+          // Extract and parse dates immediately
+          const startDateRaw = startDateIndex >= 0 ? row[startDateIndex] : '';
+          const endDateRaw = endDateIndex >= 0 ? row[endDateIndex] : '';
+          
+          // Parse dates using the robust date parser
+          const startDateParsed = parseDate(startDateRaw);
+          const endDateParsed = endDateRaw ? parseDate(endDateRaw) : { date: null, isValid: true, originalValue: endDateRaw };
+          
+          // Convert to YYYY-MM-DD format for consistency
+          const startDate = startDateParsed.isValid && startDateParsed.date 
+            ? formatDateForDB(startDateParsed.date)
+            : '';
+          const endDate = endDateParsed.isValid && endDateParsed.date
+            ? formatDateForDB(endDateParsed.date)
+            : '';
+          
+          console.log(`[Row ${index + 2}] ${employeeName}: Raw dates [${startDateRaw}, ${endDateRaw}] → Parsed [${startDate}, ${endDate}]`);
+          
           const reason = reasonIndex >= 0 ? String(row[reasonIndex] || '').trim() : '';
           const isCertified = certifiedIndex >= 0 ? Boolean(row[certifiedIndex]) : false;
           const notes = notesIndex >= 0 ? String(row[notesIndex] || '').trim() : '';
@@ -625,18 +642,24 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
             calculatedSicknessDays,
             schemeAllocation,
             matchedSchemeName,
-            hasOverlap
+            hasOverlap,
+            startDateValid: startDateParsed.isValid,
+            endDateValid: endDateParsed.isValid
           });
           
-          if (!bestEmployeeMatch) {
+          // Check for invalid dates first
+          if (!startDateParsed.isValid || (!startDate && calculatedSicknessDays === undefined)) {
+            status = 'needs_attention';
+            statusReason = `Invalid or missing start date: ${startDateParsed.error || 'No start date provided'}`;
+          } else if (endDateRaw && !endDateParsed.isValid) {
+            status = 'needs_attention';
+            statusReason = `Invalid end date: ${endDateParsed.error}`;
+          } else if (!bestEmployeeMatch) {
             status = 'needs_attention';
             statusReason = 'No employee match found';
           } else if (bestEmployeeMatch.confidence < 50) {
             status = 'needs_attention';
             statusReason = `Low confidence employee match (${bestEmployeeMatch.confidence}%)`;
-          } else if (!startDate && calculatedSicknessDays === undefined) {
-            status = 'needs_attention';
-            statusReason = 'Either start date or sickness days must be provided';
           } else if (schemeAllocation && !matchedSchemeName && schemeAllocation.toLowerCase() !== 'none' && schemeAllocation.toLowerCase() !== 'n/a') {
             status = 'needs_attention';
             statusReason = `Scheme "${schemeAllocation}" not found`;
