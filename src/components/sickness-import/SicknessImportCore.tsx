@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Upload, FileText, Users, CheckCircle, AlertCircle, Clock, X, Search, Filter, UserCheck, UserX, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,15 +17,19 @@ import { useSicknessSchemes } from "@/features/company-settings/hooks/useSicknes
 import { parseDate, formatDateForDB } from "@/utils/dateParser";
 import * as XLSX from 'xlsx';
 import Fuse from 'fuse.js';
-import { SicknessImportCoreProps, ProcessedSicknessRecord } from './types';
+import { SicknessImportCoreProps, ProcessedSicknessRecord, ImportStep } from './types';
 import { overlapService } from '@/services/sickness/overlapService';
+import { processRecordsWithAutoTrim } from '@/utils/sicknessImport/autoTrimmer';
+import { OverlapTrimView } from './OverlapTrimView';
+import { FinalReviewView } from './FinalReviewView';
 
 export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }: SicknessImportCoreProps) => {
   // File handling states
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
-  const [currentStep, setCurrentStep] = useState<'upload' | 'review' | 'complete'>('upload');
+  const [currentStep, setCurrentStep] = useState<ImportStep>('upload');
+  const [isImporting, setIsImporting] = useState(false);
   
   // Data states
   const [sicknessRecords, setSicknessRecords] = useState<ProcessedSicknessRecord[]>([]);
@@ -743,10 +748,67 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
     );
   };
 
+  // Handler to proceed from review to overlap detection
+  const handleProceedFromReview = async () => {
+    setIsProcessing(true);
+    try {
+      // Process records with auto-trim
+      const trimmedRecords = await processRecordsWithAutoTrim(
+        sicknessRecords,
+        async (employeeId, startDate, endDate) => {
+          return await overlapService.checkForOverlappingSickness(
+            employeeId,
+            startDate,
+            endDate
+          );
+        },
+        async (employeeId) => {
+          // Fetch work pattern for employee
+          const { data: workPatternData } = await supabase
+            .from('work_patterns')
+            .select('day, is_working, start_time, end_time')
+            .eq('employee_id', employeeId);
+          
+          // Map to WorkDay type
+          return workPatternData?.map(wp => ({
+            day: wp.day,
+            isWorking: wp.is_working,
+            startTime: wp.start_time || '',
+            endTime: wp.end_time || '',
+            payrollId: ''
+          })) || [];
+        }
+      );
+
+      setSicknessRecords(trimmedRecords);
+      setCurrentStep('overlap-trim');
+      
+      toast({
+        title: "Overlap detection complete",
+        description: `Processed ${trimmedRecords.length} records`
+      });
+    } catch (error) {
+      console.error('Error during overlap detection:', error);
+      toast({
+        title: "Error processing overlaps",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Handler to proceed from overlap-trim to final review
+  const handleProceedFromOverlapTrim = () => {
+    setCurrentStep('final-review');
+  };
+
   // Import functionality
   const handleImport = async () => {
+    setIsImporting(true);
     const readyRecords = sicknessRecords.filter(record => 
-      record.status === 'ready' && record.matchedEmployeeId
+      record.status === 'ready' && record.matchedEmployeeId && record.trimStatus !== 'fully_overlapping'
     );
 
     if (readyRecords.length === 0) {
@@ -758,7 +820,6 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
       return;
     }
 
-    setIsProcessing(true);
     setImportProgress(0);
 
     console.log(`Starting import of ${readyRecords.length} sickness records for The Swan Practice`);
@@ -956,6 +1017,7 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
       });
     } finally {
       setIsProcessing(false);
+      setIsImporting(false);
     }
   };
 
@@ -1383,31 +1445,32 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
           </Card>
 
           {/* Actions */}
-          <div className="flex gap-2">
-            <Button 
-              onClick={handleImport}
-              disabled={isProcessing || stats.ready === 0}
-            >
-              {isProcessing ? (
-                <>
-                  <Clock className="mr-2 h-4 w-4 animate-spin" />
-                  Importing...
-                </>
-              ) : (
-                <>
-                  <Download className="mr-2 h-4 w-4" />
-                  Import {stats.ready} Records
-                </>
-              )}
-            </Button>
+          <div className="flex gap-2 justify-between">
             <Button variant="outline" onClick={handleReset}>
               Start Over
             </Button>
-            {mode === 'embedded' && onCancel && (
-              <Button variant="outline" onClick={onCancel}>
-                Cancel
+            <div className="flex gap-2">
+              {mode === 'embedded' && onCancel && (
+                <Button variant="outline" onClick={onCancel}>
+                  Cancel
+                </Button>
+              )}
+              <Button
+                onClick={handleProceedFromReview}
+                disabled={stats.ready === 0 || isProcessing}
+              >
+                {isProcessing ? (
+                  <>
+                    <Clock className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    Continue to Overlap Detection
+                  </>
+                )}
               </Button>
-            )}
+            </div>
           </div>
 
           {isProcessing && (
@@ -1419,6 +1482,25 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
             </div>
           )}
         </div>
+      )}
+
+      {/* Overlap-Trim Step */}
+      {currentStep === 'overlap-trim' && (
+        <OverlapTrimView 
+          records={sicknessRecords}
+          onProceed={handleProceedFromOverlapTrim}
+          onBack={() => setCurrentStep('review')}
+        />
+      )}
+
+      {/* Final Review Step */}
+      {currentStep === 'final-review' && (
+        <FinalReviewView 
+          records={sicknessRecords}
+          onImport={handleImport}
+          onBack={() => setCurrentStep('overlap-trim')}
+          isImporting={isImporting}
+        />
       )}
 
       {/* Complete Step */}

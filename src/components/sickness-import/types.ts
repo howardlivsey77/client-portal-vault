@@ -34,7 +34,24 @@ export interface ProcessedSicknessRecord extends SicknessRecord {
     }>;
     message?: string;
   };
+  // Auto-trim fields
+  wasTrimmed?: boolean;
+  trimmedFrom?: {
+    originalStartDate: string;
+    originalEndDate: string;
+    originalSicknessDays: number;
+  };
+  splitInto?: number; // Number of records this was split into
+  parentRecordId?: string; // If this is a child of a split record
+  trimStatus?: 'no_overlap' | 'trimmed' | 'split' | 'fully_overlapping';
 }
+
+export type ImportStep = 
+  | 'upload' 
+  | 'review'           // Employee/scheme matching
+  | 'overlap-trim'     // Overlap detection & auto-trim
+  | 'final-review'     // Final confirmation before import
+  | 'complete';
 
 export interface SicknessImportCoreProps {
   mode?: 'standalone' | 'embedded';
