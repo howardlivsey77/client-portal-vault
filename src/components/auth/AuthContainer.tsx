@@ -73,9 +73,6 @@ export const AuthContainer = ({ onSuccess }: AuthContainerProps) => {
               <CardDescription className="text-base">
                 Payroll Management Portal
               </CardDescription>
-              <p className="text-sm text-muted-foreground pt-2">
-                Access is by invitation only. Please contact your administrator if you need access.
-              </p>
             </div>
           </CardHeader>
           
