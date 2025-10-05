@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -6,44 +5,38 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ShieldCheck, ShieldX } from "lucide-react";
+import { Loader2, ShieldCheck, ShieldX, Mail } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
-import { QRCodeSVG } from "qrcode.react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Switch } from "@/components/ui/switch";
 
 const Security = () => {
   const [loading, setLoading] = useState(true);
-  const [enrolling, setEnrolling] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [unenrolling, setUnenrolling] = useState(false);
-  const [qrCode, setQrCode] = useState<string | null>(null);
-  const [secret, setSecret] = useState<string | null>(null);
-  const [otp, setOtp] = useState("");
+  const [enabling, setEnabling] = useState(false);
+  const [verifyingTest, setVerifyingTest] = useState(false);
+  const [testCode, setTestCode] = useState("");
+  const [showTestVerification, setShowTestVerification] = useState(false);
   const [has2fa, setHas2fa] = useState(false);
-  const [existingFactorId, setExistingFactorId] = useState<string | null>(null);
   const { toast } = useToast();
-  const { user, session } = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!user) return;
     
-    const checkMfaStatus = async () => {
+    const check2FAStatus = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase.auth.mfa.listFactors();
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('is_2fa_enabled')
+          .eq('id', user.id)
+          .single();
         
         if (error) throw error;
         
-        const totpFactor = data.all.find(factor => factor.factor_type === 'totp');
-        
-        // If a factor exists, store its ID for future operations
-        if (totpFactor) {
-          setExistingFactorId(totpFactor.id);
-        }
-        
-        setHas2fa(totpFactor?.status === 'verified');
+        setHas2fa(profile?.is_2fa_enabled || false);
       } catch (error: any) {
-        console.error("Error checking MFA status:", error);
+        console.error("Error checking 2FA status:", error);
         toast({
           title: "Error",
           description: error.message || "Failed to load security settings",
@@ -54,140 +47,117 @@ const Security = () => {
       }
     };
     
-    checkMfaStatus();
+    check2FAStatus();
   }, [user, toast]);
 
-  const handleEnrollMfa = async () => {
+  const handleEnable2FA = async () => {
+    if (!user?.email) return;
+    
     try {
-      // If there's an unverified factor, we need to unenroll it first
-      if (existingFactorId && !has2fa) {
-        await handleUnenrollExistingFactor(existingFactorId);
+      setEnabling(true);
+      
+      // Send test verification code
+      const { error: sendError } = await supabase.functions.invoke('send-2fa-code', {
+        body: { email: user.email, userId: user.id }
+      });
+
+      if (sendError) throw sendError;
+
+      setShowTestVerification(true);
+      toast({
+        title: "Verification code sent",
+        description: "Check your email for the verification code"
+      });
+    } catch (error: any) {
+      console.error("Error enabling 2FA:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send verification code",
+        variant: "destructive"
+      });
+    } finally {
+      setEnabling(false);
+    }
+  };
+
+  const handleVerifyTest = async () => {
+    if (!user) return;
+    
+    try {
+      setVerifyingTest(true);
+      
+      // Verify the test code
+      const { data, error } = await supabase.functions.invoke('verify-2fa-code', {
+        body: { code: testCode, userId: user.id }
+      });
+
+      if (error || !data?.success) {
+        throw new Error(error?.message || data?.error || "Invalid verification code");
       }
-      
-      setEnrolling(true);
-      const { data, error } = await supabase.auth.mfa.enroll({
-        factorType: 'totp',
-        // Use a shorter app name and include only the first part of email
-        issuer: 'App',
-        friendlyName: user?.email?.split('@')[0] || 'user',
-      });
-      
-      if (error) throw error;
-      
-      setExistingFactorId(data.id);
-      setQrCode(data.totp.qr_code);
-      setSecret(data.totp.secret);
-    } catch (error: any) {
-      console.error("Error enrolling MFA:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to set up 2FA",
-        variant: "destructive"
-      });
-    } finally {
-      setEnrolling(false);
-    }
-  };
 
-  // Helper function to unenroll an existing factor
-  const handleUnenrollExistingFactor = async (factorId: string) => {
-    try {
-      const { error } = await supabase.auth.mfa.unenroll({
-        factorId: factorId,
-      });
-      
-      if (error) throw error;
-      
-      setExistingFactorId(null);
-    } catch (error: any) {
-      console.error("Error unenrolling existing MFA:", error);
-      throw error; // Propagate the error to the caller
-    }
-  };
+      // Enable 2FA in profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ is_2fa_enabled: true })
+        .eq('id', user.id);
 
-  const handleVerifyMfa = async () => {
-    if (!existingFactorId) {
-      toast({
-        title: "Error",
-        description: "No 2FA factor found to verify",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    try {
-      setVerifying(true);
-      // First create a challenge
-      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
-        factorId: existingFactorId,
-      });
-      
-      if (challengeError) throw challengeError;
-      
-      // Then verify with the challenge ID
-      const { error: verifyError } = await supabase.auth.mfa.verify({
-        factorId: existingFactorId,
-        challengeId: challengeData.id,
-        code: otp,
-      });
-      
-      if (verifyError) throw verifyError;
-      
-      setQrCode(null);
-      setSecret(null);
-      setOtp("");
+      if (updateError) throw updateError;
+
       setHas2fa(true);
+      setShowTestVerification(false);
+      setTestCode("");
       
       toast({
         title: "Success",
-        description: "Two-factor authentication has been enabled",
+        description: "Email 2FA has been enabled for your account"
       });
     } catch (error: any) {
-      console.error("Error verifying MFA:", error);
+      console.error("Error verifying test code:", error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to verify 2FA code",
+        title: "Verification failed",
+        description: error.message || "Invalid or expired code",
         variant: "destructive"
       });
     } finally {
-      setVerifying(false);
+      setVerifyingTest(false);
     }
   };
 
-  const handleUnenrollMfa = async () => {
-    if (!existingFactorId) {
-      toast({
-        title: "Error",
-        description: "No 2FA factor found to disable",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleDisable2FA = async () => {
+    if (!user) return;
     
     try {
-      setUnenrolling(true);
+      setLoading(true);
       
-      const { error } = await supabase.auth.mfa.unenroll({
-        factorId: existingFactorId,
-      });
-      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_2fa_enabled: false })
+        .eq('id', user.id);
+
       if (error) throw error;
-      
+
       setHas2fa(false);
-      setExistingFactorId(null);
       toast({
         title: "Success",
-        description: "Two-factor authentication has been disabled",
+        description: "Email 2FA has been disabled"
       });
     } catch (error: any) {
-      console.error("Error unenrolling MFA:", error);
+      console.error("Error disabling 2FA:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to disable 2FA",
         variant: "destructive"
       });
     } finally {
-      setUnenrolling(false);
+      setLoading(false);
+    }
+  };
+
+  const handleToggle2FA = (checked: boolean) => {
+    if (checked) {
+      handleEnable2FA();
+    } else {
+      handleDisable2FA();
     }
   };
 
@@ -207,63 +177,39 @@ const Security = () => {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              {has2fa ? (
-                <>
-                  <ShieldCheck className="text-green-500" />
-                  Two-Factor Authentication (Enabled)
-                </>
-              ) : (
-                <>
-                  <ShieldX className="text-amber-500" />
-                  Two-Factor Authentication (Disabled)
-                </>
-              )}
+              <Mail className={has2fa ? "text-green-500" : "text-amber-500"} />
+              Email Two-Factor Authentication
             </CardTitle>
             <CardDescription>
-              Enhance your account security by enabling two-factor authentication (2FA).
+              Add an extra layer of security by requiring a verification code sent to your email when signing in.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
             {has2fa ? (
               <Alert className="bg-green-50 border-green-200">
                 <ShieldCheck className="h-4 w-4 text-green-500" />
                 <AlertTitle>Protected</AlertTitle>
                 <AlertDescription>
-                  Your account is protected with two-factor authentication. You'll need to enter a code from your authenticator app each time you sign in.
+                  Your account is protected with email-based two-factor authentication. You'll receive a code at <strong>{user?.email}</strong> each time you sign in.
                 </AlertDescription>
               </Alert>
-            ) : qrCode ? (
-              <div className="space-y-6">
-                <div className="text-center">
-                  <h3 className="font-medium mb-2">Scan this QR code</h3>
-                  <p className="text-sm text-gray-500 mb-4">
-                    Use an authenticator app like Google Authenticator, Microsoft Authenticator, or Authy to scan this QR code.
-                  </p>
-                  <div className="flex justify-center mb-4">
-                    {/* Use errorCorrection="H" for better error tolerance */}
-                    <QRCodeSVG 
-                      value={qrCode} 
-                      size={200} 
-                      level="H" /* Higher error correction */
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-medium mb-2">Or enter this code manually</h3>
-                  <p className="text-sm font-mono bg-gray-100 p-2 rounded select-all">
-                    {secret}
-                  </p>
-                </div>
-
+            ) : showTestVerification ? (
+              <div className="space-y-4">
+                <Alert>
+                  <Mail className="h-4 w-4" />
+                  <AlertTitle>Verify your email</AlertTitle>
+                  <AlertDescription>
+                    We've sent a 6-digit verification code to <strong>{user?.email}</strong>. Enter it below to enable 2FA.
+                  </AlertDescription>
+                </Alert>
+                
                 <div className="pt-4">
-                  <h3 className="font-medium mb-2">Verify Setup</h3>
-                  <p className="text-sm text-gray-500 mb-4">
-                    Enter the 6-digit code from your authenticator app to verify setup
+                  <p className="text-sm text-muted-foreground mb-4 text-center">
+                    Enter the verification code:
                   </p>
                   
                   <div className="flex justify-center mb-4">
-                    <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                    <InputOTP maxLength={6} value={testCode} onChange={setTestCode}>
                       <InputOTPGroup>
                         <InputOTPSlot index={0} />
                         <InputOTPSlot index={1} />
@@ -274,67 +220,69 @@ const Security = () => {
                       </InputOTPGroup>
                     </InputOTP>
                   </div>
+                  
+                  <div className="flex justify-center gap-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        setShowTestVerification(false);
+                        setTestCode("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleVerifyTest}
+                      disabled={verifyingTest || testCode.length !== 6}
+                    >
+                      {verifyingTest ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Verifying...
+                        </>
+                      ) : "Verify & Enable"}
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : (
-              <p className="text-gray-600">
-                Two-factor authentication adds an extra layer of security to your account. When enabled, 
-                you'll need to provide both your password and a code from your authenticator app when signing in.
-              </p>
+              <div className="space-y-4">
+                <p className="text-muted-foreground">
+                  When enabled, you'll receive a 6-digit verification code via email each time you sign in. 
+                  This adds an extra layer of security to your account.
+                </p>
+                
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                  <div>
+                    <p className="font-medium">Enable Email 2FA</p>
+                    <p className="text-sm text-muted-foreground">Receive codes at {user?.email}</p>
+                  </div>
+                  <Switch
+                    checked={has2fa}
+                    onCheckedChange={handleToggle2FA}
+                    disabled={enabling}
+                  />
+                </div>
+              </div>
             )}
           </CardContent>
-          <CardFooter className="flex justify-end gap-3">
-            {has2fa ? (
+          
+          {has2fa && (
+            <CardFooter className="flex justify-end">
               <Button 
                 variant="destructive" 
-                onClick={handleUnenrollMfa} 
-                disabled={unenrolling}
+                onClick={() => handleToggle2FA(false)}
+                disabled={loading}
               >
-                {unenrolling ? (
+                {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Disabling...
                   </>
                 ) : "Disable 2FA"}
               </Button>
-            ) : qrCode ? (
-              <>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setQrCode(null);
-                    setSecret(null);
-                    setOtp("");
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleVerifyMfa} 
-                  disabled={verifying || otp.length !== 6}
-                >
-                  {verifying ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Verifying...
-                    </>
-                  ) : "Verify & Enable"}
-                </Button>
-              </>
-            ) : (
-              <Button 
-                onClick={handleEnrollMfa} 
-                disabled={enrolling}
-              >
-                {enrolling ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Setting up...
-                  </>
-                ) : "Enable 2FA"}
-              </Button>
-            )}
-          </CardFooter>
+            </CardFooter>
+          )}
         </Card>
       </div>
     </PageContainer>

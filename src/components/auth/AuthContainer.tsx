@@ -33,25 +33,18 @@ export const AuthContainer = ({ onSuccess }: AuthContainerProps) => {
           onSubmit={async (otp) => {
             if (!factorId) return;
             try {
-              // First create a challenge
-              const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
-                factorId
+              // Verify the email 2FA code via edge function
+              const { data, error } = await supabase.functions.invoke('verify-2fa-code', {
+                body: { code: otp, userId: factorId } // factorId now stores userId
               });
-              if (challengeError) throw challengeError;
 
-              // Then verify with the challenge ID
-              const { data, error } = await supabase.auth.mfa.verify({
-                factorId,
-                challengeId: challengeData.id,
-                code: otp
-              });
-              if (error) throw error;
-
-              // The response has changed - check if we have a valid response with the session
-              if (data && data.user) {
-                // Assign user to default company if needed
-                await onSuccess(data.user.id);
+              if (error || !data?.success) {
+                throw new Error(error?.message || data?.error || "Failed to verify code");
               }
+
+              // Sign the user in again after successful 2FA
+              // We need to complete the authentication flow
+              setShowOtpVerification(false);
             } catch (error) {
               throw error;
             }

@@ -50,6 +50,45 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_codes: {
+        Row: {
+          attempts: number
+          code: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+          user_id: string
+          verified: boolean
+        }
+        Insert: {
+          attempts?: number
+          code: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id: string
+          verified?: boolean
+        }
+        Update: {
+          attempts?: number
+          code?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           accounts_office_number: string | null
@@ -1417,6 +1456,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          is_2fa_enabled: boolean
           is_admin: boolean
         }
         Insert: {
@@ -1424,6 +1464,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          is_2fa_enabled?: boolean
           is_admin?: boolean
         }
         Update: {
@@ -1431,6 +1472,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          is_2fa_enabled?: boolean
           is_admin?: boolean
         }
         Relationships: []

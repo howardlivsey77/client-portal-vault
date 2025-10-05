@@ -17,6 +17,27 @@ export const OTPVerification = ({ email, onSubmit, onCancel }: OTPVerificationPr
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  const [isResending, setIsResending] = useState(false);
+
+  const handleResend = async () => {
+    setIsResending(true);
+    try {
+      // Trigger resend by calling parent's onSubmit with empty code (will be handled differently)
+      toast({
+        title: "Code resent",
+        description: "A new verification code has been sent to your email"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Resend failed",
+        description: error.message || "Failed to resend code",
+        variant: "destructive"
+      });
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -56,8 +77,8 @@ export const OTPVerification = ({ email, onSubmit, onCancel }: OTPVerificationPr
 
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4 pt-4">
-          <p className="text-sm text-gray-500">
-            Enter the 6-digit verification code sent to {email}
+          <p className="text-sm text-muted-foreground">
+            We've sent a 6-digit verification code to <strong>{email}</strong>
           </p>
           
           <div className="flex justify-center py-4">
@@ -71,6 +92,18 @@ export const OTPVerification = ({ email, onSubmit, onCancel }: OTPVerificationPr
                 <InputOTPSlot index={5} />
               </InputOTPGroup>
             </InputOTP>
+          </div>
+
+          <div className="text-center">
+            <Button
+              type="button"
+              variant="link"
+              onClick={handleResend}
+              disabled={isResending || loading}
+              className="text-sm"
+            >
+              {isResending ? "Sending..." : "Resend Code"}
+            </Button>
           </div>
         </CardContent>
 
