@@ -55,7 +55,8 @@ serve(async (req) => {
     
     // Store code in database with 10-minute expiration
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-    const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip');
+    const ipAddressHeader = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip');
+    const ipAddress = ipAddressHeader ? ipAddressHeader.split(',')[0].trim() : null;
     const userAgent = req.headers.get('user-agent');
 
     const { error: insertError } = await supabase
