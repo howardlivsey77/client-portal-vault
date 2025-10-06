@@ -13,19 +13,16 @@ export const AuthContainer = ({ onSuccess }: AuthContainerProps) => {
   const [showOtpVerification, setShowOtpVerification] = useState(false);
   const [factorId, setFactorId] = useState<string | null>(null);
   const [verificationEmail, setVerificationEmail] = useState("");
-  const [storedPassword, setStoredPassword] = useState<string | null>(null);
   
-  const handleOtpRequired = (factorId: string, email: string, password: string) => {
+  const handleOtpRequired = (factorId: string, email: string) => {
     setFactorId(factorId);
     setVerificationEmail(email);
-    setStoredPassword(password);
     setShowOtpVerification(true);
   };
 
   const cancelOtpVerification = () => {
     setShowOtpVerification(false);
     setFactorId(null);
-    setStoredPassword(null);
   };
 
   return (
@@ -34,7 +31,7 @@ export const AuthContainer = ({ onSuccess }: AuthContainerProps) => {
         <OTPVerification 
           email={verificationEmail} 
           onSubmit={async (otp) => {
-            if (!factorId || !storedPassword) return;
+            if (!factorId) return;
             try {
               // Verify the email 2FA code via edge function
               const { data, error } = await supabase.functions.invoke('verify-2fa-code', {
@@ -45,23 +42,10 @@ export const AuthContainer = ({ onSuccess }: AuthContainerProps) => {
                 throw new Error(error?.message || data?.error || "Failed to verify code");
               }
 
-              // Re-authenticate user with stored credentials after successful 2FA
-              const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-                email: verificationEmail,
-                password: storedPassword
-              });
-
-              if (authError || !authData.user) {
-                throw new Error(authError?.message || "Failed to sign in after 2FA verification");
-              }
-
-              // Clear stored credentials
-              setStoredPassword(null);
+              // Complete authentication flow - user is already signed in
               setShowOtpVerification(false);
-
-              // Complete authentication flow
               if (onSuccess) {
-                await onSuccess(authData.user.id);
+                await onSuccess(factorId);
               }
             } catch (error) {
               throw error;
