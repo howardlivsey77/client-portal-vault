@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
   isLoading: boolean;
+  requires2FASetup: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   isAdmin: false,
   isLoading: true,
+  requires2FASetup: false,
   signOut: async () => {},
 });
 
@@ -32,10 +34,11 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [requires2FASetup, setRequires2FASetup] = useState<boolean>(false);
   const [authInitialized, setAuthInitialized] = useState<boolean>(false);
   const [loadingTimeout, setLoadingTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // Check admin status using the security definer function
+  // Check admin status and 2FA status using the security definer function
   const checkAdminStatus = async (userId: string) => {
     try {
       // Check via secure RPC; no direct table fallbacks to avoid RLS bypass
@@ -54,6 +57,27 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  // Check if user needs to set up 2FA
+  const check2FAStatus = async (userId: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('is_2fa_enabled')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error("Error checking 2FA status:", error);
+        return false;
+      }
+      
+      return profile?.is_2fa_enabled || false;
+    } catch (error) {
+      console.error("Exception in 2FA check:", error);
+      return false;
+    }
+  };
+
   // Handle auth state changes
   const handleAuthChange = async (_event: string, newSession: Session | null) => {
     console.log("Auth state changed:", _event, "Session:", newSession?.user?.email);
@@ -61,9 +85,10 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     setSession(newSession);
     setUser(newSession?.user ?? null);
     
-    // If session becomes null, reset admin status
+    // If session becomes null, reset admin status and 2FA requirement
     if (!newSession) {
       setIsAdmin(false);
+      setRequires2FASetup(false);
       return;
     }
     
@@ -72,6 +97,9 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       if (newSession?.user) {
         const adminStatus = await checkAdminStatus(newSession.user.id);
         setIsAdmin(adminStatus);
+        
+        const has2FA = await check2FAStatus(newSession.user.id);
+        setRequires2FASetup(!has2FA);
       }
     }, 0);
   };
@@ -117,9 +145,12 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
           setSession(data.session);
           setUser(data.session.user);
           
-          // Check admin status separately to avoid nesting Supabase calls
+          // Check admin status and 2FA status separately to avoid nesting Supabase calls
           const adminStatus = await checkAdminStatus(data.session.user.id);
           setIsAdmin(adminStatus);
+          
+          const has2FA = await check2FAStatus(data.session.user.id);
+          setRequires2FASetup(!has2FA);
         }
       } catch (error) {
         console.error("Exception initializing auth:", error);
@@ -157,6 +188,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     user,
     isAdmin,
     isLoading,
+    requires2FASetup,
     signOut,
   };
 
