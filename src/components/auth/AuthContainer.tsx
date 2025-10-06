@@ -13,16 +13,19 @@ export const AuthContainer = ({ onSuccess }: AuthContainerProps) => {
   const [showOtpVerification, setShowOtpVerification] = useState(false);
   const [factorId, setFactorId] = useState<string | null>(null);
   const [verificationEmail, setVerificationEmail] = useState("");
+  const [storedPassword, setStoredPassword] = useState<string | null>(null);
   
-  const handleOtpRequired = (factorId: string, email: string) => {
+  const handleOtpRequired = (factorId: string, email: string, password: string) => {
     setFactorId(factorId);
     setVerificationEmail(email);
+    setStoredPassword(password);
     setShowOtpVerification(true);
   };
 
   const cancelOtpVerification = () => {
     setShowOtpVerification(false);
     setFactorId(null);
+    setStoredPassword(null);
   };
 
   return (
@@ -31,7 +34,7 @@ export const AuthContainer = ({ onSuccess }: AuthContainerProps) => {
         <OTPVerification 
           email={verificationEmail} 
           onSubmit={async (otp) => {
-            if (!factorId) return;
+            if (!factorId || !storedPassword) return;
             try {
               // Verify the email 2FA code via edge function
               const { data, error } = await supabase.functions.invoke('verify-2fa-code', {
@@ -42,13 +45,28 @@ export const AuthContainer = ({ onSuccess }: AuthContainerProps) => {
                 throw new Error(error?.message || data?.error || "Failed to verify code");
               }
 
-              // Sign the user in again after successful 2FA
-              // We need to complete the authentication flow
+              // Re-authenticate user with stored credentials after successful 2FA
+              const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email: verificationEmail,
+                password: storedPassword
+              });
+
+              if (authError || !authData.user) {
+                throw new Error(authError?.message || "Failed to sign in after 2FA verification");
+              }
+
+              // Clear stored credentials
+              setStoredPassword(null);
               setShowOtpVerification(false);
+
+              // Complete authentication flow
+              if (onSuccess) {
+                await onSuccess(authData.user.id);
+              }
             } catch (error) {
               throw error;
             }
-          }} 
+          }}
           onCancel={cancelOtpVerification}
         />
       ) : (

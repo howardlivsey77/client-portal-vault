@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface LoginFormProps {
   onSuccess?: (userId: string) => Promise<void>;
-  onOtpRequired: (factorId: string, email: string) => void;
+  onOtpRequired: (factorId: string, email: string, password: string) => void;
 }
 
 export const LoginForm = ({ onSuccess, onOtpRequired }: LoginFormProps) => {
@@ -82,8 +82,8 @@ export const LoginForm = ({ onSuccess, onOtpRequired }: LoginFormProps) => {
         // Sign out the session since we need 2FA first
         await supabase.auth.signOut();
         
-        // Show OTP verification UI
-        onOtpRequired(data.user.id, email);
+        // Show OTP verification UI - pass credentials for re-authentication after 2FA
+        onOtpRequired(data.user.id, email, password);
         setLoading(false);
         return;
       }
