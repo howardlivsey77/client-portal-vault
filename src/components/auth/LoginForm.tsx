@@ -32,13 +32,38 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
     e.preventDefault();
     setLoading(true);
     try {
+      console.log("Checking 2FA requirement for:", email);
+      
+      // Check if 2FA is required BEFORE signing in
+      const { data: check2FAData, error: check2FAError } = await supabase.functions.invoke('check-2fa-requirement', {
+        body: { email }
+      });
+
+      if (check2FAError) {
+        console.error("Error checking 2FA requirement:", check2FAError);
+      }
+
+      const requires2FA = check2FAData?.requires2FA || false;
+      console.log("2FA required:", requires2FA);
+
+      // If 2FA is required, set the flag BEFORE signing in
+      if (requires2FA) {
+        console.log("Setting is2FAInProgress to true BEFORE sign in");
+        setIs2FAInProgress(true);
+      }
+
       console.log("Attempting sign in with email:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
+      
       if (error) {
         console.error("Sign in error:", error);
+        // Reset 2FA flag if sign in fails
+        if (requires2FA) {
+          setIs2FAInProgress(false);
+        }
         toast({
           title: "Login failed",
           description: error.message,
@@ -49,6 +74,9 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
       }
 
       if (!data.user) {
+        if (requires2FA) {
+          setIs2FAInProgress(false);
+        }
         toast({
           title: "Login failed",
           description: "Unable to authenticate user",
@@ -58,19 +86,9 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
         return;
       }
 
-      // Check if email-based 2FA is enabled for the user
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_2fa_enabled')
-        .eq('id', data.user.id)
-        .single();
-
-      if (profileError) {
-        console.error("Error fetching profile:", profileError);
-      }
-
-      if (profile?.is_2fa_enabled) {
-        console.log("Email 2FA required for user");
+      // If 2FA is required, send the code and show OTP screen
+      if (requires2FA) {
+        console.log("Email 2FA required - sending code");
         
         // Send verification code via edge function
         const { error: sendError } = await supabase.functions.invoke('send-2fa-code', {
@@ -79,6 +97,7 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
 
         if (sendError) {
           console.error("Error sending 2FA code:", sendError);
+          setIs2FAInProgress(false);
           toast({
             title: "Error",
             description: "Failed to send verification code",
@@ -88,10 +107,9 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
           return;
         }
 
-        // Show OTP verification UI inline and prevent redirect
+        // Show OTP verification UI (redirect is now blocked by is2FAInProgress flag)
         setUserId(data.user.id);
         setShow2FA(true);
-        setIs2FAInProgress(true);
         setLoading(false);
         return;
       }
@@ -108,6 +126,7 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
 
       // Navigation will happen via the auth state change listener
     } catch (error: any) {
+      setIs2FAInProgress(false);
       toast({
         title: "Error",
         description: error.message || "An unknown error occurred",
