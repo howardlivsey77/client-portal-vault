@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
-export const useAuthInitialization = () => {
+export const useAuthInitialization = (is2FAInProgress: boolean) => {
   const [authInitialized, setAuthInitialized] = useState(false);
   const navigate = useNavigate();
 
@@ -28,12 +28,14 @@ export const useAuthInitialization = () => {
           userEmail: data.session?.user?.email
         });
         
-        if (data.session && mounted) {
+        if (data.session && mounted && !is2FAInProgress) {
           console.log("Auth page - User already logged in, redirecting to home");
           // Wait a moment to ensure providers are ready
           setTimeout(() => {
             navigate("/");
           }, 100);
+        } else if (data.session && is2FAInProgress) {
+          console.log("Auth page - User already logged in but 2FA in progress, NOT redirecting");
         }
       } catch (error) {
         console.error("Auth page - Exception checking session:", error);
@@ -46,14 +48,20 @@ export const useAuthInitialization = () => {
 
     // Set up auth change listener with better error handling
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth page - Auth state changed:", event);
+      console.log("Auth page - Auth state changed:", event, {
+        hasSession: !!session,
+        is2FAInProgress,
+        mounted
+      });
       
-      if (session && mounted) {
+      if (session && mounted && !is2FAInProgress) {
         console.log("Auth page - User logged in, redirecting to home");
         // Small delay to ensure all providers are ready
         setTimeout(() => {
           navigate("/");
         }, 200);
+      } else if (session && is2FAInProgress) {
+        console.log("Auth page - User logged in but 2FA in progress, NOT redirecting");
       }
     });
     
@@ -61,7 +69,7 @@ export const useAuthInitialization = () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, is2FAInProgress]);
 
   return { authInitialized };
 };

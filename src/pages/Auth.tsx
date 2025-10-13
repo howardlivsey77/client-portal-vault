@@ -11,8 +11,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
-  const { authInitialized } = useAuthInitialization();
   const { user, isAdmin, is2FAInProgress } = useAuth();
+  const { authInitialized } = useAuthInitialization(is2FAInProgress);
   const navigate = useNavigate();
   
   // If user has access, redirect to home (but not during 2FA verification)
