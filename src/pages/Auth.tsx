@@ -53,7 +53,7 @@ const Auth = () => {
 
   return (
     <PageContainer>
-      {user ? (
+      {user && !is2FAInProgress ? (
         <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto mt-16">
           <CompanyAccessSetup />
         </div>
