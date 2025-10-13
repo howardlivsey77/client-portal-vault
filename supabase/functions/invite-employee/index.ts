@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.55.0";
-import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -145,48 +144,81 @@ serve(async (req) => {
 
     const companyName = company?.name || 'Your Company';
 
-    // Send invitation email using Resend
-    const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+    // Send invitation email using Mailgun
+    const mailgunApiKey = Deno.env.get('MAILGUN_API_KEY');
+    const mailgunDomain = Deno.env.get('MAILGUN_DOMAIN');
+
+    if (!mailgunApiKey || !mailgunDomain) {
+      throw new Error('Mailgun credentials not configured');
+    }
+
     const baseUrl = Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovable.app') || 
                     'https://your-app.lovable.app';
     
     const invitationLink = `${baseUrl}/auth?token=${invitation.token}`;
 
-    const { error: emailError } = await resend.emails.send({
-      from: Deno.env.get('RESEND_FROM') || 'onboarding@resend.dev',
-      to: [employee.email],
-      subject: `Access Your Employee Portal - ${companyName}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333;">Welcome to ${companyName} Employee Portal</h1>
-          <p>Hi ${employee.first_name} ${employee.last_name},</p>
-          <p>You've been invited to access the employee portal where you can:</p>
-          <ul>
-            <li>View and update your personal information</li>
-            <li>View your payslips and timesheets</li>
-            <li>Manage your employee records</li>
-          </ul>
-          <p>Click the button below to create your account and get started:</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${invitationLink}" 
-               style="background-color: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
-              Create Your Account
-            </a>
-          </div>
-          <p style="color: #666; font-size: 14px;">
-            This invitation link will expire in 7 days.
-          </p>
-          <p style="color: #666; font-size: 14px;">
-            If you didn't expect this invitation, please contact your HR department.
-          </p>
+    const mailgunUrl = `https://api.mailgun.net/v3/${mailgunDomain}/messages`;
+    
+    const formData = new FormData();
+    formData.append('from', `Dootsons Payroll <noreply@${mailgunDomain}>`);
+    formData.append('to', employee.email);
+    formData.append('subject', `Access Your Employee Portal - ${companyName}`);
+    formData.append('text', `
+Hi ${employee.first_name} ${employee.last_name},
+
+You've been invited to access the employee portal where you can:
+- View and update your personal information
+- View your payslips and timesheets
+- Manage your employee records
+
+Click the link below to create your account and get started:
+${invitationLink}
+
+This invitation link will expire in 7 days.
+
+If you didn't expect this invitation, please contact your HR department.
+    `);
+    formData.append('html', `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #333;">Welcome to ${companyName} Employee Portal</h1>
+        <p>Hi ${employee.first_name} ${employee.last_name},</p>
+        <p>You've been invited to access the employee portal where you can:</p>
+        <ul>
+          <li>View and update your personal information</li>
+          <li>View your payslips and timesheets</li>
+          <li>Manage your employee records</li>
+        </ul>
+        <p>Click the button below to create your account and get started:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${invitationLink}" 
+             style="background-color: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
+            Create Your Account
+          </a>
         </div>
-      `,
+        <p style="color: #666; font-size: 14px;">
+          This invitation link will expire in 7 days.
+        </p>
+        <p style="color: #666; font-size: 14px;">
+          If you didn't expect this invitation, please contact your HR department.
+        </p>
+      </div>
+    `);
+
+    const mailgunResponse = await fetch(mailgunUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`api:${mailgunApiKey}`)}`,
+      },
+      body: formData,
     });
 
-    if (emailError) {
-      console.error('Failed to send email:', emailError);
+    if (!mailgunResponse.ok) {
+      const errorText = await mailgunResponse.text();
+      console.error('Mailgun error:', errorText);
       throw new Error('Failed to send invitation email');
     }
+
+    console.log('Invitation email sent successfully to:', employee.email);
 
     return new Response(
       JSON.stringify({
