@@ -72,18 +72,11 @@ export const MfaSetupCard = () => {
       </CardContent>
       <CardFooter className="flex justify-end gap-3">
         {has2fa ? (
-          <Button 
-            variant="destructive" 
-            onClick={handleUnenrollMfa} 
-            disabled={unenrolling}
-          >
-            {unenrolling ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Disabling...
-              </>
-            ) : "Disable 2FA"}
-          </Button>
+          <Alert className="bg-blue-50 border-blue-200">
+            <AlertDescription className="text-sm text-blue-800">
+              Two-factor authentication is mandatory for all users and cannot be disabled.
+            </AlertDescription>
+          </Alert>
         ) : qrCode ? (
           <>
             <Button 

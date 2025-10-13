@@ -148,40 +148,12 @@ export const useMfaState = () => {
   };
 
   const handleUnenrollMfa = async () => {
-    if (!existingFactorId) {
-      toast({
-        title: "Error",
-        description: "No 2FA factor found to disable",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    try {
-      setUnenrolling(true);
-      
-      const { error } = await supabase.auth.mfa.unenroll({
-        factorId: existingFactorId,
-      });
-      
-      if (error) throw error;
-      
-      setHas2fa(false);
-      setExistingFactorId(null);
-      toast({
-        title: "Success",
-        description: "Two-factor authentication has been disabled",
-      });
-    } catch (error: any) {
-      console.error("Error unenrolling MFA:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to disable 2FA",
-        variant: "destructive"
-      });
-    } finally {
-      setUnenrolling(false);
-    }
+    // 2FA is mandatory and cannot be disabled
+    toast({
+      title: "Action Not Allowed",
+      description: "Two-factor authentication is mandatory for all users and cannot be disabled.",
+      variant: "destructive"
+    });
   };
 
   return {

@@ -39,17 +39,18 @@ Deno.serve(async (req) => {
 
     if (error) {
       console.error('Error checking 2FA status:', error);
-      console.log('Profile not found or error occurred - defaulting to 2FA not required');
-      // If profile doesn't exist, 2FA is not required
+      console.log('Profile not found or error occurred - REQUIRING 2FA by default for security');
+      // CRITICAL SECURITY: Default to requiring 2FA for all users
       return new Response(
-        JSON.stringify({ requires2FA: false }),
+        JSON.stringify({ requires2FA: true }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('Profile found:', profile);
-    const requires2FA = profile?.is_2fa_enabled || false;
-    console.log('Returning requires2FA:', requires2FA);
+    // ALWAYS require 2FA - it is MANDATORY for all users
+    const requires2FA = true;
+    console.log('Returning requires2FA:', requires2FA, '(MANDATORY for all users)');
 
     return new Response(
       JSON.stringify({ requires2FA }),
