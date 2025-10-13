@@ -79,20 +79,51 @@ serve(async (req) => {
       throw new Error('A user account already exists with this email address');
     }
 
-    // Create invitation metadata
-    const { data: invitation, error: inviteError } = await supabaseClient
+    // Check if invitation already exists (for resending)
+    const { data: existingInvitation } = await supabaseClient
       .from('invitation_metadata')
-      .insert({
-        invited_email: employee.email,
-        invited_by: user.id,
-        company_id: companyId,
-        role: 'employee',
-      })
-      .select()
+      .select('id')
+      .eq('invited_email', employee.email)
+      .eq('company_id', companyId)
+      .eq('is_accepted', false)
       .single();
 
-    if (inviteError) {
-      throw new Error(`Failed to create invitation: ${inviteError.message}`);
+    let invitation;
+
+    if (existingInvitation) {
+      // Update existing invitation with new token and timestamp
+      const newToken = crypto.randomUUID();
+      const { data: updatedInvitation, error: updateError } = await supabaseClient
+        .from('invitation_metadata')
+        .update({ 
+          token: newToken,
+          created_at: new Date().toISOString()
+        })
+        .eq('id', existingInvitation.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        throw new Error(`Failed to update invitation: ${updateError.message}`);
+      }
+      invitation = updatedInvitation;
+    } else {
+      // Create new invitation metadata
+      const { data: newInvitation, error: inviteError } = await supabaseClient
+        .from('invitation_metadata')
+        .insert({
+          invited_email: employee.email,
+          invited_by: user.id,
+          company_id: companyId,
+          role: 'employee',
+        })
+        .select()
+        .single();
+
+      if (inviteError) {
+        throw new Error(`Failed to create invitation: ${inviteError.message}`);
+      }
+      invitation = newInvitation;
     }
 
     // Update employee record with invitation timestamp

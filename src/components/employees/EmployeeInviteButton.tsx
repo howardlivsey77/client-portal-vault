@@ -42,12 +42,62 @@ export const EmployeeInviteButton = ({
     }
   };
 
-  // Show status badge if invited or active
-  if (status.status === 'invited' || status.status === 'active') {
+  // Show status badge if active (portal access enabled)
+  if (status.status === 'active') {
     return (
       <Badge variant={status.variant} className="whitespace-nowrap">
         {status.label}
       </Badge>
+    );
+  }
+
+  // Show resend button if already invited
+  if (status.status === 'invited') {
+    return (
+      <>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setShowDialog(true)}
+          disabled={loading || !employee.email}
+          className="whitespace-nowrap"
+        >
+          <Mail className="h-4 w-4 mr-2" />
+          Resend Invitation
+        </Button>
+
+        <AlertDialog open={showDialog} onOpenChange={setShowDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Resend Portal Invitation</AlertDialogTitle>
+              <AlertDialogDescription className="space-y-2">
+                <p>
+                  Resend invitation email to <strong>{employee.email}</strong>?
+                </p>
+                <p>
+                  A new invitation email will be sent to {employee.first_name} {employee.last_name}.
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleSendInvite}
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  'Resend Invitation'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
     );
   }
 

@@ -25,6 +25,8 @@ export const useEmployeeInvite = () => {
       return false;
     }
 
+    const isResend = !!employee.invitation_sent_at;
+
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('invite-employee', {
@@ -38,8 +40,8 @@ export const useEmployeeInvite = () => {
 
       if (data.success) {
         toast({
-          title: "Invitation Sent",
-          description: `Portal invitation has been sent to ${employee.email}`,
+          title: isResend ? "Invitation Resent" : "Invitation Sent",
+          description: `Portal invitation has been ${isResend ? 'resent' : 'sent'} to ${employee.email}`,
         });
         return true;
       } else {
