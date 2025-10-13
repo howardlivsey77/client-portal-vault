@@ -13,8 +13,10 @@ Deno.serve(async (req) => {
 
   try {
     const { email } = await req.json();
+    console.log('check-2fa-requirement called with email:', email);
 
     if (!email) {
+      console.log('No email provided in request');
       return new Response(
         JSON.stringify({ error: 'Email is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -28,6 +30,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Check if user has 2FA enabled
+    console.log('Querying profiles table for email:', email.toLowerCase().trim());
     const { data: profile, error } = await supabase
       .from('profiles')
       .select('is_2fa_enabled')
@@ -36,6 +39,7 @@ Deno.serve(async (req) => {
 
     if (error) {
       console.error('Error checking 2FA status:', error);
+      console.log('Profile not found or error occurred - defaulting to 2FA not required');
       // If profile doesn't exist, 2FA is not required
       return new Response(
         JSON.stringify({ requires2FA: false }),
@@ -43,8 +47,12 @@ Deno.serve(async (req) => {
       );
     }
 
+    console.log('Profile found:', profile);
+    const requires2FA = profile?.is_2fa_enabled || false;
+    console.log('Returning requires2FA:', requires2FA);
+
     return new Response(
-      JSON.stringify({ requires2FA: profile?.is_2fa_enabled || false }),
+      JSON.stringify({ requires2FA }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

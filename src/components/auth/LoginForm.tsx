@@ -41,10 +41,29 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
 
       if (check2FAError) {
         console.error("Error checking 2FA requirement:", check2FAError);
+        setLoading(false);
+        toast({
+          title: "Authentication Error",
+          description: "Unable to verify security settings. Please try again.",
+          variant: "destructive"
+        });
+        return; // STOP HERE - don't continue login
       }
 
-      const requires2FA = check2FAData?.requires2FA || false;
-      console.log("2FA required:", requires2FA);
+      // Only proceed if we got a valid response
+      if (check2FAData === null || check2FAData === undefined) {
+        console.error("No data returned from 2FA check");
+        setLoading(false);
+        toast({
+          title: "Authentication Error", 
+          description: "Unable to verify security settings. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const requires2FA = check2FAData.requires2FA === true;
+      console.log("2FA check result - requires2FA:", requires2FA, "raw data:", check2FAData);
 
       // If 2FA is required, set the flag BEFORE signing in
       if (requires2FA) {
@@ -108,8 +127,10 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
         }
 
         // Show OTP verification UI (redirect is now blocked by is2FAInProgress flag)
+        console.log("About to show 2FA screen - userId:", data.user.id, "email:", email);
         setUserId(data.user.id);
         setShow2FA(true);
+        console.log("show2FA state set to true");
         setLoading(false);
         return;
       }
