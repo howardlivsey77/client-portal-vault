@@ -12,6 +12,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { useAuth } from "@/providers/AuthProvider";
 
 interface LoginFormProps {
   onSuccess?: (userId: string) => Promise<void>;
@@ -25,6 +26,7 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
   const [userId, setUserId] = useState<string | null>(null);
   const [otp, setOtp] = useState("");
   const { toast } = useToast();
+  const { setIs2FAInProgress, signOut } = useAuth();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,9 +88,10 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
           return;
         }
 
-        // Show OTP verification UI inline
+        // Show OTP verification UI inline and prevent redirect
         setUserId(data.user.id);
         setShow2FA(true);
+        setIs2FAInProgress(true);
         setLoading(false);
         return;
       }
@@ -134,6 +137,9 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
         description: "You've been successfully logged in."
       });
 
+      // Clear 2FA in progress flag to allow redirect
+      setIs2FAInProgress(false);
+
       if (onSuccess) {
         await onSuccess(userId);
       }
@@ -148,11 +154,14 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
     }
   };
 
-  const handleBackToLogin = () => {
+  const handleBackToLogin = async () => {
     setShow2FA(false);
     setUserId(null);
     setOtp("");
     setPassword("");
+    setIs2FAInProgress(false);
+    // Sign out to clear the session
+    await signOut();
   };
 
   const handleResendCode = async () => {

@@ -12,12 +12,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const { authInitialized } = useAuthInitialization();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, is2FAInProgress } = useAuth();
   const navigate = useNavigate();
   
-  // If user has access, redirect to home
+  // If user has access, redirect to home (but not during 2FA verification)
   useEffect(() => {
-    if (user) {
+    if (user && !is2FAInProgress) {
       const checkRedirect = async () => {
         try {
           const { data, error } = await supabase
@@ -38,7 +38,7 @@ const Auth = () => {
       
       checkRedirect();
     }
-  }, [user, navigate]);
+  }, [user, navigate, is2FAInProgress]);
 
   // Show loading indicator until we've checked the session
   if (!authInitialized) {

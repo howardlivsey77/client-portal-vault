@@ -9,6 +9,8 @@ interface AuthContextType {
   isAdmin: boolean;
   isLoading: boolean;
   requires2FASetup: boolean;
+  is2FAInProgress: boolean;
+  setIs2FAInProgress: (inProgress: boolean) => void;
   signOut: () => Promise<void>;
 }
 
@@ -18,6 +20,8 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   isLoading: true,
   requires2FASetup: false,
+  is2FAInProgress: false,
+  setIs2FAInProgress: () => {},
   signOut: async () => {},
 });
 
@@ -35,6 +39,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [requires2FASetup, setRequires2FASetup] = useState<boolean>(false);
+  const [is2FAInProgress, setIs2FAInProgress] = useState<boolean>(false);
   const [authInitialized, setAuthInitialized] = useState<boolean>(false);
   const [loadingTimeout, setLoadingTimeout] = useState<NodeJS.Timeout | null>(null);
 
@@ -189,6 +194,8 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     isAdmin,
     isLoading,
     requires2FASetup,
+    is2FAInProgress,
+    setIs2FAInProgress,
     signOut,
   };
 
