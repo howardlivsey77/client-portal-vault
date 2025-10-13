@@ -32,6 +32,8 @@ export interface Employee {
   sickness_scheme_id?: string | null; // Add sickness scheme ID
   status: string | null;
   leave_date: string | null;
+  invitation_sent_at: string | null;
+  portal_access_enabled: boolean | null;
   
   // HMRC section fields
   tax_code: string | null;

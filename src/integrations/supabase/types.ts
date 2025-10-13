@@ -751,6 +751,7 @@ export type Database = {
           hourly_rate: number | null
           hours_per_week: number | null
           id: string
+          invitation_sent_at: string | null
           last_name: string
           leave_date: string | null
           national_insurance_number: string | null
@@ -759,6 +760,7 @@ export type Database = {
           nhs_pension_tier: number | null
           nic_code: string | null
           payroll_id: string | null
+          portal_access_enabled: boolean | null
           postcode: string | null
           previous_year_pensionable_pay: number | null
           rate_2: number | null
@@ -789,6 +791,7 @@ export type Database = {
           hourly_rate?: number | null
           hours_per_week?: number | null
           id?: string
+          invitation_sent_at?: string | null
           last_name: string
           leave_date?: string | null
           national_insurance_number?: string | null
@@ -797,6 +800,7 @@ export type Database = {
           nhs_pension_tier?: number | null
           nic_code?: string | null
           payroll_id?: string | null
+          portal_access_enabled?: boolean | null
           postcode?: string | null
           previous_year_pensionable_pay?: number | null
           rate_2?: number | null
@@ -827,6 +831,7 @@ export type Database = {
           hourly_rate?: number | null
           hours_per_week?: number | null
           id?: string
+          invitation_sent_at?: string | null
           last_name?: string
           leave_date?: string | null
           national_insurance_number?: string | null
@@ -835,6 +840,7 @@ export type Database = {
           nhs_pension_tier?: number | null
           nic_code?: string | null
           payroll_id?: string | null
+          portal_access_enabled?: boolean | null
           postcode?: string | null
           previous_year_pensionable_pay?: number | null
           rate_2?: number | null

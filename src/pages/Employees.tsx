@@ -46,6 +46,7 @@ export default function Employees() {
             employees={employees}
             onDelete={deleteEmployee}
             searchTerm={searchTerm}
+            onEmployeeUpdate={fetchEmployees}
           />
         )}
       </div>

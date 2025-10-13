@@ -14,16 +14,19 @@ import {
 import { Trash2, UserCog, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Employee } from "@/types/employee-types";
+import { EmployeeInviteButton } from "./EmployeeInviteButton";
 
 interface EmployeeTableProps {
   employees: Employee[];
   onDelete: (id: string) => Promise<void>;
   searchTerm: string;
+  onEmployeeUpdate?: () => void;
 }
 
-export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTableProps) => {
+export const EmployeeTable = ({ employees, onDelete, searchTerm, onEmployeeUpdate }: EmployeeTableProps) => {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const filteredEmployees = employees.filter(employee => {
     const searchLower = searchTerm.toLowerCase();
@@ -56,6 +59,7 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
             <TableHead>Department</TableHead>
             <TableHead>Gender</TableHead>
             <TableHead>Email</TableHead>
+            <TableHead>Portal Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -69,6 +73,17 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm }: EmployeeTable
               <TableCell>{employee.department}</TableCell>
               <TableCell>{employee.gender || "—"}</TableCell>
               <TableCell>{employee.email || "—"}</TableCell>
+              <TableCell>
+                {isAdmin && (
+                  <EmployeeInviteButton 
+                    employee={employee} 
+                    onInviteSent={() => {
+                      setRefreshKey(prev => prev + 1);
+                      onEmployeeUpdate?.();
+                    }}
+                  />
+                )}
+              </TableCell>
               <TableCell className="text-right space-x-2">
                 <Button
                   variant="ghost"
