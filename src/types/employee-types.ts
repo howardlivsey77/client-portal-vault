@@ -61,4 +61,5 @@ export interface EmployeeDetailsHookReturn {
   deleteEmployee: () => Promise<void>;
   fetchEmployeeData: () => Promise<void>;
   updateEmployeeField: (fieldName: string, value: any) => Promise<boolean>;
+  isOwnRecord: boolean;
 }

@@ -4,6 +4,7 @@ import { Employee } from "@/types/employeeDetails";
 import { fetchAdjacentEmployees } from "./employeeNavigationService";
 import { logger } from "./loggingService";
 import { AppError, createServiceResponse, ApiResponse } from "@/types/errors";
+import { EMPLOYEE_EDITABLE_FIELDS } from "@/types/employee-permissions";
 
 export const fetchEmployeeById = async (employeeId: string): Promise<ApiResponse<Employee>> => {
   logger.debug("Fetching employee data", { employeeId }, "EmployeeDetailsService");
@@ -32,11 +33,23 @@ export const fetchEmployeeById = async (employeeId: string): Promise<ApiResponse
 export const updateEmployeeFieldById = async (
   employeeId: string, 
   fieldName: string, 
-  value: unknown
+  value: unknown,
+  isAdmin: boolean = false,
+  isOwnRecord: boolean = false
 ): Promise<ApiResponse<boolean>> => {
-  logger.debug("Updating employee field", { employeeId, fieldName }, "EmployeeDetailsService");
+  logger.debug("Updating employee field", { employeeId, fieldName, isAdmin, isOwnRecord }, "EmployeeDetailsService");
   
   try {
+    // Validate field access for non-admins
+    if (!isAdmin && !EMPLOYEE_EDITABLE_FIELDS.includes(fieldName as any)) {
+      logger.warn("Permission denied for field update", { employeeId, fieldName, isAdmin, isOwnRecord }, "EmployeeDetailsService");
+      throw new AppError(
+        "EMPLOYEE_UPDATE_FORBIDDEN",
+        "You do not have permission to update this field",
+        { employeeId, fieldName }
+      );
+    }
+    
     const { error } = await supabase
       .from("employees")
       .update({ [fieldName]: value })

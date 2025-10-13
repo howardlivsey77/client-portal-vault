@@ -8,7 +8,7 @@ import { PersonalInfoProps, PersonalInfoFormValues } from "./types";
 
 interface PersonalInfoCardProps extends PersonalInfoProps {}
 
-export const PersonalInfoCard = ({ employee, isAdmin, updateEmployeeField }: PersonalInfoCardProps) => {
+export const PersonalInfoCard = ({ employee, isAdmin, updateEmployeeField, canEdit = false }: PersonalInfoCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const formRef = useRef<PersonalInfoFormRef>(null);
 
@@ -52,7 +52,7 @@ export const PersonalInfoCard = ({ employee, isAdmin, updateEmployeeField }: Per
     <Card className="border-[1.5px] border-foreground bg-white">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Personal Information</CardTitle>
-        {isAdmin && (
+        {canEdit && (
           <div className="flex gap-2">
             {isEditing ? (
               <>

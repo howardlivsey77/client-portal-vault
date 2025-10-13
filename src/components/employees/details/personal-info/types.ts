@@ -5,6 +5,7 @@ export interface PersonalInfoProps {
   employee: Employee;
   isAdmin: boolean;
   updateEmployeeField: (fieldName: string, value: any) => Promise<boolean>;
+  canEdit?: boolean;
 }
 
 export interface PersonalInfoFormValues {

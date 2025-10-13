@@ -24,7 +24,8 @@ const EmployeeDetails = () => {
     navigateToEmployee,
     deleteEmployee,
     fetchEmployeeData,
-    updateEmployeeField
+    updateEmployeeField,
+    isOwnRecord
   } = useEmployeeDetails(id);
   
   if (loading) {
@@ -59,13 +60,15 @@ const EmployeeDetails = () => {
           employee={employee}
           isAdmin={isAdmin}
           updateEmployeeField={updateEmployeeField}
+          canEdit={isAdmin}
         />
         
         <ContactInfoCard 
           employee={employee} 
           formattedAddress={formattedAddress}
           isAdmin={isAdmin}
-          updateEmployeeField={updateEmployeeField} 
+          updateEmployeeField={updateEmployeeField}
+          canEdit={isAdmin || isOwnRecord}
         />
         
         <HmrcInfoCard

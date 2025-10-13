@@ -6,6 +6,7 @@ export interface ContactInfoCardProps {
   formattedAddress: string;
   isAdmin: boolean;
   updateEmployeeField: (fieldName: string, value: any) => Promise<boolean>;
+  canEdit: boolean;
 }
 
 export interface ContactInfoFormValues {

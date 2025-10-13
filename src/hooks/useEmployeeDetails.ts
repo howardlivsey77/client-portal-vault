@@ -21,7 +21,8 @@ export const useEmployeeDetails = (employeeId: string | undefined): EmployeeDeta
   const [loading, setLoading] = useState(true);
   const [nextEmployeeId, setNextEmployeeId] = useState<string | null>(null);
   const [prevEmployeeId, setPrevEmployeeId] = useState<string | null>(null);
-  const { isAdmin } = useAuth();
+  const [isOwnRecord, setIsOwnRecord] = useState(false);
+  const { isAdmin, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -106,19 +107,24 @@ export const useEmployeeDetails = (employeeId: string | undefined): EmployeeDeta
 
   // Update specific field
   const updateEmployeeField = useCallback(async (fieldName: string, value: any) => {
-    if (!isAdmin || !employeeId) {
+    // Check if user has permission to edit
+    if (!isAdmin && !isOwnRecord) {
       toast({
         title: "Permission denied",
-        description: "Only administrators can edit employee records.",
+        description: "You can only edit your own employee record.",
         variant: "destructive"
       });
+      return false;
+    }
+
+    if (!employeeId) {
       return false;
     }
 
     try {
       setLoading(true);
       
-      const response = await updateEmployeeFieldById(employeeId, fieldName, value);
+      const response = await updateEmployeeFieldById(employeeId, fieldName, value, isAdmin, isOwnRecord);
       
       if (!response.success) {
         throw new Error(response.error?.message || "Failed to update employee");
@@ -141,7 +147,14 @@ export const useEmployeeDetails = (employeeId: string | undefined): EmployeeDeta
       setLoading(false);
       return false;
     }
-  }, [isAdmin, employeeId, toast, fetchEmployeeData]);
+  }, [isAdmin, isOwnRecord, employeeId, toast, fetchEmployeeData]);
+
+  // Check if this is the user's own record
+  useEffect(() => {
+    if (employee && user) {
+      setIsOwnRecord(employee.user_id === user.id);
+    }
+  }, [employee, user]);
 
   // Only fetch data when employeeId changes
   useEffect(() => {
@@ -166,6 +179,7 @@ export const useEmployeeDetails = (employeeId: string | undefined): EmployeeDeta
     navigateToEmployee,
     deleteEmployee,
     fetchEmployeeData,
-    updateEmployeeField
+    updateEmployeeField,
+    isOwnRecord
   };
 };

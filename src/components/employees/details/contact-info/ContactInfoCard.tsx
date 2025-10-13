@@ -17,7 +17,8 @@ export const ContactInfoCard = ({
   employee, 
   formattedAddress,
   isAdmin,
-  updateEmployeeField 
+  updateEmployeeField,
+  canEdit
 }: ContactInfoCardProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -54,7 +55,7 @@ export const ContactInfoCard = ({
     <Card className="border-[1.5px] border-foreground bg-white">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Contact Information</CardTitle>
-        {isAdmin && (
+        {canEdit && (
           <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
             <Pencil className="mr-2 h-4 w-4" />
             Edit
