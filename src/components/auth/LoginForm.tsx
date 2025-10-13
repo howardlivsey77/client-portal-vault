@@ -5,18 +5,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CardContent, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 
 interface LoginFormProps {
   onSuccess?: (userId: string) => Promise<void>;
-  onOtpRequired: (factorId: string, email: string) => void;
 }
 
-export const LoginForm = ({ onSuccess, onOtpRequired }: LoginFormProps) => {
+export const LoginForm = ({ onSuccess }: LoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [show2FA, setShow2FA] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [otp, setOtp] = useState("");
   const { toast } = useToast();
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -79,8 +86,9 @@ export const LoginForm = ({ onSuccess, onOtpRequired }: LoginFormProps) => {
           return;
         }
 
-        // Show OTP verification UI
-        onOtpRequired(data.user.id, email);
+        // Show OTP verification UI inline
+        setUserId(data.user.id);
+        setShow2FA(true);
         setLoading(false);
         return;
       }
@@ -106,6 +114,137 @@ export const LoginForm = ({ onSuccess, onOtpRequired }: LoginFormProps) => {
       setLoading(false);
     }
   };
+
+  const handleOtpVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userId || otp.length !== 6) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-2fa-code', {
+        body: { userId, code: otp }
+      });
+
+      if (error || data?.error) {
+        throw new Error(error?.message || data?.error || "Failed to verify code");
+      }
+
+      toast({
+        title: "Welcome back!",
+        description: "You've been successfully logged in."
+      });
+
+      if (onSuccess) {
+        await onSuccess(userId);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Verification failed",
+        description: error.message || "Invalid verification code",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setShow2FA(false);
+    setUserId(null);
+    setOtp("");
+    setPassword("");
+  };
+
+  const handleResendCode = async () => {
+    if (!userId) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-2fa-code', {
+        body: { email, userId }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Code sent",
+        description: "A new verification code has been sent to your email"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to resend code",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (show2FA) {
+    return (
+      <form onSubmit={handleOtpVerification}>
+        <CardContent className="space-y-6 pt-4">
+          <div className="space-y-2 text-center">
+            <h3 className="text-lg font-semibold">Two-Factor Authentication</h3>
+            <p className="text-sm text-muted-foreground">
+              A 6-digit code has been sent to {email}
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <InputOTP
+              maxLength={6}
+              value={otp}
+              onChange={setOtp}
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+          <div className="flex justify-center">
+            <Button
+              type="button"
+              variant="link"
+              onClick={handleResendCode}
+              disabled={loading}
+              className="text-sm"
+            >
+              Resend Code
+            </Button>
+          </div>
+        </CardContent>
+        <CardFooter className="flex flex-col gap-2">
+          <Button 
+            type="submit" 
+            disabled={loading || otp.length !== 6} 
+            className="w-full text-gray-950 bg-teal-500 hover:bg-teal-400"
+          >
+            {loading ? <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Verifying...
+              </> : "Verify"}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleBackToLogin}
+            disabled={loading}
+            className="w-full"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Login
+          </Button>
+        </CardFooter>
+      </form>
+    );
+  }
 
   return (
     <form onSubmit={handleSignIn}>
