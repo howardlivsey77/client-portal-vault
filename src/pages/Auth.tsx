@@ -17,6 +17,12 @@ const Auth = () => {
   
   // If user has access, redirect to home (but not during 2FA verification)
   useEffect(() => {
+    console.log("Auth page - Checking redirect:", { 
+      hasUser: !!user, 
+      is2FAInProgress,
+      shouldCheckRedirect: user && !is2FAInProgress 
+    });
+    
     if (user && !is2FAInProgress) {
       const checkRedirect = async () => {
         try {

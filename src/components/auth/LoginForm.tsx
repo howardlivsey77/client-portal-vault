@@ -69,6 +69,9 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
       if (requires2FA) {
         console.log("Setting is2FAInProgress to true BEFORE sign in");
         setIs2FAInProgress(true);
+        // Small delay to ensure state propagates before sign-in triggers auth changes
+        await new Promise(resolve => setTimeout(resolve, 50));
+        console.log("is2FAInProgress flag set, proceeding with sign-in");
       }
 
       console.log("Attempting sign in with email:", email);
