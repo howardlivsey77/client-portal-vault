@@ -1,5 +1,6 @@
-import { Mail, CheckCircle, Clock } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,90 +10,92 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Mail, Loader2 } from "lucide-react";
 import { useEmployeeInvite } from "@/hooks/useEmployeeInvite";
-import { Employee } from "@/types/employee-types";
+import { useCompany } from "@/providers/CompanyProvider";
+import type { Employee } from "@/types/employee-types";
 
 interface EmployeeInviteButtonProps {
   employee: Employee;
   onInviteSent: () => void;
 }
 
-export function EmployeeInviteButton({ employee, onInviteSent }: EmployeeInviteButtonProps) {
-  const { sendInvite, loading } = useEmployeeInvite();
+export const EmployeeInviteButton = ({
+  employee,
+  onInviteSent,
+}: EmployeeInviteButtonProps) => {
+  const [showDialog, setShowDialog] = useState(false);
+  const { currentCompany } = useCompany();
+  const { sendInvite, getInvitationStatus, loading } = useEmployeeInvite();
+  const status = getInvitationStatus(employee);
+
+  if (!currentCompany) {
+    return null;
+  }
 
   const handleSendInvite = async () => {
-    if (!employee.email || !employee.company_id) {
-      return;
-    }
-
-    const result = await sendInvite(employee.id, employee.email, employee.company_id);
-    if (result.success) {
+    const success = await sendInvite(employee, currentCompany.id);
+    if (success) {
+      setShowDialog(false);
       onInviteSent();
     }
   };
 
-  // Show status badge if invitation sent or portal active
-  if (employee.portal_access_enabled) {
+  // Show status badge if invited or active
+  if (status.status === 'invited' || status.status === 'active') {
     return (
-      <div className="flex items-center gap-2 text-sm text-green-600">
-        <CheckCircle className="h-4 w-4" />
-        <span>Portal Active</span>
-      </div>
+      <Badge variant={status.variant} className="whitespace-nowrap">
+        {status.label}
+      </Badge>
     );
   }
 
-  if (employee.invitation_sent_at) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-orange-600">
-        <Clock className="h-4 w-4" />
-        <span>Invitation Sent</span>
-      </div>
-    );
-  }
-
-  // Show invite button if no email
-  if (!employee.email) {
-    return (
-      <Button variant="outline" size="sm" disabled>
-        <Mail className="h-4 w-4 mr-2" />
-        No Email
-      </Button>
-    );
-  }
-
+  // Show invite button if not invited
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="outline" size="sm" disabled={loading}>
-          <Mail className="h-4 w-4 mr-2" />
-          Invite to Portal
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Send Portal Invitation</AlertDialogTitle>
-          <AlertDialogDescription>
-            Send an invitation to {employee.first_name} {employee.last_name} at{" "}
-            <strong>{employee.email}</strong> to create their employee portal account?
-            <br />
-            <br />
-            They will be able to:
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>View and update their personal information</li>
-              <li>Access payslips and tax documents</li>
-              <li>View timesheet records</li>
-            </ul>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleSendInvite} disabled={loading}>
-            {loading ? "Sending..." : "Send Invitation"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => setShowDialog(true)}
+        disabled={loading || !employee.email}
+        className="whitespace-nowrap"
+      >
+        <Mail className="h-4 w-4 mr-2" />
+        Invite to Portal
+      </Button>
+
+      <AlertDialog open={showDialog} onOpenChange={setShowDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Send Portal Invitation</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Send an invitation email to <strong>{employee.email}</strong>?
+              </p>
+              <p>
+                {employee.first_name} {employee.last_name} will receive an email with instructions to create their account and access the employee portal.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSendInvite}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                'Send Invitation'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
-}
+};
