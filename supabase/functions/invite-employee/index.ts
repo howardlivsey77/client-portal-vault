@@ -152,8 +152,7 @@ serve(async (req) => {
       throw new Error('Mailgun credentials not configured');
     }
 
-    const baseUrl = Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovable.app') || 
-                    'https://your-app.lovable.app';
+    const baseUrl = 'https://payroll.dootsons.com';
     
     const invitationLink = `${baseUrl}/invite/accept?token=${invitation.token}`;
 
