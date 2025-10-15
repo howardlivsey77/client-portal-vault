@@ -173,8 +173,6 @@ You've been invited to access the employee portal where you can:
 Click the link below to create your account and get started:
 ${invitationLink}
 
-This invitation link will expire in 7 days.
-
 If you didn't expect this invitation, please contact your HR department.
     `);
     formData.append('html', `
@@ -194,9 +192,6 @@ If you didn't expect this invitation, please contact your HR department.
             Create Your Account
           </a>
         </div>
-        <p style="color: #666; font-size: 14px;">
-          This invitation link will expire in 7 days.
-        </p>
         <p style="color: #666; font-size: 14px;">
           If you didn't expect this invitation, please contact your HR department.
         </p>
