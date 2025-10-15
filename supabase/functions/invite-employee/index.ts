@@ -155,7 +155,7 @@ serve(async (req) => {
     const baseUrl = Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovable.app') || 
                     'https://your-app.lovable.app';
     
-    const invitationLink = `${baseUrl}/auth?token=${invitation.token}`;
+    const invitationLink = `${baseUrl}/invite/accept?token=${invitation.token}`;
 
     const mailgunUrl = `https://api.mailgun.net/v3/${mailgunDomain}/messages`;
     
