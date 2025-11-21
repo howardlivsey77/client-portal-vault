@@ -2,7 +2,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { FileSpreadsheet, Download, RefreshCw, Users, AlertTriangle } from "lucide-react";
 import { SicknessReportTable } from "./SicknessReportTable";
-import { SicknessReportFilters } from "./SicknessReportFilters";
 import { useSicknessReport } from "@/hooks/useSicknessReport";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
@@ -11,9 +10,6 @@ export const SicknessReport = () => {
   const {
     reportData,
     loading,
-    filters,
-    updateFilters,
-    departments,
     refreshData
   } = useSicknessReport();
   const { toast } = useToast();
@@ -132,21 +128,12 @@ export const SicknessReport = () => {
         </Card>
       </div>
 
-      {/* Filters */}
-      <SicknessReportFilters
-        filters={filters}
-        onFiltersChange={updateFilters}
-        departments={departments}
-      />
-
       {/* Results */}
       <Card>
         <CardHeader>
           <CardTitle>Employee Sickness Data</CardTitle>
           <CardDescription>
             Showing {reportData.length} employee{reportData.length !== 1 ? 's' : ''}
-            {filters.department && ` in ${filters.department}`}
-            {filters.searchTerm && ` matching "${filters.searchTerm}"`}
           </CardDescription>
         </CardHeader>
         <CardContent>
