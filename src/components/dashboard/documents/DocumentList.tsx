@@ -27,11 +27,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { FileText, Edit, Trash2 } from "lucide-react";
+import { FileText, Edit, Trash2, Download } from "lucide-react";
 import { DocumentListProps } from "./types";
 import { useDraggable } from "@/hooks/useDraggable";
 import { cn } from "@/lib/utils";
 import { SendToMenu } from "./SendToMenu";
+import { downloadDocument } from "./document-card/utils";
 
 export function DocumentList({ documents }: DocumentListProps) {
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
@@ -66,6 +67,11 @@ export function DocumentList({ documents }: DocumentListProps) {
     setDeleteDialogOpen(false);
   };
 
+  const handleDownload = (filePath: string, title: string) => {
+    if (!filePath) return;
+    downloadDocument(filePath, title);
+  };
+
   return (
     <>
       <div className="grid grid-cols-1 gap-4">
@@ -84,6 +90,7 @@ export function DocumentList({ documents }: DocumentListProps) {
               <ContextMenuTrigger>
                 <Card 
                   {...dragProps}
+                  onClick={() => handleDownload(doc.file_path, doc.title)}
                   className={cn(
                     "p-4 flex justify-between items-center hover:bg-accent/5 cursor-pointer transition-all",
                     isDraggingThis && "opacity-50 scale-95",
@@ -121,6 +128,17 @@ export function DocumentList({ documents }: DocumentListProps) {
                   />
                   <Button 
                     variant="ghost" 
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload(doc.file_path, doc.title);
+                    }}
+                  >
+                    <Download className="h-4 w-4" />
+                    <span className="sr-only">Download</span>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
                     size="icon" 
                     onClick={(e) => {
                       e.stopPropagation();
@@ -146,6 +164,10 @@ export function DocumentList({ documents }: DocumentListProps) {
                 </Card>
               </ContextMenuTrigger>
             <ContextMenuContent>
+              <ContextMenuItem onClick={() => handleDownload(doc.file_path, doc.title)}>
+                <Download className="mr-2 h-4 w-4" />
+                Download
+              </ContextMenuItem>
               <ContextMenuItem onClick={() => handleRenameClick(doc.id, doc.title)}>
                 <Edit className="mr-2 h-4 w-4" />
                 Rename
