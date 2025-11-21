@@ -155,20 +155,29 @@ export const useInvites = () => {
         email, 
         duration: data?.duration_ms,
         inviteUrl: data?.invite_url,
+        existing_user: data?.existing_user,
         timestamp: new Date().toISOString() 
       });
 
-      // Show success with invite URL option
-      toast({
-        title: "Invitation sent",
-        description: data?.invite_url 
-          ? `Invitation sent to ${email}. You can also copy the invite link directly.`
-          : `Invitation sent to ${email} with ${selectedRole} role`,
-      });
+      // Show different success message for existing users
+      if (data?.existing_user) {
+        toast({
+          title: "User Added",
+          description: `${email} already has an account and has been added to the company with ${selectedRole} role. They can log in immediately.`,
+        });
+      } else {
+        // Show success with invite URL option for new users
+        toast({
+          title: "Invitation sent",
+          description: data?.invite_url 
+            ? `Invitation sent to ${email}. You can also copy the invite link directly.`
+            : `Invitation sent to ${email} with ${selectedRole} role`,
+        });
 
-      // Log invite URL for admin convenience
-      if (data?.invite_url) {
-        console.info(`🔗 [INVITES] Direct invite URL: ${data.invite_url}`);
+        // Log invite URL for admin convenience
+        if (data?.invite_url) {
+          console.info(`🔗 [INVITES] Direct invite URL: ${data.invite_url}`);
+        }
       }
 
       await fetchInvitations();
@@ -186,10 +195,16 @@ export const useInvites = () => {
           description: "This user already has an active invitation for this company.",
           variant: "destructive",
         });
+      } else if (errorMessage.includes('already has access to this company')) {
+        toast({
+          title: "Already Has Access",
+          description: "This user already has access to the company.",
+          variant: "destructive",
+        });
       } else if (errorMessage.includes('A user with this email address has already been registered')) {
         toast({
           title: "User Already Exists",
-          description: "A user with this email address already exists. They may need to be manually added to the company.",
+          description: "This user already has an account but couldn't be added automatically. Please contact support.",
           variant: "destructive",
         });
       } else if (errorMessage.includes('permission') || errorMessage.includes('access')) {

@@ -90,6 +90,90 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Missing required fields: email, company_id, role');
     }
 
+    // Check if user already exists in auth.users
+    console.log(JSON.stringify({
+      evt: "invite.check_existing_user",
+      reqId,
+      email: email.toLowerCase().trim(),
+      timestamp: new Date().toISOString()
+    }));
+
+    const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    const existingUser = users?.find(u => u.email?.toLowerCase() === email.toLowerCase().trim());
+
+    if (existingUser) {
+      console.log(JSON.stringify({
+        evt: "invite.existing_user_found",
+        reqId,
+        email: email.toLowerCase().trim(),
+        user_id: existingUser.id,
+        timestamp: new Date().toISOString()
+      }));
+
+      // Check if they already have company_access
+      const { data: existingAccess, error: accessCheckError } = await supabaseAdmin
+        .from('company_access')
+        .select('*')
+        .eq('user_id', existingUser.id)
+        .eq('company_id', company_id)
+        .single();
+
+      if (existingAccess) {
+        throw new Error('User already has access to this company');
+      }
+
+      // Add company_access directly for existing user
+      const { error: accessError } = await supabaseAdmin
+        .from('company_access')
+        .insert({
+          user_id: existingUser.id,
+          company_id: company_id,
+          role: role
+        });
+
+      if (accessError) {
+        console.error(JSON.stringify({
+          evt: "invite.existing_user_access_error",
+          reqId,
+          email: email.toLowerCase().trim(),
+          error: accessError,
+          timestamp: new Date().toISOString()
+        }));
+        throw new Error(`Failed to add existing user to company: ${accessError.message}`);
+      }
+
+      const duration = Date.now() - startTime;
+
+      console.log(JSON.stringify({
+        evt: "invite.existing_user_added",
+        reqId,
+        email: email.toLowerCase().trim(),
+        company_id,
+        role,
+        user_id: existingUser.id,
+        duration_ms: duration,
+        timestamp: new Date().toISOString()
+      }));
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Existing user added to company',
+          user_id: existingUser.id,
+          existing_user: true,
+          duration_ms: duration
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+          },
+        }
+      );
+    }
+
+    // User doesn't exist - proceed with standard invitation flow
     // Store invitation metadata first
     console.log(JSON.stringify({
       evt: "invite.metadata_insert_attempt",
