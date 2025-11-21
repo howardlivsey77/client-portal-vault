@@ -1,11 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { FileText, Download } from "lucide-react";
+import { FileText } from "lucide-react";
 import { SicknessReportData } from "@/hooks/useSicknessReport";
-import { generateSicknessReportPDF } from "@/utils/pdfExport";
-import { sicknessService } from "@/services/sicknessService";
-import { useToast } from "@/hooks/use-toast";
 
 interface SicknessReportTableProps {
   data: SicknessReportData[];
@@ -13,36 +8,6 @@ interface SicknessReportTableProps {
 }
 
 export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps) => {
-  const { toast } = useToast();
-
-  const handleExportIndividualReport = async (reportData: SicknessReportData) => {
-    try {
-      // Fetch detailed sickness records for the employee
-      const sicknessRecords = await sicknessService.getSicknessRecords(reportData.employee.id);
-      
-      const filename = `sickness-report-${reportData.employee.first_name}-${reportData.employee.last_name}-${new Date().toISOString().split('T')[0]}.pdf`;
-      
-      generateSicknessReportPDF(
-        reportData.employee,
-        sicknessRecords,
-        reportData.entitlementSummary,
-        null, // No company logo for now
-        filename
-      );
-      
-      toast({
-        title: "Report exported",
-        description: `Sickness report for ${reportData.employee.first_name} ${reportData.employee.last_name} has been downloaded.`
-      });
-    } catch (error) {
-      console.error("Error exporting individual report:", error);
-      toast({
-        title: "Export failed",
-        description: "Failed to export the sickness report.",
-        variant: "destructive"
-      });
-    }
-  };
 
   const formatDays = (days: number | undefined | null) => {
     if (days === undefined || days === null) return "N/A";
@@ -52,25 +17,6 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString();
-  };
-
-  const getStatusBadge = (remaining: number | undefined | null, type: string) => {
-    if (remaining === undefined || remaining === null) return null;
-    
-    let variant: "default" | "secondary" | "destructive" | "outline" = "default";
-    let text = "";
-    
-    if (type === "ssp") {
-      if (remaining <= 5) variant = "destructive";
-      else if (remaining <= 15) variant = "secondary";
-      text = `${formatDays(remaining)} days`;
-    } else {
-      if (remaining <= 2) variant = "destructive";
-      else if (remaining <= 7) variant = "secondary";
-      text = `${formatDays(remaining)} days`;
-    }
-    
-    return <Badge variant={variant}>{text}</Badge>;
   };
 
   if (loading) {
@@ -89,16 +35,15 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
               <TableHead>Full Used (12m)</TableHead>
               <TableHead>Half Used (12m)</TableHead>
               <TableHead>SSP Used (12m)</TableHead>
-              <TableHead>Full Pay Left</TableHead>
-              <TableHead>Half Pay Left</TableHead>
-              <TableHead>SSP Left</TableHead>
-              <TableHead>Actions</TableHead>
+            <TableHead>Full Pay Left</TableHead>
+            <TableHead>Half Pay Left</TableHead>
+            <TableHead>SSP Left</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {[...Array(5)].map((_, i) => (
               <TableRow key={i}>
-                {[...Array(14)].map((_, j) => (
+                {[...Array(13)].map((_, j) => (
                   <TableCell key={j}>
                     <div className="h-4 bg-muted animate-pulse rounded" />
                   </TableCell>
@@ -136,10 +81,9 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
             <TableHead>Full Used (12m)</TableHead>
             <TableHead>Half Used (12m)</TableHead>
             <TableHead>SSP Used (12m)</TableHead>
-            <TableHead>Full Pay Left</TableHead>
-            <TableHead>Half Pay Left</TableHead>
-            <TableHead>SSP Left</TableHead>
-            <TableHead>Actions</TableHead>
+              <TableHead>Full Pay Left</TableHead>
+              <TableHead>Half Pay Left</TableHead>
+              <TableHead>SSP Left</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -181,17 +125,6 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
               </TableCell>
               <TableCell>
                 {formatDays(reportData.entitlementSummary?.ssp_remaining_days)} days
-              </TableCell>
-              <TableCell>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleExportIndividualReport(reportData)}
-                  className="flex items-center gap-1"
-                >
-                  <Download className="h-3 w-3" />
-                  Export
-                </Button>
               </TableCell>
             </TableRow>
           ))}
