@@ -21,12 +21,6 @@ export const useSicknessReport = () => {
   const { employees, loading: employeesLoading } = useEmployees();
   const [reportData, setReportData] = useState<SicknessReportData[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState<SicknessReportFilters>({
-    department: '',
-    searchTerm: '',
-    sortBy: 'name',
-    sortOrder: 'asc'
-  });
   const { toast } = useToast();
 
   const fetchSicknessData = async () => {
@@ -73,55 +67,6 @@ export const useSicknessReport = () => {
     }
   };
 
-  const updateFilters = (newFilters: Partial<SicknessReportFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-  };
-
-  const filteredAndSortedData = reportData
-    .filter(data => {
-      if (filters.department && data.employee.department !== filters.department) {
-        return false;
-      }
-      if (filters.searchTerm) {
-        const searchLower = filters.searchTerm.toLowerCase();
-        const fullName = `${data.employee.first_name} ${data.employee.last_name}`.toLowerCase();
-        return fullName.includes(searchLower);
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      let comparison = 0;
-      
-      switch (filters.sortBy) {
-        case 'name':
-          comparison = `${a.employee.first_name} ${a.employee.last_name}`.localeCompare(
-            `${b.employee.first_name} ${b.employee.last_name}`
-          );
-          break;
-        case 'department':
-          comparison = a.employee.department.localeCompare(b.employee.department);
-          break;
-        case 'serviceMonths':
-          comparison = (a.entitlementSummary?.service_months || 0) - (b.entitlementSummary?.service_months || 0);
-          break;
-        case 'usedDays':
-          comparison = (a.entitlementSummary?.total_used_rolling_12_months || 0) - (b.entitlementSummary?.total_used_rolling_12_months || 0);
-          break;
-        case 'remainingFullPay':
-          comparison = (a.entitlementSummary?.full_pay_remaining || 0) - (b.entitlementSummary?.full_pay_remaining || 0);
-          break;
-        case 'remainingHalfPay':
-          comparison = (a.entitlementSummary?.half_pay_remaining || 0) - (b.entitlementSummary?.half_pay_remaining || 0);
-          break;
-        case 'remainingSsp':
-          comparison = (a.entitlementSummary?.ssp_remaining_days || 0) - (b.entitlementSummary?.ssp_remaining_days || 0);
-          break;
-        default:
-          break;
-      }
-      
-      return filters.sortOrder === 'desc' ? -comparison : comparison;
-    });
 
   useEffect(() => {
     if (!employeesLoading && employees.length > 0) {
@@ -129,14 +74,9 @@ export const useSicknessReport = () => {
     }
   }, [employees, employeesLoading]);
 
-  const departments = [...new Set(employees.map(emp => emp.department))].filter(Boolean);
-
   return {
-    reportData: filteredAndSortedData,
+    reportData,
     loading: loading || employeesLoading,
-    filters,
-    updateFilters,
-    departments,
     refreshData: fetchSicknessData
   };
 };
