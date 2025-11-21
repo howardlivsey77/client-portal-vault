@@ -14,11 +14,6 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
     return days.toFixed(1);
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString();
-  };
-
   if (loading) {
     return (
       <div className="rounded-md border">
@@ -28,8 +23,6 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
               <TableHead>Payroll ID</TableHead>
               <TableHead>First Name</TableHead>
               <TableHead>Surname</TableHead>
-              <TableHead>Department</TableHead>
-              <TableHead>Hire Date</TableHead>
               <TableHead>Service</TableHead>
               <TableHead>Total Used (12m)</TableHead>
               <TableHead>Full Used (12m)</TableHead>
@@ -43,7 +36,7 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
           <TableBody>
             {[...Array(5)].map((_, i) => (
               <TableRow key={i}>
-                {[...Array(13)].map((_, j) => (
+                {[...Array(11)].map((_, j) => (
                   <TableCell key={j}>
                     <div className="h-4 bg-muted animate-pulse rounded" />
                   </TableCell>
@@ -74,8 +67,6 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
             <TableHead>Payroll ID</TableHead>
             <TableHead>First Name</TableHead>
             <TableHead>Surname</TableHead>
-            <TableHead>Department</TableHead>
-            <TableHead>Hire Date</TableHead>
             <TableHead>Service</TableHead>
             <TableHead>Total Used (12m)</TableHead>
             <TableHead>Full Used (12m)</TableHead>
@@ -97,10 +88,6 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
               </TableCell>
               <TableCell className="font-medium">
                 {reportData.employee.last_name}
-              </TableCell>
-              <TableCell>{reportData.employee.department}</TableCell>
-              <TableCell>
-                {formatDate(reportData.employee.hire_date)}
               </TableCell>
               <TableCell>
                 {reportData.entitlementSummary?.service_months || 0} months
