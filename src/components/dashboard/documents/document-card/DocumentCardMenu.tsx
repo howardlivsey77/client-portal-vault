@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { 
-  Eye, 
   Download, 
   MoreVertical, 
   Share,
@@ -21,7 +20,7 @@ import {
 } from "lucide-react";
 import { FolderItem } from "../../types/folder.types";
 import { DocumentCardMenuProps } from "./types";
-import { moveToFolder, viewDocument, downloadDocument } from "./utils";
+import { moveToFolder, downloadDocument } from "./utils";
 
 export function DocumentCardMenu({ documentId, filePath, title, onRename, onDelete }: DocumentCardMenuProps) {
   const [folders, setFolders] = useState<FolderItem[]>([]);
@@ -37,10 +36,6 @@ export function DocumentCardMenu({ documentId, filePath, title, onRename, onDele
       }
     }
   }, []);
-
-  const handleView = () => {
-    viewDocument(filePath, title);
-  };
 
   const handleDownload = () => {
     downloadDocument(filePath, title);
@@ -77,10 +72,6 @@ export function DocumentCardMenu({ documentId, filePath, title, onRename, onDele
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[160px]">
-        <DropdownMenuItem onClick={handleView}>
-          <Eye className="mr-2 h-4 w-4" />
-          <span>View</span>
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={handleDownload}>
           <Download className="mr-2 h-4 w-4" />
           <span>Download</span>
