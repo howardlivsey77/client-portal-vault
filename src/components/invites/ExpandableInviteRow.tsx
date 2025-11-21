@@ -21,10 +21,12 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 interface ExpandableInviteRowProps {
   invitation: InvitationMetadata;
   onDelete: (id: string) => void;
+  onResend: (id: string) => Promise<boolean>;
 }
 
-export const ExpandableInviteRow = ({ invitation, onDelete }: ExpandableInviteRowProps) => {
+export const ExpandableInviteRow = ({ invitation, onDelete, onResend }: ExpandableInviteRowProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const inviteUrl = invitation.token 
     ? `${window.location.origin}/invite/accept?token=${invitation.token}`
     : null;
@@ -117,9 +119,20 @@ export const ExpandableInviteRow = ({ invitation, onDelete }: ExpandableInviteRo
                 <InviteLinkDisplay inviteUrl={inviteUrl!} />
                 
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-2"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      setIsResending(true);
+                      await onResend(invitation.id);
+                      setIsResending(false);
+                    }}
+                    disabled={isResending}
+                  >
                     <Send className="w-4 h-4" />
-                    Resend Email
+                    {isResending ? "Sending..." : "Resend Email"}
                   </Button>
                   <Button variant="outline" size="sm" className="flex items-center gap-2">
                     <QrCode className="w-4 h-4" />
