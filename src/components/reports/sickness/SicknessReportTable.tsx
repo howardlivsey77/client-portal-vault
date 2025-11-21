@@ -11,7 +11,7 @@ export const SicknessReportTable = ({ data, loading }: SicknessReportTableProps)
 
   const formatDays = (days: number | undefined | null) => {
     if (days === undefined || days === null) return "N/A";
-    return days.toFixed(1);
+    return Math.round(days).toString();
   };
 
   if (loading) {
