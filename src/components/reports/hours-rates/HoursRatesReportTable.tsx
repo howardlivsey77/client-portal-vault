@@ -51,10 +51,7 @@ export const HoursRatesReportTable = ({ data, loading }: HoursRatesReportTablePr
             <TableHead className="text-right">Hours/Week</TableHead>
             <TableHead className="text-right">Rate 2</TableHead>
             <TableHead className="text-right">Rate 3</TableHead>
-            <TableHead className="text-right">Rate 4</TableHead>
-            <TableHead className="text-right">Weekly Pay</TableHead>
             <TableHead className="text-right">Monthly Pay</TableHead>
-            <TableHead className="text-right">Annual Pay</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -79,17 +76,8 @@ export const HoursRatesReportTable = ({ data, loading }: HoursRatesReportTablePr
               <TableCell className="text-right">
                 {formatCurrency(item.employee.rate_3)}
               </TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(item.employee.rate_4)}
-              </TableCell>
-              <TableCell className="text-right font-medium">
-                {formatCurrency(item.weeklyCompensation)}
-              </TableCell>
               <TableCell className="text-right font-medium">
                 {formatCurrency(item.monthlyCompensation)}
-              </TableCell>
-              <TableCell className="text-right font-semibold">
-                {formatCurrency(item.annualCompensation)}
               </TableCell>
             </TableRow>
           ))}
