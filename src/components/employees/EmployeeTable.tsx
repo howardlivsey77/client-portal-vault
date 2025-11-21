@@ -14,7 +14,7 @@ import {
 import { Trash2, UserCog, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Employee } from "@/types/employee-types";
-import { EmployeeInviteButton } from "./EmployeeInviteButton";
+import { EmployeePortalStatus } from "./EmployeePortalStatus";
 
 interface EmployeeTableProps {
   employees: Employee[];
@@ -50,12 +50,6 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm, statusFilter, o
     <div className="rounded-md border-[1.5px] border-foreground bg-white">
       <div className="flex justify-between items-center p-4 border-b border-muted">
         <h3 className="text-lg font-semibold">Employee Directory</h3>
-        {isAdmin && (
-          <Button onClick={() => navigate("/employee/new")} size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Employee
-          </Button>
-        )}
       </div>
       <Table>
         <TableHeader>
@@ -84,15 +78,14 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm, statusFilter, o
               <TableCell>{employee.email || "—"}</TableCell>
               <TableCell>
                 <div onClick={(e) => e.stopPropagation()}>
-                  {isAdmin && (
-                    <EmployeeInviteButton 
-                      employee={employee} 
-                      onInviteSent={() => {
-                        setRefreshKey(prev => prev + 1);
-                        onEmployeeUpdate?.();
-                      }}
-                    />
-                  )}
+                  <EmployeePortalStatus 
+                    employee={employee}
+                    isAdmin={isAdmin}
+                    onInviteSent={() => {
+                      setRefreshKey(prev => prev + 1);
+                      onEmployeeUpdate?.();
+                    }}
+                  />
                 </div>
               </TableCell>
             </TableRow>
