@@ -6,5 +6,8 @@ verify_jwt = true
 [functions.send-invite]
 verify_jwt = true
 
+[functions.resend-invitation]
+verify_jwt = true
+
 [functions.check-2fa-requirement]
 verify_jwt = false

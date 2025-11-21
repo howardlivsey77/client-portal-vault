@@ -15,12 +15,14 @@ interface InvitationsTableProps {
   invitations: InvitationMetadata[];
   loading: boolean;
   onDelete: (id: string) => void;
+  onResend: (id: string) => Promise<boolean>;
 }
 
 export const InvitationsTable = ({ 
   invitations, 
   loading, 
-  onDelete 
+  onDelete,
+  onResend
 }: InvitationsTableProps) => {
   if (loading && invitations.length === 0) {
     return (
@@ -60,6 +62,7 @@ export const InvitationsTable = ({
             key={invitation.id}
             invitation={invitation}
             onDelete={onDelete}
+            onResend={onResend}
           />
         ))}
       </TableBody>

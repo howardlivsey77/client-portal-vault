@@ -22,6 +22,7 @@ interface InviteManagementTabsProps {
   usersLoading: boolean;
   userId: string | null;
   onDeleteInvitation: (id: string) => void;
+  onResendInvitation: (id: string) => Promise<boolean>;
   onChangeRole: (user: UserProfile) => void;
   invitationsError?: string | null;
   usersError?: string | null;
@@ -36,6 +37,7 @@ export const InviteManagementTabs = ({
   usersLoading,
   userId,
   onDeleteInvitation,
+  onResendInvitation,
   onChangeRole,
   invitationsError,
   usersError
@@ -62,7 +64,8 @@ export const InviteManagementTabs = ({
                   <InvitationsTable 
                     invitations={invitations} 
                     loading={invitationsLoading} 
-                    onDelete={onDeleteInvitation} 
+                    onDelete={onDeleteInvitation}
+                    onResend={onResendInvitation}
                   />
                 )}
               </>

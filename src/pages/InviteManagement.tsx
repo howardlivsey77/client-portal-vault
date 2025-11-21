@@ -43,7 +43,8 @@ const InviteManagement = () => {
     error: invitationsError,
     fetchInvitations,
     createInvitation,
-    deleteInvitation 
+    deleteInvitation,
+    resendInvitation
   } = useInvites();
   
   const {
@@ -170,6 +171,7 @@ const InviteManagement = () => {
         usersLoading={usersLoading}
         userId={userId}
         onDeleteInvitation={deleteInvitation}
+        onResendInvitation={resendInvitation}
         onChangeRole={openRoleDialog}
         invitationsError={invitationsError}
         usersError={usersError}

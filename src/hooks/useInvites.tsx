@@ -264,6 +264,57 @@ export const useInvites = () => {
     }
   };
   
+  const resendInvitation = async (invitationId: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await invokeFunction('resend-invitation', {
+        body: { invitation_id: invitationId }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to resend invitation');
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to resend invitation');
+      }
+
+      toast({
+        title: "Email Resent",
+        description: `Activation email has been resent to ${data.email}`,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error("Error resending invitation:", error);
+      
+      const errorMessage = error.message || 'Failed to resend invitation. Please try again.';
+      
+      if (errorMessage.includes('already been accepted')) {
+        toast({
+          title: "Cannot Resend",
+          description: "This invitation has already been accepted.",
+          variant: "destructive",
+        });
+      } else if (errorMessage.includes('Permission denied')) {
+        toast({
+          title: "Permission Denied",
+          description: "You don't have permission to resend this invitation.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Resend Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   useEffect(() => {
     fetchInvitations();
   }, []);
@@ -274,6 +325,7 @@ export const useInvites = () => {
     error,
     fetchInvitations,
     createInvitation,
-    deleteInvitation
+    deleteInvitation,
+    resendInvitation
   };
 };
