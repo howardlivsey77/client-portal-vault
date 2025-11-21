@@ -2,7 +2,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Home } from "lucide-react";
 import { Link } from "react-router-dom";
-import { SicknessReport } from "@/components/reports/sickness/SicknessReport";
+import { ClientReportsNavigation } from "@/components/reports/ClientReportsNavigation";
 
 const ClientReports = () => {
   return (
@@ -26,8 +26,8 @@ const ClientReports = () => {
           </BreadcrumbList>
         </Breadcrumb>
 
-        {/* Sickness Report */}
-        <SicknessReport />
+        {/* Reports Navigation and Content */}
+        <ClientReportsNavigation />
       </div>
     </PageContainer>
   );
