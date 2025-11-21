@@ -1,5 +1,7 @@
 
 import { FileText } from "lucide-react";
+import { documentService } from "@/services/documentService";
+import { toast } from "sonner";
 
 export const getFileIcon = (type: string) => {
   switch (type.toLowerCase()) {
@@ -31,5 +33,30 @@ export const renameDocument = (documentId: string, newTitle: string) => {
 export const deleteDocument = (documentId: string) => {
   if (typeof window.deleteDocument === 'function') {
     window.deleteDocument(documentId);
+  }
+};
+
+export const viewDocument = async (filePath: string, title: string) => {
+  try {
+    const url = await documentService.getDownloadUrl(filePath);
+    window.open(url, '_blank');
+  } catch (error) {
+    console.error('Failed to view document:', error);
+    toast.error("Failed to open document");
+  }
+};
+
+export const downloadDocument = async (filePath: string, title: string) => {
+  try {
+    const url = await documentService.getDownloadUrl(filePath);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = title;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Failed to download document:', error);
+    toast.error("Failed to download document");
   }
 };

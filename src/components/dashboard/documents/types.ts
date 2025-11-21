@@ -27,6 +27,7 @@ export interface Document {
   updatedAt: string;
   size: string;
   folderId: string | null;
+  file_path: string;
 }
 
 export interface DocumentListProps {

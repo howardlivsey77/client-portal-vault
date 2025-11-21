@@ -21,9 +21,9 @@ import {
 } from "lucide-react";
 import { FolderItem } from "../../types/folder.types";
 import { DocumentCardMenuProps } from "./types";
-import { moveToFolder } from "./utils";
+import { moveToFolder, viewDocument, downloadDocument } from "./utils";
 
-export function DocumentCardMenu({ documentId, onRename, onDelete }: DocumentCardMenuProps) {
+export function DocumentCardMenu({ documentId, filePath, title, onRename, onDelete }: DocumentCardMenuProps) {
   const [folders, setFolders] = useState<FolderItem[]>([]);
 
   // Load folder structure from localStorage
@@ -37,6 +37,14 @@ export function DocumentCardMenu({ documentId, onRename, onDelete }: DocumentCar
       }
     }
   }, []);
+
+  const handleView = () => {
+    viewDocument(filePath, title);
+  };
+
+  const handleDownload = () => {
+    downloadDocument(filePath, title);
+  };
 
   // Recursive function to render folder items in the dropdown menu
   const renderFolderItems = (folderList: FolderItem[]) => {
@@ -69,11 +77,11 @@ export function DocumentCardMenu({ documentId, onRename, onDelete }: DocumentCar
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[160px]">
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={handleView}>
           <Eye className="mr-2 h-4 w-4" />
           <span>View</span>
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={handleDownload}>
           <Download className="mr-2 h-4 w-4" />
           <span>Download</span>
         </DropdownMenuItem>

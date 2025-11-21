@@ -15,10 +15,15 @@ export interface DocumentCardHeaderProps {
 
 export interface DocumentCardFooterProps {
   type: string;
+  documentId: string;
+  filePath: string;
+  title: string;
 }
 
 export interface DocumentCardMenuProps {
   documentId: string;
+  filePath: string;
+  title: string;
   onRename: () => void;
   onDelete: () => void;
 }

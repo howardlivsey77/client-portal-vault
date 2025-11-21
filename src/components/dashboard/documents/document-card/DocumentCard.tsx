@@ -7,7 +7,7 @@ import { DocumentCardHeader } from "./DocumentCardHeader";
 import { DocumentCardFooter } from "./DocumentCardFooter";
 import { DocumentCardMenu } from "./DocumentCardMenu";
 import { DocumentCardDialogs } from "./DocumentCardDialogs";
-import { renameDocument, deleteDocument } from "./utils";
+import { renameDocument, deleteDocument, viewDocument } from "./utils";
 
 export function DocumentCard({
   id,
@@ -43,13 +43,18 @@ export function DocumentCard({
     setDeleteDialogOpen(false);
   };
 
+  const handleCardClick = () => {
+    viewDocument(props.file_path, title);
+  };
+
   return (
     <>
       <Card
         className={cn(
-          "group flex flex-col overflow-hidden transition-all hover:shadow-md",
+          "group flex flex-col overflow-hidden transition-all hover:shadow-md cursor-pointer",
           className
         )}
+        onClick={handleCardClick}
         {...props}
       >
         <div className="flex items-center justify-between p-4">
@@ -61,11 +66,18 @@ export function DocumentCard({
           />
           <DocumentCardMenu 
             documentId={id}
+            filePath={props.file_path}
+            title={title}
             onRename={handleRename}
             onDelete={handleDelete}
           />
         </div>
-        <DocumentCardFooter type={type} />
+        <DocumentCardFooter 
+          type={type}
+          documentId={id}
+          filePath={props.file_path}
+          title={title}
+        />
       </Card>
 
       <DocumentCardDialogs
