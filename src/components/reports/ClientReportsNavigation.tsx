@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SicknessReport } from "./sickness/SicknessReport";
+import { HoursRatesReport } from "./hours-rates/HoursRatesReport";
 
 type ReportType = "sickness" | "employee-details" | "hours-rates";
 
@@ -23,12 +24,7 @@ export function ClientReportsNavigation() {
           </div>
         );
       case "hours-rates":
-        return (
-          <div className="text-center py-12 text-muted-foreground">
-            <p className="text-lg">Employee Hours and Rates Report</p>
-            <p className="text-sm">Coming soon...</p>
-          </div>
-        );
+        return <HoursRatesReport />;
       default:
         return <SicknessReport />;
     }
