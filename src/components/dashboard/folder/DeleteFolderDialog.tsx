@@ -28,17 +28,16 @@ export function DeleteFolderDialog({
   onDeleteFolder
 }: DeleteFolderDialogProps) {
   
-  const handleDeleteFolder = () => {
+  const handleDeleteFolder = async () => {
     if (!folderId) return;
     
-    onDeleteFolder(folderId);
-    
-    toast({
-      title: "Folder deleted",
-      description: `Folder "${folderName}" has been deleted successfully.`
-    });
-    
-    onOpenChange(false);
+    try {
+      await onDeleteFolder(folderId);
+      onOpenChange(false);
+    } catch (error) {
+      // Error toast already shown by useFolderExplorer hook
+      // Keep dialog open so user can retry
+    }
   };
 
   return (
