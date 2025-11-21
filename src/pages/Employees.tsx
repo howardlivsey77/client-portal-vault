@@ -5,6 +5,7 @@ import { EmployeeTable } from "@/components/employees/EmployeeTable";
 import { EmployeeSearch } from "@/components/employees/EmployeeSearch";
 import { EmployeeActions } from "@/components/employees/EmployeeActions";
 import { EmptyEmployeeState } from "@/components/employees/EmptyEmployeeState";
+import { EmployeeStatusFilter } from "@/components/employees/EmployeeStatusFilter";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useAuth } from "@/providers/AuthProvider";
 import { useCompany } from "@/providers/CompanyProvider";
@@ -14,6 +15,7 @@ import { Link } from "react-router-dom";
 export default function Employees() {
   const { employees, loading, fetchEmployees, deleteEmployee } = useEmployees();
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<'current' | 'past' | 'all'>('current');
   
   const { isAdmin } = useAuth();
   const { currentCompany } = useCompany();
@@ -23,13 +25,19 @@ export default function Employees() {
   return (
     <PageContainer title="Employees">
       <div className="flex flex-col space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-[1.5px] border-foreground rounded-md p-4 bg-white">
-          <EmployeeSearch searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-          <EmployeeActions 
-            isAdmin={isAdmin}
-            loading={loading}
-            onRefresh={fetchEmployees}
+        <div className="flex flex-col gap-4">
+          <EmployeeStatusFilter 
+            selectedFilter={statusFilter}
+            onFilterChange={setStatusFilter}
           />
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-[1.5px] border-foreground rounded-md p-4 bg-white">
+            <EmployeeSearch searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+            <EmployeeActions 
+              isAdmin={isAdmin}
+              loading={loading}
+              onRefresh={fetchEmployees}
+            />
+          </div>
         </div>
 
         {!currentCompany ? (
@@ -46,6 +54,7 @@ export default function Employees() {
             employees={employees}
             onDelete={deleteEmployee}
             searchTerm={searchTerm}
+            statusFilter={statusFilter}
             onEmployeeUpdate={fetchEmployees}
           />
         )}

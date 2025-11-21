@@ -20,15 +20,21 @@ interface EmployeeTableProps {
   employees: Employee[];
   onDelete: (id: string) => Promise<void>;
   searchTerm: string;
+  statusFilter: 'current' | 'past' | 'all';
   onEmployeeUpdate?: () => void;
 }
 
-export const EmployeeTable = ({ employees, onDelete, searchTerm, onEmployeeUpdate }: EmployeeTableProps) => {
+export const EmployeeTable = ({ employees, onDelete, searchTerm, statusFilter, onEmployeeUpdate }: EmployeeTableProps) => {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const [refreshKey, setRefreshKey] = useState(0);
 
   const filteredEmployees = employees.filter(employee => {
+    // Status filter
+    if (statusFilter === 'current' && employee.status === 'leaver') return false;
+    if (statusFilter === 'past' && employee.status !== 'leaver') return false;
+    
+    // Search filter
     const searchLower = searchTerm.toLowerCase();
     return (
       employee.first_name.toLowerCase().includes(searchLower) ||
