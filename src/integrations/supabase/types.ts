@@ -977,6 +977,53 @@ export type Database = {
           },
         ]
       }
+      invitation_resend_log: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          invitation_id: string
+          ip_address: unknown
+          resend_method: string | null
+          resent_at: string
+          resent_by: string
+          success: boolean
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          invitation_id: string
+          ip_address?: unknown
+          resend_method?: string | null
+          resent_at?: string
+          resent_by: string
+          success: boolean
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          invitation_id?: string
+          ip_address?: unknown
+          resend_method?: string | null
+          resent_at?: string
+          resent_by?: string
+          success?: boolean
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitation_resend_log_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: false
+            referencedRelation: "invitation_metadata"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_at: string | null

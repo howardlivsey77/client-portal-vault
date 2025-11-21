@@ -12,11 +12,15 @@ import {
   Copy,
   Send,
   QrCode,
-  ExternalLink
+  ExternalLink,
+  History,
+  CheckCircle,
+  XCircle
 } from "lucide-react";
 import { InvitationMetadata } from "@/hooks/useInvites";
 import { CopyInviteButton, InviteLinkDisplay } from "./CopyInviteButton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useInvitationHistory } from "@/hooks/useInvitationHistory";
 
 interface ExpandableInviteRowProps {
   invitation: InvitationMetadata;
@@ -27,6 +31,7 @@ interface ExpandableInviteRowProps {
 export const ExpandableInviteRow = ({ invitation, onDelete, onResend }: ExpandableInviteRowProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const { data: resendHistory } = useInvitationHistory(invitation.id);
   const inviteUrl = invitation.token 
     ? `${window.location.origin}/invite/accept?token=${invitation.token}`
     : null;
@@ -145,6 +150,42 @@ export const ExpandableInviteRow = ({ invitation, onDelete, onResend }: Expandab
                   <p>• Link can be shared manually if email delivery fails</p>
                   <p>• Invitation expires in 7 days from creation</p>
                 </div>
+
+                {/* Resend History */}
+                {resendHistory && resendHistory.length > 0 && (
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="flex items-center gap-2 text-sm font-medium mb-3">
+                      <History className="w-4 h-4" />
+                      Resend History ({resendHistory.length})
+                    </div>
+                    <div className="space-y-2">
+                      {resendHistory.map((log) => (
+                        <div 
+                          key={log.id} 
+                          className="text-xs p-3 rounded bg-background border flex items-start gap-2"
+                        >
+                          <div className={`mt-0.5 ${log.success ? 'text-green-600' : 'text-red-600'}`}>
+                            {log.success ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                          </div>
+                          <div className="flex-1">
+                            <p>
+                              <span className="font-medium">
+                                {log.resent_by_profile?.full_name || log.resent_by_profile?.email || 'Admin'}
+                              </span>
+                              {' '}resent invitation{' '}
+                              <span className="text-muted-foreground">
+                                {formatDistanceToNow(new Date(log.resent_at), { addSuffix: true })}
+                              </span>
+                            </p>
+                            {!log.success && log.error_message && (
+                              <p className="text-red-600 mt-1">Error: {log.error_message}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </TableCell>
           </TableRow>
