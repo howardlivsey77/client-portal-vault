@@ -37,12 +37,26 @@ export const deleteDocument = (documentId: string) => {
 };
 
 export const viewDocument = async (filePath: string, title: string) => {
+  // Open a blank window immediately to preserve the user gesture
+  const newWindow = window.open("", "_blank");
+
+  // If the browser blocked the popup, newWindow will be null
+  if (!newWindow) {
+    toast.error("Unable to open document. Please allow pop-ups for this site and try again.");
+    return;
+  }
+
   try {
     const url = await documentService.getDownloadUrl(filePath);
-    window.open(url, '_blank');
+    
+    // Once we have the signed URL, navigate the already-open window
+    newWindow.location.href = url;
   } catch (error) {
-    console.error('Failed to view document:', error);
-    toast.error("Failed to open document");
+    console.error("Failed to view document:", error);
+    
+    // Close the placeholder window if we failed to load the document
+    newWindow.close();
+    toast.error("Failed to open document. Please try again.");
   }
 };
 
