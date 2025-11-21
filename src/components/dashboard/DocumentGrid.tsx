@@ -23,7 +23,8 @@ const convertToLegacyDocument = (dbDoc: any) => ({
     year: 'numeric' 
   }),
   size: `${(dbDoc.file_size / (1024 * 1024)).toFixed(1)} MB`,
-  folderId: dbDoc.folder_id
+  folderId: dbDoc.folder_id,
+  file_path: dbDoc.file_path
 });
 
 export function DocumentGrid({
