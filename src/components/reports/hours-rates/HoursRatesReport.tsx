@@ -29,10 +29,7 @@ export const HoursRatesReport = () => {
         'Hours per Week': data.employee.hours_per_week || 0,
         'Rate 2': data.employee.rate_2 || 0,
         'Rate 3': data.employee.rate_3 || 0,
-        'Rate 4': data.employee.rate_4 || 0,
-        'Weekly Pay': data.weeklyCompensation.toFixed(2),
-        'Monthly Pay': data.monthlyCompensation.toFixed(2),
-        'Annual Pay': data.annualCompensation.toFixed(2)
+        'Monthly Pay': data.monthlyCompensation.toFixed(2)
       }));
 
       const ws = XLSX.utils.json_to_sheet(exportData);
