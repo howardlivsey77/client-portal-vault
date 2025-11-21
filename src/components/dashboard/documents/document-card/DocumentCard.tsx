@@ -7,7 +7,7 @@ import { DocumentCardHeader } from "./DocumentCardHeader";
 import { DocumentCardFooter } from "./DocumentCardFooter";
 import { DocumentCardMenu } from "./DocumentCardMenu";
 import { DocumentCardDialogs } from "./DocumentCardDialogs";
-import { renameDocument, deleteDocument, viewDocument } from "./utils";
+import { renameDocument, deleteDocument, downloadDocument } from "./utils";
 
 export function DocumentCard({
   id,
@@ -44,7 +44,8 @@ export function DocumentCard({
   };
 
   const handleCardClick = () => {
-    viewDocument(props.file_path, title);
+    if (!props.file_path) return;
+    downloadDocument(props.file_path, title);
   };
 
   return (
