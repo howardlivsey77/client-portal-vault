@@ -60,12 +60,15 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm, onEmployeeUpdat
             <TableHead>Gender</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Portal Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filteredEmployees.map((employee) => (
-            <TableRow key={employee.id}>
+            <TableRow 
+              key={employee.id}
+              onClick={() => navigate(`/employee/${employee.id}`)}
+              className="cursor-pointer hover:bg-muted/50"
+            >
               <TableCell className="font-medium">
                 {employee.first_name} {employee.last_name}
               </TableCell>
@@ -74,33 +77,17 @@ export const EmployeeTable = ({ employees, onDelete, searchTerm, onEmployeeUpdat
               <TableCell>{employee.gender || "—"}</TableCell>
               <TableCell>{employee.email || "—"}</TableCell>
               <TableCell>
-                {isAdmin && (
-                  <EmployeeInviteButton 
-                    employee={employee} 
-                    onInviteSent={() => {
-                      setRefreshKey(prev => prev + 1);
-                      onEmployeeUpdate?.();
-                    }}
-                  />
-                )}
-              </TableCell>
-              <TableCell className="text-right space-x-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(`/employee/${employee.id}`)}
-                >
-                  <UserCog className="h-4 w-4" />
-                </Button>
-                {isAdmin && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onDelete(employee.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                )}
+                <div onClick={(e) => e.stopPropagation()}>
+                  {isAdmin && (
+                    <EmployeeInviteButton 
+                      employee={employee} 
+                      onInviteSent={() => {
+                        setRefreshKey(prev => prev + 1);
+                        onEmployeeUpdate?.();
+                      }}
+                    />
+                  )}
+                </div>
               </TableCell>
             </TableRow>
           ))}

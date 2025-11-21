@@ -20,7 +20,7 @@ export type Database = {
           changed_by: string
           created_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           new_admin_status: boolean
           old_admin_status: boolean
           target_user_id: string
@@ -31,7 +31,7 @@ export type Database = {
           changed_by: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_admin_status: boolean
           old_admin_status: boolean
           target_user_id: string
@@ -42,7 +42,7 @@ export type Database = {
           changed_by?: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_admin_status?: boolean
           old_admin_status?: boolean
           target_user_id?: string
@@ -58,7 +58,7 @@ export type Database = {
           email: string
           expires_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           user_agent: string | null
           user_id: string
           verified: boolean
@@ -70,7 +70,7 @@ export type Database = {
           email: string
           expires_at: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           user_id: string
           verified?: boolean
@@ -82,7 +82,7 @@ export type Database = {
           email?: string
           expires_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           user_id?: string
           verified?: boolean
@@ -201,7 +201,7 @@ export type Database = {
           accessed_table: string
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           sensitive_fields: string[] | null
           user_agent: string | null
           user_id: string
@@ -212,7 +212,7 @@ export type Database = {
           accessed_table: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           sensitive_fields?: string[] | null
           user_agent?: string | null
           user_id: string
@@ -223,7 +223,7 @@ export type Database = {
           accessed_table?: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           sensitive_fields?: string[] | null
           user_agent?: string | null
           user_id?: string
@@ -1795,9 +1795,36 @@ export type Database = {
         }
         Returns: string
       }
-      create_invitation: {
-        Args:
-          | {
+      create_invitation:
+        | {
+            Args: {
+              _email: string
+              _expires_at?: string
+              _invite_code: string
+              _role?: string
+              _user_id: string
+            }
+            Returns: {
+              accepted_at: string | null
+              company_id: string | null
+              email: string
+              expires_at: string
+              id: string
+              invite_code: string
+              is_accepted: boolean | null
+              issued_at: string
+              issued_by: string
+              role: string | null
+            }
+            SetofOptions: {
+              from: "*"
+              to: "invitations"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
               _company_id: string
               _email: string
               _expires_at?: string
@@ -1805,30 +1832,26 @@ export type Database = {
               _role?: string
               _user_id: string
             }
-          | {
-              _email: string
-              _expires_at?: string
-              _invite_code: string
-              _role?: string
-              _user_id: string
+            Returns: {
+              accepted_at: string | null
+              company_id: string | null
+              email: string
+              expires_at: string
+              id: string
+              invite_code: string
+              is_accepted: boolean | null
+              issued_at: string
+              issued_by: string
+              role: string | null
             }
-        Returns: {
-          accepted_at: string | null
-          company_id: string | null
-          email: string
-          expires_at: string
-          id: string
-          invite_code: string
-          is_accepted: boolean | null
-          issued_at: string
-          issued_by: string
-          role: string | null
-        }
-      }
-      current_clerk_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+            SetofOptions: {
+              from: "*"
+              to: "invitations"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+      current_clerk_id: { Args: never; Returns: string }
       delete_invitation: {
         Args: { _id: string; _user_id: string }
         Returns: boolean
@@ -1837,18 +1860,9 @@ export type Database = {
         Args: { _reason?: string; _target_user_id: string }
         Returns: Json
       }
-      get_current_user_admin_status: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      get_current_user_email: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_current_user_is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      get_current_user_admin_status: { Args: never; Returns: boolean }
+      get_current_user_email: { Args: never; Returns: string }
+      get_current_user_is_admin: { Args: never; Returns: boolean }
       get_employee_safe_data: {
         Args: { employee_id: string }
         Returns: {
@@ -1899,22 +1913,56 @@ export type Database = {
           role: string
           token: string | null
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "invitation_metadata"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
-      get_invitations: {
-        Args: { _company_id?: string; _user_id: string } | { _user_id: string }
-        Returns: {
-          accepted_at: string | null
-          company_id: string | null
-          email: string
-          expires_at: string
-          id: string
-          invite_code: string
-          is_accepted: boolean | null
-          issued_at: string
-          issued_by: string
-          role: string | null
-        }[]
-      }
+      get_invitations:
+        | {
+            Args: { _user_id: string }
+            Returns: {
+              accepted_at: string | null
+              company_id: string | null
+              email: string
+              expires_at: string
+              id: string
+              invite_code: string
+              is_accepted: boolean | null
+              issued_at: string
+              issued_by: string
+              role: string | null
+            }[]
+            SetofOptions: {
+              from: "*"
+              to: "invitations"
+              isOneToOne: false
+              isSetofReturn: true
+            }
+          }
+        | {
+            Args: { _company_id?: string; _user_id: string }
+            Returns: {
+              accepted_at: string | null
+              company_id: string | null
+              email: string
+              expires_at: string
+              id: string
+              invite_code: string
+              is_accepted: boolean | null
+              issued_at: string
+              issued_by: string
+              role: string | null
+            }[]
+            SetofOptions: {
+              from: "*"
+              to: "invitations"
+              isOneToOne: false
+              isSetofReturn: true
+            }
+          }
       get_user_companies: {
         Args: { _user_id: string }
         Returns: {
@@ -1927,18 +1975,9 @@ export type Database = {
         Args: { company_id: string; user_id: string }
         Returns: string
       }
-      get_user_is_admin: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
-      is_admin: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
-      is_user_admin: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
+      get_user_is_admin: { Args: { user_id: string }; Returns: boolean }
+      is_admin: { Args: { user_id: string }; Returns: boolean }
+      is_user_admin: { Args: { user_id: string }; Returns: boolean }
       log_sensitive_data_access: {
         Args: {
           access_type: string
@@ -1957,7 +1996,7 @@ export type Database = {
         Returns: boolean
       }
       run_sickness_integrity_check: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           calculated_days: number
           difference: number
@@ -1968,10 +2007,7 @@ export type Database = {
           stored_days: number
         }[]
       }
-      sync_timesheet_entries_payroll_ids: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      sync_timesheet_entries_payroll_ids: { Args: never; Returns: number }
       user_has_company_access: {
         Args: { _company_id: string; _required_role?: string; _user_id: string }
         Returns: boolean
