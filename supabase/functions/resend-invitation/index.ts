@@ -89,6 +89,20 @@ serve(async (req: Request) => {
 
     console.log(`[resend-invitation] Resending email to ${invitation.invited_email}`);
 
+    // Create initial log entry
+    const { data: logEntry } = await supabaseAdmin
+      .from('invitation_resend_log')
+      .insert({
+        invitation_id: invitation_id,
+        resent_by: user.id,
+        success: false,
+        resend_method: 'manual',
+        ip_address: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip'),
+        user_agent: req.headers.get('user-agent'),
+      })
+      .select()
+      .single();
+
     // Resend the invitation email via Supabase Auth
     const redirectTo = `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.supabase.co')}/auth/v1/verify?token=${invitation.token}&type=invite&redirect_to=https://payroll.dootsons.com/auth`;
 
@@ -106,7 +120,27 @@ serve(async (req: Request) => {
 
     if (resendError) {
       console.error('[resend-invitation] Error resending email:', resendError);
+      
+      // Update log with failure
+      if (logEntry) {
+        await supabaseAdmin
+          .from('invitation_resend_log')
+          .update({
+            success: false,
+            error_message: resendError.message
+          })
+          .eq('id', logEntry.id);
+      }
+      
       throw new Error(`Failed to resend invitation: ${resendError.message}`);
+    }
+
+    // Update log with success
+    if (logEntry) {
+      await supabaseAdmin
+        .from('invitation_resend_log')
+        .update({ success: true })
+        .eq('id', logEntry.id);
     }
 
     console.log(`[resend-invitation] Email resent successfully to ${invitation.invited_email}`);
