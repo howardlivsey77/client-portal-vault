@@ -15,10 +15,45 @@ function isNumericValue(value: any): boolean {
 }
 
 /**
+ * Helper function to parse time strings in HH:MM format
+ * Examples: "04:30" -> 4.5, "00:30" -> 0.5, "10:15" -> 10.25
+ */
+function parseTimeString(value: any): number | null {
+  if (typeof value !== 'string') return null;
+  
+  // Match HH:MM or H:MM format (with optional leading zeros)
+  const timeRegex = /^(\d{1,2}):(\d{2})$/;
+  const match = value.trim().match(timeRegex);
+  
+  if (!match) return null;
+  
+  const hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  
+  // Validate ranges
+  if (minutes < 0 || minutes >= 60) {
+    console.warn(`Invalid minutes in time string: ${value}`);
+    return null;
+  }
+  
+  // Convert to decimal hours
+  const decimalHours = hours + (minutes / 60);
+  console.log(`Parsed time string "${value}" -> ${decimalHours} hours (${hours}h ${minutes}m)`);
+  
+  return decimalHours;
+}
+
+/**
  * Helper function to detect and convert Excel time decimal values to hours
  * Excel stores time as decimal fractions of a day (e.g., 0.125 = 3 hours)
  */
 function convertTimeDecimalToHours(value: any): number {
+  // NEW: Try to parse as HH:MM format first
+  const timeStringHours = parseTimeString(value);
+  if (timeStringHours !== null) {
+    return timeStringHours;
+  }
+  
   if (!isNumericValue(value)) return 0;
   
   const numericValue = parseFloat(value);
