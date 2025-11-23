@@ -48,14 +48,14 @@ export const overlapService = {
         }) || [];
 
       if (overlappingRecords.length > 0) {
-        const message = overlappingRecords.length === 1
-          ? `Overlaps with existing sickness record from ${overlappingRecords[0].start_date}${overlappingRecords[0].end_date ? ` to ${overlappingRecords[0].end_date}` : ''}`
-          : `Overlaps with ${overlappingRecords.length} existing sickness records`;
+        const overlapDetails = overlappingRecords.map(record => {
+          return `${record.start_date} to ${record.end_date || record.start_date}`;
+        }).join('; ');
 
         return {
           hasOverlap: true,
           overlappingRecords,
-          message
+          message: `Overlaps with existing record(s): ${overlapDetails}`
         };
       }
 
