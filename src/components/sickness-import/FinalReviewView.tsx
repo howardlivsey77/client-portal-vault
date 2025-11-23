@@ -68,51 +68,53 @@ export const FinalReviewView = ({ records, onImport, onBack, isImporting }: Fina
           <CardTitle>Records to Import ({recordsToImport.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Employee</TableHead>
-                <TableHead>Date Range</TableHead>
-                <TableHead>Working Days</TableHead>
-                <TableHead>Scheme</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recordsToImport.map((record) => (
-                <TableRow key={record.id}>
-                  <TableCell className="font-medium">{record.employeeName}</TableCell>
-                  <TableCell>
-                    {record.startDate} <ArrowRight className="inline h-3 w-3 mx-1" /> {record.endDate}
-                  </TableCell>
-                  <TableCell>{record.sicknessDays || 0} days</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {record.matchedSchemeName || record.schemeAllocation || 'Default'}
-                  </TableCell>
-                  <TableCell>
-                    {record.trimStatus === 'no_overlap' && (
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Original
-                      </Badge>
-                    )}
-                    {record.trimStatus === 'trimmed' && (
-                      <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                        <AlertTriangle className="h-3 w-3 mr-1" />
-                        Trimmed
-                      </Badge>
-                    )}
-                    {record.trimStatus === 'split' && (
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                        <Split className="h-3 w-3 mr-1" />
-                        Split
-                      </Badge>
-                    )}
-                  </TableCell>
+          <div className="max-h-[500px] overflow-y-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Employee</TableHead>
+                  <TableHead>Date Range</TableHead>
+                  <TableHead>Working Days</TableHead>
+                  <TableHead>Scheme</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {recordsToImport.map((record) => (
+                  <TableRow key={record.id}>
+                    <TableCell className="font-medium">{record.employeeName}</TableCell>
+                    <TableCell>
+                      {record.startDate} <ArrowRight className="inline h-3 w-3 mx-1" /> {record.endDate}
+                    </TableCell>
+                    <TableCell>{record.sicknessDays || 0} days</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {record.matchedSchemeName || record.schemeAllocation || 'Default'}
+                    </TableCell>
+                    <TableCell>
+                      {record.trimStatus === 'no_overlap' && (
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Original
+                        </Badge>
+                      )}
+                      {record.trimStatus === 'trimmed' && (
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Trimmed
+                        </Badge>
+                      )}
+                      {record.trimStatus === 'split' && (
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          <Split className="h-3 w-3 mr-1" />
+                          Split
+                        </Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
