@@ -24,6 +24,14 @@ export function EmployeeCard({
   const isExpanded = expandedCards[employeeName];
   const hasMultipleCandidates = match.candidates.length > 1;
   const displayCandidates = isExpanded ? match.candidates : match.candidates.slice(0, 2);
+  
+  // Sort employees alphabetically by last name, then first name
+  const sortedEmployees = [...allDatabaseEmployees].sort((a, b) => {
+    if (a.last_name !== b.last_name) {
+      return a.last_name.localeCompare(b.last_name);
+    }
+    return a.first_name.localeCompare(b.first_name);
+  });
 
   return (
     <Card className="mb-3 bg-white">
@@ -88,7 +96,7 @@ export function EmployeeCard({
               </SelectTrigger>
               <SelectContent className="z-50 bg-white border shadow-lg max-h-48">
                 <SelectItem value="skip" className="text-xs">Skip this employee</SelectItem>
-                {allDatabaseEmployees.map(employee => (
+                {sortedEmployees.map(employee => (
                   <SelectItem key={employee.id} value={employee.id} className="text-xs">
                     {employee.full_name}
                     {employee.payroll_id && ` (${employee.payroll_id})`}
