@@ -28,8 +28,10 @@ export const overlapService = {
 
       if (error) throw error;
 
-      const recordStart = new Date(startDate);
-      const recordEnd = endDate ? new Date(endDate) : recordStart;
+      // Use string comparison to avoid timezone issues
+      // YYYY-MM-DD format sorts correctly lexicographically
+      const recordStartStr = startDate;
+      const recordEndStr = endDate || startDate;
 
       const overlappingRecords = existingRecords
         ?.filter(record => {
@@ -38,11 +40,11 @@ export const overlapService = {
             return false;
           }
 
-          const existingStart = new Date(record.start_date);
-          const existingEnd = record.end_date ? new Date(record.end_date) : existingStart;
+          const existingStartStr = record.start_date;
+          const existingEndStr = record.end_date || record.start_date;
 
-          // Check for any overlap
-          return recordStart <= existingEnd && recordEnd >= existingStart;
+          // Check for any overlap using string comparison
+          return recordStartStr <= existingEndStr && recordEndStr >= existingStartStr;
         }) || [];
 
       if (overlappingRecords.length > 0) {
