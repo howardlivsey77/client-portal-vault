@@ -163,6 +163,14 @@ export async function matchEmployees(employeeHoursData: EmployeeHoursData[]): Pr
       rate_4: (emp as any).rate_4 ?? null,
     }));
 
+    // Sort employees alphabetically by last name, then first name
+    databaseEmployees.sort((a, b) => {
+      if (a.last_name !== b.last_name) {
+        return a.last_name.localeCompare(b.last_name);
+      }
+      return a.first_name.localeCompare(b.first_name);
+    });
+
     const exactMatches: EmployeeMatchResult[] = [];
     const fuzzyMatches: EmployeeMatchResult[] = [];
     const unmatchedEmployees: EmployeeMatchResult[] = [];
