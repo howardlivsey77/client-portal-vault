@@ -10,12 +10,31 @@ export interface ParsedDate {
 }
 
 /**
+ * Strip time portion from datetime strings
+ * Examples:
+ *   "01/01/2025 00:00" -> "01/01/2025"
+ *   "2025-01-01 23:59:59" -> "2025-01-01"
+ *   "01/01/2025" -> "01/01/2025" (unchanged)
+ */
+function stripTimeFromDateString(dateStr: string): string {
+  // Match everything before space or T separator
+  const timeSeparatorMatch = dateStr.match(/^([^\sT]+)/);
+  
+  if (timeSeparatorMatch) {
+    return timeSeparatorMatch[1].trim();
+  }
+  
+  return dateStr;
+}
+
+/**
  * Parse a date value from various formats including:
  * - DD/MM/YYYY or DD-MM-YYYY
  * - MM/DD/YYYY or MM-DD-YYYY  
  * - YYYY-MM-DD
  * - Excel serial numbers
  * - JavaScript Date objects
+ * - Datetime strings with time portions (time will be stripped)
  */
 export function parseDate(value: any): ParsedDate {
   const originalValue = value;
@@ -61,7 +80,7 @@ export function parseDate(value: any): ParsedDate {
   }
 
 // Convert to string for parsing
-const dateStr = String(value).trim();
+let dateStr = String(value).trim();
 
 if (!dateStr) {
   return {
@@ -71,6 +90,10 @@ if (!dateStr) {
     originalValue
   };
 }
+
+// Strip time portion if present (e.g., "01/01/2025 00:00" -> "01/01/2025")
+dateStr = stripTimeFromDateString(dateStr);
+console.log(`Date parsing: "${originalValue}" -> "${dateStr}" (after time strip)`);
 
 // Handle numeric strings that are likely Excel serial numbers (e.g., "45720" or "45720.0")
 if (/^\d+(\.0+)?$/.test(dateStr)) {
