@@ -28,10 +28,8 @@ export const overlapService = {
 
       if (error) throw error;
 
-      // Use string comparison to avoid timezone issues
-      // YYYY-MM-DD format sorts correctly lexicographically
-      const recordStartStr = startDate;
-      const recordEndStr = endDate || startDate;
+      const recordStart = new Date(startDate);
+      const recordEnd = endDate ? new Date(endDate) : recordStart;
 
       const overlappingRecords = existingRecords
         ?.filter(record => {
@@ -40,22 +38,22 @@ export const overlapService = {
             return false;
           }
 
-          const existingStartStr = record.start_date;
-          const existingEndStr = record.end_date || record.start_date;
+          const existingStart = new Date(record.start_date);
+          const existingEnd = record.end_date ? new Date(record.end_date) : existingStart;
 
-          // Check for any overlap using string comparison
-          return recordStartStr <= existingEndStr && recordEndStr >= existingStartStr;
+          // Check for any overlap
+          return recordStart <= existingEnd && recordEnd >= existingStart;
         }) || [];
 
       if (overlappingRecords.length > 0) {
-        const overlapDetails = overlappingRecords.map(record => {
-          return `${record.start_date} to ${record.end_date || record.start_date}`;
-        }).join('; ');
+        const message = overlappingRecords.length === 1
+          ? `Overlaps with existing sickness record from ${overlappingRecords[0].start_date}${overlappingRecords[0].end_date ? ` to ${overlappingRecords[0].end_date}` : ''}`
+          : `Overlaps with ${overlappingRecords.length} existing sickness records`;
 
         return {
           hasOverlap: true,
           overlappingRecords,
-          message: `Overlaps with existing record(s): ${overlapDetails}`
+          message
         };
       }
 

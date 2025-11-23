@@ -624,25 +624,7 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
                   overlappingRecords: overlapResult.overlappingRecords,
                   message: overlapResult.message
                 };
-                
-                // ENHANCED LOGGING for overlap debugging
-                console.log(`🔴 OVERLAP DETECTED for ${employeeName}:`, {
-                  employeeId: bestEmployeeMatch.id,
-                  employeeName: bestEmployeeMatch.name,
-                  rawStartDate: startDateRaw,
-                  rawEndDate: endDateRaw,
-                  parsedStartDate: startDate,
-                  parsedEndDate: endDate || '(ongoing)',
-                  overlappingRecords: overlapResult.overlappingRecords.map(r => ({
-                    id: r.id,
-                    start: r.start_date,
-                    end: r.end_date || '(ongoing)',
-                    days: r.total_days
-                  })),
-                  message: overlapResult.message
-                });
-              } else {
-                console.log(`✅ No overlap for ${employeeName} (${startDate} to ${endDate || 'ongoing'})`);
+                console.log(`Overlap detected for ${employeeName}:`, overlapResult.message);
               }
             } catch (error) {
               console.error(`Error checking overlaps for ${employeeName}:`, error);
@@ -695,8 +677,6 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
             sicknessDays: calculatedSicknessDays || 0,
             startDate: startDate || undefined,
             endDate: endDate || undefined,
-            startDateRaw,
-            endDateRaw,
             reason: reason || undefined,
             isCertified,
             notes: notes || undefined,
@@ -1376,29 +1356,12 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
                           {record.reason && (
                             <p className="text-xs text-muted-foreground">{record.reason}</p>
                           )}
-                          {(record.startDate || record.startDateRaw) && (
-                            <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                              <div>
-                                <span className="font-medium">Raw:</span> {String(record.startDateRaw || '')} 
-                                {record.endDateRaw && ` → ${String(record.endDateRaw)}`}
-                              </div>
-                              <div>
-                                <span className="font-medium">Parsed:</span> {record.startDate} 
-                                {record.endDate && ` → ${record.endDate}`}
-                              </div>
-                            </div>
-                          )}
                           {record.hasOverlap && (
-                            <div className="mt-2 p-2 bg-amber-100 dark:bg-amber-900/30 rounded text-xs space-y-1">
-                              <div className="flex items-center gap-1 font-medium text-amber-900 dark:text-amber-100">
-                                <AlertCircle className="h-3 w-3" />
-                                Auto-skipped: Overlap detected
-                              </div>
-                              {record.overlapDetails?.overlappingRecords.map((overlap, idx) => (
-                                <div key={idx} className="text-amber-800 dark:text-amber-200">
-                                  Existing record: {overlap.start_date} to {overlap.end_date || overlap.start_date} ({overlap.total_days} days)
-                                </div>
-                              ))}
+                            <div className="flex items-center gap-1 mt-1">
+                              <AlertCircle className="h-3 w-3 text-muted-foreground" />
+                              <p className="text-xs text-muted-foreground">
+                                Auto-skipped: {record.overlapDetails?.message}
+                              </p>
                             </div>
                           )}
                         </div>
