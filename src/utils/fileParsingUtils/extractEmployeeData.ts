@@ -15,20 +15,26 @@ function isNumericValue(value: any): boolean {
 }
 
 /**
- * Helper function to parse time strings in HH:MM format
- * Examples: "04:30" -> 4.5, "00:30" -> 0.5, "10:15" -> 10.25
+ * Helper function to parse time strings in HH:MM or HH:MM:SS format
+ * Examples: 
+ *   "04:30" -> 4.5
+ *   "00:30" -> 0.5
+ *   "10:15" -> 10.25
+ *   "71:30:00" -> 71.5
+ *   "02:15:30" -> 2.258333...
  */
 function parseTimeString(value: any): number | null {
   if (typeof value !== 'string') return null;
   
-  // Match HH:MM or H:MM format (with optional leading zeros)
-  const timeRegex = /^(\d{1,2}):(\d{2})$/;
+  // Match HH:MM:SS or HH:MM format (hours can be any number of digits)
+  const timeRegex = /^(\d+):(\d{2})(?::(\d{2}))?$/;
   const match = value.trim().match(timeRegex);
   
   if (!match) return null;
   
   const hours = parseInt(match[1], 10);
   const minutes = parseInt(match[2], 10);
+  const seconds = match[3] ? parseInt(match[3], 10) : 0; // Seconds are optional
   
   // Validate ranges
   if (minutes < 0 || minutes >= 60) {
@@ -36,9 +42,14 @@ function parseTimeString(value: any): number | null {
     return null;
   }
   
+  if (seconds < 0 || seconds >= 60) {
+    console.warn(`Invalid seconds in time string: ${value}`);
+    return null;
+  }
+  
   // Convert to decimal hours
-  const decimalHours = hours + (minutes / 60);
-  console.log(`Parsed time string "${value}" -> ${decimalHours} hours (${hours}h ${minutes}m)`);
+  const decimalHours = hours + (minutes / 60) + (seconds / 3600);
+  console.log(`Parsed time string "${value}" -> ${decimalHours} hours (${hours}h ${minutes}m ${seconds}s)`);
   
   return decimalHours;
 }
