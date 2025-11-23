@@ -116,149 +116,151 @@ export const OverlapTrimView = ({ records, onProceed, onBack }: OverlapTrimViewP
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[50px]"></TableHead>
-                <TableHead>Employee</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Original Date Range</TableHead>
-                <TableHead>New Date Range(s)</TableHead>
-                <TableHead className="text-right">Working Days</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recordGroups.map((group) => {
-                const mainRecord = group[0];
-                const hasDetails = mainRecord.wasTrimmed || mainRecord.trimStatus === 'split';
-                const isExpanded = expandedRows.has(mainRecord.id);
+          <div className="max-h-[500px] overflow-y-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[50px]"></TableHead>
+                  <TableHead>Employee</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Original Date Range</TableHead>
+                  <TableHead>New Date Range(s)</TableHead>
+                  <TableHead className="text-right">Working Days</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recordGroups.map((group) => {
+                  const mainRecord = group[0];
+                  const hasDetails = mainRecord.wasTrimmed || mainRecord.trimStatus === 'split';
+                  const isExpanded = expandedRows.has(mainRecord.id);
 
-                return (
-                  <Collapsible key={mainRecord.id} open={isExpanded} asChild>
-                    <>
-                      <TableRow>
-                        <TableCell>
-                          {hasDetails && (
-                            <CollapsibleTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => toggleRow(mainRecord.id)}
-                              >
-                                <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                              </Button>
-                            </CollapsibleTrigger>
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium">{mainRecord.employeeName}</TableCell>
-                        <TableCell>
-                          {mainRecord.trimStatus === 'no_overlap' && (
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              No Overlap
-                            </Badge>
-                          )}
-                          {mainRecord.trimStatus === 'trimmed' && (
-                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                              <AlertTriangle className="h-3 w-3 mr-1" />
-                              Trimmed
-                            </Badge>
-                          )}
-                          {mainRecord.trimStatus === 'split' && (
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                              <Split className="h-3 w-3 mr-1" />
-                              Split ({group.length})
-                            </Badge>
-                          )}
-                          {mainRecord.trimStatus === 'fully_overlapping' && (
-                            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                              <XCircle className="h-3 w-3 mr-1" />
-                              Skipped
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {mainRecord.trimmedFrom ? (
-                            <span className="text-muted-foreground">
-                              {mainRecord.trimmedFrom.originalStartDate} - {mainRecord.trimmedFrom.originalEndDate}
-                            </span>
-                          ) : (
-                            <span>{mainRecord.startDate} - {mainRecord.endDate}</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {mainRecord.trimStatus === 'fully_overlapping' ? (
-                            <span className="text-muted-foreground italic">Fully overlapping</span>
-                          ) : mainRecord.trimStatus === 'split' ? (
-                            <span className="text-blue-600 font-medium">{group.length} new records</span>
-                          ) : (
-                            <span>{mainRecord.startDate} - {mainRecord.endDate}</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {mainRecord.trimStatus === 'fully_overlapping' ? (
-                            <span className="text-muted-foreground">-</span>
-                          ) : mainRecord.trimStatus === 'split' ? (
-                            <span className="font-medium">
-                              {group.reduce((sum, r) => sum + (r.sicknessDays || 0), 0)} days
-                            </span>
-                          ) : (
-                            <span>{mainRecord.sicknessDays || 0} days</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                      {hasDetails && (
-                        <CollapsibleContent asChild>
-                          <TableRow>
-                            <TableCell colSpan={6} className="bg-muted/50">
-                              <div className="p-4 space-y-3">
-                                {mainRecord.trimmedFrom && (
-                                  <div>
-                                    <p className="text-sm font-medium mb-2">Original Record:</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {mainRecord.trimmedFrom.originalStartDate} - {mainRecord.trimmedFrom.originalEndDate} 
-                                      ({mainRecord.trimmedFrom.originalSicknessDays} working days)
-                                    </p>
-                                  </div>
-                                )}
-                                {mainRecord.overlapDetails && (
-                                  <div>
-                                    <p className="text-sm font-medium mb-2">Conflicts with existing records:</p>
-                                    <ul className="text-sm text-muted-foreground space-y-1">
-                                      {mainRecord.overlapDetails.overlappingRecords.map((overlap) => (
-                                        <li key={overlap.id}>
-                                          • {overlap.start_date}{overlap.end_date ? ` - ${overlap.end_date}` : ''} ({overlap.total_days} days)
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                                {group.length > 1 && (
-                                  <div>
-                                    <p className="text-sm font-medium mb-2">Auto-trimmed to {group.length} records:</p>
-                                    <ul className="text-sm space-y-1">
-                                      {group.map((record, idx) => (
-                                        <li key={record.id} className="flex items-center gap-2">
-                                          <CheckCircle2 className="h-3 w-3 text-green-600" />
-                                          <span>
-                                            {record.startDate} - {record.endDate} ({record.sicknessDays} working days)
-                                          </span>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        </CollapsibleContent>
-                      )}
-                    </>
-                  </Collapsible>
-                );
-              })}
-            </TableBody>
-          </Table>
+                  return (
+                    <Collapsible key={mainRecord.id} open={isExpanded} asChild>
+                      <>
+                        <TableRow>
+                          <TableCell>
+                            {hasDetails && (
+                              <CollapsibleTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleRow(mainRecord.id)}
+                                >
+                                  <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                </Button>
+                              </CollapsibleTrigger>
+                            )}
+                          </TableCell>
+                          <TableCell className="font-medium">{mainRecord.employeeName}</TableCell>
+                          <TableCell>
+                            {mainRecord.trimStatus === 'no_overlap' && (
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                No Overlap
+                              </Badge>
+                            )}
+                            {mainRecord.trimStatus === 'trimmed' && (
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                                <AlertTriangle className="h-3 w-3 mr-1" />
+                                Trimmed
+                              </Badge>
+                            )}
+                            {mainRecord.trimStatus === 'split' && (
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                <Split className="h-3 w-3 mr-1" />
+                                Split ({group.length})
+                              </Badge>
+                            )}
+                            {mainRecord.trimStatus === 'fully_overlapping' && (
+                              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                                <XCircle className="h-3 w-3 mr-1" />
+                                Skipped
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {mainRecord.trimmedFrom ? (
+                              <span className="text-muted-foreground">
+                                {mainRecord.trimmedFrom.originalStartDate} - {mainRecord.trimmedFrom.originalEndDate}
+                              </span>
+                            ) : (
+                              <span>{mainRecord.startDate} - {mainRecord.endDate}</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {mainRecord.trimStatus === 'fully_overlapping' ? (
+                              <span className="text-muted-foreground italic">Fully overlapping</span>
+                            ) : mainRecord.trimStatus === 'split' ? (
+                              <span className="text-blue-600 font-medium">{group.length} new records</span>
+                            ) : (
+                              <span>{mainRecord.startDate} - {mainRecord.endDate}</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {mainRecord.trimStatus === 'fully_overlapping' ? (
+                              <span className="text-muted-foreground">-</span>
+                            ) : mainRecord.trimStatus === 'split' ? (
+                              <span className="font-medium">
+                                {group.reduce((sum, r) => sum + (r.sicknessDays || 0), 0)} days
+                              </span>
+                            ) : (
+                              <span>{mainRecord.sicknessDays || 0} days</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                        {hasDetails && (
+                          <CollapsibleContent asChild>
+                            <TableRow>
+                              <TableCell colSpan={6} className="bg-muted/50">
+                                <div className="p-4 space-y-3">
+                                  {mainRecord.trimmedFrom && (
+                                    <div>
+                                      <p className="text-sm font-medium mb-2">Original Record:</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {mainRecord.trimmedFrom.originalStartDate} - {mainRecord.trimmedFrom.originalEndDate} 
+                                        ({mainRecord.trimmedFrom.originalSicknessDays} working days)
+                                      </p>
+                                    </div>
+                                  )}
+                                  {mainRecord.overlapDetails && (
+                                    <div>
+                                      <p className="text-sm font-medium mb-2">Conflicts with existing records:</p>
+                                      <ul className="text-sm text-muted-foreground space-y-1">
+                                        {mainRecord.overlapDetails.overlappingRecords.map((overlap) => (
+                                          <li key={overlap.id}>
+                                            • {overlap.start_date}{overlap.end_date ? ` - ${overlap.end_date}` : ''} ({overlap.total_days} days)
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  {group.length > 1 && (
+                                    <div>
+                                      <p className="text-sm font-medium mb-2">Auto-trimmed to {group.length} records:</p>
+                                      <ul className="text-sm space-y-1">
+                                        {group.map((record, idx) => (
+                                          <li key={record.id} className="flex items-center gap-2">
+                                            <CheckCircle2 className="h-3 w-3 text-green-600" />
+                                            <span>
+                                              {record.startDate} - {record.endDate} ({record.sicknessDays} working days)
+                                            </span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          </CollapsibleContent>
+                        )}
+                      </>
+                    </Collapsible>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
