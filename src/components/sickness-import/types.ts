@@ -34,6 +34,9 @@ export interface ProcessedSicknessRecord extends SicknessRecord {
     }>;
     message?: string;
   };
+  // Raw date values from file (for debugging date parsing issues)
+  startDateRaw?: any;
+  endDateRaw?: any;
   // Auto-trim fields
   wasTrimmed?: boolean;
   trimmedFrom?: {
