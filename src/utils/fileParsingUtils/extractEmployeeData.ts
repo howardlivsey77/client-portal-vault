@@ -47,7 +47,7 @@ function convertTimeDecimalToHours(value: any): number {
 /**
  * Extract employee name from various column patterns
  */
-function extractEmployeeName(row: any): { employeeName: string, payrollId: string } {
+function extractEmployeeName(row: any): { employeeName: string, payrollId: string, email: string } {
   console.log('Extracting employee name from row:', Object.keys(row));
   
   // Try different patterns for employee identification
@@ -109,17 +109,44 @@ function extractEmployeeName(row: any): { employeeName: string, payrollId: strin
   // Extract payroll ID from various patterns
   payrollId = row['payroll ID'] || row.EmployeeID || row.ID || row['Staff ID'] || row.StaffID || '';
   
+  // Extract email from various patterns
+  let email = '';
+  const emailPatterns = [
+    'Email', 'email', 'EMAIL',
+    'Email Address', 'email address', 'EMAIL ADDRESS',
+    'E-mail', 'e-mail', 'E-MAIL',
+    'Staff Email', 'staff email', 'STAFF EMAIL',
+    'Work Email', 'work email', 'WORK EMAIL',
+    'Contact Email', 'contact email', 'CONTACT EMAIL'
+  ];
+
+  for (const pattern of emailPatterns) {
+    if (row[pattern]) {
+      email = String(row[pattern]).trim().toLowerCase();
+      console.log(`Found email in column "${pattern}":`, email);
+      break;
+    }
+  }
+
+  // Validate email format (basic check)
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (email && !emailRegex.test(email)) {
+    console.warn(`Invalid email format found: "${email}", ignoring`);
+    email = '';
+  }
+  
   // Create full name
   const employeeName = (firstName + (lastName ? ' ' + lastName : '')).trim();
   
   console.log('Extracted employee info:', { 
     employeeName, 
-    payrollId, 
+    payrollId,
+    email,
     firstName, 
     lastName 
   });
   
-  return { employeeName, payrollId };
+  return { employeeName, payrollId, email };
 }
 
 /**
@@ -136,7 +163,7 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
     console.log(`\n=== Processing row ${rowIndex} ===`);
     
     // Extract employee identification info using enhanced logic
-    const { employeeName, payrollId } = extractEmployeeName(row);
+    const { employeeName, payrollId, email } = extractEmployeeName(row);
     
     // Skip if no employee name found
     if (!employeeName) {
@@ -182,6 +209,7 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
           employeeId: '',  // Will be enriched later with DB lookup
           payrollId: payrollId,
           employeeName: employeeName,
+          email: email,
           extraHours: roundToTwoDecimals(hours) || 0,
           entries: 1,
           rateType: `Rate ${rateCol.rateNumber}`,
@@ -271,6 +299,7 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
             employeeId: '',  // Will be enriched later with DB lookup
             payrollId: payrollId,
             employeeName: employeeName,
+            email: email,
             extraHours: roundToTwoDecimals(hoursValue) || 0,
             entries: 1,
             rateType: rateMapping.rateType,
@@ -303,6 +332,7 @@ export function extractEmployeeData(jsonData: any[]): EmployeeHoursData[] {
           employeeId: '',  // Will be enriched later with DB lookup
           payrollId: payrollId,
           employeeName: employeeName,
+          email: email,
           extraHours: roundToTwoDecimals(standardHours) || 0,
           entries: 1,
           rateType: 'Standard',

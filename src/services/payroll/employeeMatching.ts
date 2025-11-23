@@ -102,6 +102,33 @@ function findMatchingCandidates(
   const { firstName, lastName } = parseEmployeeName(employeeData.employeeName);
   const candidates: EmployeeMatchCandidate[] = [];
   
+  // PRIORITY 1: Check for exact email match first (highest priority)
+  if (employeeData.email) {
+    const normalizedFileEmail = employeeData.email.toLowerCase().trim();
+    
+    for (const dbEmployee of databaseEmployees) {
+      if (dbEmployee.email) {
+        const normalizedDbEmail = dbEmployee.email.toLowerCase().trim();
+        
+        if (normalizedFileEmail === normalizedDbEmail) {
+          // Exact email match - this is definitive!
+          console.log(`✅ EXACT EMAIL MATCH: ${employeeData.employeeName} matched to ${dbEmployee.full_name} via email ${normalizedFileEmail}`);
+          
+          candidates.push({
+            ...dbEmployee,
+            confidence: 1.0
+          });
+          
+          // Return immediately - email match is definitive, no need to check names
+          return candidates;
+        }
+      }
+    }
+  }
+  
+  // PRIORITY 2: If no email match, fall back to name-based matching
+  console.log(`No email match for ${employeeData.employeeName}, using name-based matching...`);
+  
   for (const dbEmployee of databaseEmployees) {
     let confidence = 0;
     
@@ -210,6 +237,15 @@ export async function matchEmployees(employeeHoursData: EmployeeHoursData[]): Pr
     }
     
     console.log(`Employee matching results: ${exactMatches.length} exact, ${fuzzyMatches.length} fuzzy, ${unmatchedEmployees.length} unmatched`);
+    
+    // Log breakdown of exact match methods
+    const emailMatches = exactMatches.filter(m => 
+      m.employeeData.email && m.selectedMatch?.email && 
+      m.employeeData.email.toLowerCase() === m.selectedMatch.email.toLowerCase()
+    ).length;
+    const nameMatches = exactMatches.length - emailMatches;
+    
+    console.log(`  └─ Exact matches breakdown: ${emailMatches} via email, ${nameMatches} via name`);
     
     return {
       exactMatches,

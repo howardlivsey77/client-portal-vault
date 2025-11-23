@@ -1,6 +1,7 @@
 export type EmployeeHoursData = {
   employeeId: string;
   employeeName: string;
+  email?: string;
   extraHours: number;
   entries: number;
   rateType?: string;
