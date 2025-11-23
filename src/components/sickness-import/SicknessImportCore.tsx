@@ -664,8 +664,8 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
             status = 'needs_attention';
             statusReason = `Scheme "${schemeAllocation}" not found`;
           } else if (hasOverlap) {
-            status = 'needs_attention';
-            statusReason = overlapDetails?.message || 'Overlaps with existing sickness record';
+            status = 'skipped';
+            statusReason = `Auto-skipped: ${overlapDetails?.message || 'Overlaps with existing sickness record'}`;
           }
           
           console.log(`Record status for ${employeeName}: ${status} - ${statusReason || 'Ready for import'}`);
@@ -1306,15 +1306,15 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
-                  id="skip-overlaps"
-                  checked={sicknessRecords.filter(r => r.hasOverlap && r.status === 'skipped').length === sicknessRecords.filter(r => r.hasOverlap).length && sicknessRecords.filter(r => r.hasOverlap).length > 0}
+                  id="include-overlaps"
+                  checked={sicknessRecords.filter(r => r.hasOverlap && r.status !== 'skipped').length > 0}
                   onCheckedChange={(checked) => {
                     setSicknessRecords(records =>
                       records.map(record => {
                         if (record.hasOverlap) {
                           return {
                             ...record,
-                            status: checked ? 'skipped' : (record.matchedEmployeeId ? 'needs_attention' : 'needs_attention')
+                            status: checked ? 'needs_attention' : 'skipped'
                           };
                         }
                         return record;
@@ -1322,8 +1322,8 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
                     );
                   }}
                 />
-                <label htmlFor="skip-overlaps" className="text-sm">
-                  Skip all with overlaps
+                <label htmlFor="include-overlaps" className="text-sm">
+                  Include records with overlaps (review before import)
                 </label>
               </div>
             </div>
@@ -1357,9 +1357,9 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
                           )}
                           {record.hasOverlap && (
                             <div className="flex items-center gap-1 mt-1">
-                              <AlertCircle className="h-3 w-3 text-amber-500" />
-                              <p className="text-xs text-amber-600 dark:text-amber-400">
-                                {record.overlapDetails?.message}
+                              <AlertCircle className="h-3 w-3 text-muted-foreground" />
+                              <p className="text-xs text-muted-foreground">
+                                Auto-skipped: {record.overlapDetails?.message}
                               </p>
                             </div>
                           )}
