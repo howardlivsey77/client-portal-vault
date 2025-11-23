@@ -1332,7 +1332,8 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
           {/* Records Table */}
           <Card>
             <CardContent className="p-0">
-              <Table>
+              <div className="max-h-[500px] overflow-y-auto">
+                <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Employee</TableHead>
@@ -1464,6 +1465,7 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
 
