@@ -19,6 +19,7 @@ export interface PayrollTableRow {
   employeeId: string;
   payrollId: string;
   name: string;
+  department: string;
   salary: number;
   statutoryPayment: number;
   overtime: number;
@@ -35,6 +36,29 @@ export interface PayrollTableRow {
   amountPaid: number;
   notes: string;
   hasPayrollResult: boolean;
+}
+
+export interface PayrollTotals {
+  salary: number;
+  statutoryPayment: number;
+  overtime: number;
+  ssp: number;
+  extraPayments: number;
+  extraDeductions: number;
+  gross: number;
+  tax: number;
+  employeeNic: number;
+  employerNic: number;
+  pensionablePay: number;
+  pension: number;
+  studentLoan: number;
+  amountPaid: number;
+}
+
+export interface DepartmentGroup {
+  department: string;
+  rows: PayrollTableRow[];
+  subtotals: PayrollTotals;
 }
 
 export type SortField = 'payrollId' | 'name';
@@ -109,6 +133,7 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
         employeeId: emp.id,
         payrollId: emp.payroll_id || '',
         name: `${emp.first_name} ${emp.last_name}`,
+        department: emp.department || 'Unassigned',
         salary: emp.monthly_salary || 0,
         statutoryPayment: 0, // Future: SMP, SPP, etc.
         overtime: 0, // Future: calculated from timesheet data
@@ -141,9 +166,9 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
     });
   }, [tableData, sortBy]);
 
-  // Calculate totals
-  const totals = useMemo(() => {
-    return sortedData.reduce(
+  // Helper function to calculate totals for a set of rows
+  const calculateTotals = (rows: PayrollTableRow[]): PayrollTotals => {
+    return rows.reduce(
       (acc, row) => ({
         salary: acc.salary + row.salary,
         statutoryPayment: acc.statutoryPayment + row.statutoryPayment,
@@ -177,10 +202,44 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
         amountPaid: 0,
       }
     );
+  };
+
+  // Group data by department
+  const groupedData = useMemo((): DepartmentGroup[] => {
+    const departmentMap = new Map<string, PayrollTableRow[]>();
+    
+    // Group employees by department
+    sortedData.forEach((row) => {
+      const dept = row.department;
+      if (!departmentMap.has(dept)) {
+        departmentMap.set(dept, []);
+      }
+      departmentMap.get(dept)!.push(row);
+    });
+    
+    // Convert to array and sort departments alphabetically (but put 'Unassigned' last)
+    const departments = Array.from(departmentMap.keys()).sort((a, b) => {
+      if (a === 'Unassigned') return 1;
+      if (b === 'Unassigned') return -1;
+      return a.localeCompare(b);
+    });
+    
+    return departments.map((dept) => {
+      const rows = departmentMap.get(dept)!;
+      return {
+        department: dept,
+        rows,
+        subtotals: calculateTotals(rows),
+      };
+    });
   }, [sortedData]);
+
+  // Calculate grand totals
+  const totals = useMemo(() => calculateTotals(sortedData), [sortedData]);
 
   return {
     data: sortedData,
+    groupedData,
     totals,
     loading,
     sortBy,

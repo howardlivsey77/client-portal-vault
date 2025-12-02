@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   Table,
   TableBody,
@@ -10,7 +11,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { PayrollTableHeader } from './PayrollTableHeader';
 import { PayrollTableRowComponent } from './PayrollTableRow';
-import { usePayrollTableData } from './hooks/usePayrollTableData';
+import { usePayrollTableData, PayrollTotals } from './hooks/usePayrollTableData';
 import { PayPeriod } from '@/services/payroll/utils/financial-year-utils';
 import { formatPounds } from '@/lib/formatters';
 
@@ -20,7 +21,7 @@ interface PayrollTableViewProps {
 
 export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
   const {
-    data,
+    groupedData,
     totals,
     loading,
     sortBy,
@@ -43,7 +44,7 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
     );
   }
 
-  if (data.length === 0) {
+  if (groupedData.length === 0) {
     return (
       <div className="text-center p-8 bg-muted/30 rounded-lg">
         <h3 className="text-xl font-medium mb-2">No Employees Found</h3>
@@ -53,6 +54,27 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
       </div>
     );
   }
+
+  const renderSubtotalRow = (subtotals: PayrollTotals, label: string) => (
+    <TableRow className="bg-muted/40 font-medium border-b-2">
+      <TableCell className="font-semibold">{label}</TableCell>
+      <TableCell>—</TableCell>
+      <TableCell className="text-right tabular-nums">{formatCurrency(subtotals.salary)}</TableCell>
+      <TableCell className="text-right tabular-nums">{formatCurrency(subtotals.statutoryPayment)}</TableCell>
+      <TableCell className="text-right tabular-nums">{formatCurrency(subtotals.overtime)}</TableCell>
+      <TableCell className="text-right tabular-nums">{formatCurrency(subtotals.ssp)}</TableCell>
+      <TableCell className="text-right tabular-nums">{formatCurrency(subtotals.extraPayments)}</TableCell>
+      <TableCell className="text-right tabular-nums">{formatCurrency(subtotals.extraDeductions)}</TableCell>
+      <TableCell className="text-right tabular-nums">{formatCurrency(subtotals.gross)}</TableCell>
+      <TableCell className="text-right tabular-nums">{formatCurrency(subtotals.tax)}</TableCell>
+      <TableCell className="text-right tabular-nums">{formatCurrency(subtotals.employeeNic)}</TableCell>
+      <TableCell className="text-right tabular-nums">
+        {formatCurrency(subtotals.pensionablePay)} / {formatCurrency(subtotals.pension)}
+      </TableCell>
+      <TableCell className="text-right tabular-nums">{formatCurrency(subtotals.studentLoan)}</TableCell>
+      <TableCell className="text-right tabular-nums font-bold">{formatCurrency(subtotals.amountPaid)}</TableCell>
+    </TableRow>
+  );
 
   return (
     <div className="space-y-4">
@@ -84,8 +106,23 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map((row, index) => (
-              <PayrollTableRowComponent key={row.employeeId} row={row} index={index} />
+            {groupedData.map((group) => (
+              <React.Fragment key={group.department}>
+                {/* Department Header Row */}
+                <TableRow className="bg-primary/10 border-t-2 border-primary/20">
+                  <TableCell colSpan={14} className="py-2 font-semibold text-base text-primary">
+                    {group.department}
+                  </TableCell>
+                </TableRow>
+                
+                {/* Employee Rows */}
+                {group.rows.map((row, index) => (
+                  <PayrollTableRowComponent key={row.employeeId} row={row} index={index} />
+                ))}
+                
+                {/* Department Subtotal Row */}
+                {renderSubtotalRow(group.subtotals, `${group.department} Total`)}
+              </React.Fragment>
             ))}
           </TableBody>
           <TableFooter>
