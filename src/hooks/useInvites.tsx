@@ -143,11 +143,27 @@ export const useInvites = () => {
           payload,
           timestamp: new Date().toISOString()
         });
-        throw new Error(error.message || 'Failed to send invitation');
+        
+        // Try to parse JSON error from edge function response
+        let errorMessage = 'Failed to send invitation';
+        const jsonMatch = error.message?.match(/\{.*\}/);
+        if (jsonMatch) {
+          try {
+            const parsed = JSON.parse(jsonMatch[0]);
+            errorMessage = parsed.error || errorMessage;
+          } catch {
+            errorMessage = error.message || errorMessage;
+          }
+        } else {
+          errorMessage = error.message || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to send invitation');
+      // Safe null check before accessing data properties
+      if (!data || !data.success) {
+        throw new Error(data?.error || 'Failed to send invitation');
       }
 
       console.log("✅ [INVITES] Invitation created successfully:", { 
