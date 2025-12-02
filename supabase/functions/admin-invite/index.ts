@@ -297,7 +297,91 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // User doesn't exist - proceed with invitation flow
-    // Store invitation metadata first
+    // First, check for existing invitation and handle stale ones
+    console.log(JSON.stringify({
+      evt: "invite.check_existing_invitation",
+      reqId,
+      email: email.toLowerCase().trim(),
+      company_id,
+      timestamp: new Date().toISOString()
+    }));
+
+    const { data: existingInvitation } = await supabaseAdmin
+      .from('invitation_metadata')
+      .select('id, is_accepted, invited_email')
+      .eq('invited_email', email.toLowerCase().trim())
+      .eq('company_id', company_id)
+      .maybeSingle();
+
+    if (existingInvitation) {
+      console.log(JSON.stringify({
+        evt: "invite.existing_invitation_found",
+        reqId,
+        email: email.toLowerCase().trim(),
+        invitation_id: existingInvitation.id,
+        is_accepted: existingInvitation.is_accepted,
+        timestamp: new Date().toISOString()
+      }));
+
+      if (existingInvitation.is_accepted) {
+        // Check if user actually completed signup (has profile)
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .eq('email', email.toLowerCase().trim())
+          .maybeSingle();
+
+        if (!profile) {
+          // Stale "accepted" invitation with no profile - clean up and proceed
+          console.log(JSON.stringify({
+            evt: "invite.cleaning_stale_invitation",
+            reqId,
+            email: email.toLowerCase().trim(),
+            invitation_id: existingInvitation.id,
+            timestamp: new Date().toISOString()
+          }));
+
+          // Delete the stale invitation_metadata
+          await supabaseAdmin
+            .from('invitation_metadata')
+            .delete()
+            .eq('id', existingInvitation.id);
+
+          // Also check for and delete unconfirmed auth.users entry
+          const { data: { users: allUsers } } = await supabaseAdmin.auth.admin.listUsers();
+          const staleUser = allUsers?.find(u => 
+            u.email?.toLowerCase() === email.toLowerCase().trim() && 
+            !u.email_confirmed_at
+          );
+
+          if (staleUser) {
+            console.log(JSON.stringify({
+              evt: "invite.deleting_stale_auth_user",
+              reqId,
+              email: email.toLowerCase().trim(),
+              stale_user_id: staleUser.id,
+              timestamp: new Date().toISOString()
+            }));
+            await supabaseAdmin.auth.admin.deleteUser(staleUser.id);
+          }
+
+          console.log(JSON.stringify({
+            evt: "invite.stale_data_cleaned",
+            reqId,
+            email: email.toLowerCase().trim(),
+            timestamp: new Date().toISOString()
+          }));
+        } else {
+          // User actually exists with a profile - they have access
+          throw new Error('User already has access to this company');
+        }
+      } else {
+        // Pending invitation exists - suggest using resend
+        throw new Error('User already has a pending invitation. Use "Resend Email" to send it again.');
+      }
+    }
+
+    // Store invitation metadata
     console.log(JSON.stringify({
       evt: "invite.metadata_insert_attempt",
       reqId,
