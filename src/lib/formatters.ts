@@ -102,3 +102,15 @@ export function formatLengthOfService(hireDate: string | Date): string {
   
   return `${years} ${yearText}, ${months} ${monthText}`;
 }
+
+/**
+ * Calculates monthly salary from hourly rate and hours per week
+ * Formula: (hourly_rate × hours_per_week) / 7 × 365 / 12
+ * @param hourlyRate The employee's hourly rate
+ * @param hoursPerWeek The employee's contracted hours per week
+ * @returns The calculated monthly salary rounded to 2 decimal places
+ */
+export function calculateMonthlySalary(hourlyRate: number, hoursPerWeek: number): number {
+  const monthlySalary = (hourlyRate * hoursPerWeek) / 7 * 365 / 12;
+  return roundToTwoDecimals(monthlySalary) || 0;
+}
