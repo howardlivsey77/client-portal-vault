@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Employee } from "@/types/employee-types";
 import { PayrollFormValues } from "../types";
+import { calculateMonthlySalary } from "@/lib/formatters";
 
 interface EmployeeInfoFieldsProps {
   employee?: Employee | null;
@@ -21,19 +22,11 @@ export function EmployeeInfoFields({
   
   useEffect(() => {
     if (employee) {
-      // Use stored monthly salary if available, otherwise calculate it
-      let monthlySalary: number;
-      
-      if (employee.monthly_salary !== undefined) {
-        monthlySalary = employee.monthly_salary;
-      } else {
-        const hourlyRate = employee.hourly_rate || 0;
-        const hoursPerWeek = employee.hours_per_week || 0;
-        
-        // Calculate monthly salary based on hourly rate and weekly hours
-        // Formula: (weekly hours × hourly rate) ÷ 7 × 365 ÷ 12
-        monthlySalary = Number(((hourlyRate * hoursPerWeek) / 7 * 365 / 12).toFixed(2));
-      }
+      // Always calculate monthly salary from hourly rate and hours per week
+      const monthlySalary = calculateMonthlySalary(
+        employee.hourly_rate || 0,
+        employee.hours_per_week || 0
+      );
 
       // Convert student loan plan to the correct type (1, 2, 4, 5 or null)
       const studentLoanPlan = employee.student_loan_plan === 1 ? 1 :
@@ -47,7 +40,7 @@ export function EmployeeInfoFields({
         employeeName: `${employee.first_name} ${employee.last_name}`,
         payrollId: employee.payroll_id || '',
         monthlySalary: monthlySalary,
-        taxCode: employee.tax_code || '1257L', // Use tax code from employee record
+        taxCode: employee.tax_code || '1257L',
         studentLoanPlan: studentLoanPlan
       });
     }

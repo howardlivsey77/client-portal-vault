@@ -4,6 +4,7 @@ import { useCompany } from '@/providers/CompanyProvider';
 import { useToast } from '@/hooks/use-toast';
 import { PayPeriod } from '@/services/payroll/utils/financial-year-utils';
 import { Employee } from '@/types/employee-types';
+import { calculateMonthlySalary } from '@/lib/formatters';
 
 // Helper to get payroll period date from PayPeriod
 function getPayPeriodDate(payPeriod: PayPeriod): string {
@@ -134,7 +135,7 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
         payrollId: emp.payroll_id || '',
         name: `${emp.first_name} ${emp.last_name}`,
         department: emp.department || 'Unassigned',
-        salary: emp.monthly_salary || 0,
+        salary: calculateMonthlySalary(emp.hourly_rate || 0, emp.hours_per_week || 0),
         statutoryPayment: 0, // Future: SMP, SPP, etc.
         overtime: 0, // Future: calculated from timesheet data
         ssp: 0, // Future: Statutory Sick Pay
