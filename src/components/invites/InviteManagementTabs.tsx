@@ -21,7 +21,7 @@ interface InviteManagementTabsProps {
   invitationsLoading: boolean;
   usersLoading: boolean;
   userId: string | null;
-  onDeleteInvitation: (id: string) => void;
+  onDeleteInvitation: (id: string) => Promise<boolean>;
   onResendInvitation: (id: string) => Promise<boolean>;
   onChangeRole: (user: UserProfile) => void;
   onDeleteUser?: (userId: string) => Promise<boolean>;
