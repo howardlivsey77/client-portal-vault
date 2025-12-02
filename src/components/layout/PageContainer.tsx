@@ -3,8 +3,7 @@ import React, { useState } from 'react';
 import { Sidebar } from './sidebar';
 import { CustomNavbar } from './CustomNavbar';
 import { useLocation } from 'react-router-dom';
-import { SidebarProvider, useSidebarContext } from '@/contexts/SidebarContext';
-import { cn } from '@/lib/utils';
+import { SidebarProvider } from '@/contexts/SidebarContext';
 
 interface PageContainerProps {
   children: React.ReactNode;
@@ -14,7 +13,6 @@ interface PageContainerProps {
 function PageContainerInner({ children, title }: PageContainerProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
-  const { isExpanded, isCollapsed, isHovering } = useSidebarContext();
   
   const isAuthPage = location.pathname === '/auth';
   
@@ -28,16 +26,6 @@ function PageContainerInner({ children, title }: PageContainerProps) {
       
       <div className="flex flex-1">
         {!isAuthPage && <Sidebar isOpen={sidebarOpen} />}
-        
-        {/* Spacer div to push content - only needed when sidebar is static (not hovering overlay) */}
-        {!isAuthPage && (
-          <div 
-            className={cn(
-              "hidden lg:block shrink-0 transition-all duration-300",
-              isExpanded && !isHovering ? "w-64" : "w-16"
-            )}
-          />
-        )}
         
         <div className="flex flex-1 flex-col overflow-hidden">
           <main className="flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-8">
