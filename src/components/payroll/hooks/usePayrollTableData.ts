@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/providers/CompanyProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -321,6 +321,44 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
     return ratesMap;
   }, [employees]);
 
+  // Refetch function that actually reloads data
+  const refetch = useCallback(async () => {
+    if (!currentCompany?.id) return;
+    
+    setLoading(true);
+    try {
+      const periodDate = getPayPeriodDate(payPeriod);
+      
+      const [empResponse, payrollResponse] = await Promise.all([
+        supabase
+          .from('employees')
+          .select('*')
+          .eq('company_id', currentCompany.id)
+          .eq('status', 'active'),
+        supabase
+          .from('payroll_results')
+          .select('*')
+          .eq('company_id', currentCompany.id)
+          .eq('payroll_period', periodDate)
+      ]);
+
+      if (empResponse.error) throw empResponse.error;
+      if (payrollResponse.error) throw payrollResponse.error;
+
+      setEmployees((empResponse.data as unknown as Employee[]) || []);
+      setPayrollResults(payrollResponse.data || []);
+    } catch (error: any) {
+      console.error('Error refetching payroll data:', error);
+      toast({
+        title: 'Error refreshing data',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [currentCompany?.id, payPeriod, toast]);
+
   return {
     data: sortedData,
     groupedData,
@@ -331,9 +369,6 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
     paymentDate,
     setPaymentDate,
     employeeRates,
-    refetch: () => {
-      // Trigger refetch by updating state
-      setLoading(true);
-    },
+    refetch,
   };
 }
