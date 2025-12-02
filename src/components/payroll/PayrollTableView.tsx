@@ -164,31 +164,12 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <PayrollTableHeader
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          paymentDate={paymentDate}
-          onPaymentDateChange={setPaymentDate}
-        />
-        <Button
-          onClick={calculateAndSaveAll}
-          disabled={isProcessing || loading}
-          className="gap-2"
-        >
-          {isProcessing ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Processing {progress?.current}/{progress?.total}...
-            </>
-          ) : (
-            <>
-              <Calculator className="h-4 w-4" />
-              Calculate & Save All
-            </>
-          )}
-        </Button>
-      </div>
+      <PayrollTableHeader
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        paymentDate={paymentDate}
+        onPaymentDateChange={setPaymentDate}
+      />
 
       <div className="rounded-md border overflow-x-auto">
         <Table>
@@ -260,6 +241,26 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
           </TableFooter>
         </Table>
       </div>
+
+      {/* Floating Calculate & Save Button */}
+      <Button
+        onClick={calculateAndSaveAll}
+        disabled={isProcessing || loading}
+        size="lg"
+        className="fixed bottom-6 right-6 z-50 gap-2 shadow-lg hover:shadow-xl transition-shadow"
+      >
+        {isProcessing ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Processing {progress?.current}/{progress?.total}...
+          </>
+        ) : (
+          <>
+            <Calculator className="h-4 w-4" />
+            Calculate & Save All
+          </>
+        )}
+      </Button>
     </div>
   );
 }
