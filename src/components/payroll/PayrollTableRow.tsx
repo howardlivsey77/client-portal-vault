@@ -27,7 +27,6 @@ export function PayrollTableRowComponent({ row, index }: PayrollTableRowProps) {
       <TableCell className="text-right tabular-nums font-medium">{formatCurrency(row.gross)}</TableCell>
       <TableCell className="text-right tabular-nums">{formatCurrency(row.tax)}</TableCell>
       <TableCell className="text-right tabular-nums">{formatCurrency(row.employeeNic)}</TableCell>
-      <TableCell className="text-right tabular-nums">{formatCurrency(row.employerNic)}</TableCell>
       <TableCell className="text-right tabular-nums">
         {formatCurrency(row.pensionablePay)} / {formatCurrency(row.pension)}
       </TableCell>
@@ -35,7 +34,6 @@ export function PayrollTableRowComponent({ row, index }: PayrollTableRowProps) {
       <TableCell className="text-right tabular-nums font-medium text-primary">
         {formatCurrency(row.amountPaid)}
       </TableCell>
-      <TableCell className="max-w-[150px] truncate">{row.notes || '-'}</TableCell>
     </TableRow>
   );
 }
