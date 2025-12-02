@@ -5,6 +5,14 @@ import { useToast } from '@/hooks/use-toast';
 import { PayPeriod } from '@/services/payroll/utils/financial-year-utils';
 import { Employee } from '@/types/employee-types';
 import { calculateMonthlySalary } from '@/lib/formatters';
+import { calculateMonthlyIncomeTaxAsync } from '@/services/payroll/calculations/income-tax';
+import { calculateNationalInsuranceAsync } from '@/services/payroll/calculations/national-insurance';
+
+interface CalculatedPayroll {
+  tax: number;
+  nic: number;
+  gross: number;
+}
 
 // Helper to get payroll period date from PayPeriod
 function getPayPeriodDate(payPeriod: PayPeriod): string {
@@ -70,6 +78,7 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortField>('payrollId');
   const [paymentDate, setPaymentDate] = useState<Date | undefined>(undefined);
+  const [calculatedPayroll, setCalculatedPayroll] = useState<Map<string, CalculatedPayroll>>(new Map());
   const { currentCompany } = useCompany();
   const { toast } = useToast();
 
@@ -122,30 +131,81 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
     fetchData();
   }, [currentCompany?.id, payPeriod.periodNumber, payPeriod.year]);
 
+  // Calculate tax and NIC for employees without payroll results
+  useEffect(() => {
+    const calculatePayrollForEmployees = async () => {
+      if (employees.length === 0) return;
+
+      const newCalculations = new Map<string, CalculatedPayroll>();
+      
+      // Get current tax year based on pay period
+      const taxYear = `${payPeriod.year}/${(payPeriod.year + 1).toString().substring(2)}`;
+
+      for (const emp of employees) {
+        // Skip if already has payroll result
+        const hasPayrollResult = payrollResults.some(pr => pr.employee_id === emp.id);
+        if (hasPayrollResult) continue;
+
+        const monthlySalary = calculateMonthlySalary(emp.hourly_rate || 0, emp.hours_per_week || 0);
+        const taxCode = emp.tax_code || '1257L';
+
+        try {
+          // Calculate tax and NIC in parallel
+          const [taxResult, niResult] = await Promise.all([
+            calculateMonthlyIncomeTaxAsync(monthlySalary, taxCode, taxYear),
+            calculateNationalInsuranceAsync(monthlySalary, taxYear)
+          ]);
+
+          newCalculations.set(emp.id, {
+            tax: taxResult.monthlyTax,
+            nic: niResult.nationalInsurance,
+            gross: monthlySalary
+          });
+        } catch (error) {
+          console.error(`Error calculating payroll for ${emp.first_name} ${emp.last_name}:`, error);
+          // Set defaults on error
+          newCalculations.set(emp.id, { tax: 0, nic: 0, gross: monthlySalary });
+        }
+      }
+
+      setCalculatedPayroll(newCalculations);
+    };
+
+    calculatePayrollForEmployees();
+  }, [employees, payrollResults, payPeriod.year]);
+
   // Combine employees with payroll results
   const tableData = useMemo((): PayrollTableRow[] => {
     return employees.map((emp) => {
       const payrollResult = payrollResults.find((pr) => pr.employee_id === emp.id);
+      const calculatedValues = calculatedPayroll.get(emp.id);
       
       // Convert pennies to pounds for display (payroll_results stores values in pennies)
       const toPounds = (pennies: number | null) => (pennies || 0) / 100;
+      const monthlySalary = calculateMonthlySalary(emp.hourly_rate || 0, emp.hours_per_week || 0);
       
       return {
         employeeId: emp.id,
         payrollId: emp.payroll_id || '',
         name: `${emp.first_name} ${emp.last_name}`,
         department: emp.department || 'Unassigned',
-        salary: calculateMonthlySalary(emp.hourly_rate || 0, emp.hours_per_week || 0),
+        salary: monthlySalary,
         statutoryPayment: 0, // Future: SMP, SPP, etc.
         overtime: 0, // Future: calculated from timesheet data
         ssp: 0, // Future: Statutory Sick Pay
         extraPayments: 0, // Future: additional earnings
         extraDeductions: 0, // Future: additional deductions
-        gross: payrollResult ? toPounds(payrollResult.gross_pay_this_period) : 0,
-        tax: payrollResult ? toPounds(payrollResult.income_tax_this_period) : 0,
-        employeeNic: payrollResult ? toPounds(payrollResult.nic_employee_this_period) : 0,
+        gross: payrollResult 
+          ? toPounds(payrollResult.gross_pay_this_period) 
+          : (calculatedValues?.gross || monthlySalary),
+        tax: payrollResult 
+          ? toPounds(payrollResult.income_tax_this_period) 
+          : (calculatedValues?.tax || 0),
+        employeeNic: payrollResult 
+          ? toPounds(payrollResult.nic_employee_this_period) 
+          : (calculatedValues?.nic || 0),
         employerNic: payrollResult ? toPounds(payrollResult.nic_employer_this_period) : 0,
-        pensionablePay: payrollResult ? toPounds(payrollResult.gross_pay_this_period) : 0,
+        pensionablePay: payrollResult ? toPounds(payrollResult.gross_pay_this_period) : monthlySalary,
         pension: payrollResult 
           ? toPounds(payrollResult.employee_pension_this_period + (payrollResult.nhs_pension_employee_this_period || 0)) 
           : 0,
@@ -155,7 +215,7 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
         hasPayrollResult: !!payrollResult,
       };
     });
-  }, [employees, payrollResults]);
+  }, [employees, payrollResults, calculatedPayroll]);
 
   // Sort the data
   const sortedData = useMemo(() => {
