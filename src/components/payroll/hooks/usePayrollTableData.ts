@@ -7,11 +7,13 @@ import { Employee } from '@/types/employee-types';
 import { calculateMonthlySalary } from '@/lib/formatters';
 import { calculateMonthlyIncomeTaxAsync } from '@/services/payroll/calculations/income-tax';
 import { calculateNationalInsuranceAsync } from '@/services/payroll/calculations/national-insurance';
+import { calculateStudentLoan } from '@/services/payroll/calculations/student-loan';
 
 interface CalculatedPayroll {
   tax: number;
   nic: number;
   gross: number;
+  studentLoan: number;
 }
 
 // Helper to get payroll period date from PayPeriod
@@ -156,15 +158,20 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
             calculateNationalInsuranceAsync(monthlySalary, taxYear)
           ]);
 
+          // Calculate student loan (synchronous - uses hardcoded thresholds)
+          const studentLoanPlan = emp.student_loan_plan as 1 | 2 | 4 | 5 | 6 | null;
+          const studentLoanDeduction = calculateStudentLoan(monthlySalary, studentLoanPlan);
+
           newCalculations.set(emp.id, {
             tax: taxResult.monthlyTax,
             nic: niResult.nationalInsurance,
-            gross: monthlySalary
+            gross: monthlySalary,
+            studentLoan: studentLoanDeduction
           });
         } catch (error) {
           console.error(`Error calculating payroll for ${emp.first_name} ${emp.last_name}:`, error);
           // Set defaults on error
-          newCalculations.set(emp.id, { tax: 0, nic: 0, gross: monthlySalary });
+          newCalculations.set(emp.id, { tax: 0, nic: 0, gross: monthlySalary, studentLoan: 0 });
         }
       }
 
@@ -209,7 +216,9 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
         pension: payrollResult 
           ? toPounds(payrollResult.employee_pension_this_period + (payrollResult.nhs_pension_employee_this_period || 0)) 
           : 0,
-        studentLoan: payrollResult ? toPounds(payrollResult.student_loan_this_period) : 0,
+        studentLoan: payrollResult 
+          ? toPounds(payrollResult.student_loan_this_period) 
+          : (calculatedValues?.studentLoan || 0),
         amountPaid: payrollResult ? toPounds(payrollResult.net_pay_this_period) : 0,
         notes: '', // Future: notes field
         hasPayrollResult: !!payrollResult,
