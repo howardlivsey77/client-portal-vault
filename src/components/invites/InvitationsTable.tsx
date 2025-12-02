@@ -14,7 +14,7 @@ import { ExpandableInviteRow } from "./ExpandableInviteRow";
 interface InvitationsTableProps {
   invitations: InvitationMetadata[];
   loading: boolean;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<boolean>;
   onResend: (id: string) => Promise<boolean>;
 }
 

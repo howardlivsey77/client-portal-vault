@@ -21,23 +21,43 @@ import { InvitationMetadata } from "@/hooks/useInvites";
 import { CopyInviteButton, InviteLinkDisplay } from "./CopyInviteButton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useInvitationHistory } from "@/hooks/useInvitationHistory";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ExpandableInviteRowProps {
   invitation: InvitationMetadata;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<boolean>;
   onResend: (id: string) => Promise<boolean>;
 }
 
 export const ExpandableInviteRow = ({ invitation, onDelete, onResend }: ExpandableInviteRowProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { data: resendHistory } = useInvitationHistory(invitation.id);
   const inviteUrl = invitation.token 
     ? `${window.location.origin}/invite/accept?token=${invitation.token}`
     : null;
 
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    await onDelete(invitation.id);
+    setIsDeleting(false);
+    setShowDeleteDialog(false);
+  };
+
 
   return (
+    <>
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
       <CollapsibleTrigger asChild>
         <TableRow className="cursor-pointer hover:bg-muted/50">
@@ -100,7 +120,7 @@ export const ExpandableInviteRow = ({ invitation, onDelete, onResend }: Expandab
                   size="icon"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDelete(invitation.id);
+                    setShowDeleteDialog(true);
                   }}
                 >
                   <Trash2 className="h-4 w-4 text-destructive" />
@@ -192,5 +212,30 @@ export const ExpandableInviteRow = ({ invitation, onDelete, onResend }: Expandab
         </CollapsibleContent>
       )}
     </Collapsible>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Invitation</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>Are you sure you want to delete this invitation for <strong>{invitation.invited_email}</strong>?</p>
+              <p className="text-sm text-muted-foreground">
+                This will permanently remove the invitation. If the user has already started the signup process but hasn't confirmed their email, their unconfirmed account will also be deleted.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete Invitation"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };

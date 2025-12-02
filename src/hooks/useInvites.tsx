@@ -248,33 +248,52 @@ export const useInvites = () => {
     }
   };
   
-  const deleteInvitation = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this invitation?")) {
-      return;
-    }
-    
+  const deleteInvitation = async (id: string): Promise<boolean> => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('invitation_metadata')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      const { data, error } = await invokeFunction('delete-invitation', {
+        body: { invitation_id: id }
+      });
+
+      if (error) {
+        // Try to parse JSON error from edge function response
+        let errorMessage = 'Failed to delete invitation';
+        const jsonMatch = error.message?.match(/\{.*\}/);
+        if (jsonMatch) {
+          try {
+            const parsed = JSON.parse(jsonMatch[0]);
+            errorMessage = parsed.error || errorMessage;
+          } catch {
+            errorMessage = error.message || errorMessage;
+          }
+        } else {
+          errorMessage = error.message || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      if (!data || !data.success) {
+        throw new Error(data?.error || 'Failed to delete invitation');
+      }
       
       toast({
         title: "Invitation deleted",
-        description: "The invitation has been successfully deleted.",
+        description: data.user_deleted 
+          ? `Invitation and unconfirmed user account have been deleted.`
+          : `The invitation has been successfully deleted.`,
       });
       
       // Update the invitations list
       setInvitations(invitations.filter(invite => invite.id !== id));
+      return true;
     } catch (error: any) {
+      console.error("Error deleting invitation:", error);
       toast({
         title: "Error deleting invitation",
         description: error.message,
         variant: "destructive"
       });
+      return false;
     } finally {
       setLoading(false);
     }
