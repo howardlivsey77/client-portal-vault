@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { PageContainer } from "@/components/layout/PageContainer";
-import { EmployeePayrollCalculator } from "@/components/payroll/EmployeePayrollCalculator";
+import { PayrollTableView } from "@/components/payroll/PayrollTableView";
 import { PayrollInputWizard } from "@/components/payroll/PayrollInputWizard";
 import { PayrollErrorBoundary } from "@/components/payroll/PayrollErrorBoundary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -109,10 +109,10 @@ const PayrollProcessing = () => {
           <TabsContent value="calculator">
             <Card>
               <CardHeader>
-                <CardTitle>Employee Payroll Calculator</CardTitle>
+                <CardTitle>Employee Payroll Overview</CardTitle>
               </CardHeader>
               <CardContent>
-                <EmployeePayrollCalculator payPeriod={selectedPayPeriod} />
+                <PayrollTableView payPeriod={selectedPayPeriod} />
               </CardContent>
             </Card>
           </TabsContent>
