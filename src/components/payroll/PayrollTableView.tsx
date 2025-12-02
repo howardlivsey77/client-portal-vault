@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Table,
   TableBody,
@@ -14,9 +14,19 @@ import { PayrollTableRowComponent } from './PayrollTableRow';
 import { usePayrollTableData, PayrollTotals } from './hooks/usePayrollTableData';
 import { PayPeriod } from '@/services/payroll/utils/financial-year-utils';
 import { formatPounds } from '@/lib/formatters';
+import { PayrollAdjustments, emptyAdjustments } from './adjustments';
 
 interface PayrollTableViewProps {
   payPeriod: PayPeriod;
+}
+
+interface EmployeeRatesMap {
+  [employeeId: string]: {
+    hourlyRate: number;
+    rate2: number | null;
+    rate3: number | null;
+    rate4: number | null;
+  };
 }
 
 export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
@@ -28,7 +38,41 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
     setSortBy,
     paymentDate,
     setPaymentDate,
+    employeeRates,
   } = usePayrollTableData(payPeriod);
+
+  // State to track adjustments per employee
+  const [adjustmentsMap, setAdjustmentsMap] = useState<Record<string, PayrollAdjustments>>({});
+
+  const handleAdjustmentsChange = useCallback((employeeId: string, adjustments: PayrollAdjustments) => {
+    setAdjustmentsMap(prev => ({
+      ...prev,
+      [employeeId]: adjustments,
+    }));
+  }, []);
+
+  // Calculate adjusted totals including adjustments
+  const calculateAdjustedTotals = useCallback((baseTotals: PayrollTotals): PayrollTotals => {
+    let adjustedTotals = { ...baseTotals };
+    
+    Object.values(adjustmentsMap).forEach(adj => {
+      const overtimeTotal = adj.overtime.reduce((sum, item) => sum + item.amount, 0);
+      const statutoryTotal = adj.statutoryPayment.reduce((sum, item) => sum + item.amount, 0);
+      const sicknessTotal = adj.sickness.reduce((sum, item) => sum + item.amount, 0);
+      const extraPaymentsTotal = adj.extraPayments.reduce((sum, item) => sum + item.amount, 0);
+      const extraDeductionsTotal = adj.extraDeductions.reduce((sum, item) => sum + item.amount, 0);
+
+      adjustedTotals.overtime += overtimeTotal;
+      adjustedTotals.statutoryPayment += statutoryTotal;
+      adjustedTotals.ssp += sicknessTotal;
+      adjustedTotals.extraPayments += extraPaymentsTotal;
+      adjustedTotals.extraDeductions += extraDeductionsTotal;
+      adjustedTotals.gross += overtimeTotal + statutoryTotal + sicknessTotal + extraPaymentsTotal;
+      adjustedTotals.amountPaid += overtimeTotal + statutoryTotal + sicknessTotal + extraPaymentsTotal - extraDeductionsTotal;
+    });
+
+    return adjustedTotals;
+  }, [adjustmentsMap]);
 
   const formatCurrency = (value: number) => {
     if (value === 0) return '-';
@@ -55,6 +99,30 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
     );
   }
 
+  // Calculate adjusted subtotals for a department
+  const calculateDepartmentSubtotals = (rows: typeof groupedData[0]['rows'], baseSubtotals: PayrollTotals): PayrollTotals => {
+    let adjustedSubtotals = { ...baseSubtotals };
+    
+    rows.forEach(row => {
+      const adj = adjustmentsMap[row.employeeId] || emptyAdjustments;
+      const overtimeTotal = adj.overtime.reduce((sum, item) => sum + item.amount, 0);
+      const statutoryTotal = adj.statutoryPayment.reduce((sum, item) => sum + item.amount, 0);
+      const sicknessTotal = adj.sickness.reduce((sum, item) => sum + item.amount, 0);
+      const extraPaymentsTotal = adj.extraPayments.reduce((sum, item) => sum + item.amount, 0);
+      const extraDeductionsTotal = adj.extraDeductions.reduce((sum, item) => sum + item.amount, 0);
+
+      adjustedSubtotals.overtime += overtimeTotal;
+      adjustedSubtotals.statutoryPayment += statutoryTotal;
+      adjustedSubtotals.ssp += sicknessTotal;
+      adjustedSubtotals.extraPayments += extraPaymentsTotal;
+      adjustedSubtotals.extraDeductions += extraDeductionsTotal;
+      adjustedSubtotals.gross += overtimeTotal + statutoryTotal + sicknessTotal + extraPaymentsTotal;
+      adjustedSubtotals.amountPaid += overtimeTotal + statutoryTotal + sicknessTotal + extraPaymentsTotal - extraDeductionsTotal;
+    });
+
+    return adjustedSubtotals;
+  };
+
   const renderSubtotalRow = (subtotals: PayrollTotals, label: string) => (
     <TableRow className="bg-muted/40 font-medium border-b-2">
       <TableCell className="font-semibold">{label}</TableCell>
@@ -75,6 +143,8 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
       <TableCell className="text-right tabular-nums font-bold">{formatCurrency(subtotals.amountPaid)}</TableCell>
     </TableRow>
   );
+
+  const adjustedTotals = calculateAdjustedTotals(totals);
 
   return (
     <div className="space-y-4">
@@ -117,32 +187,39 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
                 
                 {/* Employee Rows */}
                 {group.rows.map((row, index) => (
-                  <PayrollTableRowComponent key={row.employeeId} row={row} index={index} />
+                  <PayrollTableRowComponent 
+                    key={row.employeeId} 
+                    row={row} 
+                    index={index}
+                    employeeRates={employeeRates[row.employeeId] || { hourlyRate: 0, rate2: null, rate3: null, rate4: null }}
+                    adjustments={adjustmentsMap[row.employeeId] || emptyAdjustments}
+                    onAdjustmentsChange={(adj) => handleAdjustmentsChange(row.employeeId, adj)}
+                  />
                 ))}
                 
                 {/* Department Subtotal Row */}
-                {renderSubtotalRow(group.subtotals, `${group.department} Total`)}
+                {renderSubtotalRow(calculateDepartmentSubtotals(group.rows, group.subtotals), `${group.department} Total`)}
               </React.Fragment>
             ))}
           </TableBody>
           <TableFooter>
             <TableRow className="bg-muted/70 font-medium">
               <TableCell colSpan={2}>Totals</TableCell>
-              <TableCell className="text-right tabular-nums">{formatCurrency(totals.salary)}</TableCell>
-              <TableCell className="text-right tabular-nums">{formatCurrency(totals.statutoryPayment)}</TableCell>
-              <TableCell className="text-right tabular-nums">{formatCurrency(totals.overtime)}</TableCell>
-              <TableCell className="text-right tabular-nums">{formatCurrency(totals.ssp)}</TableCell>
-              <TableCell className="text-right tabular-nums">{formatCurrency(totals.extraPayments)}</TableCell>
-              <TableCell className="text-right tabular-nums">{formatCurrency(totals.extraDeductions)}</TableCell>
-              <TableCell className="text-right tabular-nums">{formatCurrency(totals.gross)}</TableCell>
-              <TableCell className="text-right tabular-nums">{formatCurrency(totals.tax)}</TableCell>
-              <TableCell className="text-right tabular-nums">{formatCurrency(totals.employeeNic)}</TableCell>
+              <TableCell className="text-right tabular-nums">{formatCurrency(adjustedTotals.salary)}</TableCell>
+              <TableCell className="text-right tabular-nums">{formatCurrency(adjustedTotals.statutoryPayment)}</TableCell>
+              <TableCell className="text-right tabular-nums">{formatCurrency(adjustedTotals.overtime)}</TableCell>
+              <TableCell className="text-right tabular-nums">{formatCurrency(adjustedTotals.ssp)}</TableCell>
+              <TableCell className="text-right tabular-nums">{formatCurrency(adjustedTotals.extraPayments)}</TableCell>
+              <TableCell className="text-right tabular-nums">{formatCurrency(adjustedTotals.extraDeductions)}</TableCell>
+              <TableCell className="text-right tabular-nums">{formatCurrency(adjustedTotals.gross)}</TableCell>
+              <TableCell className="text-right tabular-nums">{formatCurrency(adjustedTotals.tax)}</TableCell>
+              <TableCell className="text-right tabular-nums">{formatCurrency(adjustedTotals.employeeNic)}</TableCell>
               <TableCell className="text-right tabular-nums">
-                {formatCurrency(totals.pensionablePay)} / {formatCurrency(totals.pension)}
+                {formatCurrency(adjustedTotals.pensionablePay)} / {formatCurrency(adjustedTotals.pension)}
               </TableCell>
-              <TableCell className="text-right tabular-nums">{formatCurrency(totals.studentLoan)}</TableCell>
+              <TableCell className="text-right tabular-nums">{formatCurrency(adjustedTotals.studentLoan)}</TableCell>
               <TableCell className="text-right tabular-nums font-bold text-primary">
-                {formatCurrency(totals.amountPaid)}
+                {formatCurrency(adjustedTotals.amountPaid)}
               </TableCell>
             </TableRow>
           </TableFooter>

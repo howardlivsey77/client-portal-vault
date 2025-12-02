@@ -307,6 +307,20 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
   // Calculate grand totals
   const totals = useMemo(() => calculateTotals(sortedData), [sortedData]);
 
+  // Build employee rates map for overtime dialogs
+  const employeeRates = useMemo(() => {
+    const ratesMap: Record<string, { hourlyRate: number; rate2: number | null; rate3: number | null; rate4: number | null }> = {};
+    employees.forEach(emp => {
+      ratesMap[emp.id] = {
+        hourlyRate: emp.hourly_rate || 0,
+        rate2: emp.rate_2 || null,
+        rate3: emp.rate_3 || null,
+        rate4: emp.rate_4 || null,
+      };
+    });
+    return ratesMap;
+  }, [employees]);
+
   return {
     data: sortedData,
     groupedData,
@@ -316,6 +330,7 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
     setSortBy,
     paymentDate,
     setPaymentDate,
+    employeeRates,
     refetch: () => {
       // Trigger refetch by updating state
       setLoading(true);
