@@ -754,6 +754,7 @@ export type Database = {
           invitation_sent_at: string | null
           last_name: string
           leave_date: string | null
+          monthly_salary: number | null
           national_insurance_number: string | null
           nhs_pension_employee_rate: number | null
           nhs_pension_member: boolean | null
@@ -794,6 +795,7 @@ export type Database = {
           invitation_sent_at?: string | null
           last_name: string
           leave_date?: string | null
+          monthly_salary?: number | null
           national_insurance_number?: string | null
           nhs_pension_employee_rate?: number | null
           nhs_pension_member?: boolean | null
@@ -834,6 +836,7 @@ export type Database = {
           invitation_sent_at?: string | null
           last_name?: string
           leave_date?: string | null
+          monthly_salary?: number | null
           national_insurance_number?: string | null
           nhs_pension_employee_rate?: number | null
           nhs_pension_member?: boolean | null
