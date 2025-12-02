@@ -4,19 +4,34 @@ import { cn } from "@/lib/utils";
 import { CheckSquare, ChartBar, Clock, FileText, Home, Receipt, Users, Building, UserCog, Stethoscope, FileBarChart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SidebarMainNavigationProps {
   location: { pathname: string; search: string };
+  isExpanded?: boolean;
 }
 
-export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) {
+interface NavItem {
+  icon: React.ElementType;
+  label: string;
+  to: string;
+  isActive: boolean;
+  adminOnly?: boolean;
+}
+
+export function SidebarMainNavigation({ location, isExpanded = true }: SidebarMainNavigationProps) {
   const { isAdmin } = useAuth();
-  // Functions to check active state
+
   const isTabActive = (tab: string) => {
     const params = new URLSearchParams(location.search);
     const currentTab = params.get("tab");
     if (!currentTab && tab === "overview" && !location.pathname.includes("/")) {
-      return true; // Default tab is overview
+      return true;
     }
     return currentTab === tab;
   };
@@ -25,191 +40,130 @@ export function SidebarMainNavigation({ location }: SidebarMainNavigationProps) 
     return location.pathname.includes(route);
   };
 
-  // Function to create a URL that navigates to the home page with a specific tab
   const getTabUrl = (tab: string) => {
     return `/?tab=${tab}`;
   };
 
+  const navItems: NavItem[] = [
+    {
+      icon: Home,
+      label: "Dashboard",
+      to: getTabUrl("overview"),
+      isActive: isTabActive("overview") && !isRouteActive("/employees"),
+    },
+    {
+      icon: Building,
+      label: "Companies",
+      to: getTabUrl("companies"),
+      isActive: isTabActive("companies"),
+      adminOnly: true,
+    },
+    {
+      icon: CheckSquare,
+      label: "Tasks",
+      to: getTabUrl("tasks"),
+      isActive: isTabActive("tasks"),
+    },
+    {
+      icon: Users,
+      label: "Employees",
+      to: "/employees",
+      isActive: isRouteActive("/employees") && !isRouteActive("/employees/sickness/import"),
+    },
+    {
+      icon: Stethoscope,
+      label: "Sickness Import",
+      to: "/employees/sickness/import",
+      isActive: isRouteActive("/employees/sickness/import"),
+      adminOnly: true,
+    },
+    {
+      icon: Clock,
+      label: "Timesheets",
+      to: getTabUrl("timesheets"),
+      isActive: isTabActive("timesheets"),
+    },
+    {
+      icon: Receipt,
+      label: "Payroll Input",
+      to: getTabUrl("payroll"),
+      isActive: isTabActive("payroll"),
+    },
+    {
+      icon: Receipt,
+      label: "Payroll Processing",
+      to: "/payroll-processing",
+      isActive: isRouteActive("/payroll-processing"),
+      adminOnly: true,
+    },
+    {
+      icon: FileText,
+      label: "Documents",
+      to: getTabUrl("documents"),
+      isActive: isTabActive("documents"),
+    },
+    {
+      icon: ChartBar,
+      label: "Bureau Reports",
+      to: getTabUrl("reports"),
+      isActive: isTabActive("reports"),
+      adminOnly: true,
+    },
+    {
+      icon: FileBarChart,
+      label: "Client Reports",
+      to: "/client-reports",
+      isActive: isRouteActive("/client-reports"),
+    },
+    {
+      icon: UserCog,
+      label: "Users",
+      to: "/invites",
+      isActive: isRouteActive("/invites"),
+      adminOnly: true,
+    },
+  ];
+
+  const filteredItems = navItems.filter(item => !item.adminOnly || isAdmin);
+
   return (
-    <div className="mt-2 space-y-1 px-2">
-      <Button 
-        variant="ghost" 
-        className={cn(
-          "monday-sidebar-item w-full justify-start", 
-          isTabActive("overview") && !isRouteActive("/employees") && "bg-foreground text-background"
-        )} 
-        asChild
-      >
-        <Link to={getTabUrl("overview")}>
-          <Home className="h-4 w-4" />
-          Dashboard
-        </Link>
-      </Button>
-      
-      {isAdmin && (
-        <Button 
-          variant="ghost" 
-          className={cn(
-            "monday-sidebar-item w-full justify-start", 
-            isTabActive("companies") && "bg-foreground text-background"
-          )} 
-          asChild
-        >
-          <Link to={getTabUrl("companies")}>
-            <Building className="h-4 w-4" />
-            Companies
-          </Link>
-        </Button>
-      )}
-      
-      <Button 
-        variant="ghost" 
-        className={cn(
-          "monday-sidebar-item w-full justify-start", 
-          isTabActive("tasks") && "bg-foreground text-background"
-        )} 
-        asChild
-      >
-        <Link to={getTabUrl("tasks")}>
-          <CheckSquare className="h-4 w-4" />
-          Tasks
-        </Link>
-      </Button>
-      
-      <Button 
-        variant="ghost" 
-        className={cn(
-          "monday-sidebar-item w-full justify-start", 
-          isRouteActive("/employees") && "bg-foreground text-background"
-        )} 
-        asChild
-      >
-        <Link to="/employees">
-          <Users className="h-4 w-4" />
-          Employees
-        </Link>
-      </Button>
+    <TooltipProvider delayDuration={0}>
+      <div className={cn("mt-2 space-y-1", isExpanded ? "px-2" : "px-1")}>
+        {filteredItems.map((item) => {
+          const Icon = item.icon;
+          const button = (
+            <Button 
+              variant="ghost" 
+              className={cn(
+                "monday-sidebar-item w-full",
+                isExpanded ? "justify-start" : "justify-center px-0",
+                item.isActive && "bg-foreground text-background"
+              )} 
+              asChild
+            >
+              <Link to={item.to}>
+                <Icon className={cn("h-4 w-4", isExpanded && "mr-2")} />
+                {isExpanded && <span className="truncate">{item.label}</span>}
+              </Link>
+            </Button>
+          );
 
-      {isAdmin && (
-        <Button 
-          variant="ghost" 
-          className={cn(
-            "monday-sidebar-item w-full justify-start", 
-            isRouteActive("/employees/sickness/import") && "bg-foreground text-background"
-          )} 
-          asChild
-        >
-          <Link to="/employees/sickness/import">
-            <Stethoscope className="h-4 w-4" />
-            Sickness Import
-          </Link>
-        </Button>
-      )}
+          if (!isExpanded) {
+            return (
+              <Tooltip key={item.label}>
+                <TooltipTrigger asChild>
+                  {button}
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  {item.label}
+                </TooltipContent>
+              </Tooltip>
+            );
+          }
 
-      
-      <Button 
-        variant="ghost" 
-        className={cn(
-          "monday-sidebar-item w-full justify-start", 
-          isTabActive("timesheets") && "bg-foreground text-background"
-        )} 
-        asChild
-      >
-        <Link to={getTabUrl("timesheets")}>
-          <Clock className="h-4 w-4" />
-          Timesheets
-        </Link>
-      </Button>
-      
-      <Button 
-        variant="ghost" 
-        className={cn(
-          "monday-sidebar-item w-full justify-start", 
-          isTabActive("payroll") && "bg-foreground text-background"
-        )} 
-        asChild
-      >
-        <Link to={getTabUrl("payroll")}>
-          <Receipt className="h-4 w-4" />
-          Payroll Input
-        </Link>
-      </Button>
-      
-      {isAdmin && (
-        <Button 
-          variant="ghost" 
-          className={cn(
-            "monday-sidebar-item w-full justify-start", 
-            isRouteActive("/payroll-processing") && "bg-foreground text-background"
-          )} 
-          asChild
-        >
-          <Link to="/payroll-processing">
-            <Receipt className="h-4 w-4" />
-            Payroll Processing
-          </Link>
-        </Button>
-      )}
-      
-      <Button 
-        variant="ghost" 
-        className={cn(
-          "monday-sidebar-item w-full justify-start", 
-          isTabActive("documents") && "bg-foreground text-background"
-        )} 
-        asChild
-      >
-        <Link to={getTabUrl("documents")}>
-          <FileText className="h-4 w-4" />
-          Documents
-        </Link>
-      </Button>
-      
-      {isAdmin && (
-        <Button 
-          variant="ghost" 
-          className={cn(
-            "monday-sidebar-item w-full justify-start", 
-            isTabActive("reports") && "bg-foreground text-background"
-          )} 
-          asChild
-        >
-          <Link to={getTabUrl("reports")}>
-            <ChartBar className="h-4 w-4" />
-            Bureau Reports
-          </Link>
-        </Button>
-      )}
-
-      <Button 
-        variant="ghost" 
-        className={cn(
-          "monday-sidebar-item w-full justify-start", 
-          isRouteActive("/client-reports") && "bg-foreground text-background"
-        )} 
-        asChild
-      >
-        <Link to="/client-reports">
-          <FileBarChart className="h-4 w-4" />
-          Client Reports
-        </Link>
-      </Button>
-
-      {isAdmin && (
-        <Button 
-          variant="ghost" 
-          className={cn(
-            "monday-sidebar-item w-full justify-start", 
-            isRouteActive("/invites") && "bg-foreground text-background"
-          )} 
-          asChild
-        >
-          <Link to="/invites">
-            <UserCog className="h-4 w-4" />
-            Users
-          </Link>
-        </Button>
-      )}
-    </div>
+          return <div key={item.label}>{button}</div>;
+        })}
+      </div>
+    </TooltipProvider>
   );
 }
