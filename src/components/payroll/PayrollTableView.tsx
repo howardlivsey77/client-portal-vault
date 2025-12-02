@@ -67,22 +67,20 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
         <Table>
           <TableHeader className="bg-muted/50 sticky top-0">
             <TableRow>
-              <TableHead className="whitespace-nowrap">Payroll Id</TableHead>
-              <TableHead className="whitespace-nowrap">Name</TableHead>
-              <TableHead className="text-right whitespace-nowrap">Salary</TableHead>
-              <TableHead className="text-right whitespace-nowrap">Statutory Payment</TableHead>
-              <TableHead className="text-right whitespace-nowrap">Overtime</TableHead>
-              <TableHead className="text-right whitespace-nowrap">SSP</TableHead>
-              <TableHead className="text-right whitespace-nowrap">Extra Payments</TableHead>
-              <TableHead className="text-right whitespace-nowrap">Extra Deductions</TableHead>
-              <TableHead className="text-right whitespace-nowrap">Gross</TableHead>
-              <TableHead className="text-right whitespace-nowrap">Tax</TableHead>
-              <TableHead className="text-right whitespace-nowrap">Employee NIC</TableHead>
-              <TableHead className="text-right whitespace-nowrap">Employer NIC</TableHead>
-              <TableHead className="text-right whitespace-nowrap">Pensionable Pay / Pension</TableHead>
-              <TableHead className="text-right whitespace-nowrap">Student Loan</TableHead>
-              <TableHead className="text-right whitespace-nowrap">Amount Paid</TableHead>
-              <TableHead className="whitespace-nowrap">Notes</TableHead>
+              <TableHead className="min-w-[80px]">Payroll ID</TableHead>
+              <TableHead className="min-w-[120px]">Name</TableHead>
+              <TableHead className="text-right min-w-[80px]">Basic Salary</TableHead>
+              <TableHead className="text-right min-w-[80px]">Statutory Payment</TableHead>
+              <TableHead className="text-right min-w-[70px]">Overtime</TableHead>
+              <TableHead className="text-right min-w-[70px]">Sickness</TableHead>
+              <TableHead className="text-right min-w-[80px]">Extra Payments</TableHead>
+              <TableHead className="text-right min-w-[80px]">Extra Deductions</TableHead>
+              <TableHead className="text-right min-w-[80px]">Gross Salary</TableHead>
+              <TableHead className="text-right min-w-[60px]">Tax</TableHead>
+              <TableHead className="text-right min-w-[80px]">Employee NIC</TableHead>
+              <TableHead className="text-right min-w-[100px]">Pensionable Pay/ Pension</TableHead>
+              <TableHead className="text-right min-w-[80px]">Student Loan</TableHead>
+              <TableHead className="text-right min-w-[80px]">Net Pay</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -102,7 +100,6 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
               <TableCell className="text-right tabular-nums">{formatCurrency(totals.gross)}</TableCell>
               <TableCell className="text-right tabular-nums">{formatCurrency(totals.tax)}</TableCell>
               <TableCell className="text-right tabular-nums">{formatCurrency(totals.employeeNic)}</TableCell>
-              <TableCell className="text-right tabular-nums">{formatCurrency(totals.employerNic)}</TableCell>
               <TableCell className="text-right tabular-nums">
                 {formatCurrency(totals.pensionablePay)} / {formatCurrency(totals.pension)}
               </TableCell>
@@ -110,7 +107,6 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
               <TableCell className="text-right tabular-nums font-bold text-primary">
                 {formatCurrency(totals.amountPaid)}
               </TableCell>
-              <TableCell></TableCell>
             </TableRow>
           </TableFooter>
         </Table>
