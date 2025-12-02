@@ -17,6 +17,7 @@ import {
   ExtraDeductionItem,
   emptyAdjustments,
 } from './adjustments';
+import { PayslipPreviewDialog } from './PayslipPreviewDialog';
 
 interface EmployeeRates {
   hourlyRate: number;
@@ -31,9 +32,10 @@ interface PayrollTableRowProps {
   employeeRates: EmployeeRates;
   adjustments: PayrollAdjustments;
   onAdjustmentsChange: (adjustments: PayrollAdjustments) => void;
+  payPeriod?: string;
 }
 
-type DialogType = 'overtime' | 'statutory' | 'sickness' | 'extraPayments' | 'extraDeductions' | null;
+type DialogType = 'overtime' | 'statutory' | 'sickness' | 'extraPayments' | 'extraDeductions' | 'payslip' | null;
 
 export function PayrollTableRowComponent({ 
   row, 
@@ -41,6 +43,7 @@ export function PayrollTableRowComponent({
   employeeRates,
   adjustments,
   onAdjustmentsChange,
+  payPeriod = '',
 }: PayrollTableRowProps) {
   const [openDialog, setOpenDialog] = useState<DialogType>(null);
 
@@ -109,7 +112,10 @@ export function PayrollTableRowComponent({
           {formatCurrency(row.pensionablePay)} / {formatCurrency(row.pension)}
         </TableCell>
         <TableCell className="text-right tabular-nums">{formatCurrency(row.studentLoan)}</TableCell>
-        <TableCell className="text-right tabular-nums font-medium text-primary">
+        <TableCell 
+          className={cn("text-right tabular-nums font-medium text-primary", clickableCellClass)}
+          onClick={() => setOpenDialog('payslip')}
+        >
           {formatCurrency(adjustedNetPay)}
         </TableCell>
       </TableRow>
@@ -154,6 +160,26 @@ export function PayrollTableRowComponent({
         employeeName={row.name}
         initialItems={adjustments.extraDeductions}
         onSave={(items: ExtraDeductionItem[]) => onAdjustmentsChange({ ...adjustments, extraDeductions: items })}
+      />
+
+      <PayslipPreviewDialog
+        open={openDialog === 'payslip'}
+        onOpenChange={(open) => setOpenDialog(open ? 'payslip' : null)}
+        employeeName={row.name}
+        payrollId={row.payrollId || ''}
+        payPeriod={payPeriod}
+        basicSalary={row.salary}
+        overtime={overtimeTotal}
+        statutoryPayment={statutoryTotal}
+        ssp={sicknessTotal}
+        extraPayments={adjustments.extraPayments}
+        incomeTax={row.tax}
+        nationalInsurance={row.employeeNic}
+        pension={row.pension}
+        studentLoan={row.studentLoan}
+        extraDeductions={adjustments.extraDeductions}
+        grossPay={adjustedGross}
+        netPay={adjustedNetPay}
       />
     </>
   );
