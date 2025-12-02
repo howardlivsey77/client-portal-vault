@@ -146,6 +146,57 @@ export const useUsers = () => {
       setLoading(false);
     }
   };
+
+  const deleteUser = async (userId: string) => {
+    setLoading(true);
+    try {
+      setError(null);
+      
+      console.log("Deleting user:", userId);
+      
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { userId }
+      });
+      
+      if (error) {
+        console.error("Error deleting user:", error);
+        toast({
+          title: "Error deleting user",
+          description: error.message || "Failed to delete user",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      if (data?.error) {
+        console.error("Delete user error:", data.error);
+        toast({
+          title: "Error deleting user",
+          description: data.error,
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      toast({
+        title: "User deleted",
+        description: data?.message || "User has been successfully deleted.",
+      });
+      
+      await fetchUsers();
+      return true;
+    } catch (error: any) {
+      console.error("Exception deleting user:", error);
+      toast({
+        title: "Error deleting user",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
   
   useEffect(() => {
     // Delay initial fetch to ensure auth is ready
@@ -161,6 +212,7 @@ export const useUsers = () => {
     loading,
     error,
     fetchUsers,
-    updateUserRole
+    updateUserRole,
+    deleteUser
   };
 };

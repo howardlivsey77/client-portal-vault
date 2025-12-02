@@ -11,3 +11,6 @@ verify_jwt = true
 
 [functions.check-2fa-requirement]
 verify_jwt = false
+
+[functions.delete-user]
+verify_jwt = true
