@@ -54,7 +54,7 @@ const PayrollProcessing = () => {
 
   return (
     <PageContainer title="Payroll Processing">
-      <div className="container mx-auto p-4">
+      <div className="w-full">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">UK Payroll Processing</h1>
           

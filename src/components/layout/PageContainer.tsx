@@ -28,7 +28,7 @@ function PageContainerInner({ children, title }: PageContainerProps) {
         {!isAuthPage && <Sidebar isOpen={sidebarOpen} />}
         
         <div className="flex flex-1 flex-col overflow-hidden">
-          <main className="flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-8">
+          <main className="flex-1 overflow-y-auto px-3 py-6 md:px-4 lg:px-4">
             {title && (
               <div className="mb-6">
                 <h1 className="text-2xl font-bold tracking-tight text-monday-darkblue">{title}</h1>
