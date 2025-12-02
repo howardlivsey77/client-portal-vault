@@ -8,10 +8,13 @@ import {
   TableRow,
   TableFooter,
 } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Calculator, Loader2 } from 'lucide-react';
 import { PayrollTableHeader } from './PayrollTableHeader';
 import { PayrollTableRowComponent } from './PayrollTableRow';
 import { usePayrollTableData, PayrollTotals } from './hooks/usePayrollTableData';
+import { usePayrollBatchCalculation } from './hooks/usePayrollBatchCalculation';
 import { PayPeriod } from '@/services/payroll/utils/financial-year-utils';
 import { formatPounds } from '@/lib/formatters';
 import { PayrollAdjustments, emptyAdjustments } from './adjustments';
@@ -39,6 +42,7 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
     paymentDate,
     setPaymentDate,
     employeeRates,
+    refetch,
   } = usePayrollTableData(payPeriod);
 
   // State to track adjustments per employee
@@ -50,6 +54,18 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
       [employeeId]: adjustments,
     }));
   }, []);
+
+  // Handle completion of batch calculation
+  const handleBatchComplete = useCallback(() => {
+    setAdjustmentsMap({}); // Clear adjustments after save
+    refetch(); // Reload data
+  }, [refetch]);
+
+  const {
+    calculateAndSaveAll,
+    isProcessing,
+    progress,
+  } = usePayrollBatchCalculation(payPeriod, adjustmentsMap, groupedData, handleBatchComplete);
 
   // Calculate adjusted totals including adjustments
   const calculateAdjustedTotals = useCallback((baseTotals: PayrollTotals): PayrollTotals => {
@@ -148,12 +164,31 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
 
   return (
     <div className="space-y-4">
-      <PayrollTableHeader
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        paymentDate={paymentDate}
-        onPaymentDateChange={setPaymentDate}
-      />
+      <div className="flex items-center justify-between">
+        <PayrollTableHeader
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          paymentDate={paymentDate}
+          onPaymentDateChange={setPaymentDate}
+        />
+        <Button
+          onClick={calculateAndSaveAll}
+          disabled={isProcessing || loading}
+          className="gap-2"
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Processing {progress?.current}/{progress?.total}...
+            </>
+          ) : (
+            <>
+              <Calculator className="h-4 w-4" />
+              Calculate & Save All
+            </>
+          )}
+        </Button>
+      </div>
 
       <div className="rounded-md border overflow-x-auto">
         <Table>
