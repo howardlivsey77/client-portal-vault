@@ -52,7 +52,8 @@ const InviteManagement = () => {
     loading: usersLoading,
     error: usersError,
     fetchUsers,
-    updateUserRole
+    updateUserRole,
+    deleteUser
   } = useUsers();
   
   // Check if user is logged in and is admin
@@ -173,6 +174,7 @@ const InviteManagement = () => {
         onDeleteInvitation={deleteInvitation}
         onResendInvitation={resendInvitation}
         onChangeRole={openRoleDialog}
+        onDeleteUser={deleteUser}
         invitationsError={invitationsError}
         usersError={usersError}
       />
