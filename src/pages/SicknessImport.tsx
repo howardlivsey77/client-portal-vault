@@ -3,7 +3,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { ArrowLeft, Home, Users } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Link, useNavigate } from "react-router-dom";
-import { SicknessImportCore } from "@/components/sickness-import/SicknessImportCore";
+import { SicknessImportCore } from "@/components/employees/sickness-import/SicknessImportCore";
 
 const SicknessImport = () => {
   const navigate = useNavigate();

@@ -2,7 +2,7 @@
 import { WizardStep } from "./types";
 import { FileUploader } from "./FileUploader";
 import { UploadSummary, FinalSummary } from "./upload-summary";
-import { SicknessImportCore } from "@/components/sickness-import/SicknessImportCore";
+import { SicknessImportCore } from "@/components/employees/sickness-import/SicknessImportCore";
 
 interface CreateWizardStepsProps {
   uploadedFiles: any;

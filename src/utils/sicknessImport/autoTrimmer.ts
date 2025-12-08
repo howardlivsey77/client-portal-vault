@@ -1,4 +1,4 @@
-import { ProcessedSicknessRecord } from "@/components/sickness-import/types";
+import { ProcessedSicknessRecord } from "@/components/employees/sickness-import/types";
 import { WorkDay } from "@/components/employees/details/work-pattern/types";
 import { countWorkingDaysBetween } from "@/components/employees/details/sickness/utils/workingDaysCalculations";
 
