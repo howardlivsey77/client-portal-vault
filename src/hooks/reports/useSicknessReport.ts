@@ -3,7 +3,7 @@ import { Employee } from "@/types/employee-types";
 import { SicknessEntitlementSummary } from "@/types/sickness";
 import { useEmployees } from "@/hooks/employees/useEmployees";
 import { useToast } from "@/hooks/common/use-toast";
-import { calculateSicknessEntitlementSummary } from "@/utils/sicknessCalculations";
+import { calculateSicknessEntitlementSummary } from "@/utils";
 
 export interface SicknessReportData {
   employee: Employee;

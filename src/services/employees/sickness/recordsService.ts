@@ -89,7 +89,7 @@ export const recordsService = {
   async recalculateEntitlementWithReference(employeeId: string, referenceDate: string) {
     // Import services to avoid circular dependencies
     const { sicknessService } = await import("@/services/employees");
-    const { calculateSicknessEntitlementSummary } = await import("@/utils/sicknessCalculations");
+    const { calculateSicknessEntitlementSummary } = await import("@/utils");
     
     // Get employee details
     const { data: employeeData, error } = await supabase

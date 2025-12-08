@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useTimesheetContext } from './TimesheetContext';
 import { SaveIcon, AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { fetchTimesheetSettings, isTimeOutsideTolerance } from '@/utils/timesheetUtils';
+import { fetchTimesheetSettings, isTimeOutsideTolerance } from '@/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useNotifications } from '@/components/notifications/NotificationsContext';
 

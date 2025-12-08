@@ -5,7 +5,7 @@ import { formatCurrency, formatDate } from '@/lib/formatters';
 import { ExtraHoursSummary } from '@/components/payroll/types';
 import { SicknessRecord, SicknessEntitlementSummary } from '@/types/sickness';
 import { Employee } from '@/types/employee-types';
-import { calculateSicknessRecordPayments } from './sicknessPaymentCalculator';
+import { calculateSicknessRecordPayments } from '@/utils/sickness/sicknessPaymentCalculator';
 
 /**
  * Generate a PDF from the extra hours summary data

@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { ExtraHoursSummary } from "../types";
-import { generateExtraHoursCSV } from "@/utils/csvExport";
+import { generateExtraHoursCSV } from "@/utils";
 import { toast } from "@/hooks";
 
 interface ExportCSVButtonProps {

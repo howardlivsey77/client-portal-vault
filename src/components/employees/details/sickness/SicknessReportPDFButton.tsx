@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
 import { Employee } from "@/types/employee-types";
 import { SicknessRecord, SicknessEntitlementSummary } from "@/types/sickness";
-import { generateSicknessReportPDF } from "@/utils/pdfExport";
+import { generateSicknessReportPDF } from "@/utils";
 import { toast } from "@/hooks";
 import { useCompany } from "@/providers/CompanyProvider";
 

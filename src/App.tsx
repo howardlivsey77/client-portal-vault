@@ -24,7 +24,7 @@ import ClientReports from "./pages/ClientReports";
 import AuthProvider from "./providers/AuthProvider";
 
 // Import and run the sickness data fix
-import { runSicknessDataFix } from "./utils/fixSicknessData";
+import { runSicknessDataFix } from "@/utils";
 
 // Run fix once on app load
 runSicknessDataFix().catch(console.error);

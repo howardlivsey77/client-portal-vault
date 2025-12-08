@@ -13,12 +13,12 @@ import { Upload, FileText, Users, CheckCircle, AlertCircle, Clock, X, Search, Fi
 import { useToast, useEmployees } from "@/hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { useSicknessSchemes } from "@/features/company-settings/hooks/useSicknessSchemes";
-import { parseDate, formatDateForDB } from "@/utils/dateParser";
+import { parseDate, formatDateForDB } from "@/utils";
 import * as XLSX from 'xlsx';
 import Fuse from 'fuse.js';
 import { SicknessImportCoreProps, ProcessedSicknessRecord, ImportStep } from './types';
 import { overlapService } from '@/services/employees/sickness/overlapService';
-import { processRecordsWithAutoTrim } from '@/utils/sicknessImport/autoTrimmer';
+import { processRecordsWithAutoTrim } from '@/utils/sickness/import/autoTrimmer';
 import { OverlapTrimView } from './OverlapTrimView';
 import { FinalReviewView } from './FinalReviewView';
 

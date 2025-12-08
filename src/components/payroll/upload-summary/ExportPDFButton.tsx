@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { ExtraHoursSummary } from "../types";
-import { generateExtraHoursPDF } from "@/utils/pdfExport";
+import { generateExtraHoursPDF } from "@/utils";
 import { toast } from "@/hooks";
 
 interface ExportPDFButtonProps {
