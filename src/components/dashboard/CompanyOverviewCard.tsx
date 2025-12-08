@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Users, Calendar, ChevronDown } from "lucide-react";
+import { Users, Calendar, ChevronDown, Briefcase } from "lucide-react";
 
 interface GenderData {
   gender: string;
@@ -12,12 +12,14 @@ interface CompanyOverviewCardProps {
   totalEmployees: number;
   genderData: GenderData[];
   averageAge: number | null;
+  averageLengthOfService: number | null;
 }
 
 export function CompanyOverviewCard({
   totalEmployees,
   genderData,
   averageAge,
+  averageLengthOfService,
 }: CompanyOverviewCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const sortedGenderData = [...genderData].sort((a, b) => b.count - a.count);
@@ -58,6 +60,15 @@ export function CompanyOverviewCard({
                 <Calendar className="h-5 w-5 text-primary mb-2" />
                 <span className="text-2xl font-bold">{averageAge ?? "—"}</span>
                 <span className="text-xs text-muted-foreground mt-1">Avg Age</span>
+              </div>
+              
+              {/* Average Length of Service Tile */}
+              <div className="flex flex-col items-center text-center p-4 rounded-lg bg-muted/50 min-w-[100px]">
+                <Briefcase className="h-5 w-5 text-primary mb-2" />
+                <span className="text-2xl font-bold">
+                  {averageLengthOfService !== null ? averageLengthOfService.toFixed(1) : "—"}
+                </span>
+                <span className="text-xs text-muted-foreground mt-1">Avg Service (yrs)</span>
               </div>
               
               {/* Gender Distribution Tile - Merged */}
