@@ -62,15 +62,6 @@ export function CompanyOverviewCard({
               </div>
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-md bg-primary/10">
-                  <Building2 className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{departmentCount}</p>
-                  <p className="text-xs text-muted-foreground">Departments</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-md bg-primary/10">
                   <Calendar className="h-4 w-4 text-primary" />
                 </div>
                 <div>
@@ -89,9 +80,16 @@ export function CompanyOverviewCard({
 
           {/* Department Distribution */}
           <div className="space-y-4 md:-ml-6">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Department Distribution
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Department Distribution
+              </h3>
+              <div className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-primary" />
+                <span className="text-lg font-bold">{departmentCount}</span>
+                <span className="text-xs text-muted-foreground">Total</span>
+              </div>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
               {sortedDepartments.map((dept) => (
                 <div key={dept.name} className="space-y-0.5">
