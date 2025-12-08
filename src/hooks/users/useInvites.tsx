@@ -1,0 +1,365 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/common/use-toast";
+import { invokeFunction } from "@/supabase-invoke-guard";
+
+export interface InvitationMetadata {
+  id: string;
+  invited_email: string;
+  invited_by: string;
+  company_id: string;
+  role: string;
+  created_at: string;
+  accepted_at: string | null;
+  is_accepted: boolean;
+  token?: string;
+}
+
+export const useInvites = () => {
+  const [invitations, setInvitations] = useState<InvitationMetadata[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+  
+  const fetchInvitations = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Use admin-gated RPC to fetch invitation metadata
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id;
+      if (!userId) {
+        // wait until auth is ready without surfacing an error
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .rpc('get_invitation_metadata', { _user_id: userId, _company_id: null });
+        
+      if (error) {
+        console.error("Invitation metadata fetch error:", error);
+        throw error;
+      }
+      
+      console.log("Invitation metadata:", data);
+      
+      setInvitations(data || []);
+    } catch (error: any) {
+      console.error("Error fetching invitations:", error);
+      
+      // Handle permission errors gracefully
+      if (error.message && error.message.includes("permission denied")) {
+        setError("Permission denied: You don't have access to view invitations.");
+        toast({
+          title: "Error fetching invitations",
+          description: "Permission denied: You don't have access to view invitations.",
+          variant: "destructive"
+        });
+      } else {
+        setError(error.message || "An error occurred while fetching invitations.");
+        toast({
+          title: "Error fetching invitations",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+      
+      // Set empty invitations array in case of error
+      setInvitations([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const createInvitation = async (email: string, selectedRole: string, userId: string | null, companyId: string | null) => {
+    setLoading(true);
+    
+    try {
+      if (!email.trim()) {
+        toast({
+          title: "Email required",
+          description: "Please enter a valid email address.",
+          variant: "destructive"
+        });
+        return false;
+      }
+      if (!companyId) {
+        toast({
+          title: "Company required",
+          description: "Please select a company for this invitation.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      const payload = {
+        email: email.toLowerCase().trim(),
+        company_id: companyId,
+        role: selectedRole,
+        redirect_to: 'https://payroll.dootsons.com/auth',
+        origin: window.location.origin
+      };
+
+      console.info("📤 [INVITES] Calling admin-invite for", {
+        email: payload.email,
+        role: selectedRole,
+        companyId,
+        timestamp: new Date().toISOString(),
+        buildInfo: (window as any).__BUILD_INFO__
+      });
+
+      // Enhanced invocation with compatibility shim for cache debugging
+      let { data, error } = await invokeFunction('admin-invite', { body: payload });
+      
+      console.info("📬 [INVITES] admin-invite result:", { 
+        success: !error, 
+        data, 
+        error, 
+        timestamp: new Date().toISOString() 
+      });
+      
+      // Compatibility shim - detect if old cached code is still trying send-invite
+      if (error && (error.message?.includes("Function not found") || error.message?.includes("404"))) {
+        console.warn("⚠️ [CACHE DEBUG] admin-invite failed, attempting send-invite fallback for telemetry");
+        console.error("❌ [CACHE DEBUG] This means old cached code is still active!");
+        
+        try {
+          const fallbackResult = await invokeFunction('send-invite', { body: payload });
+          console.warn("🔄 [CACHE DEBUG] send-invite fallback succeeded - cache issue confirmed");
+          data = fallbackResult.data;
+          error = fallbackResult.error;
+        } catch (fallbackError) {
+          console.info("✅ [CACHE DEBUG] send-invite also failed - this is expected, admin-invite should work");
+        }
+      }
+
+      if (error) {
+        console.error("📧 [INVITES] Invitation creation failed:", { 
+          error, 
+          email, 
+          payload,
+          timestamp: new Date().toISOString()
+        });
+        
+        // Try to parse JSON error from edge function response
+        let errorMessage = 'Failed to send invitation';
+        const jsonMatch = error.message?.match(/\{.*\}/);
+        if (jsonMatch) {
+          try {
+            const parsed = JSON.parse(jsonMatch[0]);
+            errorMessage = parsed.error || errorMessage;
+          } catch {
+            errorMessage = error.message || errorMessage;
+          }
+        } else {
+          errorMessage = error.message || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      // Safe null check before accessing data properties
+      if (!data || !data.success) {
+        throw new Error(data?.error || 'Failed to send invitation');
+      }
+
+      console.log("✅ [INVITES] Invitation created successfully:", { 
+        data, 
+        email, 
+        duration: data?.duration_ms,
+        inviteUrl: data?.invite_url,
+        existing_user: data?.existing_user,
+        timestamp: new Date().toISOString() 
+      });
+
+      // Show different success message for existing users
+      if (data?.existing_user) {
+        toast({
+          title: "User Added",
+          description: `${email} already has an account and has been added to the company with ${selectedRole} role. They can log in immediately.`,
+        });
+      } else {
+        // Show success with invite URL option for new users
+        toast({
+          title: "Invitation sent",
+          description: data?.invite_url 
+            ? `Invitation sent to ${email}. You can also copy the invite link directly.`
+            : `Invitation sent to ${email} with ${selectedRole} role`,
+        });
+
+        // Log invite URL for admin convenience
+        if (data?.invite_url) {
+          console.info(`🔗 [INVITES] Direct invite URL: ${data.invite_url}`);
+        }
+      }
+
+      await fetchInvitations();
+      return { success: true, inviteUrl: data?.invite_url };
+    } catch (error: any) {
+      console.error("Error creating invitation:", error);
+      
+      // Parse error details from the response
+      const errorMessage = error.message || 'Failed to send invitation. Please try again.';
+      
+      // Check if it's a specific error we can handle
+      if (errorMessage.includes('already has an active invitation')) {
+        toast({
+          title: "Invitation Failed",
+          description: "This user already has an active invitation for this company.",
+          variant: "destructive",
+        });
+      } else if (errorMessage.includes('already has access to this company')) {
+        toast({
+          title: "Already Has Access",
+          description: "This user already has access to the company.",
+          variant: "destructive",
+        });
+      } else if (errorMessage.includes('A user with this email address has already been registered')) {
+        toast({
+          title: "User Already Exists",
+          description: "This user already has an account but couldn't be added automatically. Please contact support.",
+          variant: "destructive",
+        });
+      } else if (errorMessage.includes('permission') || errorMessage.includes('access')) {
+        toast({
+          title: "Permission Denied",
+          description: "You don't have permission to invite users to this company.",
+          variant: "destructive",
+        });
+      } else if (errorMessage.includes('Failed to create invitation metadata')) {
+        toast({
+          title: "Database Error",
+          description: "There was a problem creating the invitation. Please contact support if this persists.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Invitation Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+      return { success: false };
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const deleteInvitation = async (id: string): Promise<boolean> => {
+    setLoading(true);
+    try {
+      const { data, error } = await invokeFunction('delete-invitation', {
+        body: { invitation_id: id }
+      });
+
+      if (error) {
+        // Try to parse JSON error from edge function response
+        let errorMessage = 'Failed to delete invitation';
+        const jsonMatch = error.message?.match(/\{.*\}/);
+        if (jsonMatch) {
+          try {
+            const parsed = JSON.parse(jsonMatch[0]);
+            errorMessage = parsed.error || errorMessage;
+          } catch {
+            errorMessage = error.message || errorMessage;
+          }
+        } else {
+          errorMessage = error.message || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      if (!data || !data.success) {
+        throw new Error(data?.error || 'Failed to delete invitation');
+      }
+      
+      toast({
+        title: "Invitation deleted",
+        description: data.user_deleted 
+          ? `Invitation and unconfirmed user account have been deleted.`
+          : `The invitation has been successfully deleted.`,
+      });
+      
+      // Update the invitations list
+      setInvitations(invitations.filter(invite => invite.id !== id));
+      return true;
+    } catch (error: any) {
+      console.error("Error deleting invitation:", error);
+      toast({
+        title: "Error deleting invitation",
+        description: error.message,
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const resendInvitation = async (invitationId: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await invokeFunction('resend-invitation', {
+        body: { invitation_id: invitationId }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to resend invitation');
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to resend invitation');
+      }
+
+      toast({
+        title: "Email Resent",
+        description: `Activation email has been resent to ${data.email}`,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error("Error resending invitation:", error);
+      
+      const errorMessage = error.message || 'Failed to resend invitation. Please try again.';
+      
+      if (errorMessage.includes('already been accepted')) {
+        toast({
+          title: "Cannot Resend",
+          description: "This invitation has already been accepted.",
+          variant: "destructive",
+        });
+      } else if (errorMessage.includes('Permission denied')) {
+        toast({
+          title: "Permission Denied",
+          description: "You don't have permission to resend this invitation.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Resend Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchInvitations();
+  }, []);
+  
+  return {
+    invitations,
+    loading,
+    error,
+    fetchInvitations,
+    createInvitation,
+    deleteInvitation,
+    resendInvitation
+  };
+};
