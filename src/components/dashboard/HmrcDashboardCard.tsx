@@ -142,7 +142,7 @@ export function HmrcDashboardCard() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            <h3 className="text-sm font-semibold uppercase tracking-wide">
               HMRC
             </h3>
           </div>
@@ -159,10 +159,6 @@ export function HmrcDashboardCard() {
                 ))}
               </SelectContent>
             </Select>
-            <div className="flex items-center gap-1.5">
-              <span className="text-base font-bold">{formatCurrency(totals.payments - totals.credits)}</span>
-              <span className="text-[10px] text-muted-foreground">Net</span>
-            </div>
           </div>
         </div>
 
@@ -210,7 +206,7 @@ export function HmrcDashboardCard() {
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t border-border font-semibold">
+                <tr className="border-t-2 border-foreground/30 font-semibold">
                   <td className="py-1.5 px-2">Total</td>
                   <td className="py-1.5 px-2 text-right tabular-nums">
                     {formatCurrency(totals.payments)}

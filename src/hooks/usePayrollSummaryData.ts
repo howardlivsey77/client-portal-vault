@@ -84,7 +84,7 @@ export function usePayrollSummaryData(taxYear: string) {
         const hasData = !!periodData;
         
         const year = p <= 9 ? startYear + 2000 : startYear + 2001;
-        const label = `${MONTH_NAMES[p - 1]} ${year.toString().slice(-2)}`;
+        const label = `${MONTH_NAMES[p - 1]} ${year}`;
 
         const grossPay = periodData?.grossPay || 0;
         const overtimePay = generateExampleOvertimePay(p, hasData);
