@@ -18,7 +18,7 @@ export function DepartmentDistributionCard({
   departmentCount, 
   departmentData 
 }: DepartmentDistributionCardProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const maxDepartmentValue = Math.max(...departmentData.map(d => d.value), 1);
   const sortedDepartments = [...departmentData].sort((a, b) => b.value - a.value);
 
