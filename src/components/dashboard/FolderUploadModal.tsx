@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { documentService, documentFolderService } from "@/services";
 import { useCompany } from "@/providers/CompanyProvider";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks";
 import { FolderUploadArea } from "./upload/FolderUploadArea";
 import { FileWithPath, FolderUploadProgress } from "@/types/documents";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

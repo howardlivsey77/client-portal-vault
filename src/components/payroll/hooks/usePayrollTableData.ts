@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/providers/CompanyProvider';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks';
 import { PayPeriod } from '@/services/payroll/utils/financial-year-utils';
 import { Employee } from '@/types/employee-types';
 import { calculateMonthlySalary } from '@/lib/formatters';

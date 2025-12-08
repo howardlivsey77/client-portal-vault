@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { documentFolderService } from "@/services";
 import { FolderItem as FolderItemType } from "../types/folder.types";
 import { useCompany } from "@/providers/CompanyProvider";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/hooks";
 
 export function useFolderExplorer(onFolderSelect: (folderId: string | null) => void) {
   const { currentCompany } = useCompany();

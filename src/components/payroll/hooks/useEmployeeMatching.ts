@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/hooks";
 import { matchEmployees, applyUserMappings, EmployeeMatchingResults } from "@/services/payroll/employeeMatching";
 import { ExtraHoursSummary } from "../types";
 import { setProcessedPayrollData } from "./services/payrollDataService";

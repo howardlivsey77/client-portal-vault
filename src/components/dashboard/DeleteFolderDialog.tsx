@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogClose
 } from "@/components/ui/dialog";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/hooks";
 import { Trash } from "lucide-react";
 
 interface DeleteFolderDialogProps {

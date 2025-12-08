@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { ColumnMapping, availableFields, fieldLabels } from "./ImportConstants";
 import { areRequiredFieldsMapped, saveMappings, clearSavedMappings } from "./ImportUtils";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks";
 
 interface ColumnMappingUIProps {
   columnMappings: ColumnMapping[];

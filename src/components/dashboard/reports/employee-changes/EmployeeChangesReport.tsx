@@ -7,7 +7,7 @@ import { format } from "date-fns";
 import { DateRangeFilter } from "./DateRangeFilter";
 import { ChangesList } from "./ChangesList";
 import { useEmployeeChanges } from "./useEmployeeChanges";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks";
 import { Button } from "@/components/ui/button";
 import * as XLSX from "xlsx";
 import { formatCurrency } from "@/lib/formatters";

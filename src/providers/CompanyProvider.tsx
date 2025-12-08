@@ -3,7 +3,7 @@ import { createContext, useState, useEffect, useContext, ReactNode, useCallback 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthProvider";
 import { Company, CompanyWithRole } from "@/types/company";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks";
 
 interface CompanyContextType {
   currentCompany: Company | null;

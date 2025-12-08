@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { documentFolderService } from "@/services";
 import { useCompany } from "@/providers/CompanyProvider";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/hooks";
 
 export function useSubfolders(selectedFolderId: string | null) {
   const { currentCompany } = useCompany();

@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { isTimeOutsideTolerance } from "@/utils/timesheetUtils";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/hooks";
 
 // Define types for our notifications
 export type NotificationType = 'timesheet-exception' | 'approval-required' | 'system';

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { documentService, documentFolderService } from "@/services";
 import { useCompany } from "@/providers/CompanyProvider";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks";
 import { FileUploadArea } from "./upload/FileUploadArea";
 import { DocumentMetadataForm } from "./upload/DocumentMetadataForm";
 

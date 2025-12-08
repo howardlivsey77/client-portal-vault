@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks";
 import { Download } from "lucide-react";
 import { generatePayslip } from "@/utils/payslipGenerator";
 import { PayrollResult } from "@/services/payroll/types";

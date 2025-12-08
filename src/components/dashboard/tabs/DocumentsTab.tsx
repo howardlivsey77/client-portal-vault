@@ -5,7 +5,7 @@ import { FolderExplorer } from "@/components/dashboard/FolderExplorer";
 import { documentFolderService } from "@/services";
 import { useCompany } from "@/providers/CompanyProvider";
 import { AddFolderDialog } from "@/components/dashboard/folder/AddFolderDialog";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/hooks";
 
 interface DocumentsTabProps {
   onAddDocument: () => void;

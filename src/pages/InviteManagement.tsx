@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks";
 import { Loader2, RefreshCw, UserPlus } from "lucide-react";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useCompany } from "@/providers/CompanyProvider";
