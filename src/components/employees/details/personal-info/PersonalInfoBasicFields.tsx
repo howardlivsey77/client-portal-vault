@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 import { genderOptions } from "@/types/employee";
-import { useDepartments } from "@/hooks/useDepartments";
+import { useDepartments } from "@/hooks";
 import { PersonalInfoFormValues } from "./types";
 import { useNavigate } from "react-router-dom";
 

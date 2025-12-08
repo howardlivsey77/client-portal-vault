@@ -3,8 +3,7 @@ import { Card } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Pencil, FolderPlus, MoreVertical, Trash, Folder } from "lucide-react";
 import { FolderItem as FolderItemType } from "../types/folder.types";
-import { useDraggable } from "@/hooks/useDraggable";
-import { useDroppable } from "@/hooks/useDroppable";
+import { useDraggable, useDroppable } from "@/hooks";
 import { cn } from "@/lib/utils";
 interface FolderTileProps {
   folder: FolderItemType;

@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { useEmployeeTimesheet } from '@/hooks/useEmployeeTimesheet';
+import { useEmployeeTimesheet } from '@/hooks';
 import { TimesheetHeader } from './TimesheetHeader';
 import { WeeklyTimesheetGrid } from './WeeklyTimesheetGrid';
 import { Card, CardContent } from '@/components/ui/card';

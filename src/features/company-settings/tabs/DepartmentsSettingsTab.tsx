@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { useDepartments } from "@/hooks/useDepartments";
+import { useDepartments } from "@/hooks";
 import { useAuth } from "@/providers/AuthProvider";
 import { Department } from "@/services";
 

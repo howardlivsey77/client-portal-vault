@@ -1,7 +1,7 @@
 
 import { useParams } from "react-router-dom";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { useEmployeeDetails } from "@/hooks/useEmployeeDetails";
+import { useEmployeeDetails } from "@/hooks";
 import { EmployeeHeader } from "@/components/employees/details/EmployeeHeader";
 import { PersonalInfoCard } from "@/components/employees/details";
 import { ContactInfoCard } from "@/components/employees/details/contact-info/ContactInfoCard";

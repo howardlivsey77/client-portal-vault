@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Loader2, ShieldCheck, User, UserCog, Users, Trash2 } from "lucide-react";
-import { UserProfile } from "@/hooks/useUsers";
+import { UserProfile } from "@/hooks";
 
 interface UsersTableProps {
   users: UserProfile[];

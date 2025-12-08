@@ -1,7 +1,7 @@
 
 import { Loader2 } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { useAuthInitialization } from "@/hooks/useAuthInitialization";
+import { useAuthInitialization } from "@/hooks";
 import { AuthContainer } from "@/components/auth/AuthContainer";
 import { ensureCompanyAccess } from "@/services";
 import { CompanyAccessSetup } from "@/components/auth/CompanyAccessSetup";

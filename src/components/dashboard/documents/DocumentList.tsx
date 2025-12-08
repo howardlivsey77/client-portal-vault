@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { FileText, Edit, Trash2, Download } from "lucide-react";
 import { DocumentListProps } from "./types";
-import { useDraggable } from "@/hooks/useDraggable";
+import { useDraggable } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { SendToMenu } from "./SendToMenu";
 import { downloadDocument } from "./document-card/utils";

@@ -3,8 +3,7 @@ import { Button } from "@/components/ui/button";
 import { FileSpreadsheet, RefreshCw } from "lucide-react";
 import { SicknessReportTable } from "./SicknessReportTable";
 import { SicknessReportFilters } from "./SicknessReportFilters";
-import { useSicknessReport } from "@/hooks/useSicknessReport";
-import { useToast } from "@/hooks";
+import { useSicknessReport, useToast } from "@/hooks";
 import * as XLSX from 'xlsx';
 
 export const SicknessReport = () => {

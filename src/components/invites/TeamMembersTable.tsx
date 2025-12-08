@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
-import { TeamMember } from "@/hooks/useTeamMembers";
+import { TeamMember } from "@/hooks";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

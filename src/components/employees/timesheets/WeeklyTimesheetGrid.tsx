@@ -1,6 +1,6 @@
 
 import { format } from 'date-fns';
-import { WeeklyTimesheetDay } from '@/hooks/useEmployeeTimesheet';
+import { WeeklyTimesheetDay } from '@/hooks';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';

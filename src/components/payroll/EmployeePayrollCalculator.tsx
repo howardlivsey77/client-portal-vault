@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useToast } from "@/hooks";
-import { useEmployees, Employee } from "@/hooks/useEmployees";
+import { useToast, useEmployees, Employee } from "@/hooks";
 import { PayrollCalculator } from "@/components/payroll/calculator/PayrollCalculator";
 import { EmployeeNavigation } from "@/components/payroll/EmployeeNavigation";
 import { Skeleton } from "@/components/ui/skeleton";

@@ -5,7 +5,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { useAuth } from "@/providers/AuthProvider";
 import { useCompany } from "@/providers/CompanyProvider";
 import { Loader2 } from "lucide-react";
-import { useEmployeeForm } from "@/hooks/useEmployeeForm";
+import { useEmployeeForm } from "@/hooks";
 import { EmployeeFormHeader } from "@/components/employees/form/EmployeeFormHeader";
 import { EmployeeFormContainer } from "@/components/employees/form/EmployeeFormContainer";
 import { EmployeeFormErrorBoundary } from "@/components/employees/form/EmployeeFormErrorBoundary";

@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { usePayrollSummaryData } from "@/hooks/usePayrollSummaryData";
+import { usePayrollSummaryData } from "@/hooks";
 import { useState } from "react";
 import { Coins } from "lucide-react";
 

@@ -6,7 +6,7 @@ import { ColumnMappingUI } from "./import/ColumnMapping";
 import { EmployeePreview } from "./import/EmployeePreview";
 import { EmployeeChangesConfirmation } from "./import/EmployeeChangesConfirmation";
 import { transformData, saveMappings } from "./import/ImportUtils";
-import { useEmployeeImport } from "@/hooks/useEmployeeImport";
+import { useEmployeeImport } from "@/hooks";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useState } from "react";

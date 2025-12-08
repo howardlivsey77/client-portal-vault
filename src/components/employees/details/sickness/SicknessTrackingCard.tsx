@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SicknessEntitlementCard } from "./SicknessEntitlementCard";
 import { SicknessRecordsList } from "./SicknessRecordsList";
 import { SicknessRecordForm } from "./SicknessRecordForm";
-import { useSicknessData } from "@/hooks/useSicknessData";
+import { useSicknessData } from "@/hooks";
 import { SicknessRecord, SicknessEntitlementSummary } from "@/types/sickness";
 import { SicknessScheme, WorkDay } from "@/components/employees/details/work-pattern/types";
 import { Employee } from "@/types/employee-types";

@@ -3,7 +3,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UseFormReturn } from "react-hook-form";
 import { EmployeeFormValues } from "@/types/employee";
-import { useDepartments } from "@/hooks/useDepartments";
+import { useDepartments } from "@/hooks";
 
 interface JobInfoFieldsProps {
   form: UseFormReturn<EmployeeFormValues>;

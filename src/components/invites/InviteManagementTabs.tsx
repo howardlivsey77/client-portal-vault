@@ -8,8 +8,7 @@ import {
 } from "@/components/ui/card";
 import { InvitationsTable } from "@/components/invites/InvitationsTable";
 import { UsersTable } from "@/components/invites/UsersTable";
-import { UserProfile } from "@/hooks/useUsers";
-import { InvitationMetadata } from "@/hooks/useInvites";
+import { UserProfile, InvitationMetadata } from "@/hooks";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 

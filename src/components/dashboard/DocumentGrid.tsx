@@ -9,7 +9,7 @@ import { DocumentGridProps } from "./documents/types";
 import { DragDropProvider } from "@/contexts/DragDropContext";
 import { documentFolderService } from "@/services";
 import { toast } from "sonner";
-import { useDroppable } from "@/hooks/useDroppable";
+import { useDroppable } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 // Convert database document to legacy format for compatibility
