@@ -1,5 +1,5 @@
 
-import { Document } from "@/components/dashboard/DocumentGrid";
+import { Document } from "@/components/dashboard";
 
 declare global {
   interface Window {

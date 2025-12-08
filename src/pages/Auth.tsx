@@ -2,9 +2,8 @@
 import { Loader2 } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useAuthInitialization } from "@/hooks";
-import { AuthContainer } from "@/components/auth/AuthContainer";
+import { AuthContainer, CompanyAccessSetup } from "@/components/auth";
 import { ensureCompanyAccess } from "@/services";
-import { CompanyAccessSetup } from "@/components/auth/CompanyAccessSetup";
 import { useAuth } from "@/providers/AuthProvider";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";

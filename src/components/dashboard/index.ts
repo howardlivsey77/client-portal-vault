@@ -15,6 +15,9 @@ export { DocumentGrid } from "./DocumentGrid";
 export { DocumentUploadModal } from "./DocumentUploadModal";
 export { AddDocumentButton } from "./AddDocumentButton";
 
+// Document types
+export type { Document, DocumentGridProps, DocumentListProps } from "./documents/types";
+
 // Folder components
 export { FolderExplorer } from "./FolderExplorer";
 export { FolderUploadModal } from "./FolderUploadModal";
@@ -35,10 +38,14 @@ export { useSubfolders } from "./documents/useSubfolders";
 // Tasks sub-components
 export { TaskDialog } from "./tasks/TaskDialog";
 export { TaskItem } from "./tasks/TaskItem";
+export { TaskList } from "./tasks/TaskList";
 
 // Reports sub-components
 export { EmployeeDetailsReport } from "./reports/employee-details/EmployeeDetailsReport";
 export { EmployeeChangesReport } from "./reports/employee-changes/EmployeeChangesReport";
+export { ReportsNavigation } from "./reports/ReportsNavigation";
 
 // Tabs
 export { DocumentsTab } from "./tabs/DocumentsTab";
+export { PayrollTab } from "./tabs/PayrollTab";
+export { TimesheetsTab } from "./tabs/TimesheetsTab";

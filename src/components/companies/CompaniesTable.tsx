@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Building, Search, Plus } from "lucide-react";
-import { CreateCompanyOption } from "@/components/auth/company-access/CreateCompanyOption";
+import { CreateCompanyOption } from "@/components/auth";
 
 export function CompaniesTable() {
   const { companies, currentCompany, switchCompany, isLoading } = useCompany();

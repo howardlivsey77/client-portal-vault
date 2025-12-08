@@ -2,15 +2,17 @@
 import { useParams } from "react-router-dom";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useEmployeeDetails } from "@/hooks";
-import { EmployeeHeader } from "@/components/employees/details/EmployeeHeader";
-import { PersonalInfoCard } from "@/components/employees/details";
-import { ContactInfoCard } from "@/components/employees/details/contact-info/ContactInfoCard";
-import { SystemInfoCard } from "@/components/employees/details/SystemInfoCard";
-import { WorkPatternCard } from "@/components/employees/details/WorkPatternCard";
-import { EmployeeNotFound } from "@/components/employees/details/EmployeeNotFound";
-import { LoadingState } from "@/components/employees/details/LoadingState";
-import { HmrcInfoCard } from "@/components/employees/details/hmrc-info/HmrcInfoCard";
-import { EmploymentStatusCard } from "@/components/employees/details/employment-status/EmploymentStatusCard";
+import { 
+  EmployeeHeader,
+  PersonalInfoCard,
+  ContactInfoCard,
+  SystemInfoCard,
+  WorkPatternCard,
+  EmployeeNotFound,
+  LoadingState,
+  HmrcInfoCard,
+  EmploymentStatusCard
+} from "@/components/employees/details";
 
 const EmployeeDetails = () => {
   const { id } = useParams();

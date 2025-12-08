@@ -1,18 +1,20 @@
 
 import { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { FolderUploadModal } from "@/components/dashboard/FolderUploadModal";
+import { 
+  FolderUploadModal, 
+  EmployeeDashboard, 
+  DashboardHeader,
+  DocumentsTab,
+  TaskList,
+  ReportsNavigation,
+  PayrollTab,
+  TimesheetsTab
+} from "@/components/dashboard";
+import { PayrollInputWizard } from "@/components/payroll";
+import { CompaniesTable } from "@/components/companies/CompaniesTable";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "react-router-dom";
-import { TaskList } from "@/components/dashboard/tasks/TaskList";
-import { ReportsNavigation } from "@/components/dashboard/reports/ReportsNavigation";
-import { PayrollInputWizard } from "@/components/payroll/PayrollInputWizard";
-import { EmployeeDashboard } from "@/components/dashboard/EmployeeDashboard";
-import { DocumentsTab } from "@/components/dashboard/tabs/DocumentsTab";
-import { PayrollTab } from "@/components/dashboard/tabs/PayrollTab";
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { TimesheetsTab } from "@/components/dashboard/tabs/TimesheetsTab";
-import { CompaniesTable } from "@/components/companies/CompaniesTable";
 
 const Index = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);

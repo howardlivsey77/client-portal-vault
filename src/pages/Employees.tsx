@@ -1,11 +1,13 @@
 
 import React, { useState } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { EmployeeTable } from "@/components/employees/EmployeeTable";
-import { EmployeeSearch } from "@/components/employees/EmployeeSearch";
-import { EmployeeActions } from "@/components/employees/EmployeeActions";
-import { EmptyEmployeeState } from "@/components/employees/EmptyEmployeeState";
-import { EmployeeStatusFilter } from "@/components/employees/EmployeeStatusFilter";
+import { 
+  EmployeeTable, 
+  EmployeeSearch, 
+  EmployeeActions, 
+  EmptyEmployeeState, 
+  EmployeeStatusFilter 
+} from "@/components/employees";
 import { useEmployees } from "@/hooks";
 import { useAuth } from "@/providers/AuthProvider";
 import { useCompany } from "@/providers/CompanyProvider";
