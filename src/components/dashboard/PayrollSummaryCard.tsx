@@ -1,7 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePayrollSummaryData } from "@/hooks/usePayrollSummaryData";
 import { useState } from "react";
+import { Coins } from "lucide-react";
 
 function generateFinancialYears(): string[] {
   const now = new Date();
@@ -18,38 +19,42 @@ function generateFinancialYears(): string[] {
   return years;
 }
 
-function getCurrentTaxPeriod(): number {
-  const now = new Date();
-  const month = now.getMonth();
-  // April = period 1, May = period 2, etc.
-  return month >= 3 ? month - 2 : month + 10;
-}
-
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-GB', {
     style: 'currency',
     currency: 'GBP',
-    minimumFractionDigits: 2,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount);
+}
+
+function VarianceIndicator({ variance }: { variance: number | null }) {
+  if (variance === null || variance === 0) return null;
+  
+  if (variance > 0) {
+    return <span className="text-red-500 ml-1 text-[10px]">▲</span>;
+  }
+  return <span className="text-foreground ml-1 text-[10px]">▼</span>;
 }
 
 export function PayrollSummaryCard() {
   const financialYears = generateFinancialYears();
   const [selectedYear, setSelectedYear] = useState(financialYears[1]);
-  const [selectedPeriod, setSelectedPeriod] = useState(getCurrentTaxPeriod());
   
-  const { data, isLoading } = usePayrollSummaryData(selectedYear, selectedPeriod);
-
-  const periods = Array.from({ length: 12 }, (_, i) => i + 1);
+  const { data, isLoading } = usePayrollSummaryData(selectedYear);
 
   return (
-    <Card className="monday-card pt-4">
-      <CardHeader className="pb-3 pt-0">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold">Payroll Summary</CardTitle>
+    <Card className="monday-card border-[1.5px] border-foreground">
+      <CardContent className="pt-4 pb-3 px-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
+            <Coins className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold uppercase tracking-wide">Payroll Summary</h3>
+          </div>
+          <div className="flex items-center gap-3">
             <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="h-7 w-[80px] text-xs">
+              <SelectTrigger className="h-6 w-[70px] text-xs border-muted-foreground/30">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -60,61 +65,79 @@ export function PayrollSummaryCard() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={selectedPeriod.toString()} onValueChange={(v) => setSelectedPeriod(Number(v))}>
-              <SelectTrigger className="h-7 w-[70px] text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {periods.map((period) => (
-                  <SelectItem key={period} value={period.toString()} className="text-xs">
-                    P{period}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-1">
+              <span className="text-base font-bold">{formatCurrency(data?.totals.costToEmployer || 0)}</span>
+              <span className="text-[10px] text-muted-foreground">YTD</span>
+            </div>
           </div>
         </div>
-        {data?.periodLabel && (
-          <p className="text-xs text-muted-foreground mt-1">{data.periodLabel}</p>
-        )}
-      </CardHeader>
-      <CardContent className="pt-0">
+
+        {/* Table */}
         {isLoading ? (
-          <div className="text-xs text-muted-foreground">Loading...</div>
+          <div className="text-xs text-muted-foreground py-4 text-center">Loading...</div>
         ) : (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-muted-foreground">Gross Pay</p>
-                <p className="text-lg font-semibold">{formatCurrency(data?.totalGross || 0)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Income Tax</p>
-                <p className="text-lg font-semibold">{formatCurrency(data?.totalTax || 0)}</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-muted-foreground">Employee NIC</p>
-                <p className="text-lg font-semibold">{formatCurrency(data?.totalNicEmployee || 0)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Employer NIC</p>
-                <p className="text-lg font-semibold">{formatCurrency(data?.totalNicEmployer || 0)}</p>
-              </div>
-            </div>
-            <div className="pt-2 border-t">
-              <div className="flex justify-between items-center">
-                <p className="text-xs text-muted-foreground">Employees Processed</p>
-                <p className="text-sm font-medium">{data?.employeeCount || 0}</p>
-              </div>
-              <div className="flex justify-between items-center mt-1">
-                <p className="text-xs text-muted-foreground font-medium">Total Deductions</p>
-                <p className="text-sm font-semibold text-primary">
-                  {formatCurrency((data?.totalTax || 0) + (data?.totalNicEmployee || 0) + (data?.totalNicEmployer || 0))}
-                </p>
-              </div>
-            </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-muted-foreground/20">
+                  <th className="text-left font-medium text-muted-foreground py-1.5 pr-2">Period</th>
+                  <th className="text-right font-medium text-muted-foreground py-1.5 px-2">Gross Pay</th>
+                  <th className="text-right font-medium text-muted-foreground py-1.5 px-2">Overtime</th>
+                  <th className="text-right font-medium text-muted-foreground py-1.5 pl-2">Cost to Employer</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data?.periods.map((period) => {
+                  const hasData = period.grossPay > 0 || period.overtimePay > 0;
+                  return (
+                    <tr 
+                      key={period.period} 
+                      className="border-b border-muted-foreground/10 hover:bg-muted/30 transition-colors"
+                    >
+                      <td className="py-1.5 pr-2 font-medium">{period.label}</td>
+                      <td className="py-1.5 px-2 text-right">
+                        {hasData ? (
+                          <span className="inline-flex items-center">
+                            {formatCurrency(period.grossPay)}
+                            <VarianceIndicator variance={period.grossVariance} />
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="py-1.5 px-2 text-right">
+                        {hasData ? (
+                          <span className="inline-flex items-center">
+                            {formatCurrency(period.overtimePay)}
+                            <VarianceIndicator variance={period.overtimeVariance} />
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="py-1.5 pl-2 text-right">
+                        {hasData ? (
+                          <span className="inline-flex items-center">
+                            {formatCurrency(period.costToEmployer)}
+                            <VarianceIndicator variance={period.costVariance} />
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-foreground/30 font-semibold">
+                  <td className="py-2 pr-2">Total</td>
+                  <td className="py-2 px-2 text-right">{formatCurrency(data?.totals.grossPay || 0)}</td>
+                  <td className="py-2 px-2 text-right">{formatCurrency(data?.totals.overtimePay || 0)}</td>
+                  <td className="py-2 pl-2 text-right">{formatCurrency(data?.totals.costToEmployer || 0)}</td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
         )}
       </CardContent>
