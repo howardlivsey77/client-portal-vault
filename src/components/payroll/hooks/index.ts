@@ -1,6 +1,5 @@
 
-// Re-export the main hook and services for easy access
-export { usePayrollWizard } from "./usePayrollWizard";
+// Re-export services and hooks for easy access
 export { getProcessedPayrollData, setProcessedPayrollData } from "./services/payrollDataService";
 export { useFileProcessing } from "./useFileProcessing";
 export { useEmployeeMatching } from "./useEmployeeMatching";
