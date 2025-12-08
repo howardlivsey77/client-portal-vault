@@ -9,7 +9,7 @@ import {
   deleteDepartment,
   CreateDepartmentData,
   UpdateDepartmentData 
-} from "@/services/employees";
+} from "@/services";
 
 export const useDepartments = () => {
   const [departments, setDepartments] = useState<Department[]>([]);

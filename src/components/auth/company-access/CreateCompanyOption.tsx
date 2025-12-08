@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { getUserFromAuth } from "@/services/users";
+import { getUserFromAuth } from "@/services";
 
 type CreateCompanyOptionProps = {
   userId?: string;

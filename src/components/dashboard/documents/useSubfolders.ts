@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { documentFolderService } from "@/services/documents";
+import { documentFolderService } from "@/services";
 import { useCompany } from "@/providers/CompanyProvider";
 import { toast } from "@/hooks/use-toast";
 

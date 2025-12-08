@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
-import { savePayrollData } from "@/services/payroll";
+import { savePayrollData } from "@/services";
 import { useAuth } from "@/providers/AuthProvider";
 import { ExtraHoursSummary, PayrollFiles } from "../types";
 

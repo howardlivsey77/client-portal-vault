@@ -6,7 +6,7 @@ import { ExtraHoursSummary, EmployeeHoursData } from "@/components/payroll/types
 import { 
   fetchPayrollPeriods, 
   fetchPayrollEmployeeDetails 
-} from "@/services/payroll";
+} from "@/services";
 import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 

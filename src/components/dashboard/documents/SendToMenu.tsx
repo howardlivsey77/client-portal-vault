@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { FolderOpen, Send } from "lucide-react";
 import { DatabaseFolder } from "@/types/documents";
-import { documentFolderService } from "@/services/documents";
+import { documentFolderService } from "@/services";
 
 interface SendToMenuProps {
   documentId: string;

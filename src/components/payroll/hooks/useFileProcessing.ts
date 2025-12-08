@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from "react";
 import { toast } from "@/hooks/use-toast";
-import { processExtraHoursFile } from "@/services/payroll";
+import { processExtraHoursFile } from "@/services";
 import { ExtraHoursSummary, PayrollFiles } from "../types";
 import { setProcessedPayrollData, clearProcessedPayrollData } from "./services/payrollDataService";
 

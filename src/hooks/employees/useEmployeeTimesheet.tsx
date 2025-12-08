@@ -3,7 +3,7 @@ import { Employee } from '@/types/employee-types';
 import { supabase } from '@/integrations/supabase/client';
 import { addDays, format } from 'date-fns';
 import { useToast } from '@/hooks/common/use-toast';
-import { fetchTimesheetEntries } from '@/services/employees';
+import { fetchTimesheetEntries } from '@/services';
 
 export interface WeeklyTimesheetDay {
   date: Date;
