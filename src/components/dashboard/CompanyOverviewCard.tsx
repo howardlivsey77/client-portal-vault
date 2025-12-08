@@ -37,16 +37,27 @@ export function CompanyOverviewCard({
             <span className="text-xs text-muted-foreground mt-1">Avg Age</span>
           </div>
           
-          {/* Gender Distribution Tiles */}
-          {sortedGenderData.map((item) => (
-            <div 
-              key={item.gender}
-              className="flex flex-col items-center text-center p-4 rounded-lg bg-muted/50 min-w-[100px]"
-            >
-              <span className="text-2xl font-bold">{item.count}</span>
-              <span className="text-xs uppercase text-muted-foreground mt-1">{item.gender}</span>
+          {/* Gender Distribution Tile - Merged */}
+          <div className="flex flex-col p-4 rounded-lg bg-muted/50 min-w-[200px]">
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3 text-center">
+              Gender Distribution
+            </h4>
+            <div className="flex items-center justify-center gap-6">
+              {sortedGenderData.map((item) => {
+                const percentage = totalEmployees > 0 
+                  ? Math.round((item.count / totalEmployees) * 100) 
+                  : 0;
+                return (
+                  <div key={item.gender} className="flex flex-col items-center text-center">
+                    <span className="text-2xl font-bold">
+                      {item.count} <span className="text-sm font-normal text-muted-foreground">({percentage}%)</span>
+                    </span>
+                    <span className="text-xs uppercase text-muted-foreground mt-1">{item.gender}</span>
+                  </div>
+                );
+              })}
             </div>
-          ))}
+          </div>
         </div>
       </CardContent>
     </Card>
