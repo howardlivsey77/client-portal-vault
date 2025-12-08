@@ -18,7 +18,16 @@ export function EmployeeDashboard() {
   return (
     <div className="space-y-6">
       <h2 className="monday-section-title">Company Overview</h2>
-      <HmrcDashboardCard />
+      
+      {/* Grid for HMRC tile and future tile */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Placeholder for future tile on the left */}
+        <div className="hidden lg:block" />
+        
+        {/* HMRC tile on the right */}
+        <HmrcDashboardCard />
+      </div>
+
       <CompanyOverviewCard 
         totalEmployees={stats.totalEmployees}
         genderData={genderData}

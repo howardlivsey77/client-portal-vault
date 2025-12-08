@@ -1,8 +1,7 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronDown, Building2 } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { useHmrcDashboardData, HmrcPeriodData } from "@/hooks/useHmrcDashboardData";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -22,15 +21,44 @@ function generateFinancialYears(): string[] {
   ];
 }
 
+// Example status data for display purposes
+function getExampleStatus(period: number): { fpsStatus: HmrcPeriodData['fpsStatus'], epsStatus: HmrcPeriodData['epsStatus'] } {
+  const currentMonth = new Date().getMonth();
+  const currentPeriod = currentMonth >= 3 ? currentMonth - 2 : currentMonth + 10;
+  
+  if (period > currentPeriod) {
+    // Future periods - no status
+    return { fpsStatus: null, epsStatus: null };
+  }
+  
+  // Example statuses for past/current periods
+  const exampleStatuses: { [key: number]: { fpsStatus: HmrcPeriodData['fpsStatus'], epsStatus: HmrcPeriodData['epsStatus'] } } = {
+    1: { fpsStatus: 'success', epsStatus: 'not_required' },
+    2: { fpsStatus: 'success', epsStatus: 'not_required' },
+    3: { fpsStatus: 'success', epsStatus: 'not_required' },
+    4: { fpsStatus: 'success', epsStatus: 'success' },
+    5: { fpsStatus: 'success', epsStatus: 'not_required' },
+    6: { fpsStatus: 'success', epsStatus: 'not_required' },
+    7: { fpsStatus: 'failed', epsStatus: 'pending' },
+    8: { fpsStatus: 'pending', epsStatus: 'not_required' },
+    9: { fpsStatus: 'success', epsStatus: 'success' },
+    10: { fpsStatus: 'success', epsStatus: 'not_required' },
+    11: { fpsStatus: 'success', epsStatus: 'not_required' },
+    12: { fpsStatus: 'success', epsStatus: 'success' },
+  };
+  
+  return exampleStatuses[period] || { fpsStatus: null, epsStatus: null };
+}
+
 function StatusIndicator({ status }: { status: HmrcPeriodData['fpsStatus'] }) {
   const getStatusStyles = () => {
     switch (status) {
       case 'success':
-        return 'bg-green-500 shadow-[0_0_8px_2px_rgba(34,197,94,0.4)]';
+        return 'bg-green-500 shadow-[0_0_6px_1px_rgba(34,197,94,0.4)]';
       case 'failed':
-        return 'bg-red-500 shadow-[0_0_8px_2px_rgba(239,68,68,0.4)]';
+        return 'bg-red-500 shadow-[0_0_6px_1px_rgba(239,68,68,0.4)]';
       case 'pending':
-        return 'bg-amber-500 shadow-[0_0_8px_2px_rgba(245,158,11,0.4)]';
+        return 'bg-amber-500 shadow-[0_0_6px_1px_rgba(245,158,11,0.4)]';
       case 'not_required':
         return 'bg-muted-foreground/30';
       default:
@@ -53,12 +81,12 @@ function StatusIndicator({ status }: { status: HmrcPeriodData['fpsStatus'] }) {
       <Tooltip>
         <TooltipTrigger asChild>
           <div 
-            className={`w-3 h-3 rounded-full ${getStatusStyles()} transition-all`}
+            className={`w-2.5 h-2.5 rounded-full ${getStatusStyles()} transition-all`}
             aria-label={getStatusLabel()}
           />
         </TooltipTrigger>
         <TooltipContent>
-          <p>{getStatusLabel()}</p>
+          <p className="text-xs">{getStatusLabel()}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -74,124 +102,128 @@ function formatCurrency(amount: number): string {
 }
 
 export function HmrcDashboardCard() {
-  const [isOpen, setIsOpen] = useState(false);
   const financialYears = useMemo(() => generateFinancialYears(), []);
   const [selectedYear, setSelectedYear] = useState(financialYears[1]); // Default to current year
   
   const { data: periodData, isLoading } = useHmrcDashboardData(selectedYear);
 
+  // Apply example statuses when no real data exists
+  const displayData = useMemo(() => {
+    if (!periodData) return null;
+    return periodData.map(period => {
+      // If no real FPS/EPS status, use example data
+      if (!period.fpsStatus && !period.epsStatus) {
+        const exampleStatus = getExampleStatus(period.period);
+        return {
+          ...period,
+          fpsStatus: exampleStatus.fpsStatus,
+          epsStatus: exampleStatus.epsStatus,
+        };
+      }
+      return period;
+    });
+  }, [periodData]);
+
   const totals = useMemo(() => {
-    if (!periodData) return { payments: 0, credits: 0 };
-    return periodData.reduce(
+    if (!displayData) return { payments: 0, credits: 0 };
+    return displayData.reduce(
       (acc, period) => ({
         payments: acc.payments + period.payments,
         credits: acc.credits + period.credits,
       }),
       { payments: 0, credits: 0 }
     );
-  }, [periodData]);
+  }, [displayData]);
 
   return (
     <Card className="animate-fade-in border-[1.5px] border-foreground">
-      <CardContent className="pt-6">
-        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-          <CollapsibleTrigger asChild>
-            <button className="flex items-center justify-between w-full cursor-pointer hover:bg-muted/50 rounded-lg p-2 -m-2 transition-colors">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                HMRC
-              </h3>
-              <div className="flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-primary" />
-                <span className="text-lg font-bold">{formatCurrency(totals.payments - totals.credits)}</span>
-                <span className="text-xs text-muted-foreground">Net Due</span>
-                <ChevronDown 
-                  className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
-                    isOpen ? "rotate-180" : ""
-                  }`} 
-                />
-              </div>
-            </button>
-          </CollapsibleTrigger>
-          
-          <CollapsibleContent className="pt-4">
-            <div className="space-y-4">
-              {/* Financial Year Selector */}
-              <div className="flex justify-end">
-                <Select value={selectedYear} onValueChange={setSelectedYear}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="Select year" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {financialYears.map((year) => (
-                      <SelectItem key={year} value={year}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* HMRC Grid */}
-              {isLoading ? (
-                <div className="flex justify-center py-4 text-muted-foreground">
-                  Loading...
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left py-2 px-3 font-medium text-muted-foreground">Period</th>
-                        <th className="text-right py-2 px-3 font-medium text-muted-foreground">Payments</th>
-                        <th className="text-right py-2 px-3 font-medium text-muted-foreground">Credits</th>
-                        <th className="text-center py-2 px-3 font-medium text-muted-foreground">FPS</th>
-                        <th className="text-center py-2 px-3 font-medium text-muted-foreground">EPS</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {periodData?.map((period) => (
-                        <tr 
-                          key={period.period} 
-                          className="border-b border-border/50 hover:bg-muted/30 transition-colors"
-                        >
-                          <td className="py-2 px-3 font-medium">{period.periodLabel}</td>
-                          <td className="py-2 px-3 text-right tabular-nums">
-                            {period.payments > 0 ? formatCurrency(period.payments) : '—'}
-                          </td>
-                          <td className="py-2 px-3 text-right tabular-nums text-green-600 dark:text-green-400">
-                            {period.credits > 0 ? formatCurrency(period.credits) : '—'}
-                          </td>
-                          <td className="py-2 px-3">
-                            <div className="flex justify-center">
-                              <StatusIndicator status={period.fpsStatus} />
-                            </div>
-                          </td>
-                          <td className="py-2 px-3">
-                            <div className="flex justify-center">
-                              <StatusIndicator status={period.epsStatus} />
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="border-t-2 border-border font-semibold">
-                        <td className="py-2 px-3">Total</td>
-                        <td className="py-2 px-3 text-right tabular-nums">
-                          {formatCurrency(totals.payments)}
-                        </td>
-                        <td className="py-2 px-3 text-right tabular-nums text-green-600 dark:text-green-400">
-                          {formatCurrency(totals.credits)}
-                        </td>
-                        <td colSpan={2}></td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              )}
+      <CardContent className="pt-4 pb-3 px-4">
+        {/* Header with title, year selector, and net due */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              HMRC
+            </h3>
+          </div>
+          <div className="flex items-center gap-3">
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-[100px] h-7 text-xs">
+                <SelectValue placeholder="Year" />
+              </SelectTrigger>
+              <SelectContent>
+                {financialYears.map((year) => (
+                  <SelectItem key={year} value={year} className="text-xs">
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex items-center gap-1.5">
+              <span className="text-base font-bold">{formatCurrency(totals.payments - totals.credits)}</span>
+              <span className="text-[10px] text-muted-foreground">Net</span>
             </div>
-          </CollapsibleContent>
-        </Collapsible>
+          </div>
+        </div>
+
+        {/* HMRC Grid */}
+        {isLoading ? (
+          <div className="flex justify-center py-3 text-muted-foreground text-xs">
+            Loading...
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-1.5 px-2 font-medium text-muted-foreground">Period</th>
+                  <th className="text-right py-1.5 px-2 font-medium text-muted-foreground">Payments</th>
+                  <th className="text-right py-1.5 px-2 font-medium text-muted-foreground">Credits</th>
+                  <th className="text-center py-1.5 px-2 font-medium text-muted-foreground">FPS</th>
+                  <th className="text-center py-1.5 px-2 font-medium text-muted-foreground">EPS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayData?.map((period) => (
+                  <tr 
+                    key={period.period} 
+                    className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                  >
+                    <td className="py-1.5 px-2 font-medium">{period.periodLabel}</td>
+                    <td className="py-1.5 px-2 text-right tabular-nums">
+                      {period.payments > 0 ? formatCurrency(period.payments) : '—'}
+                    </td>
+                    <td className="py-1.5 px-2 text-right tabular-nums text-green-600 dark:text-green-400">
+                      {period.credits > 0 ? formatCurrency(period.credits) : '—'}
+                    </td>
+                    <td className="py-1.5 px-2">
+                      <div className="flex justify-center">
+                        <StatusIndicator status={period.fpsStatus} />
+                      </div>
+                    </td>
+                    <td className="py-1.5 px-2">
+                      <div className="flex justify-center">
+                        <StatusIndicator status={period.epsStatus} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-border font-semibold">
+                  <td className="py-1.5 px-2">Total</td>
+                  <td className="py-1.5 px-2 text-right tabular-nums">
+                    {formatCurrency(totals.payments)}
+                  </td>
+                  <td className="py-1.5 px-2 text-right tabular-nums text-green-600 dark:text-green-400">
+                    {formatCurrency(totals.credits)}
+                  </td>
+                  <td colSpan={2}></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
