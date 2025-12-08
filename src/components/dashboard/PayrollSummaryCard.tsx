@@ -54,7 +54,7 @@ export function PayrollSummaryCard() {
           </div>
           <div className="flex items-center gap-3">
             <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="h-6 w-[70px] text-xs border-muted-foreground/30">
+              <SelectTrigger className="w-[100px] h-7 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
