@@ -1,6 +1,7 @@
 import { CompanyOverviewCard } from "./CompanyOverviewCard";
 import { DepartmentDistributionCard } from "./DepartmentDistributionCard";
 import { HmrcDashboardCard } from "./HmrcDashboardCard";
+import { PayrollSummaryCard } from "./PayrollSummaryCard";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
 const DEPARTMENT_COLORS = [
@@ -19,12 +20,9 @@ export function EmployeeDashboard() {
     <div className="space-y-6">
       <h2 className="monday-section-title">Company Overview</h2>
       
-      {/* Grid for HMRC tile and future tile */}
+      {/* Grid for summary tiles */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Placeholder for future tile on the left */}
-        <div className="hidden lg:block" />
-        
-        {/* HMRC tile on the right */}
+        <PayrollSummaryCard />
         <HmrcDashboardCard />
       </div>
 
