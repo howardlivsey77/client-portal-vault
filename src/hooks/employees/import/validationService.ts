@@ -1,6 +1,6 @@
 
 import { EmployeeData } from "@/components/employees/import/ImportConstants";
-import { performComprehensiveDuplicateCheck, DuplicateCheckResult } from "@/services/employeeImport/duplicateChecker";
+import { performComprehensiveDuplicateCheck, DuplicateCheckResult } from "@/services/employees/import/duplicateChecker";
 import { EmployeeConflict } from "./enhancedEmployeeMatching";
 
 export interface ImportValidationResult {
@@ -36,7 +36,7 @@ export const validateImportData = async (
     checkDuplicatesInImportData, 
     checkDuplicateEmailsInImportData, 
     checkDuplicateNationalInsuranceNumbersInImportData 
-  } = await import("@/services/employeeImport/duplicateChecker");
+  } = await import("@/services/employees/import/duplicateChecker");
   
   const payrollIds = allImportData
     .map(emp => emp.payroll_id)

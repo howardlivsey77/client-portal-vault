@@ -13,7 +13,7 @@ import { SicknessRecordFormFields } from "./SicknessRecordFormFields";
 import { getDefaultTotalDays } from "./utils/dateCalculations";
 import { calculateWorkingDaysForRecord } from "./utils/workingDaysCalculations";
 import { fetchWorkPatterns } from "@/components/employees/details/work-pattern/services/fetchPatterns";
-import { overlapService } from "@/services/sickness/overlapService";
+import { overlapService } from "@/services/employees/sickness/overlapService";
 
 interface SicknessRecordFormProps {
   open: boolean;

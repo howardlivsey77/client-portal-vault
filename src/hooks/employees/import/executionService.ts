@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeData } from "@/components/employees/import/ImportConstants";
-import { createNewEmployees, updateExistingEmployees } from "@/services/employeeImport";
+import { createNewEmployees, updateExistingEmployees } from "@/services/employees/import";
 import { EmployeeConflict } from "./enhancedEmployeeMatching";
 import { validateImportData, ImportValidationResult } from "./validationService";
 
