@@ -65,10 +65,6 @@ export function PayrollSummaryCard() {
                 ))}
               </SelectContent>
             </Select>
-            <div className="flex items-center gap-1">
-              <span className="text-base font-bold">{formatCurrency(data?.totals.costToEmployer || 0)}</span>
-              <span className="text-[10px] text-muted-foreground">YTD</span>
-            </div>
           </div>
         </div>
 
