@@ -3,7 +3,7 @@ import { Loader2 } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useAuthInitialization } from "@/hooks/useAuthInitialization";
 import { AuthContainer } from "@/components/auth/AuthContainer";
-import { ensureCompanyAccess } from "@/services/users";
+import { ensureCompanyAccess } from "@/services";
 import { CompanyAccessSetup } from "@/components/auth/CompanyAccessSetup";
 import { useAuth } from "@/providers/AuthProvider";
 import { useEffect } from "react";

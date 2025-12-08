@@ -1,6 +1,6 @@
 
 import { DatabaseFolder } from "@/types/documents";
-import { documentFolderService } from "@/services/documents";
+import { documentFolderService } from "@/services";
 
 // Convert DatabaseFolder to FolderItem format for compatibility
 const convertToFolderItem = (dbFolder: DatabaseFolder, allFolders: DatabaseFolder[]) => {

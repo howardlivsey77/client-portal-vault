@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { createCompanyAccess } from "@/services/users";
+import { createCompanyAccess } from "@/services";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";

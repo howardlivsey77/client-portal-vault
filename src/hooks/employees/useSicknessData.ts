@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/common/use-toast';
-import { sicknessService } from '@/services/employees';
+import { sicknessService } from '@/services';
 import { SicknessRecord, EntitlementUsage, SicknessEntitlementSummary } from '@/types/sickness';
 import { EligibilityRule, SicknessScheme } from '@/components/employees/details/work-pattern/types';
 import { Employee } from '@/types/employee-types';

@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/common/use-toast";
 import { useCompany } from "@/providers/CompanyProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeFormValues } from "@/types/employee";
-import { createEmployee, updateEmployee } from "@/services/employees";
+import { createEmployee, updateEmployee } from "@/services";
 
 export const useEmployeeFormSubmission = (
   isEditMode: boolean,

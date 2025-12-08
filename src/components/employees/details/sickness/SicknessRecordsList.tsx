@@ -9,7 +9,7 @@ import { Calendar, Plus, Edit, Trash, FileText, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { calculateWorkingDaysForRecord } from "./utils/workingDaysCalculations";
 import { useToast } from "@/hooks/use-toast";
-import { sicknessService } from "@/services/employees";
+import { sicknessService } from "@/services";
 
 interface SicknessRecordsListProps {
   records: SicknessRecord[];

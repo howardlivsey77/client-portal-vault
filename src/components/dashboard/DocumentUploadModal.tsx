@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
-import { documentService, documentFolderService } from "@/services/documents";
+import { documentService, documentFolderService } from "@/services";
 import { useCompany } from "@/providers/CompanyProvider";
 import { useToast } from "@/components/ui/use-toast";
 import { FileUploadArea } from "./upload/FileUploadArea";

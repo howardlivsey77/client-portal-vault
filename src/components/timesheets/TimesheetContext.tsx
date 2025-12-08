@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { WeeklyTimesheetDay } from '@/hooks/useEmployeeTimesheet';
-import { saveTimesheetEntries } from '@/services/employees';
+import { saveTimesheetEntries } from '@/services';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 

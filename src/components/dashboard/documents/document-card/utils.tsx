@@ -1,6 +1,6 @@
 
 import { FileText } from "lucide-react";
-import { documentService } from "@/services/documents";
+import { documentService } from "@/services";
 import { toast } from "sonner";
 
 export const getFileIcon = (type: string) => {
