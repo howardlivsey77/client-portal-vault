@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogClose
 } from "@/components/ui/dialog";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/hooks";
 import { Task, TaskFormData, TaskPriority, TaskStatus, RecurrencePattern } from "./types";
 import { createTask, updateTask, fetchUserProfiles } from "./taskService";
 import { TaskFormFields } from "./task-dialog/TaskFormFields";

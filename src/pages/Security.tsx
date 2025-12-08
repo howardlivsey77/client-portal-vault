@@ -4,7 +4,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks";
 import { Loader2, ShieldCheck, ShieldX, Mail } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";

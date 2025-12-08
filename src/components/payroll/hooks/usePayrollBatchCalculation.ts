@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks';
 import { useCompany } from '@/providers/CompanyProvider';
 import { PayPeriod } from '@/services/payroll/utils/financial-year-utils';
 import { PayrollAdjustments } from '../adjustments/types';

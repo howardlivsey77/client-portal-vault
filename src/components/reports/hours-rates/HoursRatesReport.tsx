@@ -4,7 +4,7 @@ import { FileSpreadsheet, RefreshCw } from "lucide-react";
 import { HoursRatesReportTable } from "./HoursRatesReportTable";
 import { HoursRatesReportFilters } from "./HoursRatesReportFilters";
 import { useHoursRatesReport } from "@/hooks/useHoursRatesReport";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks";
 import * as XLSX from 'xlsx';
 
 export const HoursRatesReport = () => {

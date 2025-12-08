@@ -8,7 +8,7 @@ import { WorkDay } from "@/components/employees/details/work-pattern/types";
 import { Calendar, Plus, Edit, Trash, FileText, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { calculateWorkingDaysForRecord } from "./utils/workingDaysCalculations";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks";
 import { sicknessService } from "@/services";
 
 interface SicknessRecordsListProps {

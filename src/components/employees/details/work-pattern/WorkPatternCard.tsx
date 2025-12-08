@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks";
 import { WorkPatternCardProps, WorkDay } from "./types";
 import { WorkPatternDialog } from "./WorkPatternDialog";
 import { WorkPatternDisplay } from "./WorkPatternDisplay";

@@ -1,6 +1,6 @@
 
 import { useCallback } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks";
 import { fetchEmployeeById } from "@/services";
 import { fetchWorkPatterns, saveWorkPatterns } from "@/components/employees/details/work-pattern/utils";
 

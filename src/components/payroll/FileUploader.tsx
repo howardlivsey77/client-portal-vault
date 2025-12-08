@@ -2,7 +2,7 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { FileText, Upload, X } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/hooks";
 
 interface FileUploaderProps {
   onFileChange: (file: File | null) => void;

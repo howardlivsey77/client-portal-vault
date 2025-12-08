@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks";
 import { calculateMonthlyPayroll } from "@/services/payroll/payrollCalculator";
 import { PayrollFormValues } from "../types";
 import { PayrollResult } from "@/services/payroll/types";

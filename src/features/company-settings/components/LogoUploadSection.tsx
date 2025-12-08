@@ -7,7 +7,7 @@ import { Control } from "react-hook-form";
 import { CompanyFormValues } from "../types";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/providers/CompanyProvider";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/hooks";
 
 interface LogoUploadSectionProps {
   control: Control<CompanyFormValues>;

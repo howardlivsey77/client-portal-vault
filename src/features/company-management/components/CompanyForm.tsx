@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks";
 import { useCompany } from "@/providers/CompanyProvider";
 import { Company } from "@/types/company";
 import { Button } from "@/components/ui/button";

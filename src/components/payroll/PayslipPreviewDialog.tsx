@@ -11,7 +11,7 @@ import { Download, X } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { generatePayslip } from '@/utils/payslipGenerator';
 import { PayrollResult } from '@/services/payroll/types';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks';
 
 interface PayslipPreviewDialogProps {
   open: boolean;

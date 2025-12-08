@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks";
 import { ClockInTolerancesSection } from "./ClockInTolerancesSection";
 import { ClockOutTolerancesSection } from "./ClockOutTolerancesSection";
 import { TimeRoundingSection } from "./TimeRoundingSection";

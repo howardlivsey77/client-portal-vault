@@ -4,7 +4,7 @@ import { FileSpreadsheet, RefreshCw } from "lucide-react";
 import { SicknessReportTable } from "./SicknessReportTable";
 import { SicknessReportFilters } from "./SicknessReportFilters";
 import { useSicknessReport } from "@/hooks/useSicknessReport";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks";
 import * as XLSX from 'xlsx';
 
 export const SicknessReport = () => {

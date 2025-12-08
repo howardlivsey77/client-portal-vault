@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Task, TaskStatus } from "./types";
 import { updateTask, deleteTask } from "./taskService";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/hooks";
 
 interface TaskItemProps {
   task: Task;
