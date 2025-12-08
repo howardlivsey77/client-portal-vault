@@ -1,4 +1,5 @@
 import { CompanyOverviewCard } from "./CompanyOverviewCard";
+import { DepartmentDistributionCard } from "./DepartmentDistributionCard";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
 const DEPARTMENT_COLORS = [
@@ -18,10 +19,12 @@ export function EmployeeDashboard() {
       <h2 className="monday-section-title">Company Overview</h2>
       <CompanyOverviewCard 
         totalEmployees={stats.totalEmployees}
-        departmentCount={stats.departmentCount}
-        departmentData={departmentData}
         genderData={genderData}
         averageAge={stats.averageAge}
+      />
+      <DepartmentDistributionCard 
+        departmentCount={stats.departmentCount}
+        departmentData={departmentData}
       />
     </div>
   );
