@@ -936,6 +936,59 @@ export type Database = {
           },
         ]
       }
+      hmrc_submissions: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          credits: number | null
+          id: string
+          payments: number | null
+          response_message: string | null
+          status: string
+          submission_type: string
+          submitted_at: string | null
+          tax_period: number
+          tax_year: string
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          credits?: number | null
+          id?: string
+          payments?: number | null
+          response_message?: string | null
+          status?: string
+          submission_type: string
+          submitted_at?: string | null
+          tax_period: number
+          tax_year: string
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          credits?: number | null
+          id?: string
+          payments?: number | null
+          response_message?: string | null
+          status?: string
+          submission_type?: string
+          submitted_at?: string | null
+          tax_period?: number
+          tax_year?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hmrc_submissions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitation_metadata: {
         Row: {
           accepted_at: string | null
