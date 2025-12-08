@@ -88,7 +88,7 @@ export const recordsService = {
   // Helper method to recalculate entitlements using reference date
   async recalculateEntitlementWithReference(employeeId: string, referenceDate: string) {
     // Import services to avoid circular dependencies
-    const { sicknessService } = await import("@/services/sicknessService");
+    const { sicknessService } = await import("@/services/employees");
     const { calculateSicknessEntitlementSummary } = await import("@/utils/sicknessCalculations");
     
     // Get employee details

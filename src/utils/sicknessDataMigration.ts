@@ -1,4 +1,4 @@
-import { sicknessService } from "@/services/sicknessService";
+import { sicknessService } from "@/services/employees";
 import { supabase } from "@/integrations/supabase/client";
 
 export const sicknessDataMigration = {

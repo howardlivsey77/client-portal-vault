@@ -1,6 +1,6 @@
 // Simplified compliance service that works with existing audit infrastructure
 import { supabase } from '@/integrations/supabase/client';
-import { logger } from '../loggingService';
+import { logger } from '../common/loggingService';
 
 export interface ComplianceMetrics {
   totalDataAccess: number;

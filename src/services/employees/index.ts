@@ -25,3 +25,10 @@ export {
   saveTimesheetEntries,
   syncTimesheetPayrollIds
 } from "./timesheetService";
+
+// Sickness services
+export { sicknessService } from "./sickness/SicknessService";
+export * from "./sickness/overlapService";
+
+// Employee import services
+export * from "./import";

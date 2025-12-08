@@ -1,7 +1,7 @@
 
 import { useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { fetchEmployeeById } from "@/services/employeeService";
+import { fetchEmployeeById } from "@/services/employees";
 import { fetchWorkPatterns, saveWorkPatterns } from "@/components/employees/details/work-pattern/utils";
 
 // Helper function to safely parse date from database without timezone issues
