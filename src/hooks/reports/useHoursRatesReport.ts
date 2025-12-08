@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Employee } from "@/types/employee-types";
-import { useEmployees } from "@/hooks/employees/useEmployees";
+import { Employee } from "@/types";
+import { useEmployees } from "@/hooks";
 
 export interface HoursRatesReportData {
   employee: Employee;

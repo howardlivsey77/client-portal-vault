@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
-import { Employee } from "@/types/employee-types";
-import { SicknessEntitlementSummary } from "@/types/sickness";
-import { useEmployees } from "@/hooks/employees/useEmployees";
-import { useToast } from "@/hooks/common/use-toast";
+import { Employee, SicknessEntitlementSummary } from "@/types";
+import { useEmployees, useToast } from "@/hooks";
 import { calculateSicknessEntitlementSummary } from "@/utils";
 
 export interface SicknessReportData {

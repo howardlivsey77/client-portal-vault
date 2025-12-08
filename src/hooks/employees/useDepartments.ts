@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/common/use-toast";
-import { useCompany } from "@/providers/CompanyProvider";
+import { useToast } from "@/hooks";
+import { useCompany } from "@/providers";
 import { 
   Department, 
   fetchDepartmentsByCompany, 

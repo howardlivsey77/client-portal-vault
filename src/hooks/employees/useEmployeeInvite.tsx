@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/common/use-toast";
-import type { Employee } from "@/types/employee-types";
+import { toast } from "@/hooks";
+import type { Employee } from "@/types";
 
 export const useEmployeeInvite = () => {
   const [loading, setLoading] = useState(false);

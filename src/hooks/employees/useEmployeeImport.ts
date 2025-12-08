@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { useToast } from "@/hooks/common/use-toast";
+import { useToast } from "@/hooks";
 import { EmployeeData, ColumnMapping } from "@/components/employees/import/ImportConstants";
 import {
   employeeImportReducer,

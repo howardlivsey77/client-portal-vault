@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/common/use-toast";
+import { useToast } from "@/hooks";
 
 export interface UserProfile {
   id: string;

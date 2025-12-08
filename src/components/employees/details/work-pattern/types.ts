@@ -1,5 +1,5 @@
 
-import { Employee } from "@/types/employeeDetails";
+import { Employee } from "@/types";
 
 export interface WorkDay {
   day: string;

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/common/use-toast";
+import { useToast } from "@/hooks";
 import { invokeFunction } from "@/supabase-invoke-guard";
 
 export interface TeamMember {

@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
-import { WeeklyTimesheetDay } from "@/hooks/employees/useEmployeeTimesheet";
+import { WeeklyTimesheetDay } from "@/hooks";
 import { addDays, format } from "date-fns";
-import { toast } from "@/hooks/common/use-toast";
+import { toast } from "@/hooks";
 
 /**
  * Fetches timesheet settings from the database

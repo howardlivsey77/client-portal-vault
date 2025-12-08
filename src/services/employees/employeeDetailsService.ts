@@ -1,9 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Employee } from "@/types/employeeDetails";
+import { Employee, AppError, createServiceResponse, ApiResponse, EMPLOYEE_EDITABLE_FIELDS } from "@/types";
 import { fetchAdjacentEmployees } from "./employeeNavigationService";
 import { logger } from "@/services/common/loggingService";
-import { AppError, createServiceResponse, ApiResponse } from "@/types/errors";
-import { EMPLOYEE_EDITABLE_FIELDS } from "@/types/employee-permissions";
 
 export const fetchEmployeeByIdDetails = async (employeeId: string): Promise<ApiResponse<Employee>> => {
   logger.debug("Fetching employee data", { employeeId }, "EmployeeDetailsService");
