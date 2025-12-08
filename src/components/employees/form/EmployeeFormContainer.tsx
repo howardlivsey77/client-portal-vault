@@ -20,7 +20,7 @@ import { HmrcFields } from "@/components/employees/HmrcFields";
 import { NhsPensionFields } from "@/components/employees/NhsPensionFields";
 import { StatusFields } from "./StatusFields";
 import { UseFormReturn } from "react-hook-form";
-import { EmployeeFormValues } from "@/types/employee";
+import { EmployeeFormValues } from "@/types";
 import { useNavigate } from "react-router-dom";
 
 interface EmployeeFormContainerProps {

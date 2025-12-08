@@ -1,5 +1,5 @@
 
-import { DatabaseFolder } from "@/types/documents";
+import { DatabaseFolder } from "@/types";
 import { documentFolderService } from "@/services";
 
 // Convert DatabaseFolder to FolderItem format for compatibility

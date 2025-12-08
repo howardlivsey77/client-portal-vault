@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { EmployeeInviteButton } from "./EmployeeInviteButton";
 import { useEmployeeInvite } from "@/hooks";
-import type { Employee } from "@/types/employee-types";
+import type { Employee } from "@/types";
 
 interface EmployeePortalStatusProps {
   employee: Employee;

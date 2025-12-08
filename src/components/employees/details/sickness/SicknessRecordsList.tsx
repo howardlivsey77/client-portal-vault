@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SicknessRecord } from "@/types/sickness";
+import { SicknessRecord } from "@/types";
 import { WorkDay } from "@/components/employees/details/work-pattern/types";
 import { Calendar, Plus, Edit, Trash, FileText, RefreshCw } from "lucide-react";
 import { format } from "date-fns";

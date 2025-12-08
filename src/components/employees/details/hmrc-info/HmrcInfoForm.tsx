@@ -4,11 +4,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import { hmrcInfoSchema, HmrcInfoFormValues } from "./HmrcInfoSchema";
 import { Button } from "@/components/ui/button";
-import { Employee } from "@/types/employee-types";
+import { Employee, studentLoanPlanOptions, nicCodeOptions } from "@/types";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { studentLoanPlanOptions, nicCodeOptions } from "@/types/employee";
 import { Switch } from "@/components/ui/switch";
 import { X, Check } from "lucide-react";
 

@@ -7,7 +7,7 @@ import { WorkPatternCardProps, WorkDay } from "./types";
 import { WorkPatternDialog } from "./WorkPatternDialog";
 import { WorkPatternDisplay } from "./WorkPatternDisplay";
 import { fetchWorkPatterns, saveWorkPatterns } from "./utils";
-import { defaultWorkPattern } from "@/types/employee";
+import { defaultWorkPattern } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import { SicknessSchemeSelector } from "./SicknessSchemeSelector";
 import { SicknessTrackingCard } from "../sickness/SicknessTrackingCard";

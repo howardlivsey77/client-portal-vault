@@ -7,7 +7,7 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
-import { SicknessRecord } from "@/types/sickness";
+import { SicknessRecord } from "@/types";
 import { sicknessRecordSchema, SicknessRecordFormData } from "./SicknessRecordFormSchema";
 import { SicknessRecordFormFields } from "./SicknessRecordFormFields";
 import { getDefaultTotalDays } from "./utils/dateCalculations";

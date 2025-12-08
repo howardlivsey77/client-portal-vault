@@ -3,8 +3,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { ExtraHoursSummary } from '@/components/payroll/types';
-import { SicknessRecord, SicknessEntitlementSummary } from '@/types/sickness';
-import { Employee } from '@/types/employee-types';
+import { SicknessRecord, SicknessEntitlementSummary, Employee } from '@/types';
 import { calculateSicknessRecordPayments } from '@/utils/sickness/sicknessPaymentCalculator';
 
 /**

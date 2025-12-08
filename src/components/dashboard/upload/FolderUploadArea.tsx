@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { FolderOpen, X, AlertCircle } from "lucide-react";
-import { FileWithPath, FolderUploadProgress } from "@/types/documents";
+import { FileWithPath, FolderUploadProgress } from "@/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface FolderUploadAreaProps {

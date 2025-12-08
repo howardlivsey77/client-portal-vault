@@ -1,5 +1,5 @@
 
-import { EmployeeFormValues } from "@/types/employee";
+import { EmployeeFormValues } from "@/types";
 
 export interface EmployeeFormData {
   first_name: string;

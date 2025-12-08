@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Trash2, UserCog, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Employee } from "@/types/employee-types";
+import { Employee } from "@/types";
 import { EmployeePortalStatus } from "./EmployeePortalStatus";
 
 interface EmployeeTableProps {

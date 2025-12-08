@@ -8,7 +8,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { EmployeeFormValues } from "@/types/employee";
+import { EmployeeFormValues } from "@/types";
 import { GenderField } from "./GenderField";
 import { DateInputField } from "./DateInputField";
 

@@ -1,6 +1,6 @@
 
 import { WorkDay } from "../types";
-import { defaultWorkPattern } from "@/types/employee";
+import { defaultWorkPattern } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { DAYS_OF_WEEK } from "../utils/constants";
 

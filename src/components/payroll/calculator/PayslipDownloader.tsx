@@ -4,7 +4,7 @@ import { useToast } from "@/hooks";
 import { Download } from "lucide-react";
 import { generatePayslip } from "@/utils";
 import { PayrollResult } from "@/services/payroll/types";
-import { Employee } from "@/types/employee-types";
+import { Employee } from "@/types";
 
 interface PayslipDownloaderProps {
   calculationResult: PayrollResult | null;

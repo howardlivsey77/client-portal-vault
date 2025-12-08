@@ -4,7 +4,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { EmployeeFormValues } from "@/types/employee";
+import { EmployeeFormValues } from "@/types";
 
 interface NhsPensionFieldsProps {
   control: Control<EmployeeFormValues>;

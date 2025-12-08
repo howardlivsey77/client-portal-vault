@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { DatabaseDocument } from "@/types/documents";
+import { DatabaseDocument } from "@/types";
 import { documentService } from "@/services";
 import { useCompany } from "@/providers/CompanyProvider";
 import { toast } from "@/hooks";

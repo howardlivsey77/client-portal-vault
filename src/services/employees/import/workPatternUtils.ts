@@ -1,6 +1,6 @@
 
 import { WorkDay } from "@/components/employees/details/work-pattern/types";
-import { defaultWorkPattern } from "@/types/employee";
+import { defaultWorkPattern } from "@/types";
 import { extractWorkPatternWithPayrollId } from "@/components/employees/import/ImportUtils";
 import { normalizePayrollId } from "./payrollIdUtils";
 

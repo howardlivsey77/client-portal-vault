@@ -2,7 +2,7 @@
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
-import { EmployeeFormValues } from "@/types/employee";
+import { EmployeeFormValues } from "@/types";
 
 interface AddressFieldsProps {
   form: UseFormReturn<EmployeeFormValues>;

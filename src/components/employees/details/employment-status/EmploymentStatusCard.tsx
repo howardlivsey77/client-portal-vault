@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Pencil, Calendar } from "lucide-react";
 import { format } from "date-fns";
-import { Employee } from "@/types/employee-types";
+import { Employee } from "@/types";
 import { EmploymentStatusForm } from "./EmploymentStatusForm";
 
 interface EmploymentStatusCardProps {

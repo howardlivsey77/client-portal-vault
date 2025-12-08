@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { SicknessRecord } from "@/types/sickness";
+import { SicknessRecord } from "@/types";
 
 export interface OverlapResult {
   hasOverlap: boolean;

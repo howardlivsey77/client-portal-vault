@@ -3,8 +3,7 @@ import { Control } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { nicCodeOptions } from "@/types/employee";
-import { EmployeeFormValues } from "@/types/employee";
+import { nicCodeOptions, EmployeeFormValues } from "@/types";
 
 interface NationalInsuranceFieldsProps {
   control: Control<EmployeeFormValues>;

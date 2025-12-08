@@ -1,6 +1,6 @@
 
 import { UseFormReturn } from "react-hook-form";
-import { EmployeeFormValues } from "@/types/employee";
+import { EmployeeFormValues } from "@/types";
 import { DateInputField } from "./DateInputField";
 
 interface HireDateFieldProps {

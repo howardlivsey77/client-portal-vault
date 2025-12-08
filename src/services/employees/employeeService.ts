@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { EmployeeFormValues } from "@/types/employee";
+import { EmployeeFormValues } from "@/types";
 
 export const fetchEmployeeById = async (id: string) => {
   const { data, error } = await supabase

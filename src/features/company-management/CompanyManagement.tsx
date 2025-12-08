@@ -6,7 +6,7 @@ import { CompanyList } from "./components/CompanyList";
 import { CompanyForm } from "./components/CompanyForm";
 import { DeleteCompanyDialog } from "./components/DeleteCompanyDialog";
 import { useCompanyManagement } from "./hooks/useCompanyManagement";
-import { Company } from "@/types/company";
+import { Company } from "@/types";
 
 const CompanyManagement = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);

@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Employee } from "@/types/employee-types";
+import { Employee } from "@/types";
 import { PayrollFormValues } from "./types";
 import { EmployeeInfoFields } from "./form/EmployeeInfoFields";
 import { FinancialDetailsFields } from "./form/FinancialDetailsFields";

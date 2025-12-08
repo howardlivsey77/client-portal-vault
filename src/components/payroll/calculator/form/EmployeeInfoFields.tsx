@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Employee } from "@/types/employee-types";
+import { Employee } from "@/types";
 import { PayrollFormValues } from "../types";
 import { calculateMonthlySalary } from "@/lib/formatters";
 

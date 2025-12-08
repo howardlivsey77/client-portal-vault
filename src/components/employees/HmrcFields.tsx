@@ -4,8 +4,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { studentLoanPlanOptions, nicCodeOptions } from "@/types/employee";
-import { EmployeeFormValues } from "@/types/employee";
+import { studentLoanPlanOptions, nicCodeOptions, EmployeeFormValues } from "@/types";
 import { Label } from "@/components/ui/label";
 
 interface HmrcFieldsProps {

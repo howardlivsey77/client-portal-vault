@@ -14,7 +14,7 @@ import {
 import { Mail, Loader2 } from "lucide-react";
 import { useEmployeeInvite } from "@/hooks";
 import { useCompany } from "@/providers/CompanyProvider";
-import type { Employee } from "@/types/employee-types";
+import type { Employee } from "@/types";
 
 interface EmployeeInviteButtonProps {
   employee: Employee;

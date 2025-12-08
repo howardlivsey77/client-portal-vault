@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { EntitlementUsage } from "@/types/sickness";
+import { EntitlementUsage } from "@/types";
 import { EligibilityRule } from "@/components/employees/details/work-pattern/types";
 import { calculationUtils } from "./calculationUtils";
 

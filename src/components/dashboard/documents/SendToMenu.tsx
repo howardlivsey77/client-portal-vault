@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FolderOpen, Send } from "lucide-react";
-import { DatabaseFolder } from "@/types/documents";
+import { DatabaseFolder } from "@/types";
 import { documentFolderService } from "@/services";
 
 interface SendToMenuProps {
