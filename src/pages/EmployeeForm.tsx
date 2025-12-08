@@ -6,9 +6,11 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useCompany } from "@/providers/CompanyProvider";
 import { Loader2 } from "lucide-react";
 import { useEmployeeForm } from "@/hooks";
-import { EmployeeFormHeader } from "@/components/employees/form/EmployeeFormHeader";
-import { EmployeeFormContainer } from "@/components/employees/form/EmployeeFormContainer";
-import { EmployeeFormErrorBoundary } from "@/components/employees/form/EmployeeFormErrorBoundary";
+import { 
+  EmployeeFormHeader, 
+  EmployeeFormContainer, 
+  EmployeeFormErrorBoundary 
+} from "@/components/employees";
 
 const EmployeeForm = () => {
   const { id } = useParams();

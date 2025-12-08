@@ -2,7 +2,7 @@ import { PaymentHoursRatesReport as PaymentHoursRatesReportComponent } from "./p
 import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getProcessedPayrollData } from "@/components/payroll/hooks";
-import { ExtraHoursSummary, EmployeeHoursData } from "@/components/payroll/types";
+import { ExtraHoursSummary, EmployeeHoursData } from "@/components/payroll";
 import { 
   fetchPayrollPeriods, 
   fetchPayrollEmployeeDetails 

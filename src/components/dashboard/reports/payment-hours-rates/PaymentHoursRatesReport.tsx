@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EmployeeHoursData } from "@/components/payroll/types";
+import { EmployeeHoursData } from "@/components/payroll";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface PaymentHoursRatesReportProps {

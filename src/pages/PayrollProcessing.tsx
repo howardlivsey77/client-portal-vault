@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { PageContainer } from "@/components/layout/PageContainer";
-import { PayrollTableView } from "@/components/payroll/PayrollTableView";
-import { PayrollInputWizard } from "@/components/payroll/PayrollInputWizard";
-import { PayrollErrorBoundary } from "@/components/payroll/PayrollErrorBoundary";
+import { 
+  PayrollTableView, 
+  PayrollInputWizard, 
+  PayrollErrorBoundary 
+} from "@/components/payroll";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
