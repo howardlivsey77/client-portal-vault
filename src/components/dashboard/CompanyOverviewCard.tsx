@@ -92,14 +92,14 @@ export function CompanyOverviewCard({
             <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Department Distribution
             </h3>
-            <div className="space-y-2.5 max-h-[140px] overflow-y-auto pr-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
               {sortedDepartments.map((dept) => (
-                <div key={dept.name} className="space-y-1">
+                <div key={dept.name} className="space-y-0.5">
                   <div className="flex justify-between items-center text-xs">
                     <span className="truncate text-muted-foreground">{dept.name}</span>
                     <span className="font-semibold text-foreground ml-2">{dept.value}</span>
                   </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                     <div 
                       className="h-full rounded-full transition-all duration-700 ease-out"
                       style={{ 
