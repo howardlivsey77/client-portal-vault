@@ -1,6 +1,4 @@
-
-import { EmployeeOverview } from "./EmployeeOverview";
-import { EmployeeDemographics } from "./EmployeeDemographics";
+import { CompanyOverviewCard } from "./CompanyOverviewCard";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
 const DEPARTMENT_COLORS = [
@@ -18,19 +16,13 @@ export function EmployeeDashboard() {
   return (
     <div className="space-y-6">
       <h2 className="monday-section-title">Company Overview</h2>
-      <div className="grid gap-6 md:grid-cols-2">
-        <EmployeeOverview 
-          totalEmployees={stats.totalEmployees}
-          departmentCount={stats.departmentCount}
-          departmentData={departmentData}
-        />
-        <EmployeeDemographics 
-          totalEmployees={stats.totalEmployees}
-          genderData={genderData}
-          averageAge={stats.averageAge}
-        />
-      </div>
-      
+      <CompanyOverviewCard 
+        totalEmployees={stats.totalEmployees}
+        departmentCount={stats.departmentCount}
+        departmentData={departmentData}
+        genderData={genderData}
+        averageAge={stats.averageAge}
+      />
     </div>
   );
 }
