@@ -1,5 +1,4 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Users, Building2, Calendar } from "lucide-react";
 
@@ -30,6 +29,8 @@ export function CompanyOverviewCard({
   averageAge,
 }: CompanyOverviewCardProps) {
   const sortedGenderData = [...genderData].sort((a, b) => b.count - a.count);
+  const maxDepartmentValue = Math.max(...departmentData.map(d => d.value), 1);
+  const sortedDepartments = [...departmentData].sort((a, b) => b.value - a.value);
 
   return (
     <Card className="animate-fade-in border-[1.5px] border-foreground">
@@ -91,17 +92,23 @@ export function CompanyOverviewCard({
             <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Department Distribution
             </h3>
-            <div className="grid grid-cols-2 gap-2 max-h-[140px] overflow-y-auto">
-              {departmentData.map((dept) => (
-                <Badge 
-                  key={dept.name} 
-                  variant="outline" 
-                  className="justify-between py-1.5"
-                  style={{ borderLeftColor: dept.color, borderLeftWidth: 3 }}
-                >
-                  <span className="truncate text-xs">{dept.name}</span>
-                  <span className="ml-2 font-semibold">{dept.value}</span>
-                </Badge>
+            <div className="space-y-2.5 max-h-[140px] overflow-y-auto pr-2">
+              {sortedDepartments.map((dept) => (
+                <div key={dept.name} className="space-y-1">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="truncate text-muted-foreground">{dept.name}</span>
+                    <span className="font-semibold text-foreground ml-2">{dept.value}</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full rounded-full transition-all duration-700 ease-out"
+                      style={{ 
+                        width: `${(dept.value / maxDepartmentValue) * 100}%`,
+                        backgroundColor: dept.color 
+                      }}
+                    />
+                  </div>
+                </div>
               ))}
             </div>
           </div>
