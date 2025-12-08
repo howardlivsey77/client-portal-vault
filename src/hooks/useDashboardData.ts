@@ -19,6 +19,7 @@ interface DashboardStats {
   averageHireDate: string;
   departmentCount: number;
   averageAge: number | null;
+  averageLengthOfService: number | null;
 }
 
 export function useDashboardData(departmentColors: string[]) {
@@ -26,7 +27,8 @@ export function useDashboardData(departmentColors: string[]) {
     totalEmployees: 0,
     averageHireDate: "-",
     departmentCount: 0,
-    averageAge: null
+    averageAge: null,
+    averageLengthOfService: null
   });
   const [departmentData, setDepartmentData] = useState<DepartmentData[]>([]);
   const [genderData, setGenderData] = useState<GenderData[]>([]);
@@ -67,6 +69,13 @@ export function useDashboardData(departmentColors: string[]) {
           .select("date_of_birth");
           
         if (dobError) throw dobError;
+        
+        // Get hire dates for length of service calculation
+        const { data: hireDateData, error: hireDateError } = await supabase
+          .from("employees")
+          .select("hire_date");
+          
+        if (hireDateError) throw hireDateError;
         
         // Get recent hires
         const { data: recentData, error: recentError } = await supabase
@@ -145,15 +154,35 @@ export function useDashboardData(departmentColors: string[]) {
         
         // Calculate average age (null if no valid DOBs)
         const averageAge = validDobCount > 0 ? Math.round(totalAge / validDobCount) : null;
+        
+        // Calculate average length of service from hire dates
+        let totalServiceYears = 0;
+        let validHireDateCount = 0;
+        const today = new Date();
+        
+        hireDateData?.forEach(emp => {
+          if (emp.hire_date) {
+            const hireDate = new Date(emp.hire_date);
+            const serviceMs = today.getTime() - hireDate.getTime();
+            const serviceYears = serviceMs / (1000 * 60 * 60 * 24 * 365.25);
+            totalServiceYears += serviceYears;
+            validHireDateCount++;
+          }
+        });
+        
+        const averageLengthOfService = validHireDateCount > 0 
+          ? Math.round((totalServiceYears / validHireDateCount) * 10) / 10 
+          : null;
           
         setDepartmentData(deptChartData);
         setGenderData(genderChartData);
         setRecentHires(recentData || []);
         setStats({
           totalEmployees: count || 0,
-          averageHireDate: "-", // Could calculate average if needed
+          averageHireDate: "-",
           departmentCount: deptMap.size,
-          averageAge
+          averageAge,
+          averageLengthOfService
         });
       } catch (error: any) {
         toast({

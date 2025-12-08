@@ -21,6 +21,7 @@ export function EmployeeDashboard() {
         totalEmployees={stats.totalEmployees}
         genderData={genderData}
         averageAge={stats.averageAge}
+        averageLengthOfService={stats.averageLengthOfService}
       />
       <DepartmentDistributionCard 
         departmentCount={stats.departmentCount}
