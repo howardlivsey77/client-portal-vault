@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { useEmployeeFormState } from "./form/useEmployeeFormState";
-import { useEmployeeDataFetching } from "./form/useEmployeeDataFetching";
-import { useEmployeeFormSubmission } from "./form/useEmployeeFormSubmission";
-import { UseEmployeeFormReturn } from "./form/types";
+import {
+  useEmployeeFormState,
+  useEmployeeDataFetching,
+  useEmployeeFormSubmission,
+  UseEmployeeFormReturn
+} from "./form";
 
 export const useEmployeeForm = (employeeId?: string): UseEmployeeFormReturn => {
   const isEditMode = employeeId !== undefined && employeeId !== "new";

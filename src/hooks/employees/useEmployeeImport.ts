@@ -1,20 +1,16 @@
 import { useReducer } from "react";
 import { useToast } from "@/hooks/common/use-toast";
 import { EmployeeData, ColumnMapping } from "@/components/employees/import/ImportConstants";
-import { 
-  employeeImportReducer, 
-  initialState 
-} from "./import/employeeImportReducer";
-import { 
-  areRequiredFieldsMapped, 
-  compareEmployees 
-} from "./import/employeeImportUtils";
-import { 
+import {
+  employeeImportReducer,
+  initialState,
+  areRequiredFieldsMapped,
+  compareEmployees,
   executeImport,
   findExistingEmployees,
-  validateImportData
-} from "./import/employeeImportService";
-import { EmployeeConflict } from "./import/enhancedEmployeeMatching";
+  validateImportData,
+  EmployeeConflict
+} from "./import";
 
 export const useEmployeeImport = (onSuccess: () => void) => {
   const [state, dispatch] = useReducer(employeeImportReducer, initialState);
