@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
-import { SicknessReportFilters as FilterType } from "@/hooks/useSicknessReport";
+import { SicknessReportFilters as FilterType } from "@/hooks";
 
 interface SicknessReportFiltersProps {
   filters: FilterType;

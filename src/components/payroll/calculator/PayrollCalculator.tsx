@@ -4,7 +4,7 @@ import { PayrollForm } from '@/components/payroll/calculator/PayrollForm';
 import { PayrollCalculatorActions } from '@/components/payroll/calculator/PayrollCalculatorActions';
 import { PayrollResults } from '@/components/payroll/calculator/PayrollResults';
 import { usePayrollCalculation } from '@/components/payroll/calculator/hooks/usePayrollCalculation';
-import { Employee } from '@/hooks/useEmployees';
+import { Employee } from '@/hooks';
 import { PayPeriod } from '@/services/payroll/utils/financial-year-utils';
 import { PayslipDownloader } from './PayslipDownloader';
 import { PayrollFormValues } from './types';

@@ -1,6 +1,6 @@
 
 import { formatDate } from "@/lib/formatters";
-import { Employee } from "@/hooks/useEmployeeDetails";
+import { Employee } from "@/hooks";
 import {
   Card,
   CardContent,

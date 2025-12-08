@@ -8,7 +8,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Loader2, Mail } from "lucide-react";
-import { InvitationMetadata } from "@/hooks/useInvites";
+import { InvitationMetadata } from "@/hooks";
 import { ExpandableInviteRow } from "./ExpandableInviteRow";
 
 interface InvitationsTableProps {

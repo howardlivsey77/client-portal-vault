@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileText } from "lucide-react";
-import { SicknessReportData } from "@/hooks/useSicknessReport";
+import { SicknessReportData } from "@/hooks";
 
 interface SicknessReportTableProps {
   data: SicknessReportData[];

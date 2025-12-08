@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Building2 } from "lucide-react";
-import { useHmrcDashboardData, HmrcPeriodData } from "@/hooks/useHmrcDashboardData";
+import { useHmrcDashboardData, HmrcPeriodData } from "@/hooks";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 function generateFinancialYears(): string[] {

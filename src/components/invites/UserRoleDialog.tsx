@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Loader2, ShieldCheck, User } from "lucide-react";
-import { UserProfile } from "@/hooks/useUsers";
+import { UserProfile } from "@/hooks";
 
 interface UserRoleDialogProps {
   open: boolean;

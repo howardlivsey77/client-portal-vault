@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useEmployees } from '@/hooks/useEmployees';
+import { useEmployees } from '@/hooks';
 import { useTimesheetContext } from './TimesheetContext';
 
 export const EmployeeSelector = () => {

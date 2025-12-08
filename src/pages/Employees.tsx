@@ -6,7 +6,7 @@ import { EmployeeSearch } from "@/components/employees/EmployeeSearch";
 import { EmployeeActions } from "@/components/employees/EmployeeActions";
 import { EmptyEmployeeState } from "@/components/employees/EmptyEmployeeState";
 import { EmployeeStatusFilter } from "@/components/employees/EmployeeStatusFilter";
-import { useEmployees } from "@/hooks/useEmployees";
+import { useEmployees } from "@/hooks";
 import { useAuth } from "@/providers/AuthProvider";
 import { useCompany } from "@/providers/CompanyProvider";
 import { Button } from "@/components/ui/button";

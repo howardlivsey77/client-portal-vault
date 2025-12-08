@@ -1,5 +1,5 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { HoursRatesReportData } from "@/hooks/useHoursRatesReport";
+import { HoursRatesReportData } from "@/hooks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FileX } from "lucide-react";
 

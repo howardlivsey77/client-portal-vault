@@ -2,7 +2,7 @@ import { CompanyOverviewCard } from "./CompanyOverviewCard";
 import { DepartmentDistributionCard } from "./DepartmentDistributionCard";
 import { HmrcDashboardCard } from "./HmrcDashboardCard";
 import { PayrollSummaryCard } from "./PayrollSummaryCard";
-import { useDashboardData } from "@/hooks/useDashboardData";
+import { useDashboardData } from "@/hooks";
 
 const DEPARTMENT_COLORS = [
   "#9b87f5", "#7E69AB", "#8B5CF6", "#D946EF", "#F97316", 

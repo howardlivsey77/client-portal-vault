@@ -17,10 +17,9 @@ import {
   CheckCircle,
   XCircle
 } from "lucide-react";
-import { InvitationMetadata } from "@/hooks/useInvites";
+import { InvitationMetadata, useInvitationHistory } from "@/hooks";
 import { CopyInviteButton, InviteLinkDisplay } from "./CopyInviteButton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useInvitationHistory } from "@/hooks/useInvitationHistory";
 import {
   AlertDialog,
   AlertDialogAction,

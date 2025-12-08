@@ -2,7 +2,7 @@
 import { ArrowLeft, ArrowLeftCircle, ArrowRightCircle, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format, addWeeks, subWeeks } from "date-fns";
-import { Employee } from "@/hooks/useEmployees";
+import { Employee } from "@/hooks";
 import { useTimesheetContext } from "./TimesheetContext";
 
 interface TimesheetHeaderProps {
