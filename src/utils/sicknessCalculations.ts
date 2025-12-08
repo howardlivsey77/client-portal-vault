@@ -1,6 +1,6 @@
 import { Employee } from "@/types/employee-types";
 import { SicknessEntitlementSummary } from "@/types/sickness";
-import { sicknessService } from "@/services/sicknessService";
+import { sicknessService } from "@/services/employees";
 import { formatEntitlementTier } from "./formatters";
 
 /**

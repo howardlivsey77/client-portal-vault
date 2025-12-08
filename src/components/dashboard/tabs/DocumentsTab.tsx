@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { DocumentGrid } from "@/components/dashboard/DocumentGrid";
 import { FolderExplorer } from "@/components/dashboard/FolderExplorer";
-import { documentFolderService } from "@/services/documentFolderService";
+import { documentFolderService } from "@/services/documents";
 import { useCompany } from "@/providers/CompanyProvider";
 import { AddFolderDialog } from "@/components/dashboard/folder/AddFolderDialog";
 import { toast } from "@/hooks/use-toast";

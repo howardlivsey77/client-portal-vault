@@ -10,7 +10,7 @@ import { FolderExplorerHeader } from "./folder/FolderExplorerHeader";
 import { FolderExplorerLoading } from "./folder/FolderExplorerLoading";
 import { useFolderExplorer } from "./folder/useFolderExplorer";
 import { DragDropProvider } from "@/contexts/DragDropContext";
-import { documentFolderService } from "@/services/documentFolderService";
+import { documentFolderService } from "@/services/documents";
 import { toast } from "sonner";
 
 export { type FolderItem } from "./types/folder.types";

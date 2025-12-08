@@ -48,3 +48,6 @@ export class SicknessService {
     return sspService.calculateSspUsage(employeeId, referenceDate);
   }
 }
+
+// Pre-instantiated service instance
+export const sicknessService = new SicknessService();

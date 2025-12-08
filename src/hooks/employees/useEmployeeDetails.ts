@@ -10,7 +10,7 @@ import {
   fetchEmployeeWithNavigation, 
   updateEmployeeFieldById, 
   deleteEmployeeById 
-} from "@/services/employeeDetailsService";
+} from "@/services/employees";
 
 // Properly re-export the type using 'export type'
 export type { Employee } from "@/types/employee-types";

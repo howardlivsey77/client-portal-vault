@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { documentFolderService } from "@/services/documentFolderService";
+import { documentFolderService } from "@/services/documents";
 import { FolderItem as FolderItemType } from "../types/folder.types";
 import { useCompany } from "@/providers/CompanyProvider";
 import { toast } from "@/hooks/use-toast";
