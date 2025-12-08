@@ -1,5 +1,5 @@
 
-import { parseExtraHoursFile } from '@/utils/fileParsingUtils';
+import { parseExtraHoursFile } from '@/utils/payroll/fileParsing';
 import { ExtraHoursSummary } from '@/components/payroll/types';
 import { enrichEmployeeData } from './employeeEnrichment';
 import { supabase } from '@/integrations/supabase/client';

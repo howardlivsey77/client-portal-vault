@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Download, X } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/formatters';
-import { generatePayslip } from '@/utils/payslipGenerator';
+import { generatePayslip } from '@/utils';
 import { PayrollResult } from '@/services/payroll/types';
 import { useToast } from '@/hooks';
 

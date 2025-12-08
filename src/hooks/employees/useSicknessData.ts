@@ -4,7 +4,7 @@ import { sicknessService } from '@/services';
 import { SicknessRecord, EntitlementUsage, SicknessEntitlementSummary } from '@/types/sickness';
 import { EligibilityRule, SicknessScheme } from '@/components/employees/details/work-pattern/types';
 import { Employee } from '@/types/employee-types';
-import { calculateSicknessEntitlementSummary } from '@/utils/sicknessCalculations';
+import { calculateSicknessEntitlementSummary } from '@/utils';
 
 export const useSicknessData = (
   employee: Employee | null, 

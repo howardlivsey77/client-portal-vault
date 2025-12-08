@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { sicknessDataMigration } from "@/utils/sicknessDataMigration";
+import { sicknessDataMigration } from "@/utils";
 import { toast } from "sonner";
 import { Loader2, Play, RefreshCw, CheckCircle } from "lucide-react";
 

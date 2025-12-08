@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks";
 import { Download } from "lucide-react";
-import { generatePayslip } from "@/utils/payslipGenerator";
+import { generatePayslip } from "@/utils";
 import { PayrollResult } from "@/services/payroll/types";
 import { Employee } from "@/types/employee-types";
 

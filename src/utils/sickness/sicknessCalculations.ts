@@ -1,7 +1,7 @@
 import { Employee } from "@/types/employee-types";
 import { SicknessEntitlementSummary } from "@/types/sickness";
 import { sicknessService } from "@/services";
-import { formatEntitlementTier } from "./formatters";
+import { formatEntitlementTier } from "@/utils/common/formatters";
 
 /**
  * Shared utility to calculate sickness entitlement summary from raw data
