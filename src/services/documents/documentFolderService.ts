@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { DatabaseFolder } from "@/types/documents";
+import { DatabaseFolder } from "@/types";
 
 export const documentFolderService = {
   // Get all folders for a company

@@ -14,8 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { genderOptions } from "@/types/employee";
-import { EmployeeFormValues } from "@/types/employee";
+import { genderOptions, EmployeeFormValues } from "@/types";
 
 interface GenderFieldProps {
   form: {

@@ -1,5 +1,4 @@
-import { Employee } from "@/types/employee-types";
-import { SicknessEntitlementSummary } from "@/types/sickness";
+import { Employee, SicknessEntitlementSummary } from "@/types";
 import { sicknessService } from "@/services";
 import { formatEntitlementTier } from "@/utils/common/formatters";
 

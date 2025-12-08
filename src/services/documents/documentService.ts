@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { DatabaseDocument, DocumentUploadData, FileWithPath, FolderUploadProgress } from "@/types/documents";
+import { DatabaseDocument, DocumentUploadData, FileWithPath, FolderUploadProgress } from "@/types";
 
 export const documentService = {
   // Get documents for a company and optional folder

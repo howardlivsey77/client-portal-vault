@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Users, Download, FileText, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks";
-import { Employee } from "@/types/employee-types";
+import { Employee } from "@/types";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
 

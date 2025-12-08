@@ -1,5 +1,5 @@
 
-import { Company } from "@/types/company";
+import { Company } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 

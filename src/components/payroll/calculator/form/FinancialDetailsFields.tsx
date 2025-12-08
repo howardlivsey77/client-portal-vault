@@ -1,5 +1,5 @@
 
-import { Employee } from "@/types/employee-types";
+import { Employee } from "@/types";
 import { PayrollFormValues } from "../types";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";

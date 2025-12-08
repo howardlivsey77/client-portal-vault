@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/providers/CompanyProvider';
 import { useToast } from '@/hooks';
 import { PayPeriod } from '@/services/payroll/utils/financial-year-utils';
-import { Employee } from '@/types/employee-types';
+import { Employee } from "@/types";
 import { calculateMonthlySalary } from '@/lib/formatters';
 import { calculateMonthlyIncomeTaxAsync } from '@/services/payroll/calculations/income-tax';
 import { calculateNationalInsuranceAsync } from '@/services/payroll/calculations/national-insurance';

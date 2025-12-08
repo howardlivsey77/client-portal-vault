@@ -1,7 +1,5 @@
 
-import { Employee } from "@/types/employee-types";
-import { studentLoanPlanOptions } from "@/types/employee";
-import { nicCodeOptions } from "@/types/employee";
+import { Employee, studentLoanPlanOptions, nicCodeOptions } from "@/types";
 
 interface HmrcInfoDisplayProps {
   employee: Employee;

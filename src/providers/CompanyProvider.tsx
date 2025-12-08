@@ -2,7 +2,7 @@
 import { createContext, useState, useEffect, useContext, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthProvider";
-import { Company, CompanyWithRole } from "@/types/company";
+import { Company, CompanyWithRole } from "@/types";
 import { useToast } from "@/hooks";
 
 interface CompanyContextType {

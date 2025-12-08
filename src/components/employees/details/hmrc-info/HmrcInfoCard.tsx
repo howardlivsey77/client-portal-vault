@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Employee } from "@/types/employee-types";
+import { Employee } from "@/types";
 import { HmrcInfoDisplay } from "./HmrcInfoDisplay";
 import { HmrcInfoForm } from "./HmrcInfoForm";
 import { useState } from "react";

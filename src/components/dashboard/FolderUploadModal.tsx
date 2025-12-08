@@ -13,7 +13,7 @@ import { documentService, documentFolderService } from "@/services";
 import { useCompany } from "@/providers/CompanyProvider";
 import { useToast } from "@/hooks";
 import { FolderUploadArea } from "./upload/FolderUploadArea";
-import { FileWithPath, FolderUploadProgress } from "@/types/documents";
+import { FileWithPath, FolderUploadProgress } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileUploadArea } from "./upload/FileUploadArea";
 import { DocumentMetadataForm } from "./upload/DocumentMetadataForm";

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks";
 import { useCompany } from "@/providers";
 import { supabase } from "@/integrations/supabase/client";
-import { EmployeeFormValues } from "@/types/employee";
+import { EmployeeFormValues } from "@/types";
 import { createEmployee, updateEmployee } from "@/services";
 
 export const useEmployeeFormSubmission = (

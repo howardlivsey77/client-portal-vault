@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { SicknessEntitlementSummary } from "@/types/sickness";
+import { SicknessEntitlementSummary } from "@/types";
 import { Calendar, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
 

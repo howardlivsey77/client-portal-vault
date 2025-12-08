@@ -1,4 +1,4 @@
-import { SicknessRecord, SicknessEntitlementSummary } from "@/types/sickness";
+import { SicknessRecord, SicknessEntitlementSummary } from "@/types";
 
 export interface SicknessRecordPayment {
   recordId: string;

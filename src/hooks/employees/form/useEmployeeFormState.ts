@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { employeeSchema, EmployeeFormValues, defaultWorkPattern } from "@/types/employee";
+import { employeeSchema, EmployeeFormValues, defaultWorkPattern } from "@/types";
 
 export const useEmployeeFormState = () => {
   const [loading, setLoading] = useState(false);

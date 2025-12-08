@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { HistoricalBalance } from "@/types/sickness";
+import { HistoricalBalance } from "@/types";
 import { calculationUtils } from "./calculationUtils";
 
 export const balanceService = {

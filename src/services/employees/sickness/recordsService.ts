@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { SicknessRecord } from "@/types/sickness";
+import { SicknessRecord } from "@/types";
 
 export const recordsService = {
   // Fetch sickness records for an employee

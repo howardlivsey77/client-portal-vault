@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { PayrollFormValues } from "./types";
 import { PayrollResult } from "@/services/payroll/types";
 import { PayslipDownloader } from "./PayslipDownloader";
-import { Employee } from "@/types/employee-types";
+import { Employee } from "@/types";
 
 interface PayrollCalculatorActionsProps {
   selectedTab: string;
