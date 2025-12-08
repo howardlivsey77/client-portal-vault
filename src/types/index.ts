@@ -24,6 +24,9 @@ export {
 } from './employee';
 export type { WorkDay, EmployeeFormValues } from './employee';
 
+// Backward compatibility re-export for employeeDetails
+export * from './employeeDetails';
+
 // Employee permissions
 export {
   EMPLOYEE_EDITABLE_FIELDS,

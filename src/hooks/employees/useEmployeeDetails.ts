@@ -1,11 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/common/use-toast";
-import { useAuth } from "@/providers/AuthProvider";
-import { 
-  Employee, 
-  EmployeeDetailsHookReturn 
-} from "@/types/employee-types";
+import { useToast } from "@/hooks";
+import { useAuth } from "@/providers";
+import { Employee, EmployeeDetailsHookReturn } from "@/types";
 import { 
   fetchEmployeeWithNavigation, 
   updateEmployeeFieldById, 
@@ -13,7 +10,7 @@ import {
 } from "@/services";
 
 // Properly re-export the type using 'export type'
-export type { Employee } from "@/types/employee-types";
+export type { Employee } from "@/types";
 
 export const useEmployeeDetails = (employeeId: string | undefined): EmployeeDetailsHookReturn => {
   const [employee, setEmployee] = useState<Employee | null>(null);

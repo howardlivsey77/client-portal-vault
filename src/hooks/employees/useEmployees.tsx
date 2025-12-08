@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/common/use-toast";
-import { useAuth } from "@/providers/AuthProvider";
-import { useCompany } from "@/providers/CompanyProvider";
-import { Employee } from "@/types/employee-types";
+import { useToast } from "@/hooks";
+import { useAuth, useCompany } from "@/providers";
+import { Employee } from "@/types";
 
 export const useEmployees = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);

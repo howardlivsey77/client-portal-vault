@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/common/use-toast';
+import { useToast } from '@/hooks';
 import { sicknessService } from '@/services';
-import { SicknessRecord, EntitlementUsage, SicknessEntitlementSummary } from '@/types/sickness';
+import { SicknessRecord, EntitlementUsage, SicknessEntitlementSummary, Employee } from '@/types';
 import { EligibilityRule, SicknessScheme } from '@/components/employees/details/work-pattern/types';
-import { Employee } from '@/types/employee-types';
 import { calculateSicknessEntitlementSummary } from '@/utils';
 
 export const useSicknessData = (

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Employee } from '@/types/employee-types';
+import { Employee } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { addDays, format } from 'date-fns';
-import { useToast } from '@/hooks/common/use-toast';
+import { useToast } from '@/hooks';
 import { fetchTimesheetEntries } from '@/services';
 
 export interface WeeklyTimesheetDay {
