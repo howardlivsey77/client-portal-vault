@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { readFileData, autoMapColumns } from "./ImportUtils";
 import { transformData } from "./dataTransformUtils";
 import { EmployeeData, ColumnMapping } from "./ImportConstants";
-import { findExistingEmployees } from "@/hooks/import/employeeImportService";
+import { findExistingEmployees } from "@/hooks/employees/import/employeeImportService";
 
 interface FileUploaderProps {
   onFileProcessed: (
