@@ -18,7 +18,7 @@ import { parseDate, formatDateForDB } from "@/utils/dateParser";
 import * as XLSX from 'xlsx';
 import Fuse from 'fuse.js';
 import { SicknessImportCoreProps, ProcessedSicknessRecord, ImportStep } from './types';
-import { overlapService } from '@/services/sickness/overlapService';
+import { overlapService } from '@/services/employees/sickness/overlapService';
 import { processRecordsWithAutoTrim } from '@/utils/sicknessImport/autoTrimmer';
 import { OverlapTrimView } from './OverlapTrimView';
 import { FinalReviewView } from './FinalReviewView';

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Filter, Download, Eye, Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { AuditLoggingService } from '@/services/audit/auditLoggingService';
+import { AuditLoggingService } from '@/services/compliance/audit/auditLoggingService';
 
 interface AuditLogEntry {
   id: string;
