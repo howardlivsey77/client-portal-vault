@@ -1,5 +1,6 @@
 import { CompanyOverviewCard } from "./CompanyOverviewCard";
 import { DepartmentDistributionCard } from "./DepartmentDistributionCard";
+import { HmrcDashboardCard } from "./HmrcDashboardCard";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
 const DEPARTMENT_COLORS = [
@@ -17,13 +18,14 @@ export function EmployeeDashboard() {
   return (
     <div className="space-y-6">
       <h2 className="monday-section-title">Company Overview</h2>
+      <HmrcDashboardCard />
       <CompanyOverviewCard 
         totalEmployees={stats.totalEmployees}
         genderData={genderData}
         averageAge={stats.averageAge}
         averageLengthOfService={stats.averageLengthOfService}
       />
-      <DepartmentDistributionCard 
+      <DepartmentDistributionCard
         departmentCount={stats.departmentCount}
         departmentData={departmentData}
       />
