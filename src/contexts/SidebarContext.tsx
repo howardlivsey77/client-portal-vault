@@ -1,55 +1,33 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 interface SidebarContextType {
-  isCollapsed: boolean;
-  isHovering: boolean;
-  isPinned: boolean;
-  toggleCollapsed: () => void;
-  togglePinned: () => void;
-  setHovering: (hovering: boolean) => void;
-  isExpanded: boolean; // Computed: pinned OR hovering when collapsed
+  isOpen: boolean;
+  toggleSidebar: () => void;
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'sidebar-pinned';
+const STORAGE_KEY = 'sidebar-open';
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [isPinned, setIsPinned] = useState(() => {
+  const [isOpen, setIsOpen] = useState(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored !== null ? stored === 'true' : true; // Default to pinned/expanded
+    return stored !== null ? stored === 'true' : true; // Default to open
   });
-  const [isHovering, setIsHovering] = useState(false);
-
-  const isCollapsed = !isPinned;
-  const isExpanded = isPinned || isHovering;
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, String(isPinned));
-  }, [isPinned]);
+    localStorage.setItem(STORAGE_KEY, String(isOpen));
+  }, [isOpen]);
 
-  const toggleCollapsed = useCallback(() => {
-    setIsPinned(prev => !prev);
-  }, []);
-
-  const togglePinned = useCallback(() => {
-    setIsPinned(prev => !prev);
-  }, []);
-
-  const setHovering = useCallback((hovering: boolean) => {
-    setIsHovering(hovering);
+  const toggleSidebar = useCallback(() => {
+    setIsOpen(prev => !prev);
   }, []);
 
   return (
     <SidebarContext.Provider
       value={{
-        isCollapsed,
-        isHovering,
-        isPinned,
-        toggleCollapsed,
-        togglePinned,
-        setHovering,
-        isExpanded,
+        isOpen,
+        toggleSidebar,
       }}
     >
       {children}
