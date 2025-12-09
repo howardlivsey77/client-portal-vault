@@ -43,8 +43,8 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
       
       <div className="flex items-center">
         <img 
-          src="/images/fergi-logo.png" 
-          alt="Fergi Logo" 
+          src="/lovable-uploads/3fca6e51-90f5-44c9-ae11-38b6db5ee9a0.png" 
+          alt="Dootsons Logo" 
           className="h-14" 
         />
       </div>
