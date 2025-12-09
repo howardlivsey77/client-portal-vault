@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers";
 interface DashboardHeaderProps {
   onOpenUploadModal: () => void;
   activeTab: string;

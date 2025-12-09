@@ -6,7 +6,7 @@ import { Upload, X, Image } from "lucide-react";
 import { Control } from "react-hook-form";
 import { CompanyFormValues } from "../types";
 import { supabase } from "@/integrations/supabase/client";
-import { useCompany } from "@/providers/CompanyProvider";
+import { useCompany } from "@/providers";
 import { toast } from "@/hooks";
 
 interface LogoUploadSectionProps {

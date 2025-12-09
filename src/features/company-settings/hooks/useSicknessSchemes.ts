@@ -4,7 +4,7 @@ import { SicknessScheme } from "../types";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
-import { useCompany } from "@/providers/CompanyProvider";
+import { useCompany } from "@/providers";
 import { EligibilityRule } from "@/components/employees/details/work-pattern/types";
 
 export const useSicknessSchemes = () => {

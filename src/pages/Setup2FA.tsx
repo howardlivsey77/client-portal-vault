@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks";
 import { Loader2, ShieldCheck, Mail } from "lucide-react";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Setup2FA = () => {

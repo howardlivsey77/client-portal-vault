@@ -130,8 +130,8 @@ import { useNewFeature } from "@/hooks";
 | Hooks (`@/hooks`) | ✅ Complete | All hook imports consolidated |
 | Services (`@/services`) | ✅ Complete | All service imports consolidated |
 | Utils (`@/utils`) | ✅ Complete | All util imports consolidated |
-| Providers (`@/providers`) | 🔄 In Progress | ~50 files need migration |
-| Contexts (`@/contexts`) | 🔄 In Progress | ~7 files need migration |
+| Providers (`@/providers`) | ✅ Complete | All provider imports consolidated |
+| Contexts (`@/contexts`) | ✅ Complete | All context imports consolidated |
 | Components | ✅ Complete | Barrel files created |
 | Features | ✅ Complete | Barrel file created |
 

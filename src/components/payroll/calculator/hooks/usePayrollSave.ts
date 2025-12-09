@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useToast } from "@/hooks";
-import { useCompany } from "@/providers/CompanyProvider";
+import { useCompany } from "@/providers";
 import { PayrollResult } from "@/services/payroll/types";
 import { PayPeriod } from "@/services/payroll/utils/financial-year-utils";
 import { savePayrollResultToDatabase, clearPayrollResults } from "@/services/payroll/database/payrollDatabaseService";

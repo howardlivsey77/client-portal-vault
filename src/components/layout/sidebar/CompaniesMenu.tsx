@@ -2,8 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Building, ChevronDown, Plus } from "lucide-react";
-import { useCompany } from "@/providers/CompanyProvider";
-import { useAuth } from "@/providers/AuthProvider";
+import { useCompany, useAuth } from "@/providers";
 import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,

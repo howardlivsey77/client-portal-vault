@@ -2,8 +2,7 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { useAuth } from "@/providers/AuthProvider";
-import { useCompany } from "@/providers/CompanyProvider";
+import { useAuth, useCompany } from "@/providers";
 import { Loader2 } from "lucide-react";
 import { useEmployeeForm } from "@/hooks";
 import { 

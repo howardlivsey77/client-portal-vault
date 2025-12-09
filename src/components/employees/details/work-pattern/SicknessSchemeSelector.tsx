@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { SicknessScheme } from "./types";
 import { useToast } from "@/hooks";
 import { supabase } from "@/integrations/supabase/client";
-import { useCompany } from "@/providers/CompanyProvider";
+import { useCompany } from "@/providers";
 
 interface SicknessSchemeSelectorProps {
   employeeId: string;

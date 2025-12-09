@@ -3,7 +3,7 @@ import { FileText } from "lucide-react";
 import { Employee, SicknessRecord, SicknessEntitlementSummary } from "@/types";
 import { generateSicknessReportPDF } from "@/utils";
 import { toast } from "@/hooks";
-import { useCompany } from "@/providers/CompanyProvider";
+import { useCompany } from "@/providers";
 
 interface SicknessReportPDFButtonProps {
   employee: Employee;

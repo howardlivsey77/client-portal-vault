@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCompany } from "@/providers/CompanyProvider";
+import { useCompany } from "@/providers";
 
 export interface HmrcPeriodData {
   period: number;

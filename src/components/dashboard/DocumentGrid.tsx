@@ -6,7 +6,7 @@ import { SubfolderList } from "./documents/SubfolderList";
 import { DocumentList } from "./documents/DocumentList";
 import { EmptyFolder } from "./documents/EmptyFolder";
 import { DocumentGridProps } from "./documents/types";
-import { DragDropProvider } from "@/contexts/DragDropContext";
+import { DragDropProvider } from "@/contexts";
 import { documentFolderService } from "@/services";
 import { toast } from "sonner";
 import { useDroppable } from "@/hooks";

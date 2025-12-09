@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { createCompanyAccess } from "@/services";
 import { useToast } from "@/hooks";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers";
 import { supabase } from "@/integrations/supabase/client";
 
 type Company = {

@@ -12,7 +12,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers";
 
 interface LoginFormProps {
   onSuccess?: (userId: string) => Promise<void>;

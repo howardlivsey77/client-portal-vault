@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { DatabaseDocument } from "@/types";
 import { documentService } from "@/services";
-import { useCompany } from "@/providers/CompanyProvider";
+import { useCompany } from "@/providers";
 import { toast } from "@/hooks";
 
 export function useDocuments(selectedFolderId: string | null) {

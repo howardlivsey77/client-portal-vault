@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { documentFolderService } from "@/services";
 import { FolderItem as FolderItemType } from "../types/folder.types";
-import { useCompany } from "@/providers/CompanyProvider";
+import { useCompany } from "@/providers";
 import { toast } from "@/hooks";
 
 export function useFolderExplorer(onFolderSelect: (folderId: string | null) => void) {

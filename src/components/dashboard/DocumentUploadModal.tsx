@@ -11,7 +11,7 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { documentService, documentFolderService } from "@/services";
-import { useCompany } from "@/providers/CompanyProvider";
+import { useCompany } from "@/providers";
 import { useToast } from "@/hooks";
 import { FileUploadArea } from "./upload/FileUploadArea";
 import { DocumentMetadataForm } from "./upload/DocumentMetadataForm";
