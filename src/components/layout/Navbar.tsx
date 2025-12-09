@@ -46,8 +46,8 @@ const Navbar = () => {
               <Link to="/">
                 <img
                   className="h-10 w-auto"
-                  src="/lovable-uploads/3fca6e51-90f5-44c9-ae11-38b6db5ee9a0.png"
-                  alt="Dootsons"
+                  src="/images/fergi-logo.png"
+                  alt="Fergi"
                 />
               </Link>
             </div>
