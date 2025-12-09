@@ -22,7 +22,7 @@ export function Sidebar({ isMobileOpen }: SidebarProps) {
   return (
     <aside 
       className={cn(
-        "fixed inset-y-0 left-0 z-50 flex flex-col bg-sidebar border-r border-border transition-all duration-300 ease-in-out lg:static",
+        "fixed top-20 bottom-0 left-0 z-40 flex flex-col bg-sidebar border-r border-border transition-all duration-300 ease-in-out lg:static lg:top-0",
         // Mobile visibility
         isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         // Width based on open/closed state
