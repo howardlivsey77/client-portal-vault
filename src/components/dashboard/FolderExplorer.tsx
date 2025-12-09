@@ -9,7 +9,7 @@ import { EmptyFolderState } from "./folder/EmptyFolderState";
 import { FolderExplorerHeader } from "./folder/FolderExplorerHeader";
 import { FolderExplorerLoading } from "./folder/FolderExplorerLoading";
 import { useFolderExplorer } from "./folder/useFolderExplorer";
-import { DragDropProvider } from "@/contexts/DragDropContext";
+import { DragDropProvider } from "@/contexts";
 import { documentFolderService } from "@/services";
 import { toast } from "sonner";
 

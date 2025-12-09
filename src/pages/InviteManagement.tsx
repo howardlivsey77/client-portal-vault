@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useToast, useTeamMembers } from "@/hooks";
 import { Loader2, RefreshCw, UserPlus } from "lucide-react";
-import { useCompany } from "@/providers/CompanyProvider";
+import { useCompany } from "@/providers";
 import { TeamMembersTable } from "@/components/invites/TeamMembersTable";
 import { InviteSuccessDialog } from "@/components/invites/InviteSuccessDialog";
 import { InviteUserForm } from "@/components/invites/InviteUserForm";

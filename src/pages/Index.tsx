@@ -13,7 +13,7 @@ import {
 } from "@/components/dashboard";
 import { PayrollInputWizard } from "@/components/payroll";
 import { CompaniesTable } from "@/components/companies/CompaniesTable";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers";
 import { useLocation } from "react-router-dom";
 
 const Index = () => {

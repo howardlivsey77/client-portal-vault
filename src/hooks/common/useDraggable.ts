@@ -1,5 +1,5 @@
 import { DragEvent } from "react";
-import { useDragDrop, DragItem } from "@/contexts/DragDropContext";
+import { useDragDrop, type DragItem } from "@/contexts";
 
 interface UseDraggableProps {
   item: DragItem;

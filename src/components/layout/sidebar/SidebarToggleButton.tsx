@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { PanelLeftClose, PanelLeft } from "lucide-react";
-import { useSidebarContext } from "@/contexts/SidebarContext";
+import { useSidebarContext } from "@/contexts";
 import {
   Tooltip,
   TooltipContent,

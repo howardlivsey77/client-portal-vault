@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useCompany } from "@/providers/CompanyProvider";
-import { useAuth } from "@/providers/AuthProvider";
+import { useCompany, useAuth } from "@/providers";
 import { useNavigate } from "react-router-dom";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

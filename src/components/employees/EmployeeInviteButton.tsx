@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Mail, Loader2 } from "lucide-react";
 import { useEmployeeInvite } from "@/hooks";
-import { useCompany } from "@/providers/CompanyProvider";
+import { useCompany } from "@/providers";
 import type { Employee } from "@/types";
 
 interface EmployeeInviteButtonProps {

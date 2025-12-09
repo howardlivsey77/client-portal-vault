@@ -3,7 +3,7 @@ import { useState, useCallback } from "react";
 import { toast } from "@/hooks";
 import { processExtraHoursFile, savePayrollData } from "@/services";
 import { matchEmployees, applyUserMappings, EmployeeMatchingResults } from "@/services/payroll/employeeMatching";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers";
 import { ExtraHoursSummary, PayrollFiles } from "../types";
 
 type WizardStep = 0 | 1 | 2 | 3; // Upload -> Review -> Absences -> Final Summary

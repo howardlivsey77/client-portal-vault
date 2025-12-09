@@ -9,8 +9,7 @@ import {
   EmployeeStatusFilter 
 } from "@/components/employees";
 import { useEmployees } from "@/hooks";
-import { useAuth } from "@/providers/AuthProvider";
-import { useCompany } from "@/providers/CompanyProvider";
+import { useAuth, useCompany } from "@/providers";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 

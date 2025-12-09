@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import { SidebarMainNavigation } from "./SidebarMainNavigation";
 import { SidebarFooterNavigation } from "./SidebarFooterNavigation";
 import { SidebarToggleButton } from "./SidebarToggleButton";
-import { useSidebarContext } from "@/contexts/SidebarContext";
+import { useSidebarContext } from "@/contexts";
 
 interface SidebarProps {
   isMobileOpen: boolean;

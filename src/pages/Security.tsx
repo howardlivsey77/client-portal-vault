@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks";
 import { Loader2, ShieldCheck, ShieldX, Mail } from "lucide-react";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Security = () => {

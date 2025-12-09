@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks";
 import { createCompanyAccess } from "@/services";
 import { Loader2 } from "lucide-react";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers";
 
 type AdminAccessOptionProps = {
   defaultCompany: { id: string; name: string } | null;

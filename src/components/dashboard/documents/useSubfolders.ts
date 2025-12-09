@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { documentFolderService } from "@/services";
-import { useCompany } from "@/providers/CompanyProvider";
+import { useCompany } from "@/providers";
 import { toast } from "@/hooks";
 
 export function useSubfolders(selectedFolderId: string | null) {

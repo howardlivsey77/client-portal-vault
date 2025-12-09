@@ -4,7 +4,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { useAuthInitialization } from "@/hooks";
 import { AuthContainer, CompanyAccessSetup } from "@/components/auth";
 import { ensureCompanyAccess } from "@/services";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";

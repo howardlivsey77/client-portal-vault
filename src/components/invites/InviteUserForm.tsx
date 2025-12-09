@@ -4,7 +4,7 @@ import { RoleSelection } from "./RoleSelection";
 import { FormSubmitButton } from "./FormSubmitButton";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { useCompany } from "@/providers/CompanyProvider";
+import { useCompany } from "@/providers";
 
 interface InviteUserFormProps {
   email: string;

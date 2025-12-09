@@ -1,5 +1,5 @@
 
-import { useCompany } from "@/providers/CompanyProvider";
+import { useCompany, useAuth } from "@/providers";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Building, Plus } from "lucide-react";
-import { useAuth } from "@/providers/AuthProvider";
+
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
