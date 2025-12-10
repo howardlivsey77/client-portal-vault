@@ -40,6 +40,7 @@ export function EligibilityRulesTable({
             <TableHead>Full Pay</TableHead>
             <TableHead>Half Pay</TableHead>
             <TableHead>Then</TableHead>
+            <TableHead className="text-center">Waiting Days</TableHead>
             <TableHead className="w-[80px]">Action</TableHead>
           </TableRow>
         </TableHeader>

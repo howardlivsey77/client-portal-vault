@@ -56,7 +56,8 @@ export function SicknessSchemeForm({ scheme, onSave, onCancel }: SicknessSchemeF
       halfPayAmount: 0,
       fullPayUnit: 'days',
       halfPayUnit: 'days',
-      sicknessPay: "SSP"
+      sicknessPay: "SSP",
+      hasWaitingDays: false
     };
     setEligibilityRules([...eligibilityRules, newRule]);
   };

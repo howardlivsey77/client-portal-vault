@@ -60,5 +60,7 @@ export interface SicknessEntitlementSummary {
   ssp_entitled_days?: number;
   ssp_used_rolling_12_months?: number;
   ssp_remaining_days?: number;
+  // Company sickness waiting days (3 working day wait before entitlement kicks in)
+  hasWaitingDays?: boolean;
 }
 

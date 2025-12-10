@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Trash } from "lucide-react";
 import { EligibilityRule } from "@/components/employees/details/work-pattern/types";
 import { TIME_UNIT_OPTIONS, PAY_UNIT_OPTIONS } from "./unitUtils";
@@ -159,6 +160,21 @@ export function EligibilityRuleRow({ rule, onRuleChange, onRemoveRule }: Eligibi
             <SelectItem value="HalfPay">Half Pay</SelectItem>
           </SelectContent>
         </Select>
+      </TableCell>
+      <TableCell className="text-center">
+        <div className="flex items-center justify-center gap-2">
+          <Checkbox
+            id={`waiting-days-${rule.id}`}
+            checked={rule.hasWaitingDays || false}
+            onCheckedChange={(checked) => onRuleChange(rule.id, 'hasWaitingDays', checked === true)}
+          />
+          <label 
+            htmlFor={`waiting-days-${rule.id}`}
+            className="text-xs text-muted-foreground cursor-pointer"
+          >
+            3 days
+          </label>
+        </div>
       </TableCell>
       <TableCell>
         <Button 

@@ -33,6 +33,7 @@ export interface EligibilityRule {
   fullPayUnit: 'days' | 'weeks' | 'months';
   halfPayUnit: 'days' | 'weeks' | 'months';
   sicknessPay: string;
+  hasWaitingDays?: boolean; // If true, 3 working day wait before company entitlement kicks in
   // Legacy fields for backward compatibility
   serviceMonthsFrom?: number;
   serviceMonthsTo?: number | null;
