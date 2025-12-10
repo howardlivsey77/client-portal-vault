@@ -76,6 +76,12 @@ export const PersonalInfoBasicFields = ({ control }: PersonalInfoBasicFieldsProp
                       No departments found
                     </SelectItem>
                   )}
+                  {/* Always include current value if set and not in list yet (handles loading state) */}
+                  {field.value && !departmentNames.includes(field.value) && (
+                    <SelectItem key={field.value} value={field.value}>
+                      {field.value}
+                    </SelectItem>
+                  )}
                   {departmentNames.map((dept) => (
                     <SelectItem key={dept} value={dept}>
                       {dept}
