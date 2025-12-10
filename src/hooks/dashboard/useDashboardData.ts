@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks";
+import { useCompany } from "@/providers";
 
 interface DepartmentData {
   name: string;
@@ -22,6 +23,7 @@ interface DashboardStats {
 }
 
 export function useDashboardData(departmentColors: string[]) {
+  const { currentCompany } = useCompany();
   const [stats, setStats] = useState<DashboardStats>({
     totalEmployees: 0,
     averageHireDate: "-",
@@ -37,52 +39,58 @@ export function useDashboardData(departmentColors: string[]) {
 
   useEffect(() => {
     async function fetchDashboardData() {
+      if (!currentCompany?.id) {
+        setLoading(false);
+        return;
+      }
+      
       try {
         setLoading(true);
         
         // Get total employee count
         const { count, error: countError } = await supabase
           .from("employees")
-          .select("*", { count: "exact", head: true });
+          .select("*", { count: "exact", head: true })
+          .eq("company_id", currentCompany.id);
         
         if (countError) throw countError;
         
         // Get department distribution
         const { data: deptData, error: deptError } = await supabase
           .from("employees")
-          .select("department");
-          
+          .select("department")
+          .eq("company_id", currentCompany.id);
         if (deptError) throw deptError;
         
         // Get gender distribution - only for employees with gender specified
         const { data: genderRawData, error: genderError } = await supabase
           .from("employees")
           .select("gender")
+          .eq("company_id", currentCompany.id)
           .not("gender", "is", null);
-          
         if (genderError) throw genderError;
         
         // Get date of birth data for age calculation
         const { data: dobData, error: dobError } = await supabase
           .from("employees")
-          .select("date_of_birth");
-          
+          .select("date_of_birth")
+          .eq("company_id", currentCompany.id);
         if (dobError) throw dobError;
         
         // Get hire dates for length of service calculation
         const { data: hireDateData, error: hireDateError } = await supabase
           .from("employees")
-          .select("hire_date");
-          
+          .select("hire_date")
+          .eq("company_id", currentCompany.id);
         if (hireDateError) throw hireDateError;
         
         // Get recent hires
         const { data: recentData, error: recentError } = await supabase
           .from("employees")
           .select("id, first_name, last_name, department, hire_date")
+          .eq("company_id", currentCompany.id)
           .order("hire_date", { ascending: false })
           .limit(5);
-          
         if (recentError) throw recentError;
         
         // Process department data
@@ -195,7 +203,7 @@ export function useDashboardData(departmentColors: string[]) {
     }
     
     fetchDashboardData();
-  }, [toast, departmentColors]);
+  }, [toast, departmentColors, currentCompany?.id]);
 
   return {
     stats,
