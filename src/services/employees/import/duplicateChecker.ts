@@ -2,10 +2,11 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Check for duplicate payroll IDs in the database
+ * Check for duplicate payroll IDs in the database (scoped by company)
+ * Payroll IDs must be unique within a company, but can exist in different companies
  */
-export const checkDuplicatePayrollIds = async (payrollIds: string[]): Promise<string[]> => {
-  console.log('Checking for duplicate payroll IDs in database:', payrollIds);
+export const checkDuplicatePayrollIds = async (payrollIds: string[], companyId?: string): Promise<string[]> => {
+  console.log('Checking for duplicate payroll IDs in database:', payrollIds, 'for company:', companyId);
   
   if (!payrollIds || payrollIds.length === 0) {
     console.log('No payroll IDs to check');
@@ -21,10 +22,17 @@ export const checkDuplicatePayrollIds = async (payrollIds: string[]): Promise<st
     return [];
   }
   
-  const { data, error } = await supabase
+  let query = supabase
     .from("employees")
     .select("payroll_id")
     .in("payroll_id", validPayrollIds);
+  
+  // Scope the check to the specific company if provided
+  if (companyId) {
+    query = query.eq("company_id", companyId);
+  }
+  
+  const { data, error } = await query;
   
   if (error) {
     console.error('Error checking for duplicate payroll IDs:', error);
@@ -38,10 +46,11 @@ export const checkDuplicatePayrollIds = async (payrollIds: string[]): Promise<st
 };
 
 /**
- * Check for duplicate emails in the database
+ * Check for duplicate emails in the database (scoped by company)
+ * Emails must be unique within a company, but can exist in different companies
  */
-export const checkDuplicateEmails = async (emails: string[]): Promise<string[]> => {
-  console.log('Checking for duplicate emails in database:', emails);
+export const checkDuplicateEmails = async (emails: string[], companyId?: string): Promise<string[]> => {
+  console.log('Checking for duplicate emails in database:', emails, 'for company:', companyId);
   
   if (!emails || emails.length === 0) {
     console.log('No emails to check');
@@ -57,10 +66,17 @@ export const checkDuplicateEmails = async (emails: string[]): Promise<string[]> 
     return [];
   }
   
-  const { data, error } = await supabase
+  let query = supabase
     .from("employees")
     .select("email")
     .in("email", validEmails);
+  
+  // Scope the check to the specific company if provided
+  if (companyId) {
+    query = query.eq("company_id", companyId);
+  }
+  
+  const { data, error } = await query;
   
   if (error) {
     console.error('Error checking for duplicate emails:', error);
@@ -236,9 +252,10 @@ export interface DuplicateCheckResult {
 }
 
 export const performComprehensiveDuplicateCheck = async (
-  importData: any[]
+  importData: any[],
+  companyId?: string
 ): Promise<DuplicateCheckResult> => {
-  console.log('Performing comprehensive duplicate check for', importData.length, 'records');
+  console.log('Performing comprehensive duplicate check for', importData.length, 'records', 'in company:', companyId);
   
   // Extract all unique identifiers from import data
   const payrollIds = importData
@@ -259,10 +276,11 @@ export const performComprehensiveDuplicateCheck = async (
   const internalNiDuplicates = checkDuplicateNationalInsuranceNumbersInImportData(nationalInsuranceNumbers);
   
   // Check for database duplicates
+  // Payroll IDs and emails are company-scoped, NI numbers are globally unique
   const [databasePayrollDuplicates, databaseEmailDuplicates, databaseNiDuplicates] = await Promise.all([
-    checkDuplicatePayrollIds(payrollIds),
-    checkDuplicateEmails(emails),
-    checkDuplicateNationalInsuranceNumbers(nationalInsuranceNumbers)
+    checkDuplicatePayrollIds(payrollIds, companyId),
+    checkDuplicateEmails(emails, companyId),
+    checkDuplicateNationalInsuranceNumbers(nationalInsuranceNumbers) // Globally unique - no companyId
   ]);
   
   const result: DuplicateCheckResult = {
