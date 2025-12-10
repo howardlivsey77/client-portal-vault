@@ -230,18 +230,22 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[], i
       }
     });
     
-    // Set default values for missing fields
-    if (!transformedRow.hours_per_week) transformedRow.hours_per_week = 40;
-    if (!transformedRow.hourly_rate) transformedRow.hourly_rate = 0;
+    // Set default values for missing fields (explicitly check for undefined/null to preserve 0 values)
+    if (transformedRow.hours_per_week === undefined || transformedRow.hours_per_week === null) {
+      transformedRow.hours_per_week = 40;
+    }
+    if (transformedRow.hourly_rate === undefined || transformedRow.hourly_rate === null) {
+      transformedRow.hourly_rate = 0;
+    }
     // Set default department if not provided
     if (!transformedRow.department) transformedRow.department = 'General';
     
-    // Convert numeric fields with validation
-    if (transformedRow.hours_per_week) {
+    // Convert numeric fields with validation (preserve 0 values)
+    if (transformedRow.hours_per_week !== undefined && transformedRow.hours_per_week !== null) {
       const hours = Number(transformedRow.hours_per_week);
       transformedRow.hours_per_week = isNaN(hours) ? 40 : hours;
     }
-    if (transformedRow.hourly_rate) {
+    if (transformedRow.hourly_rate !== undefined && transformedRow.hourly_rate !== null) {
       const rate = Number(transformedRow.hourly_rate);
       transformedRow.hourly_rate = isNaN(rate) ? 0 : rate;
     }
