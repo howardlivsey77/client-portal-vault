@@ -166,7 +166,9 @@ export const entitlementService = {
             .eq('id', employee.sickness_scheme_id)
             .single();
 
-          const rules = (scheme?.eligibility_rules as unknown as EligibilityRule[]) || [];
+          const rules = typeof scheme?.eligibility_rules === 'string'
+            ? JSON.parse(scheme.eligibility_rules) as EligibilityRule[]
+            : (scheme?.eligibility_rules as unknown as EligibilityRule[] || []);
           const rule = calculationUtils.findApplicableRule(serviceMonths, rules);
           
           await this.createOrUpdateEntitlementUsage(
@@ -243,8 +245,10 @@ export const entitlementService = {
         .single();
 
       if (scheme?.eligibility_rules && entitlement?.current_rule_id) {
-        const rules = scheme.eligibility_rules as unknown as EligibilityRule[];
-        const currentRule = rules.find(r => r.id === entitlement.current_rule_id);
+        const rules = typeof scheme.eligibility_rules === 'string'
+          ? JSON.parse(scheme.eligibility_rules) as EligibilityRule[]
+          : (scheme.eligibility_rules as unknown as EligibilityRule[] || []);
+        const currentRule = rules.find((r: EligibilityRule) => r.id === entitlement.current_rule_id);
         hasWaitingDays = currentRule?.hasWaitingDays || false;
       }
     }
