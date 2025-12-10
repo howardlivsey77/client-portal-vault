@@ -1901,6 +1901,7 @@ export type Database = {
       create_invitation:
         | {
             Args: {
+              _company_id: string
               _email: string
               _expires_at?: string
               _invite_code: string
@@ -1928,7 +1929,6 @@ export type Database = {
           }
         | {
             Args: {
-              _company_id: string
               _email: string
               _expires_at?: string
               _invite_code: string
