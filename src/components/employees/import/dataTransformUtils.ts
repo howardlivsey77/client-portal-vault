@@ -33,28 +33,24 @@ export const parseCSVDate = (dateValue: string | number): string | null => {
         return null;
       }
       
-      // Create date using year, month-1 (0-indexed), day
-      const jsDate = new Date(yearNum, monthNum - 1, dayNum);
-      
-      // Validate that the date is valid (handles leap years, etc.)
-      if (jsDate.getFullYear() !== yearNum || jsDate.getMonth() !== monthNum - 1 || jsDate.getDate() !== dayNum) {
+      // Validate date using a UTC date to avoid timezone issues
+      const testDate = new Date(Date.UTC(yearNum, monthNum - 1, dayNum));
+      if (testDate.getUTCFullYear() !== yearNum || testDate.getUTCMonth() !== monthNum - 1 || testDate.getUTCDate() !== dayNum) {
         console.warn('Invalid date created from DD/MM/YYYY format:', dateString);
         return null;
       }
       
-      // Return ISO date string
-      const isoDate = jsDate.toISOString().split('T')[0];
+      // Format directly as YYYY-MM-DD string to avoid timezone conversion issues
+      const isoDate = `${yearNum}-${String(monthNum).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
       console.log(`CSV date parsed: "${dateString}" -> "${isoDate}"`);
       return isoDate;
     }
     
-    // If it doesn't match DD/MM/YYYY, try other common formats
-    if (/^\d{4}-\d{2}-\d{2}/.test(dateString)) {
-      // Already in ISO format
-      const parsedDate = new Date(dateString);
-      if (!isNaN(parsedDate.getTime())) {
-        return parsedDate.toISOString().split('T')[0];
-      }
+    // If it doesn't match DD/MM/YYYY, check for ISO format
+    const isoMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+      // Already in ISO format - return as-is to avoid timezone issues
+      return dateString;
     }
     
     console.warn('Date string does not match expected DD/MM/YYYY format:', dateString);
