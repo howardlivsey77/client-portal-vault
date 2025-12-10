@@ -36,12 +36,11 @@ export const calculateSicknessEntitlementSummary = async (
     const fullAllowance = entitlementUsage.full_pay_entitled_days || 0;
     const halfAllowance = entitlementUsage.half_pay_entitled_days || 0;
 
-    const rollingTotalUsed = rollingUsage.totalUsed || 0;
-
-    // Allocate used days to full then half for display (OSP logic)
-    const rollingFullUsed = Math.min(rollingTotalUsed, fullAllowance);
-    const rollingRemainingAfterFull = Math.max(0, rollingTotalUsed - rollingFullUsed);
-    const rollingHalfUsed = Math.min(rollingRemainingAfterFull, halfAllowance);
+    // Use the correctly calculated values from the database (which accounts for waiting days)
+    // rather than recalculating from raw sickness records
+    const rollingFullUsed = Number(entitlementUsage.full_pay_used_days) || 0;
+    const rollingHalfUsed = Number(entitlementUsage.half_pay_used_days) || 0;
+    const rollingTotalUsed = rollingFullUsed + rollingHalfUsed;
 
     // Fetch hasWaitingDays from the current eligibility rule
     let hasWaitingDays = false;
