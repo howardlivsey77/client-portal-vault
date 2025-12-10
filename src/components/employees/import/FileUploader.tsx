@@ -1,12 +1,14 @@
-
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import { useToast } from "@/hooks";
 import { readFileData, autoMapColumns } from "./ImportUtils";
 import { transformData } from "./dataTransformUtils";
 import { EmployeeData, ColumnMapping } from "./ImportConstants";
 import { findExistingEmployees } from "@/hooks/employees/import";
+import { downloadTemplate } from "./templateGenerator";
 
 interface FileUploaderProps {
   onFileProcessed: (
@@ -77,7 +79,19 @@ export const FileUploader = ({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="file">Upload Excel or CSV file</Label>
+      <div className="flex items-center justify-between">
+        <Label htmlFor="file">Upload Excel or CSV file</Label>
+        <Button 
+          type="button" 
+          variant="outline" 
+          size="sm" 
+          onClick={downloadTemplate}
+          className="gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Download Template
+        </Button>
+      </div>
       <Input 
         id="file" 
         type="file" 
