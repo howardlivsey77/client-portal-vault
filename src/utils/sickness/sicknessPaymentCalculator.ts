@@ -57,6 +57,10 @@ export const calculateSicknessRecordPayments = (
 
   const results: SicknessRecordPayment[] = [];
 
+  // Check if the scheme has waiting days enabled
+  const hasWaitingDays = entitlementSummary.hasWaitingDays || false;
+  const waitingDaysCount = 3; // Standard 3 working day wait
+
   for (const { record, isWithinPeriod } of recordsWithPeriodInfo) {
     if (!isWithinPeriod) {
       // Historical record - outside current entitlement period
@@ -74,7 +78,14 @@ export const calculateSicknessRecordPayments = (
     let fullPayDays = 0;
     let halfPayDays = 0;
     let noPayDays = 0;
+    let waitingDays = 0;
     let remainingDays = record.total_days;
+
+    // Apply waiting days if enabled (first 3 days of each absence are waiting days)
+    if (hasWaitingDays && remainingDays > 0) {
+      waitingDays = Math.min(remainingDays, waitingDaysCount);
+      remainingDays -= waitingDays;
+    }
 
     // Calculate available entitlement for this record
     const availableFullPay = Math.max(0, totalFullPayDays - usedFullPay);
@@ -96,8 +107,8 @@ export const calculateSicknessRecordPayments = (
       usedHalfPay += allocateToHalfPay;
     }
 
-    // Remaining days are no pay
-    noPayDays = remainingDays;
+    // Remaining days (including waiting days) are no pay
+    noPayDays = remainingDays + waitingDays;
 
     // Generate payment description
     let paymentDescription = "";
