@@ -224,8 +224,12 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[], i
           }
         }
         else {
-          // For all other fields, just copy the value
-          transformedRow[mapping.targetField] = sourceValue;
+          // For text fields, trim whitespace to prevent duplicate categories
+          if (typeof sourceValue === 'string') {
+            transformedRow[mapping.targetField] = sourceValue.trim();
+          } else {
+            transformedRow[mapping.targetField] = sourceValue;
+          }
         }
       }
     });
