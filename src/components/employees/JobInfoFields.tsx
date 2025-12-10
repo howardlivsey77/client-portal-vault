@@ -32,10 +32,16 @@ export const JobInfoFields = ({ form, readOnly }: JobInfoFieldsProps) => {
                 <SelectValue placeholder={loading ? "Loading departments..." : "Select a department"} />
               </SelectTrigger>
             </FormControl>
-            <SelectContent>
+            <SelectContent className="bg-background">
               {departmentNames.length === 0 && !loading && (
                 <SelectItem value="no-departments" disabled>
                   No departments found - Create departments in Department Management
+                </SelectItem>
+              )}
+              {/* Show current value if set and not yet in loaded list */}
+              {field.value && !departmentNames.includes(field.value) && (
+                <SelectItem key={field.value} value={field.value}>
+                  {field.value}
                 </SelectItem>
               )}
               {departmentNames.map((dept) => (
