@@ -67,9 +67,72 @@ export const updateEmployeeFieldById = async (
 };
 
 export const deleteEmployeeById = async (employeeId: string): Promise<ApiResponse<void>> => {
-  logger.debug("Deleting employee", { employeeId }, "EmployeeDetailsService");
+  logger.debug("Deleting employee and related records", { employeeId }, "EmployeeDetailsService");
   
   try {
+    // Delete related records in correct order (child tables first)
+    
+    // 1. Delete work patterns
+    const { error: workPatternsError } = await supabase
+      .from("work_patterns")
+      .delete()
+      .eq("employee_id", employeeId);
+    if (workPatternsError) {
+      logger.error("Failed to delete work patterns", workPatternsError, "EmployeeDetailsService");
+      throw new AppError("EMPLOYEE_DELETE_FAILED", `Failed to delete work patterns: ${workPatternsError.message}`, { employeeId });
+    }
+
+    // 2. Delete sickness entitlement usage
+    const { error: entitlementError } = await supabase
+      .from("employee_sickness_entitlement_usage")
+      .delete()
+      .eq("employee_id", employeeId);
+    if (entitlementError) {
+      logger.error("Failed to delete sickness entitlement usage", entitlementError, "EmployeeDetailsService");
+      throw new AppError("EMPLOYEE_DELETE_FAILED", `Failed to delete sickness entitlement: ${entitlementError.message}`, { employeeId });
+    }
+
+    // 3. Delete sickness historical balances
+    const { error: historicalError } = await supabase
+      .from("employee_sickness_historical_balances")
+      .delete()
+      .eq("employee_id", employeeId);
+    if (historicalError) {
+      logger.error("Failed to delete sickness historical balances", historicalError, "EmployeeDetailsService");
+      throw new AppError("EMPLOYEE_DELETE_FAILED", `Failed to delete historical balances: ${historicalError.message}`, { employeeId });
+    }
+
+    // 4. Delete sickness records
+    const { error: sicknessError } = await supabase
+      .from("employee_sickness_records")
+      .delete()
+      .eq("employee_id", employeeId);
+    if (sicknessError) {
+      logger.error("Failed to delete sickness records", sicknessError, "EmployeeDetailsService");
+      throw new AppError("EMPLOYEE_DELETE_FAILED", `Failed to delete sickness records: ${sicknessError.message}`, { employeeId });
+    }
+
+    // 5. Delete timesheet entries
+    const { error: timesheetError } = await supabase
+      .from("timesheet_entries")
+      .delete()
+      .eq("employee_id", employeeId);
+    if (timesheetError) {
+      logger.error("Failed to delete timesheet entries", timesheetError, "EmployeeDetailsService");
+      throw new AppError("EMPLOYEE_DELETE_FAILED", `Failed to delete timesheet entries: ${timesheetError.message}`, { employeeId });
+    }
+
+    // 6. Delete payroll results
+    const { error: payrollError } = await supabase
+      .from("payroll_results")
+      .delete()
+      .eq("employee_id", employeeId);
+    if (payrollError) {
+      logger.error("Failed to delete payroll results", payrollError, "EmployeeDetailsService");
+      throw new AppError("EMPLOYEE_DELETE_FAILED", `Failed to delete payroll results: ${payrollError.message}`, { employeeId });
+    }
+
+    // 7. Finally delete the employee
     const { error } = await supabase
       .from("employees")
       .delete()
@@ -80,7 +143,7 @@ export const deleteEmployeeById = async (employeeId: string): Promise<ApiRespons
       throw new AppError("EMPLOYEE_DELETE_FAILED", `Failed to delete employee: ${error.message}`, { employeeId, supabaseError: error });
     }
     
-    logger.info("Employee deleted successfully", { employeeId }, "EmployeeDetailsService");
+    logger.info("Employee and related records deleted successfully", { employeeId }, "EmployeeDetailsService");
     return createServiceResponse(null);
   } catch (error) {
     if (error instanceof AppError) throw error;
