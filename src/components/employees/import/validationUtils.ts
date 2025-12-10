@@ -28,7 +28,8 @@ export const validateNationalInsuranceNumber = (niNumber: string): boolean => {
 };
 
 /**
- * Normalize National Insurance Number to standard format
+ * Normalize National Insurance Number to standard format (no spaces)
+ * Returns format: QQ123456C
  */
 export const normalizeNationalInsuranceNumber = (niNumber: string): string | null => {
   if (!niNumber || typeof niNumber !== 'string') {
@@ -41,8 +42,8 @@ export const normalizeNationalInsuranceNumber = (niNumber: string): string | nul
     return null;
   }
 
-  // Format as QQ 12 34 56 C
-  return `${cleaned.substring(0, 2)} ${cleaned.substring(2, 4)} ${cleaned.substring(4, 6)} ${cleaned.substring(6, 8)} ${cleaned.substring(8)}`;
+  // Return without spaces for consistent storage
+  return cleaned;
 };
 
 /**
