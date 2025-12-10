@@ -28,6 +28,7 @@ export const HmrcInfoForm = ({
   const form = useForm<HmrcInfoFormValues>({
     resolver: zodResolver(hmrcInfoSchema),
     defaultValues: {
+      national_insurance_number: employee.national_insurance_number || "",
       tax_code: employee.tax_code || "",
       week_one_month_one: employee.week_one_month_one || false,
       nic_code: employee.nic_code || "",
@@ -46,6 +47,20 @@ export const HmrcInfoForm = ({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="national_insurance_number"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>National Insurance Number</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. QQ 12 34 56 C" {...field} value={field.value || ""} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
           <FormField
             control={form.control}
             name="tax_code"

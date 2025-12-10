@@ -36,6 +36,7 @@ export interface Employee {
   portal_access_enabled: boolean | null;
   
   // HMRC section fields
+  national_insurance_number: string | null;
   tax_code: string | null;
   week_one_month_one: boolean | null;
   nic_code: string | null;

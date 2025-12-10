@@ -22,6 +22,11 @@ export const HmrcInfoCard = ({ employee, isAdmin, updateEmployeeField }: HmrcInf
   
   const handleSubmit = async (values: any) => {
     try {
+      // Update national insurance number
+      if (values.national_insurance_number !== employee.national_insurance_number) {
+        await updateEmployeeField("national_insurance_number", values.national_insurance_number);
+      }
+      
       // Update tax code
       if (values.tax_code !== employee.tax_code) {
         await updateEmployeeField("tax_code", values.tax_code);
