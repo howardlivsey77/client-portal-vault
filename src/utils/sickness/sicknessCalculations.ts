@@ -52,9 +52,13 @@ export const calculateSicknessEntitlementSummary = async (
           .eq('id', entitlementUsage.sickness_scheme_id)
           .single();
         
-        if (scheme?.eligibility_rules && Array.isArray(scheme.eligibility_rules)) {
-          const rules = scheme.eligibility_rules as unknown as EligibilityRule[];
-          const currentRule = rules.find(r => r.id === entitlementUsage.current_rule_id);
+        if (scheme?.eligibility_rules) {
+          // Parse rules - may come as string or array from database
+          const rules = typeof scheme.eligibility_rules === 'string'
+            ? JSON.parse(scheme.eligibility_rules)
+            : (scheme.eligibility_rules as unknown as EligibilityRule[] || []);
+          
+          const currentRule = rules.find((r: EligibilityRule) => r.id === entitlementUsage.current_rule_id);
           hasWaitingDays = currentRule?.hasWaitingDays || false;
         }
       } catch (error) {
