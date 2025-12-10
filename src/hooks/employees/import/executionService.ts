@@ -19,11 +19,12 @@ export interface ImportResult {
 export const executeImport = async (
   newEmployees: EmployeeData[],
   updatedEmployees: { existing: EmployeeData; imported: EmployeeData }[],
-  conflicts: EmployeeConflict[] = []
+  conflicts: EmployeeConflict[] = [],
+  companyId?: string
 ): Promise<ImportResult> => {
   try {
-    // Validate before proceeding
-    const validation = await validateImportData(newEmployees, updatedEmployees, conflicts);
+    // Validate before proceeding (pass companyId to scope duplicate checks)
+    const validation = await validateImportData(newEmployees, updatedEmployees, conflicts, companyId);
     
     if (!validation.canProceed) {
       return {

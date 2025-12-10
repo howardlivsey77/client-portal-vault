@@ -16,14 +16,16 @@ export interface ImportValidationResult {
 export const validateImportData = async (
   newEmployees: EmployeeData[],
   updatedEmployees: { existing: EmployeeData; imported: EmployeeData }[],
-  conflicts: EmployeeConflict[] = []
+  conflicts: EmployeeConflict[] = [],
+  companyId?: string
 ): Promise<ImportValidationResult> => {
   console.log('Validating import data...');
-  console.log(`New employees: ${newEmployees.length}, Updated employees: ${updatedEmployees.length}, Conflicts: ${conflicts.length}`);
+  console.log(`New employees: ${newEmployees.length}, Updated employees: ${updatedEmployees.length}, Conflicts: ${conflicts.length}, Company: ${companyId}`);
   
   // Only check NEW employees for database duplicates
   // Updated employees are expected to have matching records in the database
-  const duplicateCheckResult = await performComprehensiveDuplicateCheck(newEmployees);
+  // Pass companyId to scope payroll ID and email checks to this company
+  const duplicateCheckResult = await performComprehensiveDuplicateCheck(newEmployees, companyId);
   
   // Check for internal duplicates in ALL import data (new + updated)
   const allImportData = [

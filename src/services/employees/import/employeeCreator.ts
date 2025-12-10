@@ -76,12 +76,12 @@ export const createNewEmployees = async (
     throw new Error(`Duplicate payroll IDs found in import data: ${internalDuplicates.join(', ')}. Each employee must have a unique payroll ID.`);
   }
   
-  // Check for duplicates in the database
-  const existingPayrollIds = await checkDuplicatePayrollIds(payrollIds);
+  // Check for duplicates in the database (scoped to the current company)
+  const existingPayrollIds = await checkDuplicatePayrollIds(payrollIds, companyId);
   
-  // If we have duplicate payroll IDs, throw an error
+  // If we have duplicate payroll IDs within this company, throw an error
   if (existingPayrollIds.length > 0) {
-    console.error('Database duplicates found:', existingPayrollIds);
+    console.error('Database duplicates found in company:', existingPayrollIds);
     throw new Error(`duplicate key value violates unique constraint "unique_payroll_id" for IDs: ${existingPayrollIds.join(', ')}`);
   }
   
