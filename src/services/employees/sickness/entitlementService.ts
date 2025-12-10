@@ -213,22 +213,85 @@ export const entitlementService = {
     const yearStart = `${currentYear}-01-01`;
     const yearEnd = `${currentYear}-12-31`;
 
-    // Get all sickness records for current year
+    // Get employee with sickness scheme
+    const { data: employee, error: empError } = await supabase
+      .from('employees')
+      .select('sickness_scheme_id, hire_date')
+      .eq('id', employeeId)
+      .single();
+
+    if (empError) throw empError;
+
+    // Get entitlement record to know allowances
+    const { data: entitlement, error: entError } = await supabase
+      .from('employee_sickness_entitlement_usage')
+      .select('full_pay_entitled_days, half_pay_entitled_days, current_rule_id')
+      .eq('employee_id', employeeId)
+      .gte('entitlement_period_start', yearStart)
+      .lte('entitlement_period_end', yearEnd)
+      .single();
+
+    if (entError && entError.code !== 'PGRST116') throw entError;
+
+    // Get sickness scheme to check for waiting days
+    let hasWaitingDays = false;
+    if (employee?.sickness_scheme_id) {
+      const { data: scheme } = await supabase
+        .from('sickness_schemes')
+        .select('eligibility_rules')
+        .eq('id', employee.sickness_scheme_id)
+        .single();
+
+      if (scheme?.eligibility_rules && entitlement?.current_rule_id) {
+        const rules = scheme.eligibility_rules as unknown as EligibilityRule[];
+        const currentRule = rules.find(r => r.id === entitlement.current_rule_id);
+        hasWaitingDays = currentRule?.hasWaitingDays || false;
+      }
+    }
+
+    // Get all sickness records for current year, sorted by date
     const { data: records, error } = await supabase
       .from('employee_sickness_records')
       .select('total_days, start_date')
       .eq('employee_id', employeeId)
       .gte('start_date', yearStart)
-      .lte('start_date', yearEnd);
+      .lte('start_date', yearEnd)
+      .order('start_date', { ascending: true });
 
     if (error) throw error;
 
-    const totalUsed = records?.reduce((sum, record) => sum + Number(record.total_days || 0), 0) || 0;
+    const fullPayAllowance = Number(entitlement?.full_pay_entitled_days || 0);
+    const halfPayAllowance = Number(entitlement?.half_pay_entitled_days || 0);
     
-    // For now, allocate all to full pay - this can be enhanced later with allocation logic
+    let fullPayUsed = 0;
+    let halfPayUsed = 0;
+    let availableFullPay = fullPayAllowance;
+    let availableHalfPay = halfPayAllowance;
+
+    // Process each record chronologically
+    for (const record of records || []) {
+      const totalDays = Number(record.total_days || 0);
+      
+      // Apply waiting days (3 days per absence if enabled)
+      const waitingDays = hasWaitingDays ? Math.min(totalDays, 3) : 0;
+      let payableDays = totalDays - waitingDays;
+
+      // Allocate payable days to full pay first
+      const allocateToFull = Math.min(payableDays, availableFullPay);
+      fullPayUsed += allocateToFull;
+      availableFullPay -= allocateToFull;
+      payableDays -= allocateToFull;
+
+      // Then allocate remaining to half pay
+      const allocateToHalf = Math.min(payableDays, availableHalfPay);
+      halfPayUsed += allocateToHalf;
+      availableHalfPay -= allocateToHalf;
+      // Any remaining days are no pay
+    }
+
     await this.updateUsedDays(employeeId, {
-      fullPayUsed: totalUsed,
-      halfPayUsed: 0
+      fullPayUsed,
+      halfPayUsed
     });
   }
 };
