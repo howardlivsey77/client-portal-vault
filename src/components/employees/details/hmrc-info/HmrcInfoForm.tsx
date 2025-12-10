@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { X, Check } from "lucide-react";
+import { NINumberInput } from "../../NINumberInput";
 
 interface HmrcInfoFormProps {
   employee: Employee;
@@ -24,11 +25,11 @@ export const HmrcInfoForm = ({
   toggleEditMode, 
   onSubmit 
 }: HmrcInfoFormProps) => {
-  // Setup form
+  // Setup form - remove spaces from stored NI number for OTP input
   const form = useForm<HmrcInfoFormValues>({
     resolver: zodResolver(hmrcInfoSchema),
     defaultValues: {
-      national_insurance_number: employee.national_insurance_number || "",
+      national_insurance_number: (employee.national_insurance_number || "").replace(/\s/g, ""),
       tax_code: employee.tax_code || "",
       week_one_month_one: employee.week_one_month_one || false,
       nic_code: employee.nic_code || "",
@@ -46,7 +47,7 @@ export const HmrcInfoForm = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-6">
           <FormField
             control={form.control}
             name="national_insurance_number"
@@ -54,7 +55,10 @@ export const HmrcInfoForm = ({
               <FormItem>
                 <FormLabel>National Insurance Number</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g. QQ 12 34 56 C" {...field} value={field.value || ""} />
+                  <NINumberInput
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

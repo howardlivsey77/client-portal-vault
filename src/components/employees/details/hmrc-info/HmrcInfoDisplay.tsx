@@ -1,5 +1,6 @@
 
 import { Employee, studentLoanPlanOptions, nicCodeOptions } from "@/types";
+import { formatNINumberForDisplay } from "../../NINumberInput";
 
 interface HmrcInfoDisplayProps {
   employee: Employee;
@@ -23,13 +24,13 @@ export const HmrcInfoDisplay = ({ employee }: HmrcInfoDisplayProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <div className="text-sm font-medium mb-2">National Insurance Number</div>
-          <div className="p-2.5 bg-gray-50 rounded border border-gray-200">
-            {employee.national_insurance_number || "Not specified"}
+          <div className="p-2.5 bg-muted rounded border border-border">
+            {formatNINumberForDisplay(employee.national_insurance_number) || "Not specified"}
           </div>
         </div>
         <div>
           <div className="text-sm font-medium mb-2">Tax Code</div>
-          <div className="p-2.5 bg-gray-50 rounded border border-gray-200">
+          <div className="p-2.5 bg-muted rounded border border-border">
             {employee.tax_code || "Not specified"}
           </div>
         </div>
@@ -38,13 +39,13 @@ export const HmrcInfoDisplay = ({ employee }: HmrcInfoDisplayProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <div className="text-sm font-medium mb-2">Week One/Month One</div>
-          <div className="p-2.5 bg-gray-50 rounded border border-gray-200">
+          <div className="p-2.5 bg-muted rounded border border-border">
             {employee.week_one_month_one ? "Yes" : "No"}
           </div>
         </div>
         <div>
           <div className="text-sm font-medium mb-2">NIC Code</div>
-          <div className="p-2.5 bg-gray-50 rounded border border-gray-200">
+          <div className="p-2.5 bg-muted rounded border border-border">
             {getNicCodeLabel(employee.nic_code)}
           </div>
         </div>
@@ -53,7 +54,7 @@ export const HmrcInfoDisplay = ({ employee }: HmrcInfoDisplayProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <div className="text-sm font-medium mb-2">Student Loan Plan</div>
-          <div className="p-2.5 bg-gray-50 rounded border border-gray-200">
+          <div className="p-2.5 bg-muted rounded border border-border">
             {getStudentLoanPlanLabel(employee.student_loan_plan)}
           </div>
         </div>

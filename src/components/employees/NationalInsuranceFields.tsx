@@ -1,9 +1,9 @@
 
 import { Control } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { nicCodeOptions, EmployeeFormValues } from "@/types";
+import { NINumberInput } from "./NINumberInput";
 
 interface NationalInsuranceFieldsProps {
   control: Control<EmployeeFormValues>;
@@ -22,12 +22,10 @@ export const NationalInsuranceFields = ({ control, readOnly }: NationalInsurance
             <FormItem>
               <FormLabel>National Insurance Number</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="e.g. QQ 12 34 56 C"
-                  {...field}
-                  value={field.value || ""}
-                  readOnly={readOnly}
-                  className={readOnly ? "bg-gray-100" : ""}
+                <NINumberInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  disabled={readOnly}
                 />
               </FormControl>
               <FormMessage />
