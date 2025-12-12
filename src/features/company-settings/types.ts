@@ -21,4 +21,6 @@ export interface CompanyFormValues {
   contactEmail?: string;
   contactPhone?: string;
   logoUrl?: string;
+  payrollStartYear?: number;
+  payrollStartPeriod?: number;
 }
