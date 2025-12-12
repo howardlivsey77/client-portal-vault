@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { lastDayOfMonth } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/providers/CompanyProvider';
 import { useToast } from '@/hooks';
@@ -9,6 +10,14 @@ import { calculateMonthlyIncomeTaxAsync } from '@/services/payroll/calculations/
 import { calculateNationalInsuranceAsync } from '@/services/payroll/calculations/national-insurance';
 import { calculateStudentLoan } from '@/services/payroll/calculations/student-loan';
 
+// Helper to get the last day of the pay period month
+function getLastDayOfPayPeriod(payPeriod: PayPeriod): Date {
+  // UK Financial year: Period 1 = April, Period 2 = May, etc.
+  const monthIndex = ((payPeriod.periodNumber - 1 + 3) % 12); // 0-indexed
+  const year = payPeriod.periodNumber <= 9 ? payPeriod.year : payPeriod.year + 1;
+  const dateInMonth = new Date(year, monthIndex, 1);
+  return lastDayOfMonth(dateInMonth);
+}
 interface CalculatedPayroll {
   tax: number;
   nic: number;
@@ -79,10 +88,15 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
   const [payrollResults, setPayrollResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortField>('payrollId');
-  const [paymentDate, setPaymentDate] = useState<Date | undefined>(undefined);
+  const [paymentDate, setPaymentDate] = useState<Date | undefined>(() => getLastDayOfPayPeriod(payPeriod));
   const [calculatedPayroll, setCalculatedPayroll] = useState<Map<string, CalculatedPayroll>>(new Map());
   const { currentCompany } = useCompany();
   const { toast } = useToast();
+
+  // Update payment date when pay period changes
+  useEffect(() => {
+    setPaymentDate(getLastDayOfPayPeriod(payPeriod));
+  }, [payPeriod.periodNumber, payPeriod.year]);
 
   // Fetch employees and payroll results
   useEffect(() => {
