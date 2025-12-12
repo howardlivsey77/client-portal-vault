@@ -172,3 +172,107 @@ export function calculateCumulativeTaxSync(
     taxablePayYTD
   };
 }
+
+/**
+ * Week 1/Month 1 Tax Result
+ */
+export interface Week1Month1TaxResult {
+  taxThisPeriod: number;
+  freePayMonthly: number;
+  taxablePayThisPeriod: number;
+}
+
+/**
+ * Calculate tax on Week 1/Month 1 (non-cumulative) basis
+ * Each period is treated independently with 1/12th of annual bands
+ * 
+ * This is used when employee has W1/M1 indicator on their tax code
+ * or for emergency tax situations.
+ * 
+ * @param grossPayThisPeriod - Gross pay this period only (in pounds)
+ * @param taxCode - Employee tax code (e.g., '45L', 'BR', 'D0', 'D1')
+ * @returns Tax due this period (non-cumulative)
+ */
+export function calculateWeek1Month1Tax(
+  grossPayThisPeriod: number,
+  taxCode: string
+): Week1Month1TaxResult {
+  const upperTaxCode = taxCode.toUpperCase().trim();
+  
+  // Handle NT code - no tax
+  if (upperTaxCode === 'NT') {
+    return {
+      taxThisPeriod: 0,
+      freePayMonthly: Infinity,
+      taxablePayThisPeriod: 0
+    };
+  }
+  
+  // Handle BR code - basic rate (20%) on ALL income
+  if (upperTaxCode === 'BR') {
+    const taxablePayThisPeriod = Math.floor(grossPayThisPeriod);
+    return {
+      taxThisPeriod: roundToTwoDecimals(taxablePayThisPeriod * 0.2),
+      freePayMonthly: 0,
+      taxablePayThisPeriod
+    };
+  }
+  
+  // Handle D0 code - higher rate (40%) on ALL income
+  if (upperTaxCode === 'D0') {
+    const taxablePayThisPeriod = Math.floor(grossPayThisPeriod);
+    return {
+      taxThisPeriod: roundToTwoDecimals(taxablePayThisPeriod * 0.4),
+      freePayMonthly: 0,
+      taxablePayThisPeriod
+    };
+  }
+  
+  // Handle D1 code - additional rate (45%) on ALL income
+  if (upperTaxCode === 'D1') {
+    const taxablePayThisPeriod = Math.floor(grossPayThisPeriod);
+    return {
+      taxThisPeriod: roundToTwoDecimals(taxablePayThisPeriod * 0.45),
+      freePayMonthly: 0,
+      taxablePayThisPeriod
+    };
+  }
+  
+  // Parse tax code for monthly free pay
+  const taxCodeInfo = parseTaxCode(taxCode);
+  const freePayMonthly = taxCodeInfo.monthlyFreePay;
+  
+  // Calculate taxable pay (rounded down to nearest pound)
+  // For K codes, freePayMonthly is negative, so this adds to taxable income
+  const taxablePayThisPeriod = Math.max(0, Math.floor(grossPayThisPeriod - freePayMonthly));
+  
+  // Monthly tax bands (1/12 of annual limits)
+  const monthlyBasicLimit = Math.floor(37700 / 12);      // £3,141
+  const monthlyHigherLimit = Math.floor(125140 / 12);    // £10,428
+  
+  let taxThisPeriod = 0;
+  
+  // Basic rate (20%) - first £3,141 of taxable pay
+  if (taxablePayThisPeriod > 0) {
+    const basicAmount = Math.min(taxablePayThisPeriod, monthlyBasicLimit);
+    taxThisPeriod += basicAmount * 0.2;
+  }
+  
+  // Higher rate (40%) - £3,141 to £10,428
+  if (taxablePayThisPeriod > monthlyBasicLimit) {
+    const higherAmount = Math.min(taxablePayThisPeriod - monthlyBasicLimit, monthlyHigherLimit - monthlyBasicLimit);
+    taxThisPeriod += higherAmount * 0.4;
+  }
+  
+  // Additional rate (45%) - over £10,428
+  if (taxablePayThisPeriod > monthlyHigherLimit) {
+    const additionalAmount = taxablePayThisPeriod - monthlyHigherLimit;
+    taxThisPeriod += additionalAmount * 0.45;
+  }
+  
+  return {
+    taxThisPeriod: roundToTwoDecimals(taxThisPeriod),
+    freePayMonthly,
+    taxablePayThisPeriod
+  };
+}
