@@ -6,6 +6,72 @@
 import { z } from 'zod';
 
 /**
+ * HMRC-compliant tax code validation for UI inputs
+ * Validates that tax code matches one of the recognized formats:
+ * - Standard codes: 1L, 45L, 1257L, 9999L (any number + L/M/N/T suffix)
+ * - K codes: K1, K497, K9999 (negative allowance)
+ * - Flat rate codes: BR, D0, D1
+ * - No tax code: NT
+ * - Emergency code: 0T
+ * - Scottish prefix: S followed by any of above
+ * - Welsh prefix: C followed by any of above
+ */
+export const HmrcTaxCodeSchema = z
+  .string()
+  .transform((s) => s.toUpperCase().trim())
+  .refine(
+    (code) => {
+      // Allow empty/optional
+      if (!code || code === '') return true;
+      
+      // Remove Scottish/Welsh prefix for validation
+      const cleanCode = code.replace(/^[SC]/, '');
+      
+      // Valid patterns:
+      const validPatterns = [
+        /^\d+[LMNT]$/,       // Standard codes: 1L, 45L, 1257L, etc.
+        /^K\d+$/,            // K codes: K1, K497, etc.
+        /^BR$/,              // Basic rate
+        /^D0$/,              // Higher rate
+        /^D1$/,              // Additional rate
+        /^NT$/,              // No tax
+        /^0T$/,              // Emergency
+      ];
+      
+      return validPatterns.some(pattern => pattern.test(cleanCode));
+    },
+    {
+      message: 'Invalid tax code format. Valid examples: 1257L, K497, BR, D0, D1, NT, 0T'
+    }
+  );
+
+/**
+ * Helper function to validate tax code and return error message if invalid
+ */
+export function validateTaxCode(taxCode: string): { isValid: boolean; error?: string; isScottishOrWelsh?: boolean } {
+  if (!taxCode || taxCode.trim() === '') {
+    return { isValid: true };
+  }
+  
+  const result = HmrcTaxCodeSchema.safeParse(taxCode);
+  
+  if (!result.success) {
+    return { 
+      isValid: false, 
+      error: result.error.errors[0]?.message || 'Invalid tax code format'
+    };
+  }
+  
+  const upperCode = taxCode.toUpperCase().trim();
+  const isScottishOrWelsh = /^[SC]/.test(upperCode);
+  
+  return { 
+    isValid: true,
+    isScottishOrWelsh
+  };
+}
+
+/**
  * Tax code validation schema
  * Accepts: 1257L, 45M, K497, BR, D0, D1, NT, 0T, etc.
  * Rejects: empty, too long, invalid characters

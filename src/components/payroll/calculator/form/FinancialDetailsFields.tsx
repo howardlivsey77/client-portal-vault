@@ -1,4 +1,3 @@
-
 import { Employee } from "@/types";
 import { PayrollFormValues } from "../types";
 import { Label } from "@/components/ui/label";
@@ -6,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TaxCodeInput } from "@/components/employees/TaxCodeInput";
 
 interface FinancialDetailsFieldsProps {
   employee?: Employee | null;
@@ -39,10 +39,9 @@ export function FinancialDetailsFields({
 
           <div className="space-y-2">
             <Label htmlFor="taxCode">Tax Code</Label>
-            <Input
-              id="taxCode"
+            <TaxCodeInput
               value={formValues.taxCode || employee?.tax_code || '1257L'}
-              onChange={(e) => onInputChange('taxCode', e.target.value)}
+              onChange={(value) => onInputChange('taxCode', value)}
               placeholder="1257L"
             />
           </div>
