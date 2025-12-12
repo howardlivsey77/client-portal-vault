@@ -1,7 +1,13 @@
 
-import { roundToTwoDecimals } from "@/lib/formatters";
 import { parseTaxCode } from "../utils/tax-code-utils";
 import { getIncomeTaxBands, calculateTaxByBands } from "../utils/tax-bands-utils";
+
+/**
+ * Round to two decimal places (local version to avoid null handling)
+ */
+function roundToTwoDecimals(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
 
 export interface CumulativeTaxResult {
   taxThisPeriod: number;
@@ -83,33 +89,78 @@ export function calculateCumulativeTaxSync(
   taxCode: string,
   taxPaidYTD: number
 ): CumulativeTaxResult {
-  // This is a simplified sync version - for full accuracy use the async version
+  const upperTaxCode = taxCode.toUpperCase().trim();
   const taxCodeInfo = parseTaxCode(taxCode);
   
-  if (taxCode.toUpperCase() === 'NT') {
+  // Handle NT code - no tax ever
+  if (upperTaxCode === 'NT') {
     return {
-      taxThisPeriod: -taxPaidYTD,
+      taxThisPeriod: roundToTwoDecimals(-taxPaidYTD),
       taxDueYTD: 0,
       freePayYTD: Infinity,
       taxablePayYTD: 0
     };
   }
   
+  // Handle BR code - basic rate (20%) on ALL income, no personal allowance
+  if (upperTaxCode === 'BR') {
+    const taxablePayYTD = Math.floor(grossPayYTD);
+    const taxDueYTD = taxablePayYTD * 0.2;
+    return {
+      taxThisPeriod: roundToTwoDecimals(taxDueYTD - taxPaidYTD),
+      taxDueYTD: roundToTwoDecimals(taxDueYTD),
+      freePayYTD: 0,
+      taxablePayYTD
+    };
+  }
+  
+  // Handle D0 code - higher rate (40%) on ALL income
+  if (upperTaxCode === 'D0') {
+    const taxablePayYTD = Math.floor(grossPayYTD);
+    const taxDueYTD = taxablePayYTD * 0.4;
+    return {
+      taxThisPeriod: roundToTwoDecimals(taxDueYTD - taxPaidYTD),
+      taxDueYTD: roundToTwoDecimals(taxDueYTD),
+      freePayYTD: 0,
+      taxablePayYTD
+    };
+  }
+  
+  // Handle D1 code - additional rate (45%) on ALL income
+  if (upperTaxCode === 'D1') {
+    const taxablePayYTD = Math.floor(grossPayYTD);
+    const taxDueYTD = taxablePayYTD * 0.45;
+    return {
+      taxThisPeriod: roundToTwoDecimals(taxDueYTD - taxPaidYTD),
+      taxDueYTD: roundToTwoDecimals(taxDueYTD),
+      freePayYTD: 0,
+      taxablePayYTD
+    };
+  }
+  
+  // Standard cumulative calculation for other codes (1257L, K codes, 0T, etc.)
   const freePayYTD = roundToTwoDecimals(taxCodeInfo.monthlyFreePay * period);
   const taxablePayYTD = Math.max(0, Math.floor(grossPayYTD - freePayYTD));
   
-  // Use simplified band calculation (20% basic rate)
-  // For accurate results, use the async version
-  let taxDueYTD = taxablePayYTD * 0.2;
+  // Apply tax bands
+  let taxDueYTD = 0;
   
-  // Apply higher rate (40%) for income over £37,700
-  if (taxablePayYTD > 37700) {
-    taxDueYTD = 37700 * 0.2 + (taxablePayYTD - 37700) * 0.4;
+  // Basic rate (20%) - first £37,700
+  if (taxablePayYTD > 0) {
+    const basicRateAmount = Math.min(taxablePayYTD, 37700);
+    taxDueYTD += basicRateAmount * 0.2;
   }
   
-  // Apply additional rate (45%) for income over £125,140
+  // Higher rate (40%) - £37,700 to £125,140
+  if (taxablePayYTD > 37700) {
+    const higherRateAmount = Math.min(taxablePayYTD - 37700, 125140 - 37700);
+    taxDueYTD += higherRateAmount * 0.4;
+  }
+  
+  // Additional rate (45%) - over £125,140
   if (taxablePayYTD > 125140) {
-    taxDueYTD = 37700 * 0.2 + (125140 - 37700) * 0.4 + (taxablePayYTD - 125140) * 0.45;
+    const additionalRateAmount = taxablePayYTD - 125140;
+    taxDueYTD += additionalRateAmount * 0.45;
   }
   
   const taxThisPeriod = roundToTwoDecimals(taxDueYTD - taxPaidYTD);
