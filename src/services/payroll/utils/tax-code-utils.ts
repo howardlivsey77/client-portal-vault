@@ -104,6 +104,12 @@ export function calculateMonthlyFreePayFromTaxCode(taxCode: string): {
 
 /**
  * Parse a UK tax code to determine the tax-free allowance
+ * Handles all HMRC tax code formats including:
+ * - Standard codes: 1257L, 45L, 1L, 9999L (any number + L/M/N/T suffix)
+ * - K codes: K497, K1, K9999 (negative allowance)
+ * - Flat rate codes: BR (20%), D0 (40%), D1 (45%)
+ * - No tax code: NT
+ * - Emergency code: 0T
  */
 export function parseTaxCode(taxCode: string): TaxCode {
   // Handle common tax code formats
@@ -112,19 +118,28 @@ export function parseTaxCode(taxCode: string): TaxCode {
   // Calculate the monthly free pay
   const freePayResult = calculateMonthlyFreePayFromTaxCode(taxCode);
   
-  // Basic number-L code (e.g., 1257L)
-  if (/^\d+L$/.test(taxCode)) {
-    const numberPart = parseInt(taxCode.replace('L', ''), 10);
+  // BR code (basic rate 20% on all income)
+  if (taxCode === 'BR') {
     return { 
       code: taxCode, 
-      allowance: numberPart * 10,
-      monthlyFreePay: freePayResult.monthlyFreePay,
-      breakdown: freePayResult.breakdown
+      allowance: 0,
+      monthlyFreePay: 0,
+      breakdown: { numericPart: 0, isOver500: false }
     };
   }
   
-  // BR code (basic rate on all income)
-  if (taxCode === 'BR') {
+  // D0 code (higher rate 40% on all income)
+  if (taxCode === 'D0') {
+    return { 
+      code: taxCode, 
+      allowance: 0,
+      monthlyFreePay: 0,
+      breakdown: { numericPart: 0, isOver500: false }
+    };
+  }
+  
+  // D1 code (additional rate 45% on all income)
+  if (taxCode === 'D1') {
     return { 
       code: taxCode, 
       allowance: 0,
@@ -143,10 +158,32 @@ export function parseTaxCode(taxCode: string): TaxCode {
     };
   }
   
-  // K codes (reduce personal allowance)
+  // 0T code (emergency tax - no personal allowance)
+  if (taxCode === '0T') {
+    return { 
+      code: taxCode, 
+      allowance: 0,
+      monthlyFreePay: 0,
+      breakdown: { numericPart: 0, isOver500: false }
+    };
+  }
+  
+  // Standard codes with L, M, N, T suffixes (e.g., 1257L, 45L, 1L, 1257M, 1257T)
+  // L = Standard, M = Marriage allowance recipient, N = Marriage allowance transferor, T = Other
+  if (/^\d+[LMNT]$/.test(taxCode)) {
+    const numberPart = parseInt(taxCode.replace(/[LMNT]$/, ''), 10);
+    return { 
+      code: taxCode, 
+      allowance: numberPart * 10,
+      monthlyFreePay: freePayResult.monthlyFreePay,
+      breakdown: freePayResult.breakdown
+    };
+  }
+  
+  // K codes (reduce personal allowance - any numeric value)
   if (/^K\d+$/.test(taxCode)) {
     const numberPart = parseInt(taxCode.replace('K', ''), 10);
-    // K codes work in reverse - they reduce free pay
+    // K codes work in reverse - they reduce free pay (add to taxable income)
     return { 
       code: taxCode, 
       allowance: -numberPart * 10,
