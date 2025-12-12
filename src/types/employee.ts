@@ -1,5 +1,6 @@
 
 import { z } from "zod";
+import { HmrcTaxCodeSchema } from "@/services/payroll/validation/payroll-validators";
 
 // Define work pattern schema
 export const workDaySchema = z.object({
@@ -60,7 +61,7 @@ export const employeeSchema = z.object({
   gender: z.enum(["Male", "Female", "Other", "Prefer not to say"]).optional(),
   work_pattern: z.string().optional(),
   // HMRC fields
-  tax_code: z.string().optional().nullable(),
+  tax_code: HmrcTaxCodeSchema.optional().nullable().or(z.literal('')).transform(val => val === '' ? null : val),
   week_one_month_one: z.boolean().optional().nullable(),
   nic_code: nicCodeValidation.nullable(),
   student_loan_plan: z.number().min(1).max(6).optional().nullable(),

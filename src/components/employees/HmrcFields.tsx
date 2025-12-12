@@ -1,11 +1,9 @@
-
 import { Control } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { studentLoanPlanOptions, nicCodeOptions, EmployeeFormValues } from "@/types";
-import { Label } from "@/components/ui/label";
+import { TaxCodeInput } from "./TaxCodeInput";
 
 interface HmrcFieldsProps {
   control: Control<EmployeeFormValues>;
@@ -24,12 +22,11 @@ export const HmrcFields = ({ control, readOnly }: HmrcFieldsProps) => {
             <FormItem>
               <FormLabel>Tax Code</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="e.g. 1257L"
-                  {...field}
+                <TaxCodeInput
                   value={field.value || ""}
-                  readOnly={readOnly}
-                  className={readOnly ? "bg-gray-100" : ""}
+                  onChange={field.onChange}
+                  disabled={readOnly}
+                  className={readOnly ? "bg-muted" : ""}
                 />
               </FormControl>
               <FormMessage />

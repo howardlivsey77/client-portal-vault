@@ -3,6 +3,7 @@
  */
 export {
   TaxCodeSchema,
+  HmrcTaxCodeSchema,
   GrossPaySchema,
   PeriodSchema,
   TaxPaidYTDSchema,
@@ -10,6 +11,7 @@ export {
   Week1Month1PayrollInputSchema,
   validateCumulativeInputs,
   validateWeek1Month1Inputs,
+  validateTaxCode,
   type CumulativePayrollInput,
   type Week1Month1PayrollInput
 } from './payroll-validators';
