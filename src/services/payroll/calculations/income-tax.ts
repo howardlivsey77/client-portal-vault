@@ -9,6 +9,15 @@ import {
 } from "../utils/tax-bands-utils";
 
 /**
+ * Re-export cumulative tax calculation for external use
+ */
+export { 
+  calculateCumulativeTax, 
+  calculateCumulativeTaxSync,
+  type CumulativeTaxResult 
+} from './cumulative-tax';
+
+/**
  * Re-export clearTaxBandsCache for external use
  */
 export { clearTaxBandsCache, getIncomeTaxBands };
