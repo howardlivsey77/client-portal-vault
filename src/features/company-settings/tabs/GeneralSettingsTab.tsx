@@ -7,6 +7,7 @@ import { AddressSection } from "../components/AddressSection";
 import { ContactInfoSection } from "../components/ContactInfoSection";
 import { HmrcInfoSection } from "../components/HmrcInfoSection";
 import { LogoUploadSection } from "../components/LogoUploadSection";
+import { PayrollSettingsSection } from "../components/PayrollSettingsSection";
 import { useCompanyForm } from "../hooks/useCompanyForm";
 
 const GeneralSettingsTab = () => {
@@ -39,6 +40,10 @@ const GeneralSettingsTab = () => {
 
             <div className="border-t pt-6">
               <HmrcInfoSection control={form.control} />
+            </div>
+
+            <div className="border-t pt-6">
+              <PayrollSettingsSection control={form.control} />
             </div>
 
             <div className="flex justify-end">

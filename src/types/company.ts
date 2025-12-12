@@ -14,6 +14,8 @@ export type Company = {
   paye_ref?: string | null;
   accounts_office_number?: string | null;
   logo_url?: string | null;
+  payroll_start_year?: number | null;
+  payroll_start_period?: number | null;
   created_at: string;
   updated_at: string;
   created_by?: string | null;

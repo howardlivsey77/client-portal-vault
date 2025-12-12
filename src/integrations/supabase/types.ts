@@ -105,6 +105,8 @@ export type Database = {
           logo_url: string | null
           name: string
           paye_ref: string | null
+          payroll_start_period: number | null
+          payroll_start_year: number | null
           post_code: string | null
           trading_as: string | null
           updated_at: string
@@ -124,6 +126,8 @@ export type Database = {
           logo_url?: string | null
           name: string
           paye_ref?: string | null
+          payroll_start_period?: number | null
+          payroll_start_year?: number | null
           post_code?: string | null
           trading_as?: string | null
           updated_at?: string
@@ -143,6 +147,8 @@ export type Database = {
           logo_url?: string | null
           name?: string
           paye_ref?: string | null
+          payroll_start_period?: number | null
+          payroll_start_year?: number | null
           post_code?: string | null
           trading_as?: string | null
           updated_at?: string
