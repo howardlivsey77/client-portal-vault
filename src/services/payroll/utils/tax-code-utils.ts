@@ -1,7 +1,10 @@
-
 /**
  * Utilities for handling UK tax codes
+ * Production-hardened with strict validation and error handling
  */
+
+import { UnrecognizedTaxCodeError, UnsupportedTaxRegionError } from '../errors/payroll-errors';
+import { TaxCodeSchema } from '../validation/payroll-validators';
 
 export interface TaxCode {
   code: string;
@@ -104,24 +107,38 @@ export function calculateMonthlyFreePayFromTaxCode(taxCode: string): {
 
 /**
  * Parse a UK tax code to determine the tax-free allowance
+ * 
  * Handles all HMRC tax code formats including:
  * - Standard codes: 1257L, 45L, 1L, 9999L (any number + L/M/N/T suffix)
  * - K codes: K497, K1, K9999 (negative allowance)
  * - Flat rate codes: BR (20%), D0 (40%), D1 (45%)
  * - No tax code: NT
  * - Emergency code: 0T
+ * 
+ * @throws UnrecognizedTaxCodeError if tax code format is not recognized
+ * @throws UnsupportedTaxRegionError if Scottish (S) or Welsh (C) prefix detected
  */
 export function parseTaxCode(taxCode: string): TaxCode {
-  // Handle common tax code formats
-  taxCode = taxCode.toUpperCase().trim();
+  // Validate input format first
+  const validatedCode = TaxCodeSchema.parse(taxCode);
   
-  // Calculate the monthly free pay
-  const freePayResult = calculateMonthlyFreePayFromTaxCode(taxCode);
+  // Check for Scottish prefix (S1257L, SBR, etc.)
+  if (validatedCode.startsWith('S')) {
+    throw new UnsupportedTaxRegionError(validatedCode, 'Scotland');
+  }
+  
+  // Check for Welsh prefix (C1257L, CBR, etc.)
+  if (validatedCode.startsWith('C')) {
+    throw new UnsupportedTaxRegionError(validatedCode, 'Wales');
+  }
+  
+  // Calculate the monthly free pay for codes with numeric parts
+  const freePayResult = calculateMonthlyFreePayFromTaxCode(validatedCode);
   
   // BR code (basic rate 20% on all income)
-  if (taxCode === 'BR') {
+  if (validatedCode === 'BR') {
     return { 
-      code: taxCode, 
+      code: validatedCode, 
       allowance: 0,
       monthlyFreePay: 0,
       breakdown: { numericPart: 0, isOver500: false }
@@ -129,9 +146,9 @@ export function parseTaxCode(taxCode: string): TaxCode {
   }
   
   // D0 code (higher rate 40% on all income)
-  if (taxCode === 'D0') {
+  if (validatedCode === 'D0') {
     return { 
-      code: taxCode, 
+      code: validatedCode, 
       allowance: 0,
       monthlyFreePay: 0,
       breakdown: { numericPart: 0, isOver500: false }
@@ -139,9 +156,9 @@ export function parseTaxCode(taxCode: string): TaxCode {
   }
   
   // D1 code (additional rate 45% on all income)
-  if (taxCode === 'D1') {
+  if (validatedCode === 'D1') {
     return { 
-      code: taxCode, 
+      code: validatedCode, 
       allowance: 0,
       monthlyFreePay: 0,
       breakdown: { numericPart: 0, isOver500: false }
@@ -149,9 +166,9 @@ export function parseTaxCode(taxCode: string): TaxCode {
   }
   
   // NT code (no tax)
-  if (taxCode === 'NT') {
+  if (validatedCode === 'NT') {
     return { 
-      code: taxCode, 
+      code: validatedCode, 
       allowance: Infinity,
       monthlyFreePay: Infinity,
       breakdown: { numericPart: 0, isOver500: false }
@@ -159,9 +176,9 @@ export function parseTaxCode(taxCode: string): TaxCode {
   }
   
   // 0T code (emergency tax - no personal allowance)
-  if (taxCode === '0T') {
+  if (validatedCode === '0T') {
     return { 
-      code: taxCode, 
+      code: validatedCode, 
       allowance: 0,
       monthlyFreePay: 0,
       breakdown: { numericPart: 0, isOver500: false }
@@ -170,10 +187,10 @@ export function parseTaxCode(taxCode: string): TaxCode {
   
   // Standard codes with L, M, N, T suffixes (e.g., 1257L, 45L, 1L, 1257M, 1257T)
   // L = Standard, M = Marriage allowance recipient, N = Marriage allowance transferor, T = Other
-  if (/^\d+[LMNT]$/.test(taxCode)) {
-    const numberPart = parseInt(taxCode.replace(/[LMNT]$/, ''), 10);
+  if (/^\d+[LMNT]$/.test(validatedCode)) {
+    const numberPart = parseInt(validatedCode.replace(/[LMNT]$/, ''), 10);
     return { 
-      code: taxCode, 
+      code: validatedCode, 
       allowance: numberPart * 10,
       monthlyFreePay: freePayResult.monthlyFreePay,
       breakdown: freePayResult.breakdown
@@ -181,22 +198,18 @@ export function parseTaxCode(taxCode: string): TaxCode {
   }
   
   // K codes (reduce personal allowance - any numeric value)
-  if (/^K\d+$/.test(taxCode)) {
-    const numberPart = parseInt(taxCode.replace('K', ''), 10);
+  if (/^K\d+$/.test(validatedCode)) {
+    const numberPart = parseInt(validatedCode.replace('K', ''), 10);
     // K codes work in reverse - they reduce free pay (add to taxable income)
     return { 
-      code: taxCode, 
+      code: validatedCode, 
       allowance: -numberPart * 10,
       monthlyFreePay: -freePayResult.monthlyFreePay,
       breakdown: { ...freePayResult.breakdown, numericPart: numberPart }
     };
   }
   
-  // Default to standard personal allowance if code not recognized
-  return { 
-    code: taxCode, 
-    allowance: 12570, // Standard personal allowance for 2023-2024
-    monthlyFreePay: 1047.50, // Monthly equivalent of £12,570 annual allowance
-    breakdown: { numericPart: 1257, isOver500: true }
-  };
+  // If we reach here, the tax code format is not recognized
+  // CRITICAL: Do NOT fall back to defaults - throw error for manual review
+  throw new UnrecognizedTaxCodeError(validatedCode);
 }
