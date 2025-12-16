@@ -59,6 +59,12 @@ export function SidebarMainNavigation({ location, isExpanded = true }: SidebarMa
       adminOnly: true,
     },
     {
+      icon: Building,
+      label: "Company Settings",
+      to: "/settings/company/general",
+      isActive: isRouteActive("/settings/company"),
+    },
+    {
       icon: CheckSquare,
       label: "Tasks",
       to: getTabUrl("tasks"),
