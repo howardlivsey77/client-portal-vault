@@ -19,16 +19,22 @@ export const WIZARD_STEPS = [
     number: 2,
     title: "Employment",
     description: "Role & schedule",
-    fields: ["department", "hire_date", "payroll_id", "hours_per_week", "status"] as const,
+    fields: ["department", "hire_date", "payroll_id", "status"] as const,
   },
   {
     number: 3,
-    title: "Pay & Tax",
+    title: "Pay",
     description: "Compensation details",
-    fields: ["hourly_rate", "monthly_salary", "national_insurance_number", "tax_code", "nic_code", "student_loan_plan", "week_one_month_one"] as const,
+    fields: ["hours_per_week", "hourly_rate", "monthly_salary"] as const,
   },
   {
     number: 4,
+    title: "HMRC",
+    description: "Tax & NI details",
+    fields: ["national_insurance_number", "tax_code", "nic_code", "week_one_month_one", "student_loan_plan"] as const,
+  },
+  {
+    number: 5,
     title: "Contact & Pension",
     description: "Address & benefits",
     fields: ["address1", "address2", "address3", "address4", "postcode", "nhs_pension_member", "previous_year_pensionable_pay", "nhs_pension_tier", "nhs_pension_employee_rate"] as const,
@@ -43,16 +49,18 @@ const step1Schema = z.object({
 
 const step2Schema = z.object({
   department: z.string().min(1, "Department is required"),
-  hours_per_week: z.coerce.number().min(0, "Hours must be 0 or more"),
 });
 
 const step3Schema = z.object({
+  hours_per_week: z.coerce.number().min(0, "Hours must be 0 or more"),
   hourly_rate: z.coerce.number().min(0, "Hourly rate must be 0 or more"),
 });
 
 const step4Schema = z.object({});
 
-const stepSchemas = [step1Schema, step2Schema, step3Schema, step4Schema];
+const step5Schema = z.object({});
+
+const stepSchemas = [step1Schema, step2Schema, step3Schema, step4Schema, step5Schema];
 
 export const useNewEmployeeWizard = () => {
   const [currentStep, setCurrentStep] = useState(1);
