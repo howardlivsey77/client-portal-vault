@@ -8,13 +8,16 @@ interface SummaryCardsProps {
 }
 
 export function SummaryCards({ summary }: SummaryCardsProps) {
-  const hasRateData = (summary.totalRate1Hours && summary.totalRate1Hours > 0) || (summary.totalRate2Hours && summary.totalRate2Hours > 0);
+  const hasRateData = 
+    (summary.totalRate1Hours && summary.totalRate1Hours > 0) || 
+    (summary.totalRate2Hours && summary.totalRate2Hours > 0) ||
+    (summary.totalRate3Hours && summary.totalRate3Hours > 0);
   
   return (
     <div className="space-y-4">
       {/* Rate-specific cards at the top if we have rate data */}
       {hasRateData && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {summary.totalRate1Hours && summary.totalRate1Hours > 0 && (
             <Card>
               <CardHeader className="p-3">
@@ -41,6 +44,21 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
               <CardContent className="p-3 pt-0">
                 <p className="text-xl font-semibold">{summary.totalRate2Hours}</p>
                 <p className="text-xs text-muted-foreground">Enhanced rate hours</p>
+              </CardContent>
+            </Card>
+          )}
+          
+          {summary.totalRate3Hours && summary.totalRate3Hours > 0 && (
+            <Card>
+              <CardHeader className="p-3">
+                <CardTitle className="text-sm flex items-center">
+                  <DollarSign className="h-4 w-4 mr-2 text-amber-500" />
+                  Rate 3 Hours
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 pt-0">
+                <p className="text-xl font-semibold">{summary.totalRate3Hours}</p>
+                <p className="text-xs text-muted-foreground">Premium rate hours</p>
               </CardContent>
             </Card>
           )}
