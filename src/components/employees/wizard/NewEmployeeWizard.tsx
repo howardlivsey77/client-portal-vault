@@ -81,7 +81,7 @@ export const NewEmployeeWizard = ({ open, onOpenChange, onSuccess }: NewEmployee
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <UserPlus className="h-5 w-5" />
@@ -102,7 +102,7 @@ export const NewEmployeeWizard = ({ open, onOpenChange, onSuccess }: NewEmployee
 
         {/* Form Content */}
         <Form {...form}>
-          <form className="space-y-4">
+          <form className="space-y-4 min-h-[420px]">
             {renderStepContent()}
           </form>
         </Form>

@@ -64,7 +64,7 @@ export const HmrcStep = ({ form }: HmrcStepProps) => {
   }, [hasP45, p46Statement, form]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* P45 Question */}
       <FormField
         control={form.control}

@@ -12,7 +12,7 @@ export const PensionStep = ({ form }: PensionStepProps) => {
   const isNhsMember = form.watch("nhs_pension_member");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="space-y-4">
         <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
           NHS Pension (Optional)
