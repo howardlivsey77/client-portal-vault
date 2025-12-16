@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,11 +14,36 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+const getNicCodeFromDateOfBirth = (dob: Date | string | null | undefined): string => {
+  if (!dob) return "A";
+  
+  const dobDate = typeof dob === "string" ? new Date(dob) : dob;
+  if (isNaN(dobDate.getTime())) return "A";
+  
+  const today = new Date();
+  let age = today.getFullYear() - dobDate.getFullYear();
+  const monthDiff = today.getMonth() - dobDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate())) {
+    age--;
+  }
+  
+  if (age < 21) return "M";  // Under 21
+  if (age >= 66) return "C"; // Over State Pension Age
+  return "A";                // Standard
+};
+
 interface HmrcStepProps {
   form: UseFormReturn<EmployeeFormValues>;
 }
 
 export const HmrcStep = ({ form }: HmrcStepProps) => {
+  const dateOfBirth = form.watch("date_of_birth");
+
+  useEffect(() => {
+    const nicCode = getNicCodeFromDateOfBirth(dateOfBirth);
+    form.setValue("nic_code", nicCode);
+  }, [dateOfBirth, form]);
+
   return (
     <div className="space-y-6">
       <FormField
@@ -105,6 +131,9 @@ export const HmrcStep = ({ form }: HmrcStepProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              <FormDescription>
+                Auto-selected based on age. Can be changed if needed.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
