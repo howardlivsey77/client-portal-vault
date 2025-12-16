@@ -1,6 +1,30 @@
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeFormValues } from "@/types";
 
+export const getNextPayrollId = async (companyId: string): Promise<string> => {
+  const { data, error } = await supabase
+    .from("employees")
+    .select("payroll_id")
+    .eq("company_id", companyId)
+    .not("payroll_id", "is", null);
+
+  if (error) {
+    console.error("Error fetching payroll IDs:", error);
+    return "1";
+  }
+
+  const numericIds = (data || [])
+    .map(emp => parseInt(emp.payroll_id || "", 10))
+    .filter(id => !isNaN(id));
+
+  if (numericIds.length === 0) {
+    return "1";
+  }
+
+  const maxId = Math.max(...numericIds);
+  return String(maxId + 1);
+};
+
 export const fetchEmployeeById = async (id: string) => {
   const { data, error } = await supabase
     .from("employees")

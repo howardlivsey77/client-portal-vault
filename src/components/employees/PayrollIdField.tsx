@@ -7,9 +7,10 @@ import { EmployeeFormValues } from "@/types";
 interface PayrollIdFieldProps {
   form: UseFormReturn<EmployeeFormValues>;
   readOnly: boolean;
+  isEditMode?: boolean;
 }
 
-export const PayrollIdField = ({ form, readOnly }: PayrollIdFieldProps) => {
+export const PayrollIdField = ({ form, readOnly, isEditMode = false }: PayrollIdFieldProps) => {
   return (
     <FormField
       control={form.control}
@@ -26,7 +27,10 @@ export const PayrollIdField = ({ form, readOnly }: PayrollIdFieldProps) => {
             />
           </FormControl>
           <FormDescription>
-            Unique identifier used for payroll systems
+            {!isEditMode 
+              ? "Next available payroll ID (auto-generated). You can change it if needed."
+              : "Unique identifier used for payroll systems"
+            }
           </FormDescription>
           <FormMessage />
         </FormItem>
