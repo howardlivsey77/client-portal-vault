@@ -65,9 +65,24 @@ export interface HistoricalEntitlementOptions {
   workingDaysPerWeek?: number;
 }
 
+interface RecordEntitlement {
+  record: SicknessRecord;
+  isWithinPeriod: boolean;
+  sortDate: Date;
+  totalFullPayDays: number;
+  totalHalfPayDays: number;
+  hasWaitingDays: boolean;
+  isHistoricalRecord: boolean;
+}
+
 /**
  * Calculate payment allocation for each sickness record based on entitlement usage.
  * When hireDate and eligibilityRules are provided, calculates entitlement at the time of each event.
+ * 
+ * IMPORTANT: This properly handles tier transitions by:
+ * 1. Calculating each record's entitlement based on service months at that time
+ * 2. Tracking cumulative days used from ALL previous records in the rolling period
+ * 3. Comparing cumulative usage against each record's specific entitlement
  */
 export const calculateSicknessRecordPayments = (
   sicknessRecords: SicknessRecord[],
@@ -92,21 +107,6 @@ export const calculateSicknessRecordPayments = (
   const rangeStart = new Date(entitlementSummary.rolling_period_start);
   const rangeEnd = new Date(entitlementSummary.rolling_period_end);
   
-  const recordsWithPeriodInfo = sicknessRecords.map(record => {
-    const recordStart = new Date(record.start_date);
-    const recordEnd = new Date(record.end_date || record.start_date);
-    const isWithinPeriod = recordStart <= rangeEnd && recordEnd >= rangeStart;
-    
-    return {
-      record,
-      isWithinPeriod,
-      sortDate: recordStart
-    };
-  });
-
-  // Sort by start date to apply allocation chronologically
-  recordsWithPeriodInfo.sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime());
-
   // Determine if we can use historical entitlement calculation
   const useHistoricalEntitlement = Boolean(hireDate && eligibilityRules?.length);
 
@@ -115,41 +115,20 @@ export const calculateSicknessRecordPayments = (
   const defaultTotalHalfPayDays = entitlementSummary.half_pay_used_rolling_12_months + entitlementSummary.half_pay_remaining;
   const defaultHasWaitingDays = entitlementSummary.hasWaitingDays || false;
 
-  // Track usage chronologically from zero
-  let usedFullPay = 0;
-  let usedHalfPay = 0;
-
-  const results: SicknessRecordPayment[] = [];
-  const waitingDaysCount = 3; // Standard 3 working day wait
-
-  // Track previous record's end date to detect continuous absences
-  let previousEndDate: string | null = null;
-
-  for (const { record, isWithinPeriod } of recordsWithPeriodInfo) {
-    if (!isWithinPeriod) {
-      // Historical record - outside current entitlement period
-      results.push({
-        recordId: record.id,
-        fullPayDays: 0,
-        halfPayDays: 0,
-        noPayDays: record.total_days,
-        isHistorical: true,
-        paymentDescription: "Historical"
-      });
-      // Still update previousEndDate for linking purposes
-      previousEndDate = record.end_date || record.start_date;
-      continue;
-    }
-
+  // PHASE 1: Calculate entitlement for each record based on service at the time
+  const recordsWithEntitlement: RecordEntitlement[] = sicknessRecords.map(record => {
+    const recordStart = new Date(record.start_date);
+    const recordEnd = new Date(record.end_date || record.start_date);
+    const isWithinPeriod = recordStart <= rangeEnd && recordEnd >= rangeStart;
+    
+    // Check if this is a historical record (not in current month)
+    const isHistoricalRecord = !isInCurrentMonth(record.start_date);
+    
     // Calculate entitlement for THIS record based on service at the time
     let totalFullPayDays = defaultTotalFullPayDays;
     let totalHalfPayDays = defaultTotalHalfPayDays;
     let hasWaitingDays = defaultHasWaitingDays;
 
-    // Only apply historical entitlement for records outside the current month
-    // (e.g., November sickness entered in December should use November's service months)
-    const isHistoricalRecord = !isInCurrentMonth(record.start_date);
-    
     if (useHistoricalEntitlement && isHistoricalRecord && hireDate && eligibilityRules) {
       // Calculate service months at the time of this sickness event
       const serviceMonthsAtEvent = calculationUtils.calculateServiceMonthsAtDate(hireDate, record.start_date);
@@ -164,7 +143,48 @@ export const calculateSicknessRecordPayments = (
         hasWaitingDays = entitlementAtEvent.hasWaitingDays;
       }
     }
-    // For current month records, use default (today's) entitlement
+
+    return {
+      record,
+      isWithinPeriod,
+      sortDate: recordStart,
+      totalFullPayDays,
+      totalHalfPayDays,
+      hasWaitingDays,
+      isHistoricalRecord
+    };
+  });
+
+  // Sort by start date to apply allocation chronologically
+  recordsWithEntitlement.sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime());
+
+  // PHASE 2: Process records and allocate payments
+  // Track total sick days across the rolling period for tier transition handling
+  let cumulativeTotalDays = 0;
+
+  const results: SicknessRecordPayment[] = [];
+  const waitingDaysCount = 3; // Standard 3 working day wait
+
+  // Track previous record's end date to detect continuous absences
+  let previousEndDate: string | null = null;
+
+  for (const recordData of recordsWithEntitlement) {
+    const { record, isWithinPeriod, totalFullPayDays, totalHalfPayDays, hasWaitingDays } = recordData;
+
+    if (!isWithinPeriod) {
+      // Historical record - outside current entitlement period
+      results.push({
+        recordId: record.id,
+        fullPayDays: 0,
+        halfPayDays: 0,
+        noPayDays: record.total_days,
+        isHistorical: true,
+        paymentDescription: "Historical"
+      });
+      // Still update previousEndDate for linking purposes
+      previousEndDate = record.end_date || record.start_date;
+      continue;
+    }
 
     let fullPayDays = 0;
     let halfPayDays = 0;
@@ -184,16 +204,26 @@ export const calculateSicknessRecordPayments = (
     // Update previous end date for next iteration
     previousEndDate = record.end_date || record.start_date;
 
-    // Calculate available entitlement for this record
-    const availableFullPay = Math.max(0, totalFullPayDays - usedFullPay);
-    const availableHalfPay = Math.max(0, totalHalfPayDays - usedHalfPay);
+    // KEY FIX: Track TOTAL sick days taken in the rolling period
+    // When comparing against entitlement, we use cumulative sick days (not just paid days)
+    // This handles tier transitions correctly:
+    // - Oct: 0 entitlement, 3 sick days → All No Pay, but 3 days "count" toward rolling usage
+    // - Nov: 20 days entitlement, but already used 3 → Only 17 available
+    
+    // Calculate available entitlement based on total cumulative sick days
+    // (not just days that were paid at full/half pay)
+    const availableFullPay = Math.max(0, totalFullPayDays - cumulativeTotalDays);
+    
+    // Half pay availability: entitlement minus (total days used that exceeded full pay entitlement)
+    // This ensures half pay is only consumed after full pay is exhausted
+    const daysUsedAgainstHalfPay = Math.max(0, cumulativeTotalDays - totalFullPayDays);
+    const availableHalfPay = Math.max(0, totalHalfPayDays - daysUsedAgainstHalfPay);
 
     // Allocate to full pay first
     if (remainingDays > 0 && availableFullPay > 0) {
       const allocateToFullPay = Math.min(remainingDays, availableFullPay);
       fullPayDays = allocateToFullPay;
       remainingDays -= allocateToFullPay;
-      usedFullPay += allocateToFullPay;
     }
 
     // Then allocate to half pay
@@ -201,11 +231,14 @@ export const calculateSicknessRecordPayments = (
       const allocateToHalfPay = Math.min(remainingDays, availableHalfPay);
       halfPayDays = allocateToHalfPay;
       remainingDays -= allocateToHalfPay;
-      usedHalfPay += allocateToHalfPay;
     }
 
     // Remaining days (including waiting days) are no pay
     noPayDays = remainingDays + waitingDays;
+
+    // Track cumulative sick days for next iteration
+    // IMPORTANT: This includes ALL sick days, not just paid ones
+    cumulativeTotalDays += record.total_days - waitingDays; // Exclude waiting days from cumulative count
 
     // Generate payment description
     let paymentDescription = "";
