@@ -12,6 +12,7 @@ import { SicknessScheme, WorkDay } from "@/components/employees/details/work-pat
 import { Activity, AlertCircle } from "lucide-react";
 import { SicknessReportPDFButton } from "./SicknessReportPDFButton";
 import { fetchWorkPatterns } from "@/components/employees/details/work-pattern/services/fetchPatterns";
+import { calculateWorkingDaysPerWeek } from "@/components/employees/details/sickness/utils/workPatternCalculations";
 
 interface SicknessTrackingCardProps {
   employee: Employee;
@@ -125,6 +126,8 @@ export const SicknessTrackingCard = ({
             employee={employee}
             sicknessRecords={sicknessRecords}
             entitlementSummary={entitlementSummary}
+            eligibilityRules={sicknessScheme?.eligibilityRules}
+            workingDaysPerWeek={calculateWorkingDaysPerWeek(workPattern)}
             disabled={loading}
           />
         </CardTitle>

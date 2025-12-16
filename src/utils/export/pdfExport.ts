@@ -4,7 +4,7 @@ import autoTable from 'jspdf-autotable';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { ExtraHoursSummary } from '@/components/payroll/types';
 import { SicknessRecord, SicknessEntitlementSummary, Employee } from '@/types';
-import { calculateSicknessRecordPayments } from '@/utils/sickness/sicknessPaymentCalculator';
+import { calculateSicknessRecordPayments, HistoricalEntitlementOptions } from '@/utils/sickness/sicknessPaymentCalculator';
 
 /**
  * Generate a PDF from the extra hours summary data
@@ -169,7 +169,8 @@ export const generateSicknessReportPDF = async (
   sicknessRecords: SicknessRecord[],
   entitlementSummary: SicknessEntitlementSummary | null,
   companyLogoUrl?: string | null,
-  filename = 'sickness-report.pdf'
+  filename = 'sickness-report.pdf',
+  entitlementOptions?: HistoricalEntitlementOptions
 ) => {
   const doc = new jsPDF();
   
@@ -261,8 +262,8 @@ export const generateSicknessReportPDF = async (
     const currentRecords = sicknessRecords.filter(record => isRecordWithinEntitlementPeriod(record, entitlementSummary));
     const expiredRecords = sicknessRecords.filter(record => !isRecordWithinEntitlementPeriod(record, entitlementSummary));
     
-    // Calculate payment information for each record
-    const paymentInfo = calculateSicknessRecordPayments(sicknessRecords, entitlementSummary);
+    // Calculate payment information for each record (with historical entitlement if options provided)
+    const paymentInfo = calculateSicknessRecordPayments(sicknessRecords, entitlementSummary, entitlementOptions);
     
     // Records table with payment information instead of certified/reason/notes
     const tableData = sicknessRecords.map((record, index) => [

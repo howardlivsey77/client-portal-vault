@@ -63,15 +63,23 @@ export const calculationUtils = {
     }
   },
 
-  // Calculate service months from hire date
+  // Calculate service months from hire date to current date
   calculateServiceMonths(hireDate: string): number {
+    return this.calculateServiceMonthsAtDate(hireDate, new Date());
+  },
+
+  // Calculate service months from hire date to a specific reference date
+  calculateServiceMonthsAtDate(hireDate: string, referenceDate: string | Date): number {
     const hire = new Date(hireDate);
-    const now = new Date();
+    const reference = new Date(referenceDate);
     
-    const yearDiff = now.getFullYear() - hire.getFullYear();
-    const monthDiff = now.getMonth() - hire.getMonth();
+    // If reference is before hire, return 0
+    if (reference < hire) return 0;
     
-    return yearDiff * 12 + monthDiff;
+    const yearDiff = reference.getFullYear() - hire.getFullYear();
+    const monthDiff = reference.getMonth() - hire.getMonth();
+    
+    return Math.max(0, yearDiff * 12 + monthDiff);
   },
 
   // Find applicable eligibility rule based on service

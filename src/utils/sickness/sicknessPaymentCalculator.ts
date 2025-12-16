@@ -1,4 +1,7 @@
 import { SicknessRecord, SicknessEntitlementSummary } from "@/types";
+import { EligibilityRule } from "@/components/employees/details/work-pattern/types";
+import { calculationUtils } from "@/services/employees/sickness/calculationUtils";
+import { convertEntitlementToDays } from "@/components/employees/details/sickness/utils/workPatternCalculations";
 
 export interface SicknessRecordPayment {
   recordId: string;
@@ -31,12 +34,38 @@ const isContinuousAbsence = (
 };
 
 /**
- * Calculate payment allocation for each sickness record based on entitlement usage
+ * Calculate entitlement days from a rule based on working days per week
+ */
+const calculateEntitlementFromRule = (
+  rule: EligibilityRule,
+  workingDaysPerWeek: number = 5
+): { fullPayDays: number; halfPayDays: number; hasWaitingDays: boolean } => {
+  const fullPayDays = convertEntitlementToDays(rule.fullPayAmount, rule.fullPayUnit, workingDaysPerWeek);
+  const halfPayDays = convertEntitlementToDays(rule.halfPayAmount, rule.halfPayUnit, workingDaysPerWeek);
+  return { 
+    fullPayDays, 
+    halfPayDays,
+    hasWaitingDays: rule.hasWaitingDays || false
+  };
+};
+
+export interface HistoricalEntitlementOptions {
+  hireDate?: string;
+  eligibilityRules?: EligibilityRule[] | null;
+  workingDaysPerWeek?: number;
+}
+
+/**
+ * Calculate payment allocation for each sickness record based on entitlement usage.
+ * When hireDate and eligibilityRules are provided, calculates entitlement at the time of each event.
  */
 export const calculateSicknessRecordPayments = (
   sicknessRecords: SicknessRecord[],
-  entitlementSummary: SicknessEntitlementSummary | null
+  entitlementSummary: SicknessEntitlementSummary | null,
+  options?: HistoricalEntitlementOptions
 ): SicknessRecordPayment[] => {
+  const { hireDate, eligibilityRules, workingDaysPerWeek = 5 } = options || {};
+  
   if (!entitlementSummary) {
     // If no entitlement summary, mark all as unknown
     return sicknessRecords.map(record => ({
@@ -68,18 +97,19 @@ export const calculateSicknessRecordPayments = (
   // Sort by start date to apply allocation chronologically
   recordsWithPeriodInfo.sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime());
 
-  // Calculate total entitled days
-  const totalFullPayDays = entitlementSummary.full_pay_used_rolling_12_months + entitlementSummary.full_pay_remaining;
-  const totalHalfPayDays = entitlementSummary.half_pay_used_rolling_12_months + entitlementSummary.half_pay_remaining;
+  // Determine if we can use historical entitlement calculation
+  const useHistoricalEntitlement = Boolean(hireDate && eligibilityRules?.length);
+
+  // Default entitlement from summary (used when no historical rules available)
+  const defaultTotalFullPayDays = entitlementSummary.full_pay_used_rolling_12_months + entitlementSummary.full_pay_remaining;
+  const defaultTotalHalfPayDays = entitlementSummary.half_pay_used_rolling_12_months + entitlementSummary.half_pay_remaining;
+  const defaultHasWaitingDays = entitlementSummary.hasWaitingDays || false;
 
   // Track usage chronologically from zero
   let usedFullPay = 0;
   let usedHalfPay = 0;
 
   const results: SicknessRecordPayment[] = [];
-
-  // Check if the scheme has waiting days enabled
-  const hasWaitingDays = entitlementSummary.hasWaitingDays || false;
   const waitingDaysCount = 3; // Standard 3 working day wait
 
   // Track previous record's end date to detect continuous absences
@@ -99,6 +129,26 @@ export const calculateSicknessRecordPayments = (
       // Still update previousEndDate for linking purposes
       previousEndDate = record.end_date || record.start_date;
       continue;
+    }
+
+    // Calculate entitlement for THIS record based on service at the time
+    let totalFullPayDays = defaultTotalFullPayDays;
+    let totalHalfPayDays = defaultTotalHalfPayDays;
+    let hasWaitingDays = defaultHasWaitingDays;
+
+    if (useHistoricalEntitlement && hireDate && eligibilityRules) {
+      // Calculate service months at the time of this sickness event
+      const serviceMonthsAtEvent = calculationUtils.calculateServiceMonthsAtDate(hireDate, record.start_date);
+      
+      // Find the applicable rule for this service period
+      const applicableRule = calculationUtils.findApplicableRule(serviceMonthsAtEvent, eligibilityRules);
+      
+      if (applicableRule) {
+        const entitlementAtEvent = calculateEntitlementFromRule(applicableRule, workingDaysPerWeek);
+        totalFullPayDays = entitlementAtEvent.fullPayDays;
+        totalHalfPayDays = entitlementAtEvent.halfPayDays;
+        hasWaitingDays = entitlementAtEvent.hasWaitingDays;
+      }
     }
 
     let fullPayDays = 0;
