@@ -753,6 +753,7 @@ export type Database = {
           email: string | null
           first_name: string
           gender: string | null
+          has_p45: boolean | null
           hire_date: string
           hourly_rate: number | null
           hours_per_week: number | null
@@ -766,6 +767,7 @@ export type Database = {
           nhs_pension_member: boolean | null
           nhs_pension_tier: number | null
           nic_code: string | null
+          p46_statement: string | null
           payroll_id: string | null
           portal_access_enabled: boolean | null
           postcode: string | null
@@ -777,6 +779,8 @@ export type Database = {
           status: string | null
           student_loan_plan: number | null
           tax_code: string | null
+          tax_paid_ytd: number | null
+          taxable_pay_ytd: number | null
           updated_at: string
           user_id: string
           week_one_month_one: boolean | null
@@ -794,6 +798,7 @@ export type Database = {
           email?: string | null
           first_name: string
           gender?: string | null
+          has_p45?: boolean | null
           hire_date?: string
           hourly_rate?: number | null
           hours_per_week?: number | null
@@ -807,6 +812,7 @@ export type Database = {
           nhs_pension_member?: boolean | null
           nhs_pension_tier?: number | null
           nic_code?: string | null
+          p46_statement?: string | null
           payroll_id?: string | null
           portal_access_enabled?: boolean | null
           postcode?: string | null
@@ -818,6 +824,8 @@ export type Database = {
           status?: string | null
           student_loan_plan?: number | null
           tax_code?: string | null
+          tax_paid_ytd?: number | null
+          taxable_pay_ytd?: number | null
           updated_at?: string
           user_id: string
           week_one_month_one?: boolean | null
@@ -835,6 +843,7 @@ export type Database = {
           email?: string | null
           first_name?: string
           gender?: string | null
+          has_p45?: boolean | null
           hire_date?: string
           hourly_rate?: number | null
           hours_per_week?: number | null
@@ -848,6 +857,7 @@ export type Database = {
           nhs_pension_member?: boolean | null
           nhs_pension_tier?: number | null
           nic_code?: string | null
+          p46_statement?: string | null
           payroll_id?: string | null
           portal_access_enabled?: boolean | null
           postcode?: string | null
@@ -859,6 +869,8 @@ export type Database = {
           status?: string | null
           student_loan_plan?: number | null
           tax_code?: string | null
+          tax_paid_ytd?: number | null
+          taxable_pay_ytd?: number | null
           updated_at?: string
           user_id?: string
           week_one_month_one?: boolean | null

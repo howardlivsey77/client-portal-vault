@@ -65,6 +65,11 @@ export const employeeSchema = z.object({
   week_one_month_one: z.boolean().optional().nullable(),
   nic_code: nicCodeValidation.nullable(),
   student_loan_plan: z.number().min(1).max(6).optional().nullable(),
+  // P45/P46 fields
+  has_p45: z.boolean().optional().nullable(),
+  taxable_pay_ytd: z.coerce.number().min(0, "Taxable pay YTD must be a positive number").optional().nullable(),
+  tax_paid_ytd: z.coerce.number().optional().nullable(), // Can be negative for refunds
+  p46_statement: z.enum(["A", "B", "C"]).optional().nullable(),
   // NHS Pension fields
   nhs_pension_member: z.boolean().optional().nullable(),
   previous_year_pensionable_pay: z.coerce.number().min(0, "Previous year pensionable pay must be a positive number").optional().nullable(),
@@ -115,6 +120,24 @@ export const nicCodeOptions = [
   { label: "J - Under 21", value: "J" },
   { label: "M - Under 21 Deferment", value: "M" },
   { label: "Z - No NI Contribution", value: "Z" },
+];
+
+export const p46StatementOptions = [
+  { 
+    value: "A", 
+    label: "Statement A",
+    description: "This is my first job since 6 April and since the 6 April I have not received payments from any of the following: Jobseeker's Allowance, Employment and Support Allowance, Incapacity Benefit"
+  },
+  { 
+    value: "B", 
+    label: "Statement B",
+    description: "Since 6 April I have had another job but I do not have a P45. And/or since the 6 April I have received payments from any of the following: Jobseeker's Allowance, Employment and Support Allowance, Incapacity Benefit"
+  },
+  { 
+    value: "C", 
+    label: "Statement C",
+    description: "I have another job and/or I am in receipt of a State, Works or Private Pension"
+  },
 ];
 
 export const statusOptions = [
