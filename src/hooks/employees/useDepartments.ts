@@ -13,7 +13,7 @@ import {
 
 export const useDepartments = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { currentCompany } = useCompany();
   const { toast } = useToast();
 
@@ -22,6 +22,7 @@ export const useDepartments = () => {
     
     if (!currentCompany?.id) {
       console.log("useDepartments: No currentCompany.id, skipping fetch");
+      setLoading(false);
       return;
     }
     
