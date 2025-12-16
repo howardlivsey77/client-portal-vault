@@ -17,19 +17,20 @@ export const useDepartments = () => {
   const { currentCompany } = useCompany();
   const { toast } = useToast();
 
-  const fetchDepartments = useCallback(async () => {
-    console.log("useDepartments: fetchDepartments called, currentCompany?.id:", currentCompany?.id);
+  const fetchDepartments = useCallback(async (companyId?: string) => {
+    const id = companyId ?? currentCompany?.id;
+    console.log("useDepartments: fetchDepartments called, companyId:", id);
     
-    if (!currentCompany?.id) {
-      console.log("useDepartments: No currentCompany.id, skipping fetch");
+    if (!id) {
+      console.log("useDepartments: No company id available, skipping fetch");
       setLoading(false);
       return;
     }
     
     try {
       setLoading(true);
-      console.log("useDepartments: Fetching departments for company:", currentCompany.id);
-      const data = await fetchDepartmentsByCompany(currentCompany.id);
+      console.log("useDepartments: Fetching departments for company:", id);
+      const data = await fetchDepartmentsByCompany(id);
       console.log("useDepartments: Received departments:", data.length, "departments");
       setDepartments(data);
     } catch (error: any) {
@@ -42,7 +43,7 @@ export const useDepartments = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentCompany?.id, toast]);
+  }, [toast]);
 
   const addDepartment = async (departmentData: Omit<CreateDepartmentData, 'company_id'>) => {
     if (!currentCompany?.id) return;
@@ -125,8 +126,13 @@ export const useDepartments = () => {
 
   useEffect(() => {
     console.log("useDepartments: useEffect triggered, currentCompany?.id:", currentCompany?.id);
-    fetchDepartments();
-  }, [fetchDepartments]);
+    if (currentCompany?.id) {
+      fetchDepartments(currentCompany.id);
+    } else {
+      setLoading(false);
+      setDepartments([]);
+    }
+  }, [currentCompany?.id, fetchDepartments]);
 
   return {
     departments,
