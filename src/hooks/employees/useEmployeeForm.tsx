@@ -5,6 +5,7 @@ import {
   useEmployeeFormSubmission,
   UseEmployeeFormReturn
 } from "./form";
+import { useNextPayrollId } from "./useNextPayrollId";
 
 export const useEmployeeForm = (employeeId?: string): UseEmployeeFormReturn => {
   const isEditMode = employeeId !== undefined && employeeId !== "new";
@@ -18,6 +19,8 @@ export const useEmployeeForm = (employeeId?: string): UseEmployeeFormReturn => {
     readOnly,
     setReadOnly,
   } = useEmployeeFormState();
+
+  const { suggestedPayrollId } = useNextPayrollId(isEditMode);
 
   // Set initial loading state for edit mode
   useState(() => {
@@ -44,7 +47,14 @@ export const useEmployeeForm = (employeeId?: string): UseEmployeeFormReturn => {
     if (isEditMode && employeeId) {
       fetchEmployeeData();
     }
-  }, [isEditMode, employeeId]); // Removed fetchEmployeeData from dependencies to prevent infinite loop
+  }, [isEditMode, employeeId]);
+
+  // Auto-populate suggested payroll ID for new employees
+  useEffect(() => {
+    if (!isEditMode && suggestedPayrollId && !form.getValues("payroll_id")) {
+      form.setValue("payroll_id", suggestedPayrollId);
+    }
+  }, [suggestedPayrollId, isEditMode, form]);
 
   return {
     form,

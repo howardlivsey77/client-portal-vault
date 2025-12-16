@@ -74,7 +74,7 @@ export const EmployeeFormContainer = ({
 
             {/* Payroll ID */}
             <div className="max-w-xs">
-              <PayrollIdField form={form} readOnly={readOnly} />
+              <PayrollIdField form={form} readOnly={readOnly} isEditMode={isEditMode} />
             </div>
             
             {/* Employment Status */}

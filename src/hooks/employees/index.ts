@@ -3,6 +3,7 @@ export { useEmployees } from "./useEmployees";
 export type { Employee } from "./useEmployees";
 export { useEmployeeDetails } from "./useEmployeeDetails";
 export { useEmployeeForm } from "./useEmployeeForm";
+export { useNextPayrollId } from "./useNextPayrollId";
 export { useDepartments } from "./useDepartments";
 export { useEmployeeImport } from "./useEmployeeImport";
 export { useEmployeeInvite } from "./useEmployeeInvite";
