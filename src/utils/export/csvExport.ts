@@ -49,11 +49,12 @@ export const generateExtraHoursCSV = (summary: ExtraHoursSummary, filename = 'ex
     csvRows.push(escapedRow.join(','));
   });
   
-  // Create CSV content
+  // Create CSV content with UTF-8 BOM for proper Excel encoding
   const csvContent = csvRows.join('\n');
+  const BOM = '\uFEFF';
   
   // Create and download the file
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   
   if (link.download !== undefined) {
