@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks";
 import { useCompany } from "@/providers";
 import { 
@@ -17,7 +17,7 @@ export const useDepartments = () => {
   const { currentCompany } = useCompany();
   const { toast } = useToast();
 
-  const fetchDepartments = async () => {
+  const fetchDepartments = useCallback(async () => {
     console.log("useDepartments: fetchDepartments called, currentCompany?.id:", currentCompany?.id);
     
     if (!currentCompany?.id) {
@@ -42,7 +42,7 @@ export const useDepartments = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentCompany?.id, toast]);
 
   const addDepartment = async (departmentData: Omit<CreateDepartmentData, 'company_id'>) => {
     if (!currentCompany?.id) return;
@@ -126,7 +126,7 @@ export const useDepartments = () => {
   useEffect(() => {
     console.log("useDepartments: useEffect triggered, currentCompany?.id:", currentCompany?.id);
     fetchDepartments();
-  }, [currentCompany?.id]);
+  }, [fetchDepartments]);
 
   return {
     departments,
