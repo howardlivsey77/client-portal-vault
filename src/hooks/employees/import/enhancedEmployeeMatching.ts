@@ -185,9 +185,22 @@ export const compareEmployeesEnhanced = (
       // We have a clean match with no conflicts
       const existingEmp = matchResult.match;
       
-      // Check for changes in standard fields
+      // Fields that should only be compared if explicitly provided in the import
+      // (not auto-defaulted during transformation)
+      const fieldsRequiringExplicitImport = ['hours_per_week', 'hourly_rate', 'department'];
+      
+      // Check for changes in standard fields - only compare fields that were actually in the import
       const hasStandardChanges = Object.keys(importedEmp).some(key => {
         if (key === 'id' || key.startsWith('rate_')) return false;
+        
+        // Skip fields that weren't explicitly in the import file
+        // These fields are undefined if not in import (since we removed auto-defaults)
+        if (fieldsRequiringExplicitImport.includes(key)) {
+          // Only compare if the imported value is meaningful (not undefined/null/empty)
+          if (importedEmp[key] === undefined || importedEmp[key] === null || importedEmp[key] === '') {
+            return false;
+          }
+        }
         
         return importedEmp[key] !== undefined && 
               importedEmp[key] !== null && 
