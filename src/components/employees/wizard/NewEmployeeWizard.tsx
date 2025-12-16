@@ -5,6 +5,7 @@ import { WizardStepIndicator } from "./WizardStepIndicator";
 import { PersonalDetailsStep } from "./steps/PersonalDetailsStep";
 import { EmploymentInfoStep } from "./steps/EmploymentInfoStep";
 import { PayStep } from "./steps/PayStep";
+import { EmployeeYtdStep } from "./steps/EmployeeYtdStep";
 import { HmrcStep } from "./steps/HmrcStep";
 import { PensionStep } from "./steps/PensionStep";
 import { useNewEmployeeWizard, WIZARD_STEPS } from "@/hooks/employees/useNewEmployeeWizard";
@@ -70,8 +71,10 @@ export const NewEmployeeWizard = ({ open, onOpenChange, onSuccess }: NewEmployee
       case 3:
         return <PayStep form={form} />;
       case 4:
-        return <HmrcStep form={form} />;
+        return <EmployeeYtdStep form={form} />;
       case 5:
+        return <HmrcStep form={form} />;
+      case 6:
         return <PensionStep form={form} />;
       default:
         return null;
