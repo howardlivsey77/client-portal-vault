@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Upload, ChevronDown, FileText } from "lucide-react";
 import { ImportEmployeeDialogControlled } from "./ImportEmployeeDialogControlled";
 import { HMRCImportDialog } from "./HMRCImportDialog";
+import { NewEmployeeWizard } from "./wizard";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,7 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
 interface EmployeeActionsProps {
@@ -19,9 +19,9 @@ interface EmployeeActionsProps {
 }
 
 export const EmployeeActions = ({ isAdmin, loading, onRefresh }: EmployeeActionsProps) => {
-  const navigate = useNavigate();
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [hmrcImportDialogOpen, setHmrcImportDialogOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   return (
     <>
@@ -36,7 +36,7 @@ export const EmployeeActions = ({ isAdmin, loading, onRefresh }: EmployeeActions
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => navigate("/employee/new")}>
+              <DropdownMenuItem onClick={() => setWizardOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Single Employee
               </DropdownMenuItem>
@@ -51,6 +51,12 @@ export const EmployeeActions = ({ isAdmin, loading, onRefresh }: EmployeeActions
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          
+          <NewEmployeeWizard
+            open={wizardOpen}
+            onOpenChange={setWizardOpen}
+            onSuccess={onRefresh}
+          />
           
           <ImportEmployeeDialogControlled 
             open={importDialogOpen}

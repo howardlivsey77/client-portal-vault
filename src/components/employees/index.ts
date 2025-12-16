@@ -35,6 +35,9 @@ export { EmployeeFormErrorBoundary } from "./form/EmployeeFormErrorBoundary";
 export { EmployeeFormHeader } from "./form/EmployeeFormHeader";
 export { StatusFields } from "./form/StatusFields";
 
+// Wizard components
+export { NewEmployeeWizard, WizardStepIndicator } from "./wizard";
+
 // Timesheet components
 export { EmployeeTimesheet } from "./timesheets/EmployeeTimesheet";
 export { EmployeeSelector } from "./timesheets/EmployeeSelector";

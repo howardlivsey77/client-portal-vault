@@ -1,0 +1,221 @@
+import { UseFormReturn } from "react-hook-form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { EmployeeFormValues, studentLoanPlanOptions, nicCodeOptions } from "@/types";
+import { TaxCodeInput } from "../../TaxCodeInput";
+import { NINumberInput } from "../../NINumberInput";
+import { HelpCircle } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+interface PayTaxStepProps {
+  form: UseFormReturn<EmployeeFormValues>;
+}
+
+export const PayTaxStep = ({ form }: PayTaxStepProps) => {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <FormField
+          control={form.control}
+          name="hourly_rate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Hourly Rate (£) *</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  {...field}
+                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                />
+              </FormControl>
+              <FormDescription>
+                Base pay rate per hour
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="monthly_salary"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Monthly Salary (£)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="Optional"
+                  {...field}
+                  value={field.value || ""}
+                  onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                />
+              </FormControl>
+              <FormDescription>
+                For salaried employees
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      <FormField
+        control={form.control}
+        name="national_insurance_number"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>National Insurance Number</FormLabel>
+            <FormControl>
+              <NINumberInput
+                value={field.value || ""}
+                onChange={field.onChange}
+                disabled={false}
+              />
+            </FormControl>
+            <FormDescription>
+              Format: QQ123456C (2 letters, 6 numbers, 1 letter)
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <FormField
+          control={form.control}
+          name="tax_code"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="flex items-center gap-2">
+                Tax Code
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger type="button">
+                      <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>The tax code from HMRC determines how much income tax to deduct. Common codes: 1257L (standard), BR (basic rate), 0T.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </FormLabel>
+              <FormControl>
+                <TaxCodeInput
+                  value={field.value || ""}
+                  onChange={field.onChange}
+                  disabled={false}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="nic_code"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="flex items-center gap-2">
+                NI Category
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger type="button">
+                      <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>National Insurance category letter. Most employees use 'A'. Special categories exist for under 21s, apprentices, and those over state pension age.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </FormLabel>
+              <Select onValueChange={field.onChange} value={field.value || undefined}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select NI category" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {nicCodeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <FormField
+          control={form.control}
+          name="student_loan_plan"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Student Loan</FormLabel>
+              <Select
+                onValueChange={(value) => field.onChange(value === "null" ? null : Number(value))}
+                value={field.value === null ? "null" : field.value?.toString() || "null"}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {studentLoanPlanOptions.map((option) => (
+                    <SelectItem
+                      key={option.value === null ? "null" : option.value}
+                      value={option.value === null ? "null" : option.value.toString()}
+                    >
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                If employee has student loan deductions
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="week_one_month_one"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">Week 1/Month 1</FormLabel>
+                <FormDescription>
+                  Emergency tax basis
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value || false}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+      </div>
+    </div>
+  );
+};
