@@ -13,6 +13,16 @@ export interface SicknessRecordPayment {
 }
 
 /**
+ * Check if a date falls within the current calendar month
+ */
+const isInCurrentMonth = (dateString: string): boolean => {
+  const date = new Date(dateString);
+  const now = new Date();
+  return date.getMonth() === now.getMonth() && 
+         date.getFullYear() === now.getFullYear();
+};
+
+/**
  * Check if two sickness absences are continuous (no gap between them)
  * Returns true if currentStartDate is exactly the day after previousEndDate
  */
@@ -136,7 +146,11 @@ export const calculateSicknessRecordPayments = (
     let totalHalfPayDays = defaultTotalHalfPayDays;
     let hasWaitingDays = defaultHasWaitingDays;
 
-    if (useHistoricalEntitlement && hireDate && eligibilityRules) {
+    // Only apply historical entitlement for records outside the current month
+    // (e.g., November sickness entered in December should use November's service months)
+    const isHistoricalRecord = !isInCurrentMonth(record.start_date);
+    
+    if (useHistoricalEntitlement && isHistoricalRecord && hireDate && eligibilityRules) {
       // Calculate service months at the time of this sickness event
       const serviceMonthsAtEvent = calculationUtils.calculateServiceMonthsAtDate(hireDate, record.start_date);
       
@@ -150,6 +164,7 @@ export const calculateSicknessRecordPayments = (
         hasWaitingDays = entitlementAtEvent.hasWaitingDays;
       }
     }
+    // For current month records, use default (today's) entitlement
 
     let fullPayDays = 0;
     let halfPayDays = 0;
