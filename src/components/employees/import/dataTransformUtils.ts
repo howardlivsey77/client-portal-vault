@@ -230,24 +230,28 @@ export const transformData = (data: EmployeeData[], mappings: ColumnMapping[], i
       }
     });
     
-    // Set default values for missing fields (explicitly check for undefined/null to preserve 0 values)
-    if (transformedRow.hours_per_week === undefined || transformedRow.hours_per_week === null) {
-      transformedRow.hours_per_week = 40;
-    }
-    if (transformedRow.hourly_rate === undefined || transformedRow.hourly_rate === null) {
-      transformedRow.hourly_rate = 0;
-    }
-    // Set default department if not provided
-    if (!transformedRow.department) transformedRow.department = 'General';
+    // NOTE: We intentionally do NOT set default values here for hours_per_week, hourly_rate, or department.
+    // Defaults should only be applied when CREATING new employees (in employeeCreator.ts),
+    // not during transformation, to avoid false positives when comparing for updates.
     
-    // Convert numeric fields with validation (preserve 0 values)
+    // Convert numeric fields only if they were explicitly provided in the import
     if (transformedRow.hours_per_week !== undefined && transformedRow.hours_per_week !== null) {
       const hours = Number(transformedRow.hours_per_week);
-      transformedRow.hours_per_week = isNaN(hours) ? 40 : hours;
+      if (!isNaN(hours)) {
+        transformedRow.hours_per_week = hours;
+      } else {
+        // Remove invalid numeric value
+        delete transformedRow.hours_per_week;
+      }
     }
     if (transformedRow.hourly_rate !== undefined && transformedRow.hourly_rate !== null) {
       const rate = Number(transformedRow.hourly_rate);
-      transformedRow.hourly_rate = isNaN(rate) ? 0 : rate;
+      if (!isNaN(rate)) {
+        transformedRow.hourly_rate = rate;
+      } else {
+        // Remove invalid numeric value
+        delete transformedRow.hourly_rate;
+      }
     }
     
     return transformedRow;
