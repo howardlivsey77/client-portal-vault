@@ -3,10 +3,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { EmployeeData } from "@/components/employees/import/ImportConstants";
 
 /**
- * Check for existing employees
+ * Check for existing employees within a specific company
  */
-export const findExistingEmployees = async (importData: EmployeeData[]): Promise<EmployeeData[]> => {
+export const findExistingEmployees = async (
+  importData: EmployeeData[],
+  companyId?: string
+): Promise<EmployeeData[]> => {
   try {
+    // Get company ID from param or localStorage
+    const effectiveCompanyId = companyId || localStorage.getItem('lastSelectedCompany');
+    
+    if (!effectiveCompanyId) {
+      console.warn("No company ID provided for employee lookup - skipping existing employee check");
+      return [];
+    }
+    
+    console.log("Checking for existing employees in company:", effectiveCompanyId);
+    
     // Extract emails, payroll_ids, and national insurance numbers from import data
     const emails = importData
       .filter(emp => emp.email)
@@ -24,26 +37,29 @@ export const findExistingEmployees = async (importData: EmployeeData[]): Promise
     console.log("Checking for existing employees with payroll IDs:", payrollIds);
     console.log("Checking for existing employees with National Insurance Numbers:", nationalInsuranceNumbers);
     
-    // Check for existing employees with matching emails
+    // Check for existing employees with matching emails - filtered by company_id
     const { data: emailMatches, error: emailError } = await supabase
       .from("employees")
       .select("*")
+      .eq("company_id", effectiveCompanyId)
       .in("email", emails.length > 0 ? emails : ['no-emails-found']);
     
     if (emailError) throw emailError;
     
-    // Check for existing employees with matching payroll IDs
+    // Check for existing employees with matching payroll IDs - filtered by company_id
     const { data: payrollMatches, error: payrollError } = await supabase
       .from("employees")
       .select("*")
+      .eq("company_id", effectiveCompanyId)
       .in("payroll_id", payrollIds.length > 0 ? payrollIds : ['no-payroll-ids-found']);
     
     if (payrollError) throw payrollError;
     
-    // Check for existing employees with matching National Insurance Numbers
+    // Check for existing employees with matching National Insurance Numbers - filtered by company_id
     const { data: niMatches, error: niError } = await supabase
       .from("employees")
       .select("*")
+      .eq("company_id", effectiveCompanyId)
       .in("national_insurance_number", nationalInsuranceNumbers.length > 0 ? nationalInsuranceNumbers : ['no-ni-numbers-found']);
     
     if (niError) throw niError;
