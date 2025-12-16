@@ -7,6 +7,7 @@ import { EmploymentInfoStep } from "./steps/EmploymentInfoStep";
 import { PayTaxStep } from "./steps/PayTaxStep";
 import { ContactPensionStep } from "./steps/ContactPensionStep";
 import { useNewEmployeeWizard, WIZARD_STEPS } from "@/hooks/employees/useNewEmployeeWizard";
+import { useDepartments } from "@/hooks";
 import { ChevronLeft, ChevronRight, Loader2, UserPlus } from "lucide-react";
 import { useEffect } from "react";
 
@@ -28,6 +29,16 @@ export const NewEmployeeWizard = ({ open, onOpenChange, onSuccess }: NewEmployee
     submitForm,
     resetWizard,
   } = useNewEmployeeWizard();
+
+  // Fetch departments at wizard level to avoid timing issues when step 2 mounts
+  const { departments, loading: departmentsLoading, fetchDepartments } = useDepartments();
+
+  // Refetch departments when dialog opens if they're empty
+  useEffect(() => {
+    if (open && departments.length === 0 && !departmentsLoading) {
+      fetchDepartments();
+    }
+  }, [open]);
 
   // Reset wizard when dialog closes
   useEffect(() => {
@@ -53,7 +64,7 @@ export const NewEmployeeWizard = ({ open, onOpenChange, onSuccess }: NewEmployee
       case 1:
         return <PersonalDetailsStep form={form} />;
       case 2:
-        return <EmploymentInfoStep form={form} />;
+        return <EmploymentInfoStep form={form} departments={departments} departmentsLoading={departmentsLoading} />;
       case 3:
         return <PayTaxStep form={form} />;
       case 4:
