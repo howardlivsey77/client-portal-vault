@@ -18,47 +18,55 @@ export const calculationUtils = {
     };
   },
 
-  // Calculate actual rolling period based on sickness events within the rolling window
+  // Calculate actual rolling period based on first sickness anniversary method
   async getActualRollingPeriod(employeeId: string, referenceDate?: string | Date): Promise<{ start: string; end: string }> {
     try {
-      // Import here to avoid circular dependencies
       const { supabase } = await import("@/integrations/supabase/client");
       
-      // Get the generic rolling period first
-      const genericPeriod = this.getRolling12MonthPeriod(referenceDate);
-      
-      // Fetch sickness records within the rolling window
+      // Fetch ALL sickness records for the employee (no date filtering)
       const { data: records, error } = await supabase
         .from('employee_sickness_records')
         .select('start_date')
         .eq('employee_id', employeeId)
-        .gte('start_date', genericPeriod.start)
-        .lte('start_date', genericPeriod.end)
         .order('start_date', { ascending: true });
 
       if (error) throw error;
 
-      // If no sickness records in the period, return the generic period
+      // If no sickness records, return the generic rolling period
       if (!records || records.length === 0) {
-        return genericPeriod;
+        return this.getRolling12MonthPeriod(referenceDate);
       }
 
-      // Find the earliest sickness event date within the rolling window
-      const earliestSicknessDate = records[0].start_date;
+      const refDate = referenceDate ? new Date(referenceDate) : new Date();
       
-      // Calculate the period starting from the earliest sickness event
-      const start = new Date(earliestSicknessDate);
-      const end = new Date(start);
-      end.setFullYear(end.getFullYear() + 1);
-      end.setDate(end.getDate() - 1); // End date is one day before anniversary
+      // Start with the first ever sickness to establish the anniversary period
+      let periodStart = new Date(records[0].start_date);
+      let periodEnd = new Date(periodStart);
+      periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+      periodEnd.setDate(periodEnd.getDate() - 1); // End date is one day before anniversary
+
+      // If we're past this anniversary, find the next applicable period
+      while (periodEnd < refDate) {
+        // Find first sickness after current period ends
+        const nextSickness = records.find(r => new Date(r.start_date) > periodEnd);
+        if (!nextSickness) {
+          // No more sickness records after this period - return generic rolling period
+          return this.getRolling12MonthPeriod(referenceDate);
+        }
+        
+        // Start a new period from the next sickness
+        periodStart = new Date(nextSickness.start_date);
+        periodEnd = new Date(periodStart);
+        periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+        periodEnd.setDate(periodEnd.getDate() - 1);
+      }
 
       return {
-        start: start.toISOString().split('T')[0],
-        end: end.toISOString().split('T')[0]
+        start: periodStart.toISOString().split('T')[0],
+        end: periodEnd.toISOString().split('T')[0]
       };
     } catch (error) {
       console.error('Error calculating actual rolling period:', error);
-      // Fallback to generic period
       return this.getRolling12MonthPeriod(referenceDate);
     }
   },
