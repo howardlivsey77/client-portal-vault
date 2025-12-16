@@ -33,6 +33,7 @@ export const PayTaxStep = ({ form }: PayTaxStepProps) => {
                   type="number"
                   step="0.01"
                   placeholder="0.00"
+                  className="bg-white"
                   {...field}
                   onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                 />
@@ -56,6 +57,7 @@ export const PayTaxStep = ({ form }: PayTaxStepProps) => {
                   type="number"
                   step="0.01"
                   placeholder="Optional"
+                  className="bg-white"
                   {...field}
                   value={field.value || ""}
                   onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
@@ -115,6 +117,7 @@ export const PayTaxStep = ({ form }: PayTaxStepProps) => {
                   value={field.value || ""}
                   onChange={field.onChange}
                   disabled={false}
+                  className="bg-white"
                 />
               </FormControl>
               <FormMessage />
@@ -142,7 +145,7 @@ export const PayTaxStep = ({ form }: PayTaxStepProps) => {
               </FormLabel>
               <Select onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white">
                     <SelectValue placeholder="Select NI category" />
                   </SelectTrigger>
                 </FormControl>
@@ -172,7 +175,7 @@ export const PayTaxStep = ({ form }: PayTaxStepProps) => {
                 value={field.value === null ? "null" : field.value?.toString() || "null"}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white">
                     <SelectValue placeholder="None" />
                   </SelectTrigger>
                 </FormControl>
