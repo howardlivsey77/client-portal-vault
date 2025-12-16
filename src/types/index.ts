@@ -20,7 +20,8 @@ export {
   defaultWorkPattern,
   studentLoanPlanOptions,
   nicCodeOptions,
-  statusOptions
+  statusOptions,
+  p46StatementOptions
 } from './employee';
 export type { WorkDay, EmployeeFormValues } from './employee';
 
