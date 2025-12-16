@@ -5,14 +5,27 @@ import { extractDateRange } from './dateExtractor';
 import { extractEmployeeData } from './extractEmployeeData';
 import { formatSummary } from './formatSummary';
 import { isTeamnetFormat, parseTeamnetData } from './teamnetParser';
+import { TeamnetRateConfig } from './teamnetRateCalculator';
 import { ImportFormat } from '@/components/payroll/FormatSelector';
+
+export interface ParseExtraHoursOptions {
+  format?: ImportFormat;
+  rateConfig?: TeamnetRateConfig | null;
+}
 
 /**
  * Parse an Excel or CSV file containing extra hours data
  * @param file - The file to parse
- * @param format - Optional format override (practice-index or teamnet). If not provided, will auto-detect.
+ * @param options - Optional parsing options including format override and rate config
  */
-export const parseExtraHoursFile = async (file: File, format?: ImportFormat): Promise<ExtraHoursSummary> => {
+export const parseExtraHoursFile = async (
+  file: File, 
+  options?: ParseExtraHoursOptions | ImportFormat
+): Promise<ExtraHoursSummary> => {
+  // Handle backwards compatibility - if options is a string, it's the old format parameter
+  const format = typeof options === 'string' ? options : options?.format;
+  const rateConfig = typeof options === 'object' ? options?.rateConfig : undefined;
+  
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
@@ -35,7 +48,7 @@ export const parseExtraHoursFile = async (file: File, format?: ImportFormat): Pr
         
         if (useTeamnet) {
           console.log('Using Teamnet parser with time-based rate calculation');
-          const summary = parseTeamnetData(jsonData);
+          const summary = parseTeamnetData(jsonData, rateConfig);
           resolve(summary);
         } else {
           console.log('Using Practice Index parser');
@@ -63,3 +76,4 @@ export const parseExtraHoursFile = async (file: File, format?: ImportFormat): Pr
     reader.readAsArrayBuffer(file);
   });
 };
+

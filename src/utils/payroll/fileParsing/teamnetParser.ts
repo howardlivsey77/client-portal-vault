@@ -5,7 +5,7 @@
  */
 
 import { ExtraHoursSummary, EmployeeHoursData } from '@/components/payroll/types';
-import { calculateTeamnetRates, parseTeamnetDate, RateHours } from './teamnetRateCalculator';
+import { calculateTeamnetRates, parseTeamnetDate, RateHours, TeamnetRateConfig } from './teamnetRateCalculator';
 
 interface TeamnetRow {
   Name?: string;
@@ -26,6 +26,7 @@ interface EmployeeRateAccumulator {
   employeeName: string;
   rate2Hours: number;
   rate3Hours: number;
+  rate4Hours: number;
   entries: number;
 }
 
@@ -74,8 +75,10 @@ export function isTeamnetFormat(jsonData: any[]): boolean {
 
 /**
  * Parse Teamnet data and calculate rates based on shift times
+ * @param jsonData - The raw data from the Teamnet file
+ * @param rateConfig - Optional company-specific rate configuration
  */
-export function parseTeamnetData(jsonData: any[]): ExtraHoursSummary {
+export function parseTeamnetData(jsonData: any[], rateConfig?: TeamnetRateConfig | null): ExtraHoursSummary {
   const employeeMap = new Map<string, EmployeeRateAccumulator>();
   
   let earliestDate: Date | null = null;
@@ -85,6 +88,11 @@ export function parseTeamnetData(jsonData: any[]): ExtraHoursSummary {
   if (jsonData.length > 0) {
     const columnNames = Object.keys(jsonData[0]);
     console.log('[Teamnet Parser] Detected columns:', columnNames);
+    if (rateConfig) {
+      console.log('[Teamnet Parser] Using company rate config:', rateConfig);
+    } else {
+      console.log('[Teamnet Parser] Using default rate rules');
+    }
   }
   
   let skippedRows = 0;
@@ -136,20 +144,22 @@ export function parseTeamnetData(jsonData: any[]): ExtraHoursSummary {
       latestDate = shiftDate;
     }
     
-    // Calculate rate hours based on shift time
-    const rateHours = calculateTeamnetRates(timeFrom, timeTo, shiftDate);
+    // Calculate rate hours based on shift time (pass company config if available)
+    const rateHours = calculateTeamnetRates(timeFrom, timeTo, shiftDate, rateConfig);
     
     // Accumulate hours by employee
     const existing = employeeMap.get(employeeName);
     if (existing) {
       existing.rate2Hours += rateHours.rate2Hours;
       existing.rate3Hours += rateHours.rate3Hours;
+      existing.rate4Hours += rateHours.rate4Hours || 0;
       existing.entries += 1;
     } else {
       employeeMap.set(employeeName, {
         employeeName,
         rate2Hours: rateHours.rate2Hours,
         rate3Hours: rateHours.rate3Hours,
+        rate4Hours: rateHours.rate4Hours || 0,
         entries: 1
       });
     }
@@ -159,10 +169,11 @@ export function parseTeamnetData(jsonData: any[]): ExtraHoursSummary {
   console.log(`[Teamnet Parser] Summary: ${processedRows} rows processed, ${skippedRows} rows skipped, ${employeeMap.size} unique employees`)
   
   // Convert accumulated data to employee details array
-  // Create separate entries for Rate 2 and Rate 3 hours
+  // Create separate entries for Rate 2, Rate 3, and Rate 4 hours
   const employeeDetails: EmployeeHoursData[] = [];
   let totalRate2Hours = 0;
   let totalRate3Hours = 0;
+  let totalRate4Hours = 0;
   let totalEntries = 0;
   
   for (const [, emp] of employeeMap) {
@@ -190,6 +201,18 @@ export function parseTeamnetData(jsonData: any[]): ExtraHoursSummary {
       });
       totalRate3Hours += emp.rate3Hours;
     }
+    
+    // Add Rate 4 entry if there are Rate 4 hours
+    if (emp.rate4Hours > 0) {
+      employeeDetails.push({
+        employeeId: '',
+        employeeName: emp.employeeName,
+        extraHours: emp.rate4Hours,
+        entries: emp.entries,
+        rateType: 'Rate 4'
+      });
+      totalRate4Hours += emp.rate4Hours;
+    }
   }
   
   // Format date range
@@ -205,7 +228,7 @@ export function parseTeamnetData(jsonData: any[]): ExtraHoursSummary {
   
   return {
     totalEntries,
-    totalExtraHours: totalRate2Hours + totalRate3Hours,
+    totalExtraHours: totalRate2Hours + totalRate3Hours + totalRate4Hours,
     dateRange: {
       from: formatDate(earliestDate),
       to: formatDate(latestDate),
@@ -215,6 +238,7 @@ export function parseTeamnetData(jsonData: any[]): ExtraHoursSummary {
     employeeCount: employeeMap.size,
     employeeDetails,
     totalRate2Hours,
-    totalRate3Hours
+    totalRate3Hours,
+    totalRate4Hours
   };
 }

@@ -1,5 +1,4 @@
 
-import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,6 +6,7 @@ import GeneralSettingsTab from "./tabs/GeneralSettingsTab";
 import SicknessSettingsTab from "./tabs/SicknessSettingsTab";
 import LocationsSettingsTab from "./tabs/LocationsSettingsTab";
 import DepartmentsSettingsTab from "./tabs/DepartmentsSettingsTab";
+import OvertimeRatesSettingsTab from "./tabs/OvertimeRatesSettingsTab";
 
 const CompanySettings = () => {
   const location = useLocation();
@@ -17,6 +17,7 @@ const CompanySettings = () => {
     if (currentPath.includes("/settings/company/sickness")) return "sickness";
     if (currentPath.includes("/settings/company/locations")) return "locations";
     if (currentPath.includes("/settings/company/departments")) return "departments";
+    if (currentPath.includes("/settings/company/overtime")) return "overtime";
     return "general"; // Default tab
   };
 
@@ -29,6 +30,7 @@ const CompanySettings = () => {
           <TabsList>
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="sickness">Sickness</TabsTrigger>
+            <TabsTrigger value="overtime">Overtime Rates</TabsTrigger>
             <TabsTrigger value="locations">Locations</TabsTrigger>
             <TabsTrigger value="departments">Departments</TabsTrigger>
           </TabsList>
@@ -39,6 +41,10 @@ const CompanySettings = () => {
           
           <TabsContent value="sickness">
             <SicknessSettingsTab />
+          </TabsContent>
+          
+          <TabsContent value="overtime">
+            <OvertimeRatesSettingsTab />
           </TabsContent>
           
           <TabsContent value="locations">
