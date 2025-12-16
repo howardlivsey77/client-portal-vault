@@ -14,7 +14,7 @@ interface EmploymentInfoStepProps {
 
 export const EmploymentInfoStep = ({ form, departments, departmentsLoading }: EmploymentInfoStepProps) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <FormField
         control={form.control}
         name="department"

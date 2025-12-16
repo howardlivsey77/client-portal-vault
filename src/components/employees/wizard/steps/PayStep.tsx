@@ -23,7 +23,7 @@ export const PayStep = ({ form }: PayStepProps) => {
   }, [hourlyRate, hoursPerWeek, form]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <FormField
         control={form.control}
         name="hours_per_week"
