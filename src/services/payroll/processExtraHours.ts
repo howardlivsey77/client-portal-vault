@@ -4,16 +4,19 @@ import { ExtraHoursSummary } from '@/components/payroll/types';
 import { enrichEmployeeData } from './employeeEnrichment';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
+import { ImportFormat } from '@/components/payroll/FormatSelector';
 
 /**
  * Process an extra hours file and return summary data
+ * @param file - The file to process
+ * @param format - Optional format override (practice-index or teamnet)
  */
-export const processExtraHoursFile = async (file: File): Promise<ExtraHoursSummary> => {
+export const processExtraHoursFile = async (file: File, format?: ImportFormat): Promise<ExtraHoursSummary> => {
   try {
-    console.log('Processing extra hours file:', file.name);
+    console.log('Processing extra hours file:', file.name, 'Format:', format || 'auto-detect');
     
-    // Parse the file
-    const parsedData = await parseExtraHoursFile(file);
+    // Parse the file with the specified format
+    const parsedData = await parseExtraHoursFile(file, format);
     
     // Enrich with employee data from the database
     await enrichEmployeeData(parsedData);

@@ -1,6 +1,7 @@
 
 import { WizardStep } from "./types";
 import { FileUploader } from "./FileUploader";
+import { FormatSelector, ImportFormat } from "./FormatSelector";
 import { UploadSummary, FinalSummary } from "./upload-summary";
 import { SicknessImportCore } from "@/components/employees/sickness-import/SicknessImportCore";
 
@@ -15,6 +16,8 @@ interface CreateWizardStepsProps {
   onEmployeeMappingConfirm?: (mappings: Record<string, string>) => void;
   onEmployeeMappingCancel?: () => void;
   onSicknessImportComplete?: (count: number) => void;
+  selectedFormat: ImportFormat;
+  onFormatChange: (format: ImportFormat) => void;
 }
 
 export function createWizardSteps({
@@ -23,9 +26,20 @@ export function createWizardSteps({
   getSummary,
   isProcessing,
   processedData,
-  onSicknessImportComplete
+  onSicknessImportComplete,
+  selectedFormat,
+  onFormatChange
 }: CreateWizardStepsProps): WizardStep[] {
   const steps: WizardStep[] = [
+    {
+      title: "Select Format",
+      component: (
+        <FormatSelector
+          selectedFormat={selectedFormat}
+          onFormatChange={onFormatChange}
+        />
+      ),
+    },
     {
       title: "Upload Extra Hours File",
       component: (
@@ -33,7 +47,7 @@ export function createWizardSteps({
           uploadedFile={uploadedFiles.extraHours}
           onFileChange={(file) => handleFileUpload('extraHours', file)}
           acceptedFileTypes=".csv,.xlsx,.xls"
-          description="Select your extra hours file (CSV, Excel)"
+          description={`Select your ${selectedFormat === 'teamnet' ? 'Teamnet' : 'Practice Index'} extra hours file (CSV, Excel)`}
         />
       ),
     },

@@ -24,6 +24,7 @@ interface PayrollInputWizardProps {
 export function PayrollInputWizard({ open, onOpenChange }: PayrollInputWizardProps) {
   const {
     currentStep,
+    selectedFormat,
     uploadedFiles,
     processedData,
     isProcessing,
@@ -31,6 +32,7 @@ export function PayrollInputWizard({ open, onOpenChange }: PayrollInputWizardPro
     matchingResults,
     error,
     handleFileUpload,
+    handleFormatChange,
     processExtraHours,
     handleNext,
     handleBack,
@@ -48,7 +50,9 @@ export function PayrollInputWizard({ open, onOpenChange }: PayrollInputWizardPro
     showEmployeeMapping,
     matchingResults,
     onEmployeeMappingConfirm: handleEmployeeMappingConfirm,
-    onEmployeeMappingCancel: handleEmployeeMappingCancel
+    onEmployeeMappingCancel: handleEmployeeMappingCancel,
+    selectedFormat,
+    onFormatChange: handleFormatChange
   });
   
   const currentStepData = steps[currentStep];

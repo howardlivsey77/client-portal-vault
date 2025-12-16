@@ -5,6 +5,7 @@ export { EmployeePayrollCalculator } from "./EmployeePayrollCalculator";
 export { EmployeeMappingDialog } from "./EmployeeMappingDialog";
 export { EmployeeNavigation } from "./EmployeeNavigation";
 export { FileUploader } from "./FileUploader";
+export { FormatSelector, type ImportFormat } from "./FormatSelector";
 export { PayrollErrorBoundary } from "./PayrollErrorBoundary";
 export { PayrollTableHeader } from "./PayrollTableHeader";
 export { PayrollTableRowComponent } from "./PayrollTableRow";
