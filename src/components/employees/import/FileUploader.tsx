@@ -62,8 +62,9 @@ export const FileUploader = ({
       const transformedData = transformData(data, mappings, isCSVFile);
       console.log("Transformed data:", transformedData);
       
-      // Check for existing employees based on email or first name + last name
-      const existingEmployees = await findExistingEmployees(transformedData);
+      // Check for existing employees based on email, payroll_id, or NI number - filtered by company
+      const companyId = localStorage.getItem('lastSelectedCompany') || undefined;
+      const existingEmployees = await findExistingEmployees(transformedData, companyId);
       
       // Pass the data back to parent component including existing employee data
       onFileProcessed(data, transformedData, mappings, headers, existingEmployees);
