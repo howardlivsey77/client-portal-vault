@@ -31,13 +31,26 @@ interface EmployeeRateAccumulator {
 
 /**
  * Find a column value by checking various case/spelling variations
+ * Uses case-insensitive matching with trimming
  */
 function getColumnValue(row: TeamnetRow, possibleNames: string[]): string {
+  // First try exact match
   for (const name of possibleNames) {
     if (row[name] !== undefined && row[name] !== null) {
       return String(row[name]).trim();
     }
   }
+  
+  // Fall back to case-insensitive matching
+  const rowKeys = Object.keys(row);
+  for (const name of possibleNames) {
+    const normalizedName = name.toLowerCase().trim();
+    const matchingKey = rowKeys.find(k => k.toLowerCase().trim() === normalizedName);
+    if (matchingKey && row[matchingKey] !== undefined && row[matchingKey] !== null) {
+      return String(row[matchingKey]).trim();
+    }
+  }
+  
   return '';
 }
 
@@ -68,6 +81,15 @@ export function parseTeamnetData(jsonData: any[]): ExtraHoursSummary {
   let earliestDate: Date | null = null;
   let latestDate: Date | null = null;
   
+  // Debug: Log column names from first row
+  if (jsonData.length > 0) {
+    const columnNames = Object.keys(jsonData[0]);
+    console.log('[Teamnet Parser] Detected columns:', columnNames);
+  }
+  
+  let skippedRows = 0;
+  let processedRows = 0;
+  
   for (const row of jsonData) {
     const name = getColumnValue(row, ['Name', 'name']);
     const surname = getColumnValue(row, ['Surname', 'surname']);
@@ -77,6 +99,16 @@ export function parseTeamnetData(jsonData: any[]): ExtraHoursSummary {
     
     // Skip rows without essential data
     if (!name || !surname || !timeFrom || !timeTo) {
+      skippedRows++;
+      if (skippedRows <= 3) {
+        console.log('[Teamnet Parser] Skipping row - missing data:', {
+          name: name || '(empty)',
+          surname: surname || '(empty)',
+          timeFrom: timeFrom || '(empty)',
+          timeTo: timeTo || '(empty)',
+          rawKeys: Object.keys(row)
+        });
+      }
       continue;
     }
     
@@ -86,7 +118,8 @@ export function parseTeamnetData(jsonData: any[]): ExtraHoursSummary {
     // Parse the date
     const shiftDate = parseTeamnetDate(dateFrom);
     if (!shiftDate) {
-      console.warn(`Could not parse date: ${dateFrom} for employee ${employeeName}`);
+      console.warn(`[Teamnet Parser] Could not parse date: ${dateFrom} for employee ${employeeName}`);
+      skippedRows++;
       continue;
     }
     
@@ -115,7 +148,10 @@ export function parseTeamnetData(jsonData: any[]): ExtraHoursSummary {
         entries: 1
       });
     }
+    processedRows++;
   }
+  
+  console.log(`[Teamnet Parser] Summary: ${processedRows} rows processed, ${skippedRows} rows skipped, ${employeeMap.size} unique employees`)
   
   // Convert accumulated data to employee details array
   // Create separate entries for Rate 2 and Rate 3 hours
