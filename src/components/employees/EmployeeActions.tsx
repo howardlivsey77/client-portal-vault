@@ -25,52 +25,48 @@ export const EmployeeActions = ({ isAdmin, loading, onRefresh }: EmployeeActions
 
   return (
     <>
-      {isAdmin && (
-        <>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Employee
-                <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setWizardOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Single Employee
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setImportDialogOpen(true)}>
-                <Upload className="mr-2 h-4 w-4" />
-                Import from CSV/Excel
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setHmrcImportDialogOpen(true)}>
-                <FileText className="mr-2 h-4 w-4" />
-                Import from HMRC XML
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <NewEmployeeWizard
-            open={wizardOpen}
-            onOpenChange={setWizardOpen}
-            onSuccess={onRefresh}
-          />
-          
-          <ImportEmployeeDialogControlled 
-            open={importDialogOpen}
-            onOpenChange={setImportDialogOpen}
-            onSuccess={onRefresh} 
-          />
-          
-          <HMRCImportDialog
-            open={hmrcImportDialogOpen}
-            onOpenChange={setHmrcImportDialogOpen}
-            onSuccess={onRefresh}
-          />
-        </>
-      )}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Employee
+            <ChevronDown className="ml-2 h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => setWizardOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Single Employee
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setImportDialogOpen(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Import from CSV/Excel
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setHmrcImportDialogOpen(true)}>
+            <FileText className="mr-2 h-4 w-4" />
+            Import from HMRC XML
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      
+      <NewEmployeeWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onSuccess={onRefresh}
+      />
+      
+      <ImportEmployeeDialogControlled 
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onSuccess={onRefresh} 
+      />
+      
+      <HMRCImportDialog
+        open={hmrcImportDialogOpen}
+        onOpenChange={setHmrcImportDialogOpen}
+        onSuccess={onRefresh}
+      />
     </>
   );
 };
