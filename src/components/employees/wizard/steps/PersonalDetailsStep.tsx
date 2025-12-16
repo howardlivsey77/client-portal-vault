@@ -12,8 +12,9 @@ interface PersonalDetailsStepProps {
 
 export const PersonalDetailsStep = ({ form }: PersonalDetailsStepProps) => {
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="space-y-4">
+      {/* Name, Email, DOB, Gender - all in one row on larger screens */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <FormField
           control={form.control}
           name="first_name"
@@ -41,26 +42,7 @@ export const PersonalDetailsStep = ({ form }: PersonalDetailsStepProps) => {
             </FormItem>
           )}
         />
-      </div>
 
-      <FormField
-        control={form.control}
-        name="email"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Email Address</FormLabel>
-            <FormControl>
-              <Input type="email" placeholder="employee@company.com" className="bg-white" {...field} />
-            </FormControl>
-            <FormDescription>
-              Used for payslips and employee portal access
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
         <DateInputField
           control={form.control}
           name="date_of_birth"
@@ -95,43 +77,62 @@ export const PersonalDetailsStep = ({ form }: PersonalDetailsStepProps) => {
         />
       </div>
 
+      <FormField
+        control={form.control}
+        name="email"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Email Address</FormLabel>
+            <FormControl>
+              <Input type="email" placeholder="employee@company.com" className="bg-white" {...field} />
+            </FormControl>
+            <FormDescription>
+              Used for payslips and employee portal access
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
       {/* Address Section */}
       <Separator />
       
-      <div className="space-y-4">
+      <div className="space-y-3">
         <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
           Address (Optional)
         </h4>
         
-        <FormField
-          control={form.control}
-          name="address1"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Address Line 1</FormLabel>
-              <FormControl>
-                <Input placeholder="Street address" className="bg-white" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <FormField
+            control={form.control}
+            name="address1"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Address Line 1</FormLabel>
+                <FormControl>
+                  <Input placeholder="Street address" className="bg-white" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="address2"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Address Line 2</FormLabel>
-              <FormControl>
-                <Input placeholder="Apartment, suite, etc." className="bg-white" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="address2"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Address Line 2</FormLabel>
+                <FormControl>
+                  <Input placeholder="Apartment, suite, etc." className="bg-white" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <FormField
             control={form.control}
             name="address3"
@@ -159,21 +160,21 @@ export const PersonalDetailsStep = ({ form }: PersonalDetailsStepProps) => {
               </FormItem>
             )}
           />
-        </div>
 
-        <FormField
-          control={form.control}
-          name="postcode"
-          render={({ field }) => (
-            <FormItem className="max-w-[200px]">
-              <FormLabel>Postcode</FormLabel>
-              <FormControl>
-                <Input placeholder="AB12 3CD" className="bg-white" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="postcode"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Postcode</FormLabel>
+                <FormControl>
+                  <Input placeholder="AB12 3CD" className="bg-white" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
       </div>
     </div>
   );
