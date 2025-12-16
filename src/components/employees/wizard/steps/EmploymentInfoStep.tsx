@@ -53,7 +53,7 @@ export const EmploymentInfoStep = ({ form }: EmploymentInfoStepProps) => {
         )}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
         <DateInputField
           control={form.control}
           name="hire_date"
@@ -67,7 +67,7 @@ export const EmploymentInfoStep = ({ form }: EmploymentInfoStepProps) => {
           control={form.control}
           name="payroll_id"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex flex-col">
               <FormLabel>Payroll ID</FormLabel>
               <FormControl>
                 <Input placeholder="Auto-generated" className="bg-white" {...field} />
