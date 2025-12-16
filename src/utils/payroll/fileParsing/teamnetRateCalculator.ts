@@ -1,0 +1,119 @@
+/**
+ * Calculate rate assignments for Teamnet overtime based on shift times
+ * 
+ * Rate 3: Mon-Fri 18:30-20:00, Sat 10:00-14:00
+ * Rate 2: All other times
+ */
+
+export interface RateHours {
+  rate2Hours: number;
+  rate3Hours: number;
+}
+
+/**
+ * Parse time string (HH:MM or HH:MM:SS) to minutes since midnight
+ */
+function parseTimeToMinutes(timeStr: string): number {
+  if (!timeStr) return 0;
+  const parts = timeStr.split(':');
+  const hours = parseInt(parts[0], 10) || 0;
+  const minutes = parseInt(parts[1], 10) || 0;
+  return hours * 60 + minutes;
+}
+
+/**
+ * Convert minutes to hours (decimal)
+ */
+function minutesToHours(minutes: number): number {
+  return Math.round((minutes / 60) * 100) / 100; // Round to 2 decimal places
+}
+
+/**
+ * Calculate overlapping minutes between two time ranges
+ * All values are in minutes since midnight
+ */
+function calculateOverlap(
+  shiftStart: number,
+  shiftEnd: number,
+  windowStart: number,
+  windowEnd: number
+): number {
+  const overlapStart = Math.max(shiftStart, windowStart);
+  const overlapEnd = Math.min(shiftEnd, windowEnd);
+  return Math.max(0, overlapEnd - overlapStart);
+}
+
+/**
+ * Calculate rate hours for a single shift
+ * 
+ * @param timeFrom - Start time string (HH:MM)
+ * @param timeTo - End time string (HH:MM)
+ * @param date - Date of the shift
+ * @returns Object with rate2Hours and rate3Hours
+ */
+export function calculateTeamnetRates(
+  timeFrom: string,
+  timeTo: string,
+  date: Date
+): RateHours {
+  const shiftStart = parseTimeToMinutes(timeFrom);
+  let shiftEnd = parseTimeToMinutes(timeTo);
+  
+  // Handle overnight shifts (end time is next day)
+  if (shiftEnd <= shiftStart) {
+    shiftEnd += 24 * 60; // Add 24 hours
+  }
+  
+  const totalMinutes = shiftEnd - shiftStart;
+  const dayOfWeek = date.getDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+  
+  let rate3Minutes = 0;
+  
+  // Rate 3 windows (in minutes since midnight)
+  const weekdayRate3Start = parseTimeToMinutes('18:30'); // 1110 minutes
+  const weekdayRate3End = parseTimeToMinutes('20:00');   // 1200 minutes
+  const saturdayRate3Start = parseTimeToMinutes('10:00'); // 600 minutes
+  const saturdayRate3End = parseTimeToMinutes('14:00');   // 840 minutes
+  
+  // Check if weekday (Mon-Fri: 1-5)
+  if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+    rate3Minutes = calculateOverlap(shiftStart, shiftEnd, weekdayRate3Start, weekdayRate3End);
+  }
+  // Check if Saturday (6)
+  else if (dayOfWeek === 6) {
+    rate3Minutes = calculateOverlap(shiftStart, shiftEnd, saturdayRate3Start, saturdayRate3End);
+  }
+  // Sunday (0) - all Rate 2, rate3Minutes stays 0
+  
+  const rate2Minutes = totalMinutes - rate3Minutes;
+  
+  return {
+    rate2Hours: minutesToHours(rate2Minutes),
+    rate3Hours: minutesToHours(rate3Minutes)
+  };
+}
+
+/**
+ * Parse a date string in various formats
+ */
+export function parseTeamnetDate(dateStr: string): Date | null {
+  if (!dateStr) return null;
+  
+  // Try DD/MM/YYYY format first (common UK format)
+  const ukMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (ukMatch) {
+    const [, day, month, year] = ukMatch;
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  }
+  
+  // Try YYYY-MM-DD format (ISO)
+  const isoMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch;
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  }
+  
+  // Fall back to Date.parse
+  const parsed = new Date(dateStr);
+  return isNaN(parsed.getTime()) ? null : parsed;
+}

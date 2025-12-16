@@ -5,11 +5,13 @@ import { processExtraHoursFile, savePayrollData } from "@/services";
 import { matchEmployees, applyUserMappings, EmployeeMatchingResults } from "@/services/payroll/employeeMatching";
 import { useAuth } from "@/providers";
 import { ExtraHoursSummary, PayrollFiles } from "../types";
+import { ImportFormat } from "../FormatSelector";
 
-type WizardStep = 0 | 1 | 2 | 3; // Upload -> Review -> Absences -> Final Summary
+type WizardStep = 0 | 1 | 2 | 3 | 4; // Format Select -> Upload -> Review -> Absences -> Final Summary
 
 interface ConsolidatedWizardState {
   currentStep: WizardStep;
+  selectedFormat: ImportFormat;
   uploadedFiles: PayrollFiles;
   processedData: ExtraHoursSummary | null;
   isProcessing: boolean;
@@ -23,6 +25,7 @@ export function useConsolidatedPayrollWizard() {
   
   const [state, setState] = useState<ConsolidatedWizardState>({
     currentStep: 0,
+    selectedFormat: 'practice-index',
     uploadedFiles: { extraHours: null, absences: null },
     processedData: null,
     isProcessing: false,
@@ -41,6 +44,17 @@ export function useConsolidatedPayrollWizard() {
     }));
   }, []);
 
+  // Format change handler
+  const handleFormatChange = useCallback((format: ImportFormat) => {
+    setState(prev => ({
+      ...prev,
+      selectedFormat: format,
+      // Reset processed data when format changes
+      processedData: null,
+      matchingResults: null,
+    }));
+  }, []);
+
   // Consolidated file processing
   const processExtraHours = useCallback(async (file: File): Promise<ExtraHoursSummary> => {
     if (state.processedData) {
@@ -50,7 +64,8 @@ export function useConsolidatedPayrollWizard() {
     try {
       setState(prev => ({ ...prev, isProcessing: true, error: null }));
       
-      const result = await processExtraHoursFile(file);
+      // Pass the selected format to the parser
+      const result = await processExtraHoursFile(file, state.selectedFormat);
       
       // Perform employee matching immediately
       const matching = await matchEmployees(result.employeeDetails);
@@ -83,7 +98,7 @@ export function useConsolidatedPayrollWizard() {
       
       throw error;
     }
-  }, [state.processedData]);
+  }, [state.processedData, state.selectedFormat]);
 
   // Handle employee mapping confirmation
   const handleEmployeeMappingConfirm = useCallback((userMappings: Record<string, string>) => {
@@ -105,7 +120,7 @@ export function useConsolidatedPayrollWizard() {
       ...prev,
       processedData: updatedProcessedData,
       showEmployeeMapping: false,
-      currentStep: 2, // Advance to Upload Absences step
+      currentStep: 3, // Advance to Upload Absences step (adjusted for format selection step)
     }));
     
     toast({
@@ -129,17 +144,17 @@ export function useConsolidatedPayrollWizard() {
   const handleNext = useCallback(async (onOpenChange: (open: boolean) => void) => {
     console.log("HandleNext called - Current step:", state.currentStep);
     
-    // Check if we need to show employee mapping after summary step
-    if (state.currentStep === 1 && !state.showEmployeeMapping && state.matchingResults) {
+    // Check if we need to show employee mapping after summary step (step 2, adjusted for format selection)
+    if (state.currentStep === 2 && !state.showEmployeeMapping && state.matchingResults) {
       const needsMapping = state.matchingResults.fuzzyMatches.length > 0 || state.matchingResults.unmatchedEmployees.length > 0;
       if (needsMapping) {
         console.log("Showing employee mapping dialog");
         setState(prev => ({ ...prev, showEmployeeMapping: true }));
-        return; // Don't advance step yet - mapping completion will advance to step 2
+        return; // Don't advance step yet - mapping completion will advance to step 3
       }
     }
     
-    const totalSteps = 4;
+    const totalSteps = 5; // Format -> Upload -> Review -> Absences -> Final Summary
     
     if (state.currentStep < totalSteps - 1) {
       console.log("Advancing to step:", state.currentStep + 1);
@@ -203,14 +218,25 @@ export function useConsolidatedPayrollWizard() {
       return false; // User must complete mapping first
     }
     
+    // Step 0: Format selection - always can proceed
     if (state.currentStep === 0) {
+      return true;
+    }
+    // Step 1: Upload file
+    else if (state.currentStep === 1) {
       return state.uploadedFiles.extraHours !== null;
-    } else if (state.currentStep === 1) {
+    }
+    // Step 2: Review summary
+    else if (state.currentStep === 2) {
       return state.processedData !== null;
-    } else if (state.currentStep === 2) {
-      return true; // Absences file is optional
-    } else if (state.currentStep === 3) {
-      return state.processedData !== null; // Final summary requires processed data
+    }
+    // Step 3: Absences (optional)
+    else if (state.currentStep === 3) {
+      return true;
+    }
+    // Step 4: Final summary
+    else if (state.currentStep === 4) {
+      return state.processedData !== null;
     }
     return true;
   }, [state.currentStep, state.uploadedFiles.extraHours, state.processedData, state.showEmployeeMapping]);
@@ -219,6 +245,7 @@ export function useConsolidatedPayrollWizard() {
   const resetWizard = useCallback(() => {
     setState({
       currentStep: 0,
+      selectedFormat: 'practice-index',
       uploadedFiles: { extraHours: null, absences: null },
       processedData: null,
       isProcessing: false,
@@ -231,6 +258,7 @@ export function useConsolidatedPayrollWizard() {
   return {
     // State
     currentStep: state.currentStep,
+    selectedFormat: state.selectedFormat,
     uploadedFiles: state.uploadedFiles,
     processedData: state.processedData,
     isProcessing: state.isProcessing,
@@ -240,6 +268,7 @@ export function useConsolidatedPayrollWizard() {
     
     // Actions
     handleFileUpload,
+    handleFormatChange,
     processExtraHours,
     handleNext,
     handleBack,
