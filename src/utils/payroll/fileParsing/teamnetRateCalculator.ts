@@ -1,14 +1,33 @@
 /**
  * Calculate rate assignments for Teamnet overtime based on shift times
  * 
+ * Default rules (when no company config):
  * Rate 3: Mon-Fri 18:30-20:00, Sat 10:00-14:00
  * Rate 2: All other times
+ * 
+ * Company-specific rules can be configured via the database
  */
 
 export interface RateHours {
   rate2Hours: number;
   rate3Hours: number;
+  rate4Hours?: number;
 }
+
+export interface RateCondition {
+  rate: number;
+  days: string[];
+  time_from: string;
+  time_to: string;
+}
+
+export interface TeamnetRateConfig {
+  default_rate: number;
+  conditions: RateCondition[];
+}
+
+// Map day numbers to day names
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 /**
  * Parse time string (HH:MM or HH:MM:SS) to minutes since midnight
@@ -44,29 +63,57 @@ function calculateOverlap(
 }
 
 /**
- * Calculate rate hours for a single shift
- * 
- * @param timeFrom - Start time string (HH:MM)
- * @param timeTo - End time string (HH:MM)
- * @param date - Date of the shift
- * @returns Object with rate2Hours and rate3Hours
+ * Calculate rate hours using company-specific configuration
  */
-export function calculateTeamnetRates(
-  timeFrom: string,
-  timeTo: string,
-  date: Date
+function calculateWithConfig(
+  shiftStart: number,
+  shiftEnd: number,
+  dayOfWeek: number,
+  totalMinutes: number,
+  config: TeamnetRateConfig
 ): RateHours {
-  const shiftStart = parseTimeToMinutes(timeFrom);
-  let shiftEnd = parseTimeToMinutes(timeTo);
+  const dayName = DAY_NAMES[dayOfWeek];
+  const rateMinutes: Record<number, number> = { 2: 0, 3: 0, 4: 0 };
   
-  // Handle overnight shifts (end time is next day)
-  if (shiftEnd <= shiftStart) {
-    shiftEnd += 24 * 60; // Add 24 hours
+  // Calculate minutes for each matching condition
+  for (const condition of config.conditions) {
+    if (condition.days.includes(dayName)) {
+      const windowStart = parseTimeToMinutes(condition.time_from);
+      const windowEnd = parseTimeToMinutes(condition.time_to);
+      const overlap = calculateOverlap(shiftStart, shiftEnd, windowStart, windowEnd);
+      
+      if (overlap > 0 && condition.rate >= 2 && condition.rate <= 4) {
+        rateMinutes[condition.rate] += overlap;
+      }
+    }
   }
   
-  const totalMinutes = shiftEnd - shiftStart;
-  const dayOfWeek = date.getDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+  // Calculate total assigned minutes
+  const assignedMinutes = rateMinutes[2] + rateMinutes[3] + rateMinutes[4];
   
+  // Remaining minutes go to default rate
+  const remainingMinutes = totalMinutes - assignedMinutes;
+  if (remainingMinutes > 0) {
+    const defaultRate = Math.max(2, Math.min(4, config.default_rate));
+    rateMinutes[defaultRate] += remainingMinutes;
+  }
+  
+  return {
+    rate2Hours: minutesToHours(rateMinutes[2]),
+    rate3Hours: minutesToHours(rateMinutes[3]),
+    rate4Hours: minutesToHours(rateMinutes[4])
+  };
+}
+
+/**
+ * Calculate rate hours using hardcoded default rules
+ */
+function calculateWithDefaults(
+  shiftStart: number,
+  shiftEnd: number,
+  dayOfWeek: number,
+  totalMinutes: number
+): RateHours {
   let rate3Minutes = 0;
   
   // Rate 3 windows (in minutes since midnight)
@@ -91,6 +138,40 @@ export function calculateTeamnetRates(
     rate2Hours: minutesToHours(rate2Minutes),
     rate3Hours: minutesToHours(rate3Minutes)
   };
+}
+
+/**
+ * Calculate rate hours for a single shift
+ * 
+ * @param timeFrom - Start time string (HH:MM)
+ * @param timeTo - End time string (HH:MM)
+ * @param date - Date of the shift
+ * @param config - Optional company-specific rate configuration
+ * @returns Object with rate2Hours, rate3Hours, and optionally rate4Hours
+ */
+export function calculateTeamnetRates(
+  timeFrom: string,
+  timeTo: string,
+  date: Date,
+  config?: TeamnetRateConfig | null
+): RateHours {
+  const shiftStart = parseTimeToMinutes(timeFrom);
+  let shiftEnd = parseTimeToMinutes(timeTo);
+  
+  // Handle overnight shifts (end time is next day)
+  if (shiftEnd <= shiftStart) {
+    shiftEnd += 24 * 60; // Add 24 hours
+  }
+  
+  const totalMinutes = shiftEnd - shiftStart;
+  const dayOfWeek = date.getDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+  
+  // Use company config if provided, otherwise use defaults
+  if (config && config.conditions && config.conditions.length > 0) {
+    return calculateWithConfig(shiftStart, shiftEnd, dayOfWeek, totalMinutes, config);
+  }
+  
+  return calculateWithDefaults(shiftStart, shiftEnd, dayOfWeek, totalMinutes);
 }
 
 /**

@@ -1797,6 +1797,50 @@ export type Database = {
         }
         Relationships: []
       }
+      teamnet_rate_configs: {
+        Row: {
+          company_id: string
+          conditions: Json
+          created_at: string
+          created_by: string | null
+          default_rate: number
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          default_rate?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          default_rate?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teamnet_rate_configs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timesheet_entries: {
         Row: {
           actual_end: string | null
