@@ -72,7 +72,7 @@ export const PersonalDetailsStep = ({ form }: PersonalDetailsStepProps) => {
           control={form.control}
           name="gender"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex flex-col">
               <FormLabel>Gender</FormLabel>
               <Select onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
