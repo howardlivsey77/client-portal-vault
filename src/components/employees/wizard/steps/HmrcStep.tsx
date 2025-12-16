@@ -64,17 +64,17 @@ export const HmrcStep = ({ form }: HmrcStepProps) => {
   }, [hasP45, p46Statement, form]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* P45 Question */}
       <FormField
         control={form.control}
         name="has_p45"
         render={({ field }) => (
-          <FormItem className="flex flex-row items-center justify-between rounded-lg border-2 border-blue-200 p-4 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800">
+          <FormItem className="flex flex-row items-center justify-between rounded-lg border-2 border-blue-200 p-3 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800">
             <div className="space-y-0.5">
               <FormLabel className="text-base font-medium">Does the employee have a P45?</FormLabel>
-              <FormDescription>
-                A P45 is provided by the previous employer when leaving a job
+              <FormDescription className="text-xs">
+                From previous employer when leaving a job
               </FormDescription>
             </div>
             <FormControl>
@@ -98,9 +98,9 @@ export const HmrcStep = ({ form }: HmrcStepProps) => {
 
       {/* P45 Details - Show when has P45 */}
       {hasP45 === true && (
-        <div className="space-y-4 rounded-lg border p-4 bg-background">
+        <div className="space-y-3 rounded-lg border p-3 bg-background">
           <h4 className="font-medium text-sm text-muted-foreground">P45 Details</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormField
               control={form.control}
               name="taxable_pay_ytd"
@@ -117,7 +117,7 @@ export const HmrcStep = ({ form }: HmrcStepProps) => {
                       onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
                     />
                   </FormControl>
-                  <FormDescription>From P45 Part 1A, box 5</FormDescription>
+                  <FormDescription className="text-xs">From P45 Part 1A, box 5</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -138,7 +138,7 @@ export const HmrcStep = ({ form }: HmrcStepProps) => {
                       onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
                     />
                   </FormControl>
-                  <FormDescription>From P45 Part 1A, box 6</FormDescription>
+                  <FormDescription className="text-xs">From P45 Part 1A, box 6</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -149,11 +149,8 @@ export const HmrcStep = ({ form }: HmrcStepProps) => {
 
       {/* P46 Statement - Show when no P45 */}
       {hasP45 === false && (
-        <div className="space-y-4 rounded-lg border p-4 bg-background">
+        <div className="space-y-2 rounded-lg border p-3 bg-background">
           <h4 className="font-medium text-sm text-muted-foreground">New Starter Declaration (P46)</h4>
-          <p className="text-sm text-muted-foreground">
-            Please select the statement that applies to this employee:
-          </p>
           <FormField
             control={form.control}
             name="p46_statement"
@@ -163,16 +160,16 @@ export const HmrcStep = ({ form }: HmrcStepProps) => {
                   <RadioGroup
                     onValueChange={field.onChange}
                     value={field.value || undefined}
-                    className="space-y-3"
+                    className="space-y-1"
                   >
                     {p46StatementOptions.map((option) => (
-                      <div key={option.value} className="flex items-start space-x-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors">
-                        <RadioGroupItem value={option.value} id={`p46-${option.value}`} className="mt-1" />
+                      <div key={option.value} className="flex items-start space-x-3 py-1.5 hover:bg-muted/50 rounded px-2 -mx-2">
+                        <RadioGroupItem value={option.value} id={`p46-${option.value}`} className="mt-0.5" />
                         <div className="flex-1">
-                          <Label htmlFor={`p46-${option.value}`} className="font-medium cursor-pointer">
+                          <Label htmlFor={`p46-${option.value}`} className="text-sm font-medium cursor-pointer">
                             {option.label}
                           </Label>
-                          <p className="text-sm text-muted-foreground mt-1">
+                          <p className="text-xs text-muted-foreground">
                             {option.description}
                           </p>
                         </div>
@@ -189,43 +186,40 @@ export const HmrcStep = ({ form }: HmrcStepProps) => {
 
       <Separator />
 
-      {/* National Insurance Number */}
-      <FormField
-        control={form.control}
-        name="national_insurance_number"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>National Insurance Number</FormLabel>
-            <FormControl>
-              <NINumberInput
-                value={field.value || ""}
-                onChange={field.onChange}
-                disabled={false}
-              />
-            </FormControl>
-            <FormDescription>
-              Format: QQ123456C (2 letters, 6 numbers, 1 letter)
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      {/* NI Number, Tax Code, NI Category - 3 column grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <FormField
+          control={form.control}
+          name="national_insurance_number"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>NI Number</FormLabel>
+              <FormControl>
+                <NINumberInput
+                  value={field.value || ""}
+                  onChange={field.onChange}
+                  disabled={false}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="tax_code"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="flex items-center gap-2">
+              <FormLabel className="flex items-center gap-1">
                 Tax Code
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger type="button">
-                      <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
-                      <p>The tax code from HMRC determines how much income tax to deduct. Common codes: 1257L (standard), BR (basic rate), 0T.</p>
+                      <p>The tax code from HMRC. Common: 1257L (standard), BR (basic rate), 0T.</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -238,11 +232,6 @@ export const HmrcStep = ({ form }: HmrcStepProps) => {
                   className="bg-white"
                 />
               </FormControl>
-              {hasP45 === false && p46Statement && (
-                <FormDescription>
-                  Auto-filled based on P46 statement. Can be changed if HMRC advises differently.
-                </FormDescription>
-              )}
               <FormMessage />
             </FormItem>
           )}
@@ -253,15 +242,15 @@ export const HmrcStep = ({ form }: HmrcStepProps) => {
           name="nic_code"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="flex items-center gap-2">
+              <FormLabel className="flex items-center gap-1">
                 NI Category
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger type="button">
-                      <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
-                      <p>National Insurance category letter. Most employees use 'A'. Special categories exist for under 21s, apprentices, and those over state pension age.</p>
+                      <p>NI category letter. Most use 'A'. Special for under 21s, apprentices, over pension age.</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -269,7 +258,7 @@ export const HmrcStep = ({ form }: HmrcStepProps) => {
               <Select onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger className="bg-white">
-                    <SelectValue placeholder="Select NI category" />
+                    <SelectValue placeholder="Select" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -280,16 +269,14 @@ export const HmrcStep = ({ form }: HmrcStepProps) => {
                   ))}
                 </SelectContent>
               </Select>
-              <FormDescription>
-                Auto-selected based on age. Can be changed if needed.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Student Loan and Week 1/Month 1 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <FormField
           control={form.control}
           name="student_loan_plan"
@@ -316,9 +303,6 @@ export const HmrcStep = ({ form }: HmrcStepProps) => {
                   ))}
                 </SelectContent>
               </Select>
-              <FormDescription>
-                If employee has student loan deductions
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -328,10 +312,10 @@ export const HmrcStep = ({ form }: HmrcStepProps) => {
           control={form.control}
           name="week_one_month_one"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
               <div className="space-y-0.5">
-                <FormLabel className="text-base">Week 1/Month 1</FormLabel>
-                <FormDescription>
+                <FormLabel>Week 1/Month 1</FormLabel>
+                <FormDescription className="text-xs">
                   Emergency tax basis
                 </FormDescription>
               </div>
