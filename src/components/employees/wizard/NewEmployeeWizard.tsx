@@ -6,7 +6,7 @@ import { PersonalDetailsStep } from "./steps/PersonalDetailsStep";
 import { EmploymentInfoStep } from "./steps/EmploymentInfoStep";
 import { PayStep } from "./steps/PayStep";
 import { HmrcStep } from "./steps/HmrcStep";
-import { ContactPensionStep } from "./steps/ContactPensionStep";
+import { PensionStep } from "./steps/PensionStep";
 import { useNewEmployeeWizard, WIZARD_STEPS } from "@/hooks/employees/useNewEmployeeWizard";
 import { useDepartments } from "@/hooks";
 import { ChevronLeft, ChevronRight, Loader2, UserPlus } from "lucide-react";
@@ -71,7 +71,7 @@ export const NewEmployeeWizard = ({ open, onOpenChange, onSuccess }: NewEmployee
       case 4:
         return <HmrcStep form={form} />;
       case 5:
-        return <ContactPensionStep form={form} />;
+        return <PensionStep form={form} />;
       default:
         return null;
     }

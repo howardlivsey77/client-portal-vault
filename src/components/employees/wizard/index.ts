@@ -4,4 +4,4 @@ export { PersonalDetailsStep } from "./steps/PersonalDetailsStep";
 export { EmploymentInfoStep } from "./steps/EmploymentInfoStep";
 export { PayStep } from "./steps/PayStep";
 export { HmrcStep } from "./steps/HmrcStep";
-export { ContactPensionStep } from "./steps/ContactPensionStep";
+export { PensionStep } from "./steps/PensionStep";

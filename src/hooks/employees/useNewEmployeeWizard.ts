@@ -12,8 +12,8 @@ export const WIZARD_STEPS = [
   {
     number: 1,
     title: "Personal Details",
-    description: "Basic information",
-    fields: ["first_name", "last_name", "email", "date_of_birth", "gender"] as const,
+    description: "Basic information & address",
+    fields: ["first_name", "last_name", "email", "date_of_birth", "gender", "address1", "address2", "address3", "address4", "postcode"] as const,
   },
   {
     number: 2,
@@ -35,9 +35,9 @@ export const WIZARD_STEPS = [
   },
   {
     number: 5,
-    title: "Contact & Pension",
-    description: "Address & benefits",
-    fields: ["address1", "address2", "address3", "address4", "postcode", "nhs_pension_member", "previous_year_pensionable_pay", "nhs_pension_tier", "nhs_pension_employee_rate"] as const,
+    title: "Pension",
+    description: "NHS Pension details",
+    fields: ["nhs_pension_member", "previous_year_pensionable_pay", "nhs_pension_tier", "nhs_pension_employee_rate"] as const,
   },
 ];
 
