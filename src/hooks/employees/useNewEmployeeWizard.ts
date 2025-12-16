@@ -29,12 +29,18 @@ export const WIZARD_STEPS = [
   },
   {
     number: 4,
-    title: "HMRC",
-    description: "Tax & NI details",
-    fields: ["national_insurance_number", "tax_code", "nic_code", "week_one_month_one", "student_loan_plan", "has_p45", "taxable_pay_ytd", "tax_paid_ytd", "p46_statement"] as const,
+    title: "Employee YTD",
+    description: "P45/P46 information",
+    fields: ["has_p45", "taxable_pay_ytd", "tax_paid_ytd", "p46_statement"] as const,
   },
   {
     number: 5,
+    title: "HMRC",
+    description: "Tax & NI details",
+    fields: ["national_insurance_number", "tax_code", "nic_code", "week_one_month_one", "student_loan_plan"] as const,
+  },
+  {
+    number: 6,
     title: "Pension",
     description: "NHS Pension details",
     fields: ["nhs_pension_member", "previous_year_pensionable_pay", "nhs_pension_tier", "nhs_pension_employee_rate"] as const,
@@ -60,7 +66,9 @@ const step4Schema = z.object({});
 
 const step5Schema = z.object({});
 
-const stepSchemas = [step1Schema, step2Schema, step3Schema, step4Schema, step5Schema];
+const step6Schema = z.object({});
+
+const stepSchemas = [step1Schema, step2Schema, step3Schema, step4Schema, step5Schema, step6Schema];
 
 export const useNewEmployeeWizard = () => {
   const [currentStep, setCurrentStep] = useState(1);
