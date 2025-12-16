@@ -10,6 +10,27 @@ export interface SicknessRecordPayment {
 }
 
 /**
+ * Check if two sickness absences are continuous (no gap between them)
+ * Returns true if currentStartDate is exactly the day after previousEndDate
+ */
+const isContinuousAbsence = (
+  previousEndDate: string | null,
+  currentStartDate: string
+): boolean => {
+  if (!previousEndDate) return false;
+  
+  const prevEnd = new Date(previousEndDate);
+  const currStart = new Date(currentStartDate);
+  
+  // Add 1 day to previous end date
+  const expectedNextDay = new Date(prevEnd);
+  expectedNextDay.setDate(expectedNextDay.getDate() + 1);
+  
+  // Check if current start is exactly the next day
+  return expectedNextDay.toDateString() === currStart.toDateString();
+};
+
+/**
  * Calculate payment allocation for each sickness record based on entitlement usage
  */
 export const calculateSicknessRecordPayments = (
@@ -61,6 +82,9 @@ export const calculateSicknessRecordPayments = (
   const hasWaitingDays = entitlementSummary.hasWaitingDays || false;
   const waitingDaysCount = 3; // Standard 3 working day wait
 
+  // Track previous record's end date to detect continuous absences
+  let previousEndDate: string | null = null;
+
   for (const { record, isWithinPeriod } of recordsWithPeriodInfo) {
     if (!isWithinPeriod) {
       // Historical record - outside current entitlement period
@@ -72,6 +96,8 @@ export const calculateSicknessRecordPayments = (
         isHistorical: true,
         paymentDescription: "Historical"
       });
+      // Still update previousEndDate for linking purposes
+      previousEndDate = record.end_date || record.start_date;
       continue;
     }
 
@@ -81,11 +107,17 @@ export const calculateSicknessRecordPayments = (
     let waitingDays = 0;
     let remainingDays = record.total_days;
 
-    // Apply waiting days if enabled (first 3 days of each absence are waiting days)
-    if (hasWaitingDays && remainingDays > 0) {
+    // Check if this absence is continuous with the previous one (no gap)
+    const isContinuous = isContinuousAbsence(previousEndDate, record.start_date);
+
+    // Apply waiting days only if enabled AND there's a gap (not continuous)
+    if (hasWaitingDays && remainingDays > 0 && !isContinuous) {
       waitingDays = Math.min(remainingDays, waitingDaysCount);
       remainingDays -= waitingDays;
     }
+
+    // Update previous end date for next iteration
+    previousEndDate = record.end_date || record.start_date;
 
     // Calculate available entitlement for this record
     const availableFullPay = Math.max(0, totalFullPayDays - usedFullPay);
