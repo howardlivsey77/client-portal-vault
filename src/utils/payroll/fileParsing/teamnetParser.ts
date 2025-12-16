@@ -63,13 +63,13 @@ export function isTeamnetFormat(jsonData: any[]): boolean {
   const firstRow = jsonData[0];
   const keys = Object.keys(firstRow).map(k => k.toLowerCase());
   
-  // Teamnet format has Name, Surname, Time from, Time to columns
+  // Teamnet format has Name column and Time from/Time to columns
+  // Surname is optional - some exports have combined Name column with full name
   const hasName = keys.some(k => k === 'name');
-  const hasSurname = keys.some(k => k === 'surname');
   const hasTimeFrom = keys.some(k => k.includes('time from') || k === 'time_from');
   const hasTimeTo = keys.some(k => k.includes('time to') || k === 'time_to');
   
-  return hasName && hasSurname && hasTimeFrom && hasTimeTo;
+  return hasName && hasTimeFrom && hasTimeTo;
 }
 
 /**
@@ -91,19 +91,27 @@ export function parseTeamnetData(jsonData: any[]): ExtraHoursSummary {
   let processedRows = 0;
   
   for (const row of jsonData) {
-    const name = getColumnValue(row, ['Name', 'name']);
-    const surname = getColumnValue(row, ['Surname', 'surname']);
+    const firstName = getColumnValue(row, ['Name', 'name', 'First Name', 'first name']);
+    const surname = getColumnValue(row, ['Surname', 'surname', 'Last Name', 'last name']);
     const dateFrom = getColumnValue(row, ['Date from', 'date from', 'Date_from', 'date_from']);
     const timeFrom = getColumnValue(row, ['Time from', 'time from', 'Time_from', 'time_from']);
     const timeTo = getColumnValue(row, ['Time to', 'time to', 'Time_to', 'time_to']);
     
-    // Skip rows without essential data
-    if (!name || !surname || !timeFrom || !timeTo) {
+    // Build employee name - handle both separate and combined name columns
+    let employeeName: string;
+    if (surname) {
+      employeeName = `${firstName} ${surname}`.trim();
+    } else {
+      // Full name is already in the Name column
+      employeeName = firstName;
+    }
+    
+    // Skip rows without essential data (name can be in either format)
+    if (!employeeName || !timeFrom || !timeTo) {
       skippedRows++;
       if (skippedRows <= 3) {
         console.log('[Teamnet Parser] Skipping row - missing data:', {
-          name: name || '(empty)',
-          surname: surname || '(empty)',
+          name: employeeName || '(empty)',
           timeFrom: timeFrom || '(empty)',
           timeTo: timeTo || '(empty)',
           rawKeys: Object.keys(row)
@@ -111,9 +119,6 @@ export function parseTeamnetData(jsonData: any[]): ExtraHoursSummary {
       }
       continue;
     }
-    
-    // Create full employee name
-    const employeeName = `${name} ${surname}`.trim();
     
     // Parse the date
     const shiftDate = parseTeamnetDate(dateFrom);
