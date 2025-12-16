@@ -1,13 +1,27 @@
+import { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { EmployeeFormValues } from "@/types";
+import { calculateMonthlySalary } from "@/lib/formatters";
 
 interface PayStepProps {
   form: UseFormReturn<EmployeeFormValues>;
 }
 
 export const PayStep = ({ form }: PayStepProps) => {
+  const hoursPerWeek = form.watch("hours_per_week");
+  const hourlyRate = form.watch("hourly_rate");
+
+  useEffect(() => {
+    if (hourlyRate > 0 && hoursPerWeek > 0) {
+      const calculatedSalary = calculateMonthlySalary(hourlyRate, hoursPerWeek);
+      form.setValue("monthly_salary", calculatedSalary);
+    } else {
+      form.setValue("monthly_salary", null);
+    }
+  }, [hourlyRate, hoursPerWeek, form]);
+
   return (
     <div className="space-y-6">
       <FormField
@@ -69,14 +83,14 @@ export const PayStep = ({ form }: PayStepProps) => {
                 <Input
                   type="number"
                   step="0.01"
-                  placeholder="Optional"
-                  className="bg-white"
+                  placeholder="—"
+                  className="bg-muted"
+                  readOnly
                   value={field.value || ""}
-                  onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
                 />
               </FormControl>
               <FormDescription>
-                For salaried employees
+                Auto-calculated from hourly rate × hours
               </FormDescription>
               <FormMessage />
             </FormItem>
