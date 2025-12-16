@@ -4,15 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmployeeFormValues, statusOptions } from "@/types";
 import { DateInputField } from "../../DateInputField";
-import { useDepartments } from "@/hooks";
+import { Department } from "@/services/employees/departmentService";
 
 interface EmploymentInfoStepProps {
   form: UseFormReturn<EmployeeFormValues>;
+  departments: Department[];
+  departmentsLoading: boolean;
 }
 
-export const EmploymentInfoStep = ({ form }: EmploymentInfoStepProps) => {
-  const { departments, loading: departmentsLoading } = useDepartments();
-
+export const EmploymentInfoStep = ({ form, departments, departmentsLoading }: EmploymentInfoStepProps) => {
   return (
     <div className="space-y-6">
       <FormField
