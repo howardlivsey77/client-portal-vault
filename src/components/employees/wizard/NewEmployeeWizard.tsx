@@ -4,7 +4,8 @@ import { Form } from "@/components/ui/form";
 import { WizardStepIndicator } from "./WizardStepIndicator";
 import { PersonalDetailsStep } from "./steps/PersonalDetailsStep";
 import { EmploymentInfoStep } from "./steps/EmploymentInfoStep";
-import { PayTaxStep } from "./steps/PayTaxStep";
+import { PayStep } from "./steps/PayStep";
+import { HmrcStep } from "./steps/HmrcStep";
 import { ContactPensionStep } from "./steps/ContactPensionStep";
 import { useNewEmployeeWizard, WIZARD_STEPS } from "@/hooks/employees/useNewEmployeeWizard";
 import { useDepartments } from "@/hooks";
@@ -66,8 +67,10 @@ export const NewEmployeeWizard = ({ open, onOpenChange, onSuccess }: NewEmployee
       case 2:
         return <EmploymentInfoStep form={form} departments={departments} departmentsLoading={departmentsLoading} />;
       case 3:
-        return <PayTaxStep form={form} />;
+        return <PayStep form={form} />;
       case 4:
+        return <HmrcStep form={form} />;
+      case 5:
         return <ContactPensionStep form={form} />;
       default:
         return null;
