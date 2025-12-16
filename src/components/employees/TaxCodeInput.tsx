@@ -50,6 +50,7 @@ export function TaxCodeInput({
         onChange={handleChange}
         placeholder={placeholder}
         className={cn(
+          "bg-white",
           hasError && "border-destructive focus-visible:ring-destructive",
           className
         )}

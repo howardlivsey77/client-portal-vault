@@ -100,7 +100,7 @@ export function HmrcStep({ form }: HmrcStepProps) {
               <FormLabel>NI Category</FormLabel>
               <Select onValueChange={field.onChange} value={field.value || ""}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white">
                     <SelectValue placeholder="Select NI category" />
                   </SelectTrigger>
                 </FormControl>
@@ -130,7 +130,7 @@ export function HmrcStep({ form }: HmrcStepProps) {
                 value={field.value === null ? "null" : field.value?.toString() || "null"}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white">
                     <SelectValue placeholder="Select student loan plan" />
                   </SelectTrigger>
                 </FormControl>
