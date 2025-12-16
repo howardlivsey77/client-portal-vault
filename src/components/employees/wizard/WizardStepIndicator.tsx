@@ -10,16 +10,22 @@ interface Step {
 interface WizardStepIndicatorProps {
   steps: Step[];
   currentStep: number;
+  completedSteps: Set<number>;
 }
 
-export const WizardStepIndicator = ({ steps, currentStep }: WizardStepIndicatorProps) => {
+export const WizardStepIndicator = ({ steps, currentStep, completedSteps }: WizardStepIndicatorProps) => {
   return (
     <div className="mb-8">
       {/* Mobile view - simplified */}
       <div className="sm:hidden text-center mb-4">
-        <span className="text-sm text-muted-foreground">
-          Step {currentStep} of {steps.length}
-        </span>
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <span className="text-sm text-muted-foreground">
+            Step {currentStep} of {steps.length}
+          </span>
+          {completedSteps.has(currentStep) && (
+            <Check className="w-4 h-4 text-green-500" />
+          )}
+        </div>
         <h3 className="font-semibold text-lg">{steps[currentStep - 1]?.title}</h3>
         <p className="text-sm text-muted-foreground">{steps[currentStep - 1]?.description}</p>
       </div>
@@ -27,7 +33,7 @@ export const WizardStepIndicator = ({ steps, currentStep }: WizardStepIndicatorP
       {/* Desktop view - full stepper */}
       <div className="hidden sm:flex items-center justify-between">
         {steps.map((step, index) => {
-          const isCompleted = currentStep > step.number;
+          const isCompleted = completedSteps.has(step.number);
           const isCurrent = currentStep === step.number;
           
           return (
@@ -36,8 +42,8 @@ export const WizardStepIndicator = ({ steps, currentStep }: WizardStepIndicatorP
                 <div
                   className={cn(
                     "w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium border-2 transition-colors",
-                    isCompleted && "bg-primary border-primary text-primary-foreground",
-                    isCurrent && "border-primary text-primary bg-primary/10",
+                    isCompleted && "bg-green-500 border-green-500 text-white",
+                    isCurrent && !isCompleted && "border-primary text-primary bg-primary/10",
                     !isCompleted && !isCurrent && "border-muted-foreground/30 text-muted-foreground"
                   )}
                 >
@@ -65,7 +71,7 @@ export const WizardStepIndicator = ({ steps, currentStep }: WizardStepIndicatorP
                 <div 
                   className={cn(
                     "flex-1 h-0.5 mx-4 mt-[-20px]",
-                    currentStep > step.number ? "bg-primary" : "bg-muted-foreground/30"
+                    completedSteps.has(step.number) ? "bg-green-500" : "bg-muted-foreground/30"
                   )}
                 />
               )}
