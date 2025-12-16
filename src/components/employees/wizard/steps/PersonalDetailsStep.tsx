@@ -20,7 +20,7 @@ export const PersonalDetailsStep = ({ form }: PersonalDetailsStepProps) => {
             <FormItem>
               <FormLabel>First Name *</FormLabel>
               <FormControl>
-                <Input placeholder="Enter first name" {...field} />
+                <Input placeholder="Enter first name" className="bg-white" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -34,7 +34,7 @@ export const PersonalDetailsStep = ({ form }: PersonalDetailsStepProps) => {
             <FormItem>
               <FormLabel>Last Name *</FormLabel>
               <FormControl>
-                <Input placeholder="Enter last name" {...field} />
+                <Input placeholder="Enter last name" className="bg-white" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -49,7 +49,7 @@ export const PersonalDetailsStep = ({ form }: PersonalDetailsStepProps) => {
           <FormItem>
             <FormLabel>Email Address</FormLabel>
             <FormControl>
-              <Input type="email" placeholder="employee@company.com" {...field} />
+              <Input type="email" placeholder="employee@company.com" className="bg-white" {...field} />
             </FormControl>
             <FormDescription>
               Used for payslips and employee portal access
@@ -65,6 +65,7 @@ export const PersonalDetailsStep = ({ form }: PersonalDetailsStepProps) => {
           name="date_of_birth"
           label="Date of Birth"
           readOnly={false}
+          inputClassName="bg-white"
         />
 
         <FormField
@@ -75,7 +76,7 @@ export const PersonalDetailsStep = ({ form }: PersonalDetailsStepProps) => {
               <FormLabel>Gender</FormLabel>
               <Select onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white">
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                 </FormControl>

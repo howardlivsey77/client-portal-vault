@@ -27,7 +27,7 @@ export const EmploymentInfoStep = ({ form }: EmploymentInfoStepProps) => {
               disabled={departmentsLoading}
             >
               <FormControl>
-                <SelectTrigger>
+                <SelectTrigger className="bg-white">
                   <SelectValue placeholder={departmentsLoading ? "Loading..." : "Select department"} />
                 </SelectTrigger>
               </FormControl>
@@ -60,6 +60,7 @@ export const EmploymentInfoStep = ({ form }: EmploymentInfoStepProps) => {
           label="Start Date *"
           required
           readOnly={false}
+          inputClassName="bg-white"
         />
 
         <FormField
@@ -69,7 +70,7 @@ export const EmploymentInfoStep = ({ form }: EmploymentInfoStepProps) => {
             <FormItem>
               <FormLabel>Payroll ID</FormLabel>
               <FormControl>
-                <Input placeholder="Auto-generated" {...field} />
+                <Input placeholder="Auto-generated" className="bg-white" {...field} />
               </FormControl>
               <FormDescription>
                 Auto-generated. Change if needed.
@@ -92,6 +93,7 @@ export const EmploymentInfoStep = ({ form }: EmploymentInfoStepProps) => {
                   type="number"
                   step="0.5"
                   placeholder="40"
+                  className="bg-white"
                   {...field}
                   onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                 />
@@ -112,7 +114,7 @@ export const EmploymentInfoStep = ({ form }: EmploymentInfoStepProps) => {
               <FormLabel>Employment Status</FormLabel>
               <Select onValueChange={field.onChange} value={field.value || "active"}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                 </FormControl>

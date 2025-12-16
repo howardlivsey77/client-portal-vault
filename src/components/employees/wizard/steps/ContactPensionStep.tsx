@@ -26,7 +26,7 @@ export const ContactPensionStep = ({ form }: ContactPensionStepProps) => {
             <FormItem>
               <FormLabel>Address Line 1</FormLabel>
               <FormControl>
-                <Input placeholder="Street address" {...field} />
+                <Input placeholder="Street address" className="bg-white" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -40,7 +40,7 @@ export const ContactPensionStep = ({ form }: ContactPensionStepProps) => {
             <FormItem>
               <FormLabel>Address Line 2</FormLabel>
               <FormControl>
-                <Input placeholder="Apartment, suite, etc." {...field} />
+                <Input placeholder="Apartment, suite, etc." className="bg-white" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -55,7 +55,7 @@ export const ContactPensionStep = ({ form }: ContactPensionStepProps) => {
               <FormItem>
                 <FormLabel>City/Town</FormLabel>
                 <FormControl>
-                  <Input placeholder="City or town" {...field} />
+                  <Input placeholder="City or town" className="bg-white" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -69,7 +69,7 @@ export const ContactPensionStep = ({ form }: ContactPensionStepProps) => {
               <FormItem>
                 <FormLabel>County/Region</FormLabel>
                 <FormControl>
-                  <Input placeholder="County or region" {...field} />
+                  <Input placeholder="County or region" className="bg-white" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -84,7 +84,7 @@ export const ContactPensionStep = ({ form }: ContactPensionStepProps) => {
             <FormItem className="max-w-[200px]">
               <FormLabel>Postcode</FormLabel>
               <FormControl>
-                <Input placeholder="AB12 3CD" {...field} />
+                <Input placeholder="AB12 3CD" className="bg-white" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -132,6 +132,7 @@ export const ContactPensionStep = ({ form }: ContactPensionStepProps) => {
                       type="number"
                       step="0.01"
                       placeholder="0.00"
+                      className="bg-white"
                       {...field}
                       value={field.value || ""}
                       onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
@@ -157,6 +158,7 @@ export const ContactPensionStep = ({ form }: ContactPensionStepProps) => {
                       min="1"
                       max="9"
                       placeholder="Auto-calculated"
+                      className="bg-white"
                       {...field}
                       value={field.value || ""}
                       onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}

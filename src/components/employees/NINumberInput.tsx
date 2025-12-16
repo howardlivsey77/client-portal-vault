@@ -34,39 +34,39 @@ export const NINumberInput = ({ value, onChange, disabled, className }: NINumber
     >
       {/* First 2 letters (e.g., QQ) */}
       <InputOTPGroup>
-        <InputOTPSlot index={0} className="uppercase" />
-        <InputOTPSlot index={1} className="uppercase" />
+        <InputOTPSlot index={0} className="uppercase bg-white" />
+        <InputOTPSlot index={1} className="uppercase bg-white" />
       </InputOTPGroup>
       
       <InputOTPSeparator />
       
       {/* First 2 digits */}
       <InputOTPGroup>
-        <InputOTPSlot index={2} />
-        <InputOTPSlot index={3} />
+        <InputOTPSlot index={2} className="bg-white" />
+        <InputOTPSlot index={3} className="bg-white" />
       </InputOTPGroup>
       
       <InputOTPSeparator />
       
       {/* Second 2 digits */}
       <InputOTPGroup>
-        <InputOTPSlot index={4} />
-        <InputOTPSlot index={5} />
+        <InputOTPSlot index={4} className="bg-white" />
+        <InputOTPSlot index={5} className="bg-white" />
       </InputOTPGroup>
       
       <InputOTPSeparator />
       
       {/* Third 2 digits */}
       <InputOTPGroup>
-        <InputOTPSlot index={6} />
-        <InputOTPSlot index={7} />
+        <InputOTPSlot index={6} className="bg-white" />
+        <InputOTPSlot index={7} className="bg-white" />
       </InputOTPGroup>
       
       <InputOTPSeparator />
       
       {/* Final letter (e.g., C) */}
       <InputOTPGroup>
-        <InputOTPSlot index={8} className="uppercase" />
+        <InputOTPSlot index={8} className="uppercase bg-white" />
       </InputOTPGroup>
     </InputOTP>
   );

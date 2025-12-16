@@ -11,6 +11,7 @@ interface DateInputFieldProps {
   readOnly?: boolean;
   maxDate?: Date;
   minDate?: Date;
+  inputClassName?: string;
 }
 
 export const DateInputField = ({ 
@@ -20,7 +21,8 @@ export const DateInputField = ({
   required, 
   readOnly,
   maxDate,
-  minDate 
+  minDate,
+  inputClassName 
 }: DateInputFieldProps) => {
   
   const formatDateForInput = (date: Date | null): string => {
@@ -54,7 +56,8 @@ export const DateInputField = ({
               min={minDate ? formatDateForInput(minDate) : undefined}
               className={cn(
                 "w-full",
-                readOnly && "bg-gray-50"
+                readOnly && "bg-gray-50",
+                inputClassName
               )}
             />
           </FormControl>
