@@ -25,6 +25,7 @@ export const NewEmployeeWizard = ({ open, onOpenChange, onSuccess }: NewEmployee
     totalSteps,
     steps,
     isSubmitting,
+    completedSteps,
     nextStep,
     prevStep,
     submitForm,
@@ -92,7 +93,7 @@ export const NewEmployeeWizard = ({ open, onOpenChange, onSuccess }: NewEmployee
           </DialogDescription>
         </DialogHeader>
 
-        <WizardStepIndicator steps={WIZARD_STEPS} currentStep={currentStep} />
+        <WizardStepIndicator steps={WIZARD_STEPS} currentStep={currentStep} completedSteps={completedSteps} />
 
         {/* Step Header */}
         <div className="mb-4">

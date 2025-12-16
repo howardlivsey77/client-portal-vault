@@ -65,6 +65,7 @@ const stepSchemas = [step1Schema, step2Schema, step3Schema, step4Schema, step5Sc
 export const useNewEmployeeWizard = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const { currentCompany } = useCompany();
   const { user } = useAuth();
   const { suggestedPayrollId } = useNextPayrollId(false);
@@ -152,8 +153,11 @@ export const useNewEmployeeWizard = () => {
 
   const nextStep = useCallback(async () => {
     const isValid = await validateCurrentStep();
-    if (isValid && currentStep < WIZARD_STEPS.length) {
-      setCurrentStep((prev) => prev + 1);
+    if (isValid) {
+      setCompletedSteps(prev => new Set(prev).add(currentStep));
+      if (currentStep < WIZARD_STEPS.length) {
+        setCurrentStep((prev) => prev + 1);
+      }
     }
     return isValid;
   }, [currentStep, validateCurrentStep]);
@@ -206,6 +210,7 @@ export const useNewEmployeeWizard = () => {
 
   const resetWizard = useCallback(() => {
     setCurrentStep(1);
+    setCompletedSteps(new Set());
     form.reset();
     if (suggestedPayrollId) {
       form.setValue("payroll_id", suggestedPayrollId);
@@ -218,6 +223,7 @@ export const useNewEmployeeWizard = () => {
     totalSteps: WIZARD_STEPS.length,
     steps: WIZARD_STEPS,
     isSubmitting,
+    completedSteps,
     nextStep,
     prevStep,
     goToStep,
