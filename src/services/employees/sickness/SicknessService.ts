@@ -8,36 +8,36 @@ import { sspService } from "./sspService";
 // This class simply delegates to existing services to avoid any behavior change.
 // You can later extend this with logging, caching, or DI without touching consumers.
 export class SicknessService {
-  // Calculation utilities
-  getRolling12MonthPeriod = calculationUtils.getRolling12MonthPeriod;
-  getActualRollingPeriod = calculationUtils.getActualRollingPeriod;
-  calculateServiceMonths = calculationUtils.calculateServiceMonths;
-  findApplicableRule = calculationUtils.findApplicableRule;
-  calculateEntitlements = calculationUtils.calculateEntitlements;
+  // Calculation utilities - bind to preserve 'this' context
+  getRolling12MonthPeriod = calculationUtils.getRolling12MonthPeriod.bind(calculationUtils);
+  getActualRollingPeriod = calculationUtils.getActualRollingPeriod.bind(calculationUtils);
+  calculateServiceMonths = calculationUtils.calculateServiceMonths.bind(calculationUtils);
+  findApplicableRule = calculationUtils.findApplicableRule.bind(calculationUtils);
+  calculateEntitlements = calculationUtils.calculateEntitlements.bind(calculationUtils);
 
   // SSP calculations
-  calculateSspUsage = sspService.calculateSspUsage;
+  calculateSspUsage = sspService.calculateSspUsage.bind(sspService);
 
   // Entitlement management
-  getEntitlementUsage = entitlementService.getEntitlementUsage;
-  recalculateExistingEntitlement = entitlementService.recalculateExistingEntitlement;
-  createOrUpdateEntitlementUsage = entitlementService.createOrUpdateEntitlementUsage;
-  updateUsedDays = entitlementService.updateUsedDays;
-  syncAllEmployeeEntitlements = entitlementService.syncAllEmployeeEntitlements;
-  recalculateAllUsedDays = entitlementService.recalculateAllUsedDays;
-  recalculateEmployeeUsedDays = entitlementService.recalculateEmployeeUsedDays;
+  getEntitlementUsage = entitlementService.getEntitlementUsage.bind(entitlementService);
+  recalculateExistingEntitlement = entitlementService.recalculateExistingEntitlement.bind(entitlementService);
+  createOrUpdateEntitlementUsage = entitlementService.createOrUpdateEntitlementUsage.bind(entitlementService);
+  updateUsedDays = entitlementService.updateUsedDays.bind(entitlementService);
+  syncAllEmployeeEntitlements = entitlementService.syncAllEmployeeEntitlements.bind(entitlementService);
+  recalculateAllUsedDays = entitlementService.recalculateAllUsedDays.bind(entitlementService);
+  recalculateEmployeeUsedDays = entitlementService.recalculateEmployeeUsedDays.bind(entitlementService);
 
   // Sickness records management
-  getSicknessRecords = recordsService.getSicknessRecords;
-  recordSicknessAbsence = recordsService.recordSicknessAbsence;
-  updateSicknessRecord = recordsService.updateSicknessRecord;
-  deleteSicknessRecord = recordsService.deleteSicknessRecord;
-  recalculateEntitlementWithReference = recordsService.recalculateEntitlementWithReference;
+  getSicknessRecords = recordsService.getSicknessRecords.bind(recordsService);
+  recordSicknessAbsence = recordsService.recordSicknessAbsence.bind(recordsService);
+  updateSicknessRecord = recordsService.updateSicknessRecord.bind(recordsService);
+  deleteSicknessRecord = recordsService.deleteSicknessRecord.bind(recordsService);
+  recalculateEntitlementWithReference = recordsService.recalculateEntitlementWithReference.bind(recordsService);
 
   // Balance calculations
-  getHistoricalBalances = balanceService.getHistoricalBalances;
-  calculateRolling12MonthUsage = balanceService.calculateRolling12MonthUsage;
-  calculateUsedDays = balanceService.calculateUsedDays;
+  getHistoricalBalances = balanceService.getHistoricalBalances.bind(balanceService);
+  calculateRolling12MonthUsage = balanceService.calculateRolling12MonthUsage.bind(balanceService);
+  calculateUsedDays = balanceService.calculateUsedDays.bind(balanceService);
 
   // New reference date aware methods
   async calculateRolling12MonthUsageFromDate(employeeId: string, referenceDate: string | Date) {
