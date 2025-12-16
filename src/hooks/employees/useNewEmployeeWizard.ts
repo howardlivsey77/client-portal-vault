@@ -91,7 +91,7 @@ export const useNewEmployeeWizard = () => {
       week_one_month_one: false,
       nic_code: "",
       student_loan_plan: null,
-      has_p45: null,
+      has_p45: false,
       taxable_pay_ytd: null,
       tax_paid_ytd: null,
       p46_statement: null,

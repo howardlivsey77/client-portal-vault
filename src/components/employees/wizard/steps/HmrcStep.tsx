@@ -70,7 +70,7 @@ export const HmrcStep = ({ form }: HmrcStepProps) => {
         control={form.control}
         name="has_p45"
         render={({ field }) => (
-          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-muted/30">
+          <FormItem className="flex flex-row items-center justify-between rounded-lg border-2 border-blue-200 p-4 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800">
             <div className="space-y-0.5">
               <FormLabel className="text-base font-medium">Does the employee have a P45?</FormLabel>
               <FormDescription>
