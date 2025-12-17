@@ -1,15 +1,24 @@
+/**
+ * Student Loan Repayment Calculator
+ * 
+ * REGULATORY BASIS:
+ * Per SLC/HMRC guidance, student loan deductions are calculated on regular
+ * earnings only, excluding bonuses, overtime, and other additional payments.
+ * 
+ * References:
+ * - HMRC PAYE Manual: https://www.gov.uk/guidance/paye-collection-of-student-loans
+ * - Student Loans Company: https://www.slc.co.uk/
+ * 
+ * Thresholds are updated annually and stored in STUDENT_LOAN_THRESHOLDS.
+ * Current thresholds: 2025/26 tax year
+ */
 
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { STUDENT_LOAN_THRESHOLDS } from "../constants/tax-constants";
+import { payrollLogger } from "../utils/payrollLogger";
 
 /**
- * Calculate student loan repayments using 2025/26 HMRC monthly thresholds
- * 
- * IMPORTANT: This function calculates student loan deductions using monthly thresholds
- * directly, similar to how National Insurance is calculated. It should be called with 
- * the employee's base monthly salary only, NOT including additional earnings such as 
- * bonuses or overtime. Student loan deductions are calculated based on regular salary 
- * according to HMRC rules.
+ * Calculate student loan repayments using HMRC monthly thresholds
  * 
  * @param monthlySalary - The employee's base monthly salary (excluding additional earnings)
  * @param planType - The student loan plan type (1, 2, 4, 5, 6, or null)
@@ -18,7 +27,8 @@ import { STUDENT_LOAN_THRESHOLDS } from "../constants/tax-constants";
 export function calculateStudentLoan(monthlySalary: number, planType: 1 | 2 | 4 | 5 | 6 | null): number {
   if (!planType) return 0;
   
-  let monthlyThreshold, rate;
+  let monthlyThreshold: number;
+  let rate: number;
   
   switch (planType) {
     case 1:
@@ -45,17 +55,27 @@ export function calculateStudentLoan(monthlySalary: number, planType: 1 | 2 | 4 
       return 0;
   }
   
-  console.log(`[Student Loan] Plan ${planType}: Monthly salary £${monthlySalary}, Monthly threshold £${monthlyThreshold}, Rate ${rate * 100}%`);
+  // Log plan type and rate - no monetary amounts
+  payrollLogger.calculation('Student loan parameters', { 
+    planType, 
+    monthlyThreshold,
+    ratePercent: rate * 100 
+  });
   
   if (monthlySalary <= monthlyThreshold) {
-    console.log(`[Student Loan] No repayment required - monthly salary £${monthlySalary} is below monthly threshold £${monthlyThreshold}`);
+    payrollLogger.debug('Student loan: below threshold', { 
+      planType,
+      belowThreshold: true 
+    });
     return 0;
   }
   
   const monthlyRepayment = (monthlySalary - monthlyThreshold) * rate;
   const finalRepayment = roundToTwoDecimals(monthlyRepayment);
   
-  console.log(`[Student Loan] Monthly repayment: £${finalRepayment} (£${monthlySalary - monthlyThreshold} above threshold × ${rate})`);
+  payrollLogger.calculation('Student loan result', { 
+    monthlyRepayment: finalRepayment 
+  });
   
   return finalRepayment;
 }
