@@ -8,3 +8,4 @@ export { EmployeeNotFound } from './EmployeeNotFound';
 export { LoadingState } from './LoadingState';
 export * from './hmrc-info';
 export * from './employment-status/EmploymentStatusCard';
+export * from './nhs-pension';
