@@ -1450,14 +1450,18 @@ export type Database = {
           earnings_pt_to_uel_this_period: number
           employee_id: string
           employee_pension_this_period: number
+          employee_pension_ytd: number | null
           employer_pension_this_period: number
+          employer_pension_ytd: number | null
           free_pay_this_period: number
+          free_pay_ytd: number | null
           gross_pay_this_period: number
           gross_pay_ytd: number | null
           id: string
           income_tax_this_period: number
           income_tax_ytd: number | null
           net_pay_this_period: number
+          net_pay_ytd: number | null
           nhs_pension_employee_rate: number | null
           nhs_pension_employee_this_period: number | null
           nhs_pension_employee_ytd: number | null
@@ -1468,11 +1472,16 @@ export type Database = {
           nic_employee_this_period: number
           nic_employee_ytd: number | null
           nic_employer_this_period: number
+          nic_employer_ytd: number | null
           nic_letter: string
           pay_liable_to_nic_this_period: number
+          payment_date: string | null
           payroll_period: string
+          period_end_date: string | null
+          period_start_date: string | null
           student_loan_plan: number | null
           student_loan_this_period: number
+          student_loan_ytd: number | null
           tax_code: string
           tax_period: number | null
           tax_year: string | null
@@ -1490,14 +1499,18 @@ export type Database = {
           earnings_pt_to_uel_this_period: number
           employee_id: string
           employee_pension_this_period: number
+          employee_pension_ytd?: number | null
           employer_pension_this_period: number
+          employer_pension_ytd?: number | null
           free_pay_this_period: number
+          free_pay_ytd?: number | null
           gross_pay_this_period: number
           gross_pay_ytd?: number | null
           id?: string
           income_tax_this_period: number
           income_tax_ytd?: number | null
           net_pay_this_period: number
+          net_pay_ytd?: number | null
           nhs_pension_employee_rate?: number | null
           nhs_pension_employee_this_period?: number | null
           nhs_pension_employee_ytd?: number | null
@@ -1508,11 +1521,16 @@ export type Database = {
           nic_employee_this_period: number
           nic_employee_ytd?: number | null
           nic_employer_this_period: number
+          nic_employer_ytd?: number | null
           nic_letter: string
           pay_liable_to_nic_this_period: number
+          payment_date?: string | null
           payroll_period: string
+          period_end_date?: string | null
+          period_start_date?: string | null
           student_loan_plan?: number | null
           student_loan_this_period: number
+          student_loan_ytd?: number | null
           tax_code: string
           tax_period?: number | null
           tax_year?: string | null
@@ -1530,14 +1548,18 @@ export type Database = {
           earnings_pt_to_uel_this_period?: number
           employee_id?: string
           employee_pension_this_period?: number
+          employee_pension_ytd?: number | null
           employer_pension_this_period?: number
+          employer_pension_ytd?: number | null
           free_pay_this_period?: number
+          free_pay_ytd?: number | null
           gross_pay_this_period?: number
           gross_pay_ytd?: number | null
           id?: string
           income_tax_this_period?: number
           income_tax_ytd?: number | null
           net_pay_this_period?: number
+          net_pay_ytd?: number | null
           nhs_pension_employee_rate?: number | null
           nhs_pension_employee_this_period?: number | null
           nhs_pension_employee_ytd?: number | null
@@ -1548,11 +1570,16 @@ export type Database = {
           nic_employee_this_period?: number
           nic_employee_ytd?: number | null
           nic_employer_this_period?: number
+          nic_employer_ytd?: number | null
           nic_letter?: string
           pay_liable_to_nic_this_period?: number
+          payment_date?: string | null
           payroll_period?: string
+          period_end_date?: string | null
+          period_start_date?: string | null
           student_loan_plan?: number | null
           student_loan_this_period?: number
+          student_loan_ytd?: number | null
           tax_code?: string
           tax_period?: number | null
           tax_year?: string | null
@@ -1941,7 +1968,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      payroll_ytd_summary: {
+        Row: {
+          company_id: string | null
+          employee_id: string | null
+          employee_pension_ytd: number | null
+          employer_pension_ytd: number | null
+          free_pay_ytd: number | null
+          gross_pay_ytd: number | null
+          income_tax_ytd: number | null
+          last_period: number | null
+          net_pay_ytd: number | null
+          nhs_pension_employee_ytd: number | null
+          nhs_pension_employer_ytd: number | null
+          nic_employee_ytd: number | null
+          nic_employer_ytd: number | null
+          student_loan_ytd: number | null
+          tax_year: string | null
+          taxable_pay_ytd: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_results_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_results_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_invitation: {
