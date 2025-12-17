@@ -35,7 +35,7 @@ export const AuthPage = ({ children }: AuthPageProps) => {
           <img 
             src={brand.logoUrl} 
             alt={`${brand.name} Logo`} 
-            className="h-18" 
+            className={brand.id === 'fergi' ? 'h-16' : 'h-14'} 
           />
         </div>
       </header>
