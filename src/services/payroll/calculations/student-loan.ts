@@ -27,6 +27,11 @@ import { payrollLogger } from "../utils/payrollLogger";
 export function calculateStudentLoan(monthlySalary: number, planType: 1 | 2 | 4 | 5 | 6 | null): number {
   if (!planType) return 0;
   
+  // Defensive validation - guard against invalid salary values
+  if (!Number.isFinite(monthlySalary) || monthlySalary < 0) {
+    return 0;
+  }
+  
   let monthlyThreshold: number;
   let rate: number;
   
@@ -51,14 +56,12 @@ export function calculateStudentLoan(monthlySalary: number, planType: 1 | 2 | 4 
       monthlyThreshold = STUDENT_LOAN_THRESHOLDS.PLAN_6.monthly;
       rate = STUDENT_LOAN_THRESHOLDS.PLAN_6.rate;
       break;
-    default:
-      return 0;
+    // No default needed - TypeScript enforces exhaustive matching on planType
   }
   
-  // Log plan type and rate - no monetary amounts
+  // Log plan type and rate only - no monetary amounts
   payrollLogger.calculation('Student loan parameters', { 
-    planType, 
-    monthlyThreshold,
+    planType,
     ratePercent: rate * 100 
   });
   
