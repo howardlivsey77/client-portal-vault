@@ -12,11 +12,6 @@ export function useBrand(): BrandConfig {
   return context;
 }
 
-// Convert camelCase to kebab-case for CSS variables
-function toKebabCase(str: string): string {
-  return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-}
-
 // Apply brand colors to CSS variables
 function applyBrandColors(colors: BrandColors): void {
   const root = document.documentElement;
@@ -71,6 +66,42 @@ function updateFavicon(faviconUrl: string): void {
   link.href = faviconUrl;
 }
 
+// Update page title
+function updatePageTitle(title: string): void {
+  document.title = title;
+}
+
+// Update meta tags dynamically
+function updateMetaTags(brand: BrandConfig): void {
+  // Update description
+  const descMeta = document.querySelector('meta[name="description"]');
+  if (descMeta) descMeta.setAttribute('content', brand.tagline);
+
+  // Update OG tags
+  const ogTitle = document.querySelector('meta[property="og:title"]');
+  if (ogTitle) ogTitle.setAttribute('content', brand.title);
+
+  const ogDesc = document.querySelector('meta[property="og:description"]');
+  if (ogDesc) ogDesc.setAttribute('content', brand.tagline);
+
+  const ogImage = document.querySelector('meta[property="og:image"]');
+  if (ogImage && brand.faviconUrl) ogImage.setAttribute('content', brand.faviconUrl);
+
+  // Update Twitter tags
+  const twitterTitle = document.querySelector('meta[name="twitter:title"]');
+  if (twitterTitle) twitterTitle.setAttribute('content', brand.title);
+
+  const twitterDesc = document.querySelector('meta[name="twitter:description"]');
+  if (twitterDesc) twitterDesc.setAttribute('content', brand.tagline);
+
+  const twitterImage = document.querySelector('meta[name="twitter:image"]');
+  if (twitterImage && brand.faviconUrl) twitterImage.setAttribute('content', brand.faviconUrl);
+
+  // Update author
+  const authorMeta = document.querySelector('meta[name="author"]');
+  if (authorMeta) authorMeta.setAttribute('content', brand.name);
+}
+
 interface BrandProviderProps {
   children: React.ReactNode;
 }
@@ -85,6 +116,12 @@ export function BrandProvider({ children }: BrandProviderProps) {
     
     // Apply brand colors
     applyBrandColors(colors);
+
+    // Update page title
+    updatePageTitle(brand.title);
+
+    // Update meta tags
+    updateMetaTags(brand);
     
     // Update favicon if specified
     if (brand.faviconUrl) {
