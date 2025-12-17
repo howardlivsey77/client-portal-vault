@@ -1,6 +1,13 @@
 
 /**
- * UK Tax constants for 2025-2026
+ * UK Tax constants for 2025-2026 and 2026-2027
+ * 
+ * VALID FOR: 2025/26 and 2026/27 tax years
+ * 
+ * Key changes from 2024/25:
+ * - Employee NI main rate reduced from 12% to 8% (January 2024)
+ * - Secondary Threshold reduced from £758 to £417 (Autumn Budget 2024)
+ * - Employer NI rate increased to 15%
  */
 
 // Basic tax rate bands for 2025-2026
@@ -11,16 +18,24 @@ export const TAX_BANDS = {
   ADDITIONAL_RATE: { threshold_from: 12514000, threshold_to: null, rate: 0.45 }
 };
 
-// National Insurance contribution thresholds and rates for 2025-2026 (updated)
+// National Insurance contribution thresholds for 2025-2026 and 2026-2027
 export const NI_THRESHOLDS = {
-  LOWER_EARNINGS_LIMIT: { weekly: 125, monthly: 542, annual: 6500 }, // Updated for 2025/26
+  LOWER_EARNINGS_LIMIT: { weekly: 125, monthly: 542, annual: 6500 },
   PRIMARY_THRESHOLD: { weekly: 242, monthly: 1048, annual: 12570 },
   UPPER_EARNINGS_LIMIT: { weekly: 967, monthly: 4189, annual: 50270 },
-  SECONDARY_THRESHOLD: { weekly: 175, monthly: 758, annual: 9100 }
+  // FIXED: ST reduced from £758 to £417 (Autumn Budget 2024)
+  SECONDARY_THRESHOLD: { weekly: 96, monthly: 417, annual: 5000 }
 };
 
+// National Insurance rates for 2025-2026 and 2026-2027
 export const NI_RATES = {
-  MAIN_RATE: 0.12,
+  // EMPLOYEE rates (2025/26 & 2026/27)
+  EMPLOYEE_MAIN_RATE: 0.08,    // 8% - between PT and UEL (January 2024 cut)
+  EMPLOYEE_HIGHER_RATE: 0.02,  // 2% - above UEL
+  // EMPLOYER rates (2025/26 & 2026/27)  
+  EMPLOYER_RATE: 0.15,         // 15% - above ST
+  // Legacy aliases for backwards compatibility
+  MAIN_RATE: 0.08,
   HIGHER_RATE: 0.02
 };
 

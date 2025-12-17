@@ -144,7 +144,7 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       
       pay_liable_to_nic_this_period: Math.round(result.grossPay * 100),
       nic_employee_this_period: nicEmployeeThisPeriodPennies,
-      nic_employer_this_period: 0, // Default to 0, update if available
+      nic_employer_this_period: Math.round((result.employerNationalInsurance || 0) * 100),
       nic_letter: 'A', // Default, update if available
       
       student_loan_this_period: Math.round(result.studentLoan * 100),

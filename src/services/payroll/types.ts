@@ -30,6 +30,7 @@ export interface PayrollResult {
   taxablePay: number; 
   incomeTax: number;
   nationalInsurance: number;
+  employerNationalInsurance: number;  // Employer NI contribution
   studentLoan: number;
   studentLoanPlan?: 1 | 2 | 4 | 5 | 6 | null;
   pensionContribution: number;

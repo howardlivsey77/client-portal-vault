@@ -113,6 +113,7 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   }
   
   const nationalInsurance = niResult.nationalInsurance;
+  const employerNationalInsurance = niResult.employerNationalInsurance;
   
   // Get earnings in each NI band
   const earningsAtLEL = niResult.earningsAtLEL;
@@ -127,7 +128,8 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     earningsPTtoUEL,
     earningsAboveUEL,
     earningsAboveST,
-    nationalInsurance
+    nationalInsurance,
+    employerNationalInsurance
   }, 'NI_CALC');
   
   // Calculate student loan on base monthly salary only, not gross pay
@@ -186,6 +188,7 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     taxablePay: roundToTwoDecimals(taxablePay),
     incomeTax: roundToTwoDecimals(incomeTax),
     nationalInsurance: roundToTwoDecimals(nationalInsurance),
+    employerNationalInsurance: roundToTwoDecimals(employerNationalInsurance),
     studentLoan: roundToTwoDecimals(studentLoan),
     studentLoanPlan,
     pensionContribution: roundToTwoDecimals(pensionContribution),

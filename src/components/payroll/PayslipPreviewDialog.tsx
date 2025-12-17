@@ -92,6 +92,7 @@ export function PayslipPreviewDialog({
         taxablePay: grossPay,
         incomeTax,
         nationalInsurance,
+        employerNationalInsurance: 0,
         studentLoan,
         pensionContribution: pension,
         additionalDeductions: extraDeductions,
