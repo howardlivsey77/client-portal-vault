@@ -11,6 +11,7 @@ import {
   validateImportData,
   EmployeeConflict
 } from "./import";
+import { getCompanyId } from "@/utils/company/getCompanyId";
 
 export const useEmployeeImport = (onSuccess: () => void) => {
   const [state, dispatch] = useReducer(employeeImportReducer, initialState);
@@ -82,9 +83,9 @@ export const useEmployeeImport = (onSuccess: () => void) => {
     }
   };
   
-  // Get the current company ID from localStorage
+  // Get the current company ID using centralized utility
   const getCurrentCompanyId = (): string | undefined => {
-    return localStorage.getItem('lastSelectedCompany') || undefined;
+    return getCompanyId() || undefined;
   };
   
   // Prepare data for import and show confirmation dialog

@@ -9,6 +9,7 @@ import { transformData } from "./dataTransformUtils";
 import { EmployeeData, ColumnMapping } from "./ImportConstants";
 import { findExistingEmployees } from "@/hooks/employees/import";
 import { downloadTemplate } from "./templateGenerator";
+import { getCompanyId } from "@/utils/company/getCompanyId";
 
 interface FileUploaderProps {
   onFileProcessed: (
@@ -63,7 +64,7 @@ export const FileUploader = ({
       console.log("Transformed data:", transformedData);
       
       // Check for existing employees based on email, payroll_id, or NI number - filtered by company
-      const companyId = localStorage.getItem('lastSelectedCompany') || undefined;
+      const companyId = getCompanyId() || undefined;
       const existingEmployees = await findExistingEmployees(transformedData, companyId);
       
       // Pass the data back to parent component including existing employee data

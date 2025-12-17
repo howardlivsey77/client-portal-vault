@@ -5,48 +5,7 @@ import { roundToTwoDecimals } from "@/lib/formatters";
 import { checkDuplicatePayrollIds, checkDuplicatesInImportData } from "./duplicateChecker";
 import { extractValidPayrollIds, normalizePayrollId } from "./payrollIdUtils";
 import { prepareWorkPatterns, prepareWorkPatternsForInsert } from "./workPatternUtils";
-
-/**
- * Get the current user's selected company ID
- */
-const getCurrentCompanyId = async (): Promise<string | null> => {
-  try {
-    // Try to get the last selected company from localStorage first
-    const lastCompanyId = localStorage.getItem('lastSelectedCompany');
-    if (lastCompanyId) {
-      console.log('Using company ID from localStorage:', lastCompanyId);
-      return lastCompanyId;
-    }
-    
-    // If no stored company, get the user's first available company
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      console.error('No authenticated user found');
-      return null;
-    }
-    
-    const { data: companies, error } = await supabase.rpc('get_user_companies', {
-      _user_id: user.id,
-    });
-    
-    if (error) {
-      console.error('Error fetching user companies:', error);
-      return null;
-    }
-    
-    if (companies && companies.length > 0) {
-      const companyId = companies[0].id;
-      console.log('Using first available company ID:', companyId);
-      return companyId;
-    }
-    
-    console.warn('No companies found for user');
-    return null;
-  } catch (error) {
-    console.error('Error getting current company ID:', error);
-    return null;
-  }
-};
+import { requireCompanyIdAsync } from "@/utils/company/getCompanyId";
 
 /**
  * Process new employees and insert them into the database
@@ -58,11 +17,8 @@ export const createNewEmployees = async (
   console.log('Creating new employees. Count:', newEmployees.length);
   console.log('New employees data:', newEmployees);
   
-  // Get the current company ID
-  const companyId = await getCurrentCompanyId();
-  if (!companyId) {
-    throw new Error('Unable to determine company ID. Please ensure you have selected a company and try again.');
-  }
+  // Get the current company ID using centralized utility
+  const companyId = await requireCompanyIdAsync();
   console.log('Assigning employees to company ID:', companyId);
   
   // Extract all payroll IDs that are not empty, converting to strings first

@@ -4,48 +4,7 @@ import { EmployeeData } from "@/components/employees/import/ImportConstants";
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { checkDuplicatePayrollIds } from "./duplicateChecker";
 import { extractNewPayrollIds, normalizePayrollId } from "./payrollIdUtils";
-
-/**
- * Get the current user's selected company ID
- */
-const getCurrentCompanyId = async (): Promise<string | null> => {
-  try {
-    // Try to get the last selected company from localStorage first
-    const lastCompanyId = localStorage.getItem('lastSelectedCompany');
-    if (lastCompanyId) {
-      console.log('Using company ID from localStorage:', lastCompanyId);
-      return lastCompanyId;
-    }
-    
-    // If no stored company, get the user's first available company
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      console.error('No authenticated user found');
-      return null;
-    }
-    
-    const { data: companies, error } = await supabase.rpc('get_user_companies', {
-      _user_id: user.id,
-    });
-    
-    if (error) {
-      console.error('Error fetching user companies:', error);
-      return null;
-    }
-    
-    if (companies && companies.length > 0) {
-      const companyId = companies[0].id;
-      console.log('Using first available company ID:', companyId);
-      return companyId;
-    }
-    
-    console.warn('No companies found for user');
-    return null;
-  } catch (error) {
-    console.error('Error getting current company ID:', error);
-    return null;
-  }
-};
+import { getCompanyIdAsync } from "@/utils/company/getCompanyId";
 
 /**
  * Process updated employees and update them in the database
@@ -60,8 +19,8 @@ export const updateExistingEmployees = async (
     return;
   }
 
-  // Get the current company ID for updates
-  const companyId = await getCurrentCompanyId();
+  // Get the current company ID using centralized utility
+  const companyId = await getCompanyIdAsync();
   console.log('Updating employees with company ID:', companyId);
 
   // Check for any new payroll IDs that might conflict with existing ones
