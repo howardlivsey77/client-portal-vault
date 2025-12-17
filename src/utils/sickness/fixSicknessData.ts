@@ -20,9 +20,4 @@ export const runSicknessDataFix = async () => {
   }
 };
 
-// Run immediately if this file is imported
-runSicknessDataFix().then(() => {
-  console.log('🎉 All fixes applied successfully!');
-}).catch(error => {
-  console.error('💥 Fix failed:', error);
-});
+// Export for controlled execution - do not run automatically

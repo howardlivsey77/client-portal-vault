@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BrandProvider } from "@/brand";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -23,19 +23,14 @@ import NotFound from "./pages/NotFound";
 import SicknessImport from "./pages/SicknessImport";
 import ClientReports from "./pages/ClientReports";
 import AuthProvider from "./providers/AuthProvider";
-
-// Import and run the sickness data fix
-import { runSicknessDataFix } from "@/utils";
-
-// Run fix once on app load
-runSicknessDataFix().catch(console.error);
 import CompanyProvider from "./providers/CompanyProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import Require2FASetup from "./components/auth/Require2FASetup";
+import ProtectedLayout from "./components/auth/ProtectedLayout";
 import { NotificationsProvider } from "./components/notifications/NotificationsContext";
 import AuthInviteGuard from "./components/auth/AuthInviteGuard";
 import CreatePassword from "./pages/CreatePassword";
 import Setup2FA from "./pages/Setup2FA";
+import SicknessDataFixer from "./components/admin/SicknessDataFixer";
 
 const queryClient = new QueryClient();
 
@@ -50,36 +45,45 @@ const App = () => (
             <CompanyProvider>
               <NotificationsProvider>
                 <AuthInviteGuard />
+                {/* Controlled sickness data fix - runs once via useEffect */}
+                <SicknessDataFixer />
                 <Routes>
+                  {/* Public routes */}
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/create-password" element={<CreatePassword />} />
                   <Route path="/accept-invite" element={<AcceptInvite />} />
                   <Route path="/invite/accept" element={<AcceptInviteToken />} />
+                  
+                  {/* Protected route without 2FA requirement */}
                   <Route path="/setup-2fa" element={<ProtectedRoute><Setup2FA /></ProtectedRoute>} />
-                  <Route path="/" element={<ProtectedRoute><Require2FASetup><Index /></Require2FASetup></ProtectedRoute>} />
-                  <Route path="/invites" element={<ProtectedRoute adminOnly={true}><Require2FASetup><InviteManagement /></Require2FASetup></ProtectedRoute>} />
-                  <Route path="/employees" element={<ProtectedRoute><Require2FASetup><Employees /></Require2FASetup></ProtectedRoute>} />
-                  <Route path="/employees/sickness/import" element={<ProtectedRoute><Require2FASetup><SicknessImport /></Require2FASetup></ProtectedRoute>} />
-                  <Route path="/client-reports" element={<ProtectedRoute><Require2FASetup><ClientReports /></Require2FASetup></ProtectedRoute>} />
-                  <Route path="/employee/new" element={<ProtectedRoute><Require2FASetup><EmployeeForm /></Require2FASetup></ProtectedRoute>} />
-                  <Route path="/employee/:id" element={<ProtectedRoute><Require2FASetup><EmployeeDetails /></Require2FASetup></ProtectedRoute>} />
-                  <Route path="/employee/edit/:id" element={<ProtectedRoute><Require2FASetup><EmployeeForm /></Require2FASetup></ProtectedRoute>} />
-                  <Route path="/settings/timesheets" element={<ProtectedRoute><Require2FASetup><TimesheetSettings /></Require2FASetup></ProtectedRoute>} />
-                  <Route path="/notifications" element={<ProtectedRoute><Require2FASetup><Notifications /></Require2FASetup></ProtectedRoute>} />
-                  <Route path="/payroll-processing" element={<ProtectedRoute><Require2FASetup><PayrollProcessing /></Require2FASetup></ProtectedRoute>} />
-                  <Route path="/security" element={<ProtectedRoute><Require2FASetup><Security /></Require2FASetup></ProtectedRoute>} />
-                  <Route path="/profile" element={<ProtectedRoute><Require2FASetup><Profile /></Require2FASetup></ProtectedRoute>} />
                   
-                  {/* Company Settings Routes */}
-                  <Route path="/settings/company/general" element={<ProtectedRoute><Require2FASetup><CompanySettings /></Require2FASetup></ProtectedRoute>} />
-                  <Route path="/settings/company/sickness" element={<ProtectedRoute><Require2FASetup><CompanySettings /></Require2FASetup></ProtectedRoute>} />
-                  <Route path="/settings/company/locations" element={<ProtectedRoute><Require2FASetup><CompanySettings /></Require2FASetup></ProtectedRoute>} />
-                  <Route path="/settings/company/departments" element={<ProtectedRoute><Require2FASetup><CompanySettings /></Require2FASetup></ProtectedRoute>} />
+                  {/* Protected routes with 2FA requirement */}
+                  <Route element={<ProtectedLayout />}>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/employees" element={<Employees />} />
+                    <Route path="/employees/sickness/import" element={<SicknessImport />} />
+                    <Route path="/client-reports" element={<ClientReports />} />
+                    <Route path="/employee/new" element={<EmployeeForm />} />
+                    <Route path="/employee/:id" element={<EmployeeDetails />} />
+                    <Route path="/employee/edit/:id" element={<EmployeeForm />} />
+                    <Route path="/settings/timesheets" element={<TimesheetSettings />} />
+                    <Route path="/notifications" element={<Notifications />} />
+                    <Route path="/payroll-processing" element={<PayrollProcessing />} />
+                    <Route path="/security" element={<Security />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/settings/company/general" element={<CompanySettings />} />
+                    <Route path="/settings/company/sickness" element={<CompanySettings />} />
+                    <Route path="/settings/company/locations" element={<CompanySettings />} />
+                    <Route path="/settings/company/departments" element={<CompanySettings />} />
+                    <Route path="/settings/companies" element={<CompanyManagement />} />
+                  </Route>
                   
-                  {/* Company Management Route - allow all authenticated users */}
-                  <Route path="/settings/companies" element={<ProtectedRoute><Require2FASetup><CompanyManagement /></Require2FASetup></ProtectedRoute>} />
+                  {/* Admin-only routes with 2FA requirement */}
+                  <Route element={<ProtectedLayout adminOnly />}>
+                    <Route path="/invites" element={<InviteManagement />} />
+                  </Route>
                   
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  {/* Catch-all */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </NotificationsProvider>
