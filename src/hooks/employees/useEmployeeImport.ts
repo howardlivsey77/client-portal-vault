@@ -83,10 +83,6 @@ export const useEmployeeImport = (onSuccess: () => void) => {
     }
   };
   
-  // Get the current company ID using centralized utility
-  const getCurrentCompanyId = (): string | undefined => {
-    return getCompanyId() || undefined;
-  };
   
   // Prepare data for import and show confirmation dialog
   const prepareImport = async () => {
@@ -106,7 +102,7 @@ export const useEmployeeImport = (onSuccess: () => void) => {
       const { newEmployees, updatedEmployees, conflicts = [] } = comparisonResult;
       
       // Validate the import data (scoped to current company)
-      const companyId = getCurrentCompanyId();
+      const companyId = getCompanyId() || undefined;
       const validation = await validateImportData(newEmployees, updatedEmployees, conflicts, companyId);
       
       if (!validation.canProceed) {
@@ -163,7 +159,7 @@ export const useEmployeeImport = (onSuccess: () => void) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'SET_IMPORT_ERROR', payload: null });
     
-    const result = await executeImport(state.newEmployees, state.updatedEmployees, [], getCurrentCompanyId());
+    const result = await executeImport(state.newEmployees, state.updatedEmployees, [], getCompanyId() || undefined);
     
     if (result.success) {
       toast({
