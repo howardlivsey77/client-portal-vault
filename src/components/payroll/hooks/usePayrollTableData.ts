@@ -56,6 +56,12 @@ export interface PayrollTableRow {
   amountPaid: number;
   notes: string;
   hasPayrollResult: boolean;
+  // Employee-specific fields for payroll calculation
+  taxCode: string;
+  studentLoanPlan: 1 | 2 | 4 | 5 | null;
+  isNHSPensionMember: boolean;
+  pensionPercentage: number;
+  previousYearPensionablePay: number | null;
 }
 
 export interface PayrollTotals {
@@ -236,6 +242,12 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
         amountPaid: payrollResult ? toPounds(payrollResult.net_pay_this_period) : 0,
         notes: '', // Future: notes field
         hasPayrollResult: !!payrollResult,
+        // Employee-specific fields for payroll calculation
+        taxCode: emp.tax_code || '1257L',
+        studentLoanPlan: emp.student_loan_plan as 1 | 2 | 4 | 5 | null,
+        isNHSPensionMember: emp.nhs_pension_member || false,
+        pensionPercentage: 0, // Future: from employee record if available
+        previousYearPensionablePay: emp.previous_year_pensionable_pay || null,
       };
     });
   }, [employees, payrollResults, calculatedPayroll]);
