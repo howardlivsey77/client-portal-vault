@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateCumulativeTaxSync } from '@/services/payroll/calculations/cumulative-tax';
+import { calculateCumulativeTaxSync, calculateWeek1Month1Tax } from '@/services/payroll/calculations/cumulative-tax';
 import { parseTaxCode } from '@/services/payroll/utils/tax-code-utils';
 
 /**
@@ -188,6 +188,66 @@ describe('Special Tax Code Calculations', () => {
     
     // Taxable pay should be higher than gross pay
     expect(result.taxablePayYTD).toBeGreaterThan(1000);
+  });
+});
+
+describe('K Code Edge Cases', () => {
+  it('K code: taxable pay should exceed gross pay (cumulative)', () => {
+    // K497 monthly free pay ≈ -£414.17
+    const result = calculateCumulativeTaxSync(1, 500, 'K497', 0);
+    
+    // Taxable = £500 - (-£414.17) = £914.17 → £914 (floor)
+    expect(result.taxablePayYTD).toBeGreaterThan(500);
+    expect(result.freePayYTD).toBeLessThan(0);
+    
+    // Verify it's not clamped to 0
+    expect(result.taxablePayYTD).toBe(914);
+  });
+  
+  it('K code: should not clamp taxable pay to 0 with low gross', () => {
+    // K100 means ~£83.33/month added to taxable
+    const result = calculateCumulativeTaxSync(1, 100, 'K100', 0);
+    
+    // Taxable = £100 - (-£83.33) = £183.33 → £183
+    expect(result.taxablePayYTD).toBeGreaterThan(100);
+    expect(result.taxablePayYTD).toBe(183);
+  });
+  
+  it('K code: W1/M1 should also not clamp taxable pay', () => {
+    // K497 monthly free pay ≈ -£414.17
+    const result = calculateWeek1Month1Tax(500, 'K497');
+    
+    // Taxable = £500 - (-£414.17) = £914.17 → £914
+    expect(result.taxablePayThisPeriod).toBeGreaterThan(500);
+    expect(result.taxablePayThisPeriod).toBe(914);
+  });
+  
+  it('K code: cumulative over multiple periods', () => {
+    // K497 for 3 periods with £1500 gross YTD
+    const result = calculateCumulativeTaxSync(3, 1500, 'K497', 0);
+    
+    // Free pay = -£414.17 × 3 = -£1,242.51
+    // Taxable = £1500 - (-£1,242.51) = £2,742.51 → £2,742
+    expect(result.freePayYTD).toBeLessThan(0);
+    expect(result.taxablePayYTD).toBe(2742);
+    expect(result.taxablePayYTD).toBeGreaterThan(1500);
+  });
+  
+  it('K code: zero gross should still produce positive taxable income', () => {
+    // K100 with zero gross - taxable should be the K amount itself
+    const result = calculateCumulativeTaxSync(1, 0, 'K100', 0);
+    
+    // Taxable = £0 - (-£83.33) = £83.33 → £83
+    expect(result.taxablePayYTD).toBe(83);
+    expect(result.taxThisPeriod).toBeGreaterThan(0); // Should have tax due
+  });
+  
+  it('K code: W1/M1 with zero gross should produce positive taxable income', () => {
+    const result = calculateWeek1Month1Tax(0, 'K100');
+    
+    // Taxable = £0 - (-£83.33) = £83.33 → £83
+    expect(result.taxablePayThisPeriod).toBe(83);
+    expect(result.taxThisPeriod).toBeGreaterThan(0);
   });
 });
 

@@ -6,6 +6,7 @@ import {
   validateWeek1Month1Inputs 
 } from "../validation/payroll-validators";
 import { CalculationAnomalyError } from "../errors/payroll-errors";
+import { payrollLogger } from "../utils/payrollLogger";
 
 /**
  * Round to two decimal places (local version to avoid null handling)
@@ -15,24 +16,54 @@ function roundToTwoDecimals(value: number): number {
 }
 
 /**
+ * Options for anomaly checking
+ */
+interface AnomalyCheckOptions {
+  taxCode?: string;
+  isActualPeriodGross: boolean;
+}
+
+/**
  * Check for calculation anomalies that may indicate errors
- * @throws CalculationAnomalyError if anomaly detected
+ * 
+ * Only flags percentage-based warnings when:
+ * - Tax is positive (not a refund)
+ * - Gross is known to be actual (not estimated)
+ * - Not a flat-rate code (BR/D0/D1) or K code
+ * 
+ * @throws CalculationAnomalyError if anomaly detected (extreme refund)
  */
 function checkForAnomalies(
   taxThisPeriod: number,
   grossPayThisPeriod: number,
-  context: string
+  context: string,
+  options: AnomalyCheckOptions = { isActualPeriodGross: false }
 ): void {
-  // Flag if tax exceeds 50% of gross pay (unusual but possible with K codes)
-  if (grossPayThisPeriod > 0 && taxThisPeriod > grossPayThisPeriod * 0.5) {
-    // Log warning but don't throw - this can be valid for K codes or high earners
-    console.warn(
-      `[PAYROLL ANOMALY] ${context}: Tax (£${taxThisPeriod.toFixed(2)}) exceeds 50% of gross pay (£${grossPayThisPeriod.toFixed(2)}). ` +
-      `This may be correct for K codes or very high earners, but please verify.`
+  const upperTaxCode = options.taxCode?.toUpperCase() ?? '';
+  const isHighRateCode = ['BR', 'D0', 'D1'].includes(upperTaxCode);
+  const isKCode = upperTaxCode.startsWith('K');
+  
+  // Only check % threshold if:
+  // 1. Tax is positive (not a refund)
+  // 2. Gross is known to be actual (not estimated)
+  // 3. Not a flat-rate code (BR/D0/D1) or K code
+  // 4. Using 60% threshold (more permissive than 50%)
+  if (
+    options.isActualPeriodGross &&
+    !isHighRateCode &&
+    !isKCode &&
+    grossPayThisPeriod > 0 &&
+    taxThisPeriod > 0 &&
+    taxThisPeriod > grossPayThisPeriod * 0.6
+  ) {
+    payrollLogger.warn(
+      `${context}: Tax (£${taxThisPeriod.toFixed(2)}) exceeds 60% of gross pay (£${grossPayThisPeriod.toFixed(2)}). Please verify.`,
+      { employeeId: 'unknown' },
+      'TAX_CALC'
     );
   }
   
-  // Flag extremely large refunds (more than £10,000)
+  // Hard stop for extremely large refunds (more than £10,000)
   if (taxThisPeriod < -10000) {
     throw new CalculationAnomalyError(
       `Extremely large tax refund of £${Math.abs(taxThisPeriod).toFixed(2)} calculated. ` +
@@ -102,7 +133,9 @@ export async function calculateCumulativeTax(
   
   // Step 2: Calculate taxable pay YTD (rounded down to nearest pound)
   // For K codes, freePayYTD is negative, so this adds to taxable income
-  const taxablePayYTD = Math.max(0, Math.floor(validated.grossPayYTD - freePayYTD));
+  // Only clamp to 0 for positive allowances; K codes can have taxable > gross
+  const rawTaxableYTD = Math.floor(validated.grossPayYTD - freePayYTD);
+  const taxablePayYTD = taxCodeInfo.allowance >= 0 ? Math.max(0, rawTaxableYTD) : rawTaxableYTD;
   
   // Step 3: Get tax bands and calculate total tax due YTD
   const taxBands = await getIncomeTaxBands(taxYear);
@@ -112,11 +145,11 @@ export async function calculateCumulativeTax(
   // This can be negative (refund) if previous periods overpaid
   const taxThisPeriod = roundToTwoDecimals(taxDueYTD - validated.taxPaidYTD);
   
-  // Check for anomalies
-  const grossPayThisPeriod = validated.period === 1 
-    ? validated.grossPayYTD 
-    : validated.grossPayYTD / validated.period;
-  checkForAnomalies(taxThisPeriod, grossPayThisPeriod, 'Cumulative calculation');
+  // Check for anomalies - skip % check for cumulative (we don't have actual period pay)
+  checkForAnomalies(taxThisPeriod, 0, 'Cumulative calculation', {
+    taxCode: validated.taxCode,
+    isActualPeriodGross: false
+  });
   
   return {
     taxThisPeriod,
@@ -127,8 +160,15 @@ export async function calculateCumulativeTax(
 }
 
 /**
- * Synchronous version for backward compatibility
- * Uses default tax bands from constants
+ * @deprecated Use calculateCumulativeTax (async) for production payroll.
+ * This synchronous version uses hardcoded 2024/25 tax bands and does not
+ * support tax year variation. Retained for backward compatibility and testing.
+ * 
+ * LIMITATIONS:
+ * - Basic rate band: Hardcoded at £37,700
+ * - Higher rate threshold: Hardcoded at £125,140
+ * - Does not fetch current tax bands from database
+ * - Tax year parameter not supported
  * 
  * @throws ZodError if inputs fail validation
  * @throws UnrecognizedTaxCodeError if tax code is not valid
@@ -161,7 +201,10 @@ export function calculateCumulativeTaxSync(
     const taxablePayYTD = Math.floor(validated.grossPayYTD);
     const taxDueYTD = taxablePayYTD * 0.2;
     const taxThisPeriod = roundToTwoDecimals(taxDueYTD - validated.taxPaidYTD);
-    checkForAnomalies(taxThisPeriod, validated.grossPayYTD / validated.period, 'BR cumulative');
+    checkForAnomalies(taxThisPeriod, validated.grossPayYTD / validated.period, 'BR cumulative', {
+      taxCode: 'BR',
+      isActualPeriodGross: false
+    });
     return {
       taxThisPeriod,
       taxDueYTD: roundToTwoDecimals(taxDueYTD),
@@ -175,7 +218,10 @@ export function calculateCumulativeTaxSync(
     const taxablePayYTD = Math.floor(validated.grossPayYTD);
     const taxDueYTD = taxablePayYTD * 0.4;
     const taxThisPeriod = roundToTwoDecimals(taxDueYTD - validated.taxPaidYTD);
-    checkForAnomalies(taxThisPeriod, validated.grossPayYTD / validated.period, 'D0 cumulative');
+    checkForAnomalies(taxThisPeriod, validated.grossPayYTD / validated.period, 'D0 cumulative', {
+      taxCode: 'D0',
+      isActualPeriodGross: false
+    });
     return {
       taxThisPeriod,
       taxDueYTD: roundToTwoDecimals(taxDueYTD),
@@ -189,7 +235,10 @@ export function calculateCumulativeTaxSync(
     const taxablePayYTD = Math.floor(validated.grossPayYTD);
     const taxDueYTD = taxablePayYTD * 0.45;
     const taxThisPeriod = roundToTwoDecimals(taxDueYTD - validated.taxPaidYTD);
-    checkForAnomalies(taxThisPeriod, validated.grossPayYTD / validated.period, 'D1 cumulative');
+    checkForAnomalies(taxThisPeriod, validated.grossPayYTD / validated.period, 'D1 cumulative', {
+      taxCode: 'D1',
+      isActualPeriodGross: false
+    });
     return {
       taxThisPeriod,
       taxDueYTD: roundToTwoDecimals(taxDueYTD),
@@ -200,7 +249,10 @@ export function calculateCumulativeTaxSync(
   
   // Standard cumulative calculation for other codes (1257L, K codes, 0T, etc.)
   const freePayYTD = roundToTwoDecimals(taxCodeInfo.monthlyFreePay * validated.period);
-  const taxablePayYTD = Math.max(0, Math.floor(validated.grossPayYTD - freePayYTD));
+  
+  // Only clamp to 0 for positive allowances; K codes can have taxable > gross
+  const rawTaxableYTD = Math.floor(validated.grossPayYTD - freePayYTD);
+  const taxablePayYTD = taxCodeInfo.allowance >= 0 ? Math.max(0, rawTaxableYTD) : rawTaxableYTD;
   
   // Apply tax bands
   let taxDueYTD = 0;
@@ -225,8 +277,11 @@ export function calculateCumulativeTaxSync(
   
   const taxThisPeriod = roundToTwoDecimals(taxDueYTD - validated.taxPaidYTD);
   
-  // Check for anomalies
-  checkForAnomalies(taxThisPeriod, validated.grossPayYTD / validated.period, 'Cumulative sync');
+  // Check for anomalies - skip % check for cumulative (estimated gross)
+  checkForAnomalies(taxThisPeriod, 0, 'Cumulative sync', {
+    taxCode: validated.taxCode,
+    isActualPeriodGross: false
+  });
   
   return {
     taxThisPeriod,
@@ -280,7 +335,10 @@ export function calculateWeek1Month1Tax(
   if (validated.taxCode === 'BR') {
     const taxablePayThisPeriod = Math.floor(validated.grossPayThisPeriod);
     const taxThisPeriod = roundToTwoDecimals(taxablePayThisPeriod * 0.2);
-    checkForAnomalies(taxThisPeriod, validated.grossPayThisPeriod, 'BR W1/M1');
+    checkForAnomalies(taxThisPeriod, validated.grossPayThisPeriod, 'BR W1/M1', {
+      taxCode: 'BR',
+      isActualPeriodGross: true
+    });
     return {
       taxThisPeriod,
       freePayMonthly: 0,
@@ -292,7 +350,10 @@ export function calculateWeek1Month1Tax(
   if (validated.taxCode === 'D0') {
     const taxablePayThisPeriod = Math.floor(validated.grossPayThisPeriod);
     const taxThisPeriod = roundToTwoDecimals(taxablePayThisPeriod * 0.4);
-    checkForAnomalies(taxThisPeriod, validated.grossPayThisPeriod, 'D0 W1/M1');
+    checkForAnomalies(taxThisPeriod, validated.grossPayThisPeriod, 'D0 W1/M1', {
+      taxCode: 'D0',
+      isActualPeriodGross: true
+    });
     return {
       taxThisPeriod,
       freePayMonthly: 0,
@@ -304,7 +365,10 @@ export function calculateWeek1Month1Tax(
   if (validated.taxCode === 'D1') {
     const taxablePayThisPeriod = Math.floor(validated.grossPayThisPeriod);
     const taxThisPeriod = roundToTwoDecimals(taxablePayThisPeriod * 0.45);
-    checkForAnomalies(taxThisPeriod, validated.grossPayThisPeriod, 'D1 W1/M1');
+    checkForAnomalies(taxThisPeriod, validated.grossPayThisPeriod, 'D1 W1/M1', {
+      taxCode: 'D1',
+      isActualPeriodGross: true
+    });
     return {
       taxThisPeriod,
       freePayMonthly: 0,
@@ -317,8 +381,9 @@ export function calculateWeek1Month1Tax(
   const freePayMonthly = taxCodeInfo.monthlyFreePay;
   
   // Calculate taxable pay (rounded down to nearest pound)
-  // For K codes, freePayMonthly is negative, so this adds to taxable income
-  const taxablePayThisPeriod = Math.max(0, Math.floor(validated.grossPayThisPeriod - freePayMonthly));
+  // Only clamp to 0 for positive allowances; K codes can have taxable > gross
+  const rawTaxable = Math.floor(validated.grossPayThisPeriod - freePayMonthly);
+  const taxablePayThisPeriod = taxCodeInfo.allowance >= 0 ? Math.max(0, rawTaxable) : rawTaxable;
   
   // Monthly tax bands (1/12 of annual limits)
   const monthlyBasicLimit = Math.floor(37700 / 12);      // £3,141
@@ -346,8 +411,11 @@ export function calculateWeek1Month1Tax(
   
   const finalTax = roundToTwoDecimals(taxThisPeriod);
   
-  // Check for anomalies
-  checkForAnomalies(finalTax, validated.grossPayThisPeriod, 'W1/M1 calculation');
+  // Check for anomalies - W1/M1 has actual period gross
+  checkForAnomalies(finalTax, validated.grossPayThisPeriod, 'W1/M1 calculation', {
+    taxCode: validated.taxCode,
+    isActualPeriodGross: true
+  });
   
   return {
     taxThisPeriod: finalTax,
