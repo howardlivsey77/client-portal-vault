@@ -11,7 +11,8 @@ import {
   EmployeeNotFound,
   LoadingState,
   HmrcInfoCard,
-  EmploymentStatusCard
+  EmploymentStatusCard,
+  NhsPensionInfoCard
 } from "@/components/employees/details";
 
 const EmployeeDetails = () => {
@@ -74,6 +75,12 @@ const EmployeeDetails = () => {
         />
         
         <HmrcInfoCard
+          employee={employee}
+          isAdmin={isAdmin}
+          updateEmployeeField={updateEmployeeField}
+        />
+
+        <NhsPensionInfoCard
           employee={employee}
           isAdmin={isAdmin}
           updateEmployeeField={updateEmployeeField}
