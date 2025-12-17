@@ -7,6 +7,7 @@ import {
   clearTaxBandsCache, 
   calculateTaxByBands 
 } from "../utils/tax-bands-utils";
+import { payrollLogger } from "../utils/payrollLogger";
 
 /**
  * Re-export cumulative tax calculation for external use
@@ -55,7 +56,7 @@ export function calculateIncomeTax(annualSalary: number, taxCode: string): numbe
       tax = result;
     })
     .catch((error) => {
-      console.error("Error in calculateIncomeTax:", error);
+      payrollLogger.error("Error in calculateIncomeTax", error, 'TAX_CALC');
       
       // Fallback to hardcoded calculation if database lookup fails
       const { allowance } = parseTaxCode(taxCode);
@@ -165,7 +166,7 @@ export function calculateIncomeTaxFromYTD(taxablePayYTD: number, taxCode: string
       tax = result;
     })
     .catch((error) => {
-      console.error("Error in calculateIncomeTaxFromYTD:", error);
+      payrollLogger.error("Error in calculateIncomeTaxFromYTD", error, 'TAX_CALC');
       
       // Fallback to hardcoded calculation using new structure
       let fallbackTax = 0;
