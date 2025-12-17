@@ -50,10 +50,20 @@ function roundDownToNearestPound(amount: number): number {
 /**
  * Calculate tax based on taxable income and tax bands using the new range-based approach.
  * 
- * @param taxableIncome - The taxable income to calculate tax on (in pounds)
- * @param taxBands - The tax bands configuration to use
- * @returns Tax amount at FULL PRECISION (not rounded).
- *          Caller is responsible for rounding to 2dp at output boundary.
+ * Applies progressive tax rates to income within each band threshold.
+ * Taxable income is floored to the nearest pound (per HMRC) before calculation.
+ * 
+ * @param taxableIncome - Taxable income in pounds (will be floored to whole pounds per HMRC)
+ * @param taxBands - Tax band configuration with thresholds and rates
+ * @returns Tax amount at FULL PRECISION (not rounded)
+ * 
+ * ⚠️  ROUNDING RESPONSIBILITY: This function returns full precision.
+ *     The CALLER is responsible for rounding to 2 decimal places
+ *     at the appropriate output boundary.
+ * 
+ * @example
+ * const tax = calculateTaxByBands(50000, taxBands);
+ * const roundedTax = roundToTwoDecimals(tax); // Round at output
  */
 export function calculateTaxByBands(taxableIncome: number, taxBands: FormattedTaxBands): number {
   // Round down taxable income to the nearest pound as per HMRC rules
