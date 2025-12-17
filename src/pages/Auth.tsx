@@ -1,8 +1,7 @@
-
 import { Loader2 } from "lucide-react";
-import { PageContainer } from "@/components/layout/PageContainer";
 import { useAuthInitialization } from "@/hooks";
 import { AuthContainer, CompanyAccessSetup } from "@/components/auth";
+import { AuthPage } from "@/components/auth/AuthPage";
 import { ensureCompanyAccess } from "@/services";
 import { useAuth } from "@/providers";
 import { useEffect } from "react";
@@ -10,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
-  const { user, isAdmin, is2FAInProgress } = useAuth();
+  const { user, is2FAInProgress } = useAuth();
   const { authInitialized } = useAuthInitialization(is2FAInProgress);
   const navigate = useNavigate();
   
@@ -48,24 +47,22 @@ const Auth = () => {
   // Show loading indicator until we've checked the session
   if (!authInitialized) {
     return (
-      <PageContainer>
-        <div className="flex items-center justify-center min-h-[70vh]">
+      <AuthPage>
+        <div className="flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </PageContainer>
+      </AuthPage>
     );
   }
 
   return (
-    <PageContainer>
+    <AuthPage>
       {user && !is2FAInProgress ? (
-        <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto mt-16">
-          <CompanyAccessSetup />
-        </div>
+        <CompanyAccessSetup />
       ) : (
         <AuthContainer onSuccess={ensureCompanyAccess} />
       )}
-    </PageContainer>
+    </AuthPage>
   );
 };
 
