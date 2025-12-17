@@ -1,4 +1,4 @@
-import { BrandConfig, BrandColors } from './types';
+import { BrandConfig, BrandColors, SemanticColors } from './types';
 
 const defaultLightColors: BrandColors = {
   background: '169 56% 88%',
@@ -62,14 +62,38 @@ const defaultDarkColors: BrandColors = {
   header: '169 56% 73%',
 };
 
+const defaultLightSemanticColors: SemanticColors = {
+  success: '142 76% 36%',
+  successForeground: '0 0% 100%',
+  successLight: '142 76% 95%',
+  info: '211 100% 45%',
+  infoForeground: '0 0% 100%',
+  infoLight: '211 100% 95%',
+  chartColors: ['#9b87f5', '#7E69AB', '#8B5CF6', '#D946EF', '#F97316', '#0EA5E9', '#1EAEDB', '#33C3F0', '#0FA0CE'],
+};
+
+const defaultDarkSemanticColors: SemanticColors = {
+  success: '142 76% 46%',
+  successForeground: '0 0% 100%',
+  successLight: '142 40% 20%',
+  info: '211 100% 55%',
+  infoForeground: '0 0% 100%',
+  infoLight: '211 50% 20%',
+  chartColors: ['#9b87f5', '#7E69AB', '#8B5CF6', '#D946EF', '#F97316', '#0EA5E9', '#1EAEDB', '#33C3F0', '#0FA0CE'],
+};
+
 export const defaultBrand: BrandConfig = {
   id: 'dootsons',
   name: 'Dootsons',
-  domains: [], // Default fallback for unmatched domains
+  domains: [],
   logoUrl: '/lovable-uploads/3fca6e51-90f5-44c9-ae11-38b6db5ee9a0.png',
   colors: {
     light: defaultLightColors,
     dark: defaultDarkColors,
+  },
+  semanticColors: {
+    light: defaultLightSemanticColors,
+    dark: defaultDarkSemanticColors,
   },
 };
 
@@ -110,6 +134,26 @@ const fergiDarkColors: BrandColors = {
   header: '353 70% 35%',
 };
 
+const fergiLightSemanticColors: SemanticColors = {
+  success: '353 94% 63%',
+  successForeground: '0 0% 100%',
+  successLight: '353 94% 95%',
+  info: '353 60% 75%',
+  infoForeground: '353 94% 30%',
+  infoLight: '353 50% 95%',
+  chartColors: ['#fa4659', '#ff6b7a', '#ff8f9b', '#e63950', '#cc3347', '#ff4d5f', '#ff7380', '#f03a4d', '#d9334a'],
+};
+
+const fergiDarkSemanticColors: SemanticColors = {
+  success: '353 94% 63%',
+  successForeground: '0 0% 100%',
+  successLight: '353 50% 25%',
+  info: '353 60% 55%',
+  infoForeground: '0 0% 100%',
+  infoLight: '353 40% 25%',
+  chartColors: ['#fa4659', '#ff6b7a', '#ff8f9b', '#e63950', '#cc3347', '#ff4d5f', '#ff7380', '#f03a4d', '#d9334a'],
+};
+
 export const fergiBrand: BrandConfig = {
   id: 'fergi',
   name: 'Fergi',
@@ -118,6 +162,10 @@ export const fergiBrand: BrandConfig = {
   colors: {
     light: fergiLightColors,
     dark: fergiDarkColors,
+  },
+  semanticColors: {
+    light: fergiLightSemanticColors,
+    dark: fergiDarkSemanticColors,
   },
 };
 

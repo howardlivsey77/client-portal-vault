@@ -1,14 +1,15 @@
-
 import { formatDate } from "@/lib/formatters";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { ChangeTypeIndicator } from "./ChangeTypeIndicator";
 import { EmployeeChange } from "./types";
+import { useBrandColors } from "@/brand";
 
 interface ChangesListProps {
   changes: EmployeeChange[];
 }
 
 export function ChangesList({ changes }: ChangesListProps) {
+  const brandColors = useBrandColors();
   const isMay5th = (date: string) => date === "2025-05-05";
   
   return (
@@ -28,7 +29,7 @@ export function ChangesList({ changes }: ChangesListProps) {
           changes.map((change) => (
             <TableRow 
               key={`${change.id}`}
-              className={isMay5th(change.date) ? "bg-blue-50" : ""}
+              style={isMay5th(change.date) ? { backgroundColor: `hsl(${brandColors.infoLight})` } : undefined}
             >
               <TableCell className={`font-medium ${isMay5th(change.date) ? "font-bold" : ""}`}>
                 {formatDate(change.date)}
@@ -39,16 +40,16 @@ export function ChangesList({ changes }: ChangesListProps) {
               </TableCell>
               <TableCell>{change.field || '-'}</TableCell>
               <TableCell>
-                <span className="text-red-600">{change.oldValue || '-'}</span>
+                <span className="text-destructive">{change.oldValue || '-'}</span>
               </TableCell>
               <TableCell>
-                <span className="text-green-600">{change.newValue || '-'}</span>
+                <span style={{ color: `hsl(${brandColors.success})` }}>{change.newValue || '-'}</span>
               </TableCell>
             </TableRow>
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={6} className="text-center py-4 text-monday-gray">
+            <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
               No employee changes found in the selected date range
             </TableCell>
           </TableRow>

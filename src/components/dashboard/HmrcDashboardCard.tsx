@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Building2 } from "lucide-react";
 import { useHmrcDashboardData, HmrcPeriodData } from "@/hooks";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useBrandColors } from "@/brand";
 
 function generateFinancialYears(): string[] {
   const currentDate = new Date();
@@ -50,13 +51,13 @@ function getExampleStatus(period: number): { fpsStatus: HmrcPeriodData['fpsStatu
   return exampleStatuses[period] || { fpsStatus: null, epsStatus: null };
 }
 
-function StatusIndicator({ status }: { status: HmrcPeriodData['fpsStatus'] }) {
+function StatusIndicator({ status, brandColors }: { status: HmrcPeriodData['fpsStatus'], brandColors: ReturnType<typeof useBrandColors> }) {
   const getStatusStyles = () => {
     switch (status) {
       case 'success':
-        return 'bg-green-500 shadow-[0_0_6px_1px_rgba(34,197,94,0.4)]';
+        return `bg-[hsl(${brandColors.success})] shadow-[0_0_6px_1px_hsl(${brandColors.success}/0.4)]`;
       case 'failed':
-        return 'bg-red-500 shadow-[0_0_6px_1px_rgba(239,68,68,0.4)]';
+        return 'bg-destructive shadow-[0_0_6px_1px_hsl(var(--destructive)/0.4)]';
       case 'pending':
         return 'bg-amber-500 shadow-[0_0_6px_1px_rgba(245,158,11,0.4)]';
       case 'not_required':
@@ -103,7 +104,8 @@ function formatCurrency(amount: number): string {
 
 export function HmrcDashboardCard() {
   const financialYears = useMemo(() => generateFinancialYears(), []);
-  const [selectedYear, setSelectedYear] = useState(financialYears[1]); // Default to current year
+  const [selectedYear, setSelectedYear] = useState(financialYears[1]);
+  const brandColors = useBrandColors();
   
   const { data: periodData, isLoading } = useHmrcDashboardData(selectedYear);
 
@@ -189,17 +191,17 @@ export function HmrcDashboardCard() {
                     <td className="py-1.5 px-2 text-right tabular-nums">
                       {period.payments > 0 ? formatCurrency(period.payments) : '—'}
                     </td>
-                    <td className="py-1.5 px-2 text-right tabular-nums text-green-600 dark:text-green-400">
+                    <td className="py-1.5 px-2 text-right tabular-nums" style={{ color: `hsl(${brandColors.success})` }}>
                       {period.credits > 0 ? formatCurrency(period.credits) : '—'}
                     </td>
                     <td className="py-1.5 px-2">
                       <div className="flex justify-center">
-                        <StatusIndicator status={period.fpsStatus} />
+                        <StatusIndicator status={period.fpsStatus} brandColors={brandColors} />
                       </div>
                     </td>
                     <td className="py-1.5 px-2">
                       <div className="flex justify-center">
-                        <StatusIndicator status={period.epsStatus} />
+                        <StatusIndicator status={period.epsStatus} brandColors={brandColors} />
                       </div>
                     </td>
                   </tr>
@@ -211,7 +213,7 @@ export function HmrcDashboardCard() {
                   <td className="py-1.5 px-2 text-right tabular-nums">
                     {formatCurrency(totals.payments)}
                   </td>
-                  <td className="py-1.5 px-2 text-right tabular-nums text-green-600 dark:text-green-400">
+                  <td className="py-1.5 px-2 text-right tabular-nums" style={{ color: `hsl(${brandColors.success})` }}>
                     {formatCurrency(totals.credits)}
                   </td>
                   <td colSpan={2}></td>

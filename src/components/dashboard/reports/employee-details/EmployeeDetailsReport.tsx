@@ -7,6 +7,7 @@ import { useToast } from "@/hooks";
 import { Employee } from "@/types";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
+import { useBrandColors } from "@/brand";
 
 interface EmployeeDetailsReportProps {
   standalone?: boolean;
@@ -25,6 +26,7 @@ export function EmployeeDetailsReport({ standalone = false }: EmployeeDetailsRep
   const [loading, setLoading] = useState(true);
   const [totalEmployees, setTotalEmployees] = useState(0);
   const { toast } = useToast();
+  const brandColors = useBrandColors();
 
   useEffect(() => {
     fetchEmployeeDetails();
@@ -135,12 +137,15 @@ export function EmployeeDetailsReport({ standalone = false }: EmployeeDetailsRep
 
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <FileText className="h-5 w-5 text-green-600" />
+            <div 
+              className="p-2 rounded-lg"
+              style={{ backgroundColor: `hsl(${brandColors.successLight})` }}
+            >
+              <FileText className="h-5 w-5" style={{ color: `hsl(${brandColors.success})` }} />
             </div>
             <div>
-              <p className="text-sm text-monday-gray">Report Generated</p>
-              <p className="text-sm font-medium text-monday-dark">
+              <p className="text-sm text-muted-foreground">Report Generated</p>
+              <p className="text-sm font-medium">
                 {format(new Date(), "dd/MM/yyyy HH:mm")}
               </p>
             </div>

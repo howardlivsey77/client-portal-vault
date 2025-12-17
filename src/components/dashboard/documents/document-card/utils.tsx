@@ -1,4 +1,3 @@
-
 import { FileText } from "lucide-react";
 import { documentService } from "@/services";
 import { toast } from "sonner";
@@ -6,15 +5,15 @@ import { toast } from "sonner";
 export const getFileIcon = (type: string) => {
   switch (type.toLowerCase()) {
     case 'pdf':
-      return <FileText className="h-8 w-8 text-red-500" />;
+      return <FileText className="h-8 w-8 text-destructive" />;
     case 'doc':
     case 'docx':
-      return <FileText className="h-8 w-8 text-blue-500" />;
+      return <FileText className="h-8 w-8 text-primary" />;
     case 'xls':
     case 'xlsx':
-      return <FileText className="h-8 w-8 text-green-500" />;
+      return <FileText className="h-8 w-8 text-secondary" />;
     default:
-      return <FileText className="h-8 w-8 text-gray-500" />;
+      return <FileText className="h-8 w-8 text-muted-foreground" />;
   }
 };
 
