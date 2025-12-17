@@ -9,12 +9,24 @@ export const AuthPage = ({ children }: AuthPageProps) => {
   const brand = useBrand();
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-background via-muted/50 to-primary/10">
-      {/* Decorative background elements */}
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-muted/30">
+      {/* Decorative organic background shapes */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 -left-20 w-60 h-60 bg-secondary/5 rounded-full blur-3xl" />
-        <div className="absolute -bottom-20 right-1/4 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
+        {/* Large organic shape - top right */}
+        <div 
+          className="absolute -top-40 -right-64 w-[900px] h-[900px] bg-muted"
+          style={{ borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' }}
+        />
+        {/* Large organic shape - bottom left */}
+        <div 
+          className="absolute -bottom-64 -left-48 w-[800px] h-[800px] bg-primary/5"
+          style={{ borderRadius: '40% 60% 70% 30% / 40% 70% 30% 60%' }}
+        />
+        {/* Subtle accent shape - center right */}
+        <div 
+          className="absolute top-1/3 -right-32 w-[500px] h-[500px] bg-primary/3"
+          style={{ borderRadius: '50% 50% 40% 60% / 60% 40% 60% 40%' }}
+        />
       </div>
 
       {/* Header with logo - matches in-app header */}
