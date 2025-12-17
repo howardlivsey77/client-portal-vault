@@ -51,6 +51,8 @@ export interface SemanticColors {
 export interface BrandConfig {
   id: string;
   name: string;
+  title: string;
+  tagline: string;
   domains: string[];
   logoUrl: string;
   faviconUrl?: string;

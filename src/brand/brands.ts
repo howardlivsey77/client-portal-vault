@@ -103,8 +103,11 @@ const defaultDarkSemanticColors: SemanticColors = {
 export const defaultBrand: BrandConfig = {
   id: 'dootsons',
   name: 'Dootsons',
+  title: 'Dootsons - Payroll for Healthcare',
+  tagline: 'Professional payroll management system for healthcare organizations',
   domains: [],
   logoUrl: '/lovable-uploads/3fca6e51-90f5-44c9-ae11-38b6db5ee9a0.png',
+  faviconUrl: '/lovable-uploads/3fca6e51-90f5-44c9-ae11-38b6db5ee9a0.png',
   colors: {
     light: defaultLightColors,
     dark: defaultDarkColors,
@@ -193,8 +196,11 @@ const fergiDarkSemanticColors: SemanticColors = {
 export const fergiBrand: BrandConfig = {
   id: 'fergi',
   name: 'Fergi',
+  title: 'Fergi - Payroll Made Simple',
+  tagline: 'Simplified payroll management for modern businesses',
   domains: ['fergi.app', 'www.fergi.app'],
   logoUrl: '/fergi-logo.png',
+  faviconUrl: '/fergi-logo.png',
   colors: {
     light: fergiLightColors,
     dark: fergiDarkColors,
