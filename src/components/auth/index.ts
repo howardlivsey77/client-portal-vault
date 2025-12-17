@@ -1,6 +1,8 @@
 // Auth components - centralized exports
 // Main auth components
 export { AuthContainer } from "./AuthContainer";
+export { AuthPage } from "./AuthPage";
+export { AuthFooter } from "./AuthFooter";
 export { default as AuthInviteGuard } from "./AuthInviteGuard";
 export { LoginForm } from "./LoginForm";
 export { SignupForm } from "./SignupForm";
