@@ -1,6 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeData } from "@/components/employees/import/ImportConstants";
+import { getCompanyId } from "@/utils/company/getCompanyId";
 
 /**
  * Check for existing employees within a specific company
@@ -10,8 +10,8 @@ export const findExistingEmployees = async (
   companyId?: string
 ): Promise<EmployeeData[]> => {
   try {
-    // Get company ID from param or localStorage
-    const effectiveCompanyId = companyId || localStorage.getItem('lastSelectedCompany');
+    // Get company ID using centralized utility
+    const effectiveCompanyId = getCompanyId(companyId);
     
     if (!effectiveCompanyId) {
       console.warn("No company ID provided for employee lookup - skipping existing employee check");

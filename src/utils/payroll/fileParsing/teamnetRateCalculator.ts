@@ -8,23 +8,16 @@
  * Company-specific rules can be configured via the database
  */
 
+import { RateCondition, TeamnetRateConfig } from "@/features/company-settings/types/teamnetRateConfig";
+
 export interface RateHours {
   rate2Hours: number;
   rate3Hours: number;
   rate4Hours?: number;
 }
 
-export interface RateCondition {
-  rate: number;
-  days: string[];
-  time_from: string;
-  time_to: string;
-}
-
-export interface TeamnetRateConfig {
-  default_rate: number;
-  conditions: RateCondition[];
-}
+// Re-export types for backward compatibility
+export type { RateCondition, TeamnetRateConfig } from "@/features/company-settings/types/teamnetRateConfig";
 
 // Map day numbers to day names
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];

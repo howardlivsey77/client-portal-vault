@@ -1,4 +1,3 @@
-
 import { EligibilityRule } from "@/components/employees/details/work-pattern/types";
 
 export interface SicknessScheme {
@@ -24,3 +23,6 @@ export interface CompanyFormValues {
   payrollStartYear?: number;
   payrollStartPeriod?: number;
 }
+
+// Re-export teamnet rate config types
+export { type RateCondition, type TeamnetRateConfig } from './types/teamnetRateConfig';
