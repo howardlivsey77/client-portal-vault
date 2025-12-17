@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SicknessReport } from "./sickness/SicknessReport";
 import { HoursRatesReport } from "./hours-rates/HoursRatesReport";
+import { P11Report } from "./p11/P11Report";
 
-type ReportType = "sickness" | "employee-details" | "hours-rates";
+type ReportType = "sickness" | "employee-details" | "hours-rates" | "p11";
 
 export function ClientReportsNavigation() {
   const [selectedReport, setSelectedReport] = useState<ReportType>("sickness");
@@ -25,6 +26,8 @@ export function ClientReportsNavigation() {
         );
       case "hours-rates":
         return <HoursRatesReport />;
+      case "p11":
+        return <P11Report />;
       default:
         return <SicknessReport />;
     }
@@ -46,6 +49,7 @@ export function ClientReportsNavigation() {
             <SelectItem value="sickness">Sickness Report</SelectItem>
             <SelectItem value="employee-details">Employee Details Report</SelectItem>
             <SelectItem value="hours-rates">Employee Hours and Rates Report</SelectItem>
+            <SelectItem value="p11">P11 Deductions Working Sheet</SelectItem>
           </SelectContent>
         </Select>
       </div>
