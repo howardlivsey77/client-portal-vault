@@ -8,16 +8,15 @@ import { calculateNHSPension } from "./calculations/nhs-pension";
 import { PayrollDetails, PayrollResult } from "./types";
 import { parseTaxCode } from "./utils/tax-code-utils";
 import { NationalInsuranceCalculator } from "./calculations/ni/services/NationalInsuranceCalculator";
-
-/**
- * Round down to nearest pound for taxable pay
- */
-function roundDownToNearestPound(amount: number): number {
-  return Math.floor(amount);
-}
+import { payrollLogger } from "./utils/payrollLogger";
+import { getCurrentTaxYear } from "./utils/taxYearUtils";
+import { roundDownToNearestPound } from "./utils/roundingUtils";
 
 /**
  * Main function to calculate monthly payroll
+ * 
+ * @param details Payroll details including employee info, salary, tax code, etc.
+ * @returns Calculated payroll result
  */
 export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<PayrollResult> {
   const {
@@ -32,39 +31,44 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     additionalAllowances = [],
     additionalEarnings = [],
     isNHSPensionMember = false,
-    previousYearPensionablePay = null
+    previousYearPensionablePay = null,
+    taxYear: providedTaxYear
   } = details;
   
-  console.log(`[PAYROLL] Starting calculation for ${employeeName}, monthly salary: £${monthlySalary}, NHS pension member: ${isNHSPensionMember}`);
+  // Use provided tax year or calculate current one
+  const taxYear = providedTaxYear || getCurrentTaxYear();
   
-  // Tax year in format YYYY/YY
-  const currentYear = new Date().getFullYear();
-  const taxYear = `${currentYear}/${(currentYear + 1).toString().substring(2)}`;
+  payrollLogger.debug('Starting payroll calculation', { 
+    employeeId, 
+    monthlySalary, 
+    taxYear,
+    isNHSPensionMember 
+  });
   
   // Calculate earnings
   const totalAdditionalEarnings = additionalEarnings?.reduce((sum, item) => sum + item.amount, 0) || 0;
   const grossPay = monthlySalary + totalAdditionalEarnings;
-  console.log(`[PAYROLL] Gross pay: £${grossPay} (Salary: £${monthlySalary} + Additional: £${totalAdditionalEarnings})`);
+  
+  payrollLogger.calculation('Gross pay', { 
+    monthlySalary, 
+    additionalEarnings: totalAdditionalEarnings, 
+    grossPay 
+  });
   
   // Calculate deductions using enhanced async tax calculation from database
   const incomeTaxResult = await calculateMonthlyIncomeTaxAsync(grossPay, taxCode, taxYear);
   const incomeTax = incomeTaxResult.monthlyTax;
   const freePay = incomeTaxResult.freePay;
-  console.log(`[PAYROLL] Income tax: £${incomeTax}, Free pay: £${freePay}`);
   
-  // Calculate taxable pay and round down to the nearest pound
+  payrollLogger.calculation('Income tax', { incomeTax, freePay });
+  
+  // Calculate taxable pay and round down to the nearest pound (HMRC requirement)
   const taxablePay = roundDownToNearestPound(grossPay - freePay);
-  console.log(`[PAYROLL] Original calculation - Gross pay: £${grossPay}, Free pay: £${freePay}, Taxable pay (rounded down): £${taxablePay}`);
   
-  // Special case for debugging Holly King
-  const isHollyKing = employeeName.includes("Holly King");
-  if (isHollyKing) {
-    console.log(`[PAYROLL] HOLLY KING TEST CASE - Monthly salary: £${monthlySalary}, Gross pay: £${grossPay}`);
-  }
+  payrollLogger.calculation('Taxable pay', { grossPay, freePay, taxablePay });
   
   // Use the NI calculator service for National Insurance calculations
-  console.log(`[PAYROLL] Calculating National Insurance for gross pay: £${grossPay}`);
-  const niCalculator = new NationalInsuranceCalculator(taxYear, true);
+  const niCalculator = new NationalInsuranceCalculator(taxYear, false);
   const niResult: NICalculationResult = await niCalculator.calculate(grossPay);
   const nationalInsurance = niResult.nationalInsurance;
   
@@ -75,22 +79,21 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   const earningsAboveUEL = niResult.earningsAboveUEL;
   const earningsAboveST = niResult.earningsAboveST;
   
-  console.log(`[PAYROLL] NI calculation results:
-    - Earnings at LEL: £${earningsAtLEL}
-    - Earnings LEL to PT: £${earningsLELtoPT}
-    - Earnings PT to UEL: £${earningsPTtoUEL}
-    - Earnings above UEL: £${earningsAboveUEL}
-    - Earnings above ST: £${earningsAboveST}
-    - Total NI contribution: £${nationalInsurance}
-  `);
+  payrollLogger.calculation('NI bands', {
+    earningsAtLEL,
+    earningsLELtoPT,
+    earningsPTtoUEL,
+    earningsAboveUEL,
+    earningsAboveST,
+    nationalInsurance
+  }, 'NI_CALC');
   
-  // FIXED: Calculate student loan on base monthly salary only, not gross pay
+  // Calculate student loan on base monthly salary only, not gross pay
   // Student loan deductions should only be based on regular salary, excluding additional earnings
-  console.log(`[PAYROLL] Calculating student loan on base monthly salary: £${monthlySalary} (excluding additional earnings: £${totalAdditionalEarnings})`);
   const studentLoan = calculateStudentLoan(monthlySalary, studentLoanPlan);
-  
   const pensionContribution = calculatePension(grossPay, pensionPercentage);
-  console.log(`[PAYROLL] Student loan: £${studentLoan}, Pension contribution: £${pensionContribution}`);
+  
+  payrollLogger.calculation('Student loan & pension', { studentLoan, pensionContribution });
   
   // Calculate NHS pension contributions
   const nhsPensionResult = await calculateNHSPension(
@@ -100,7 +103,11 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     isNHSPensionMember
   );
   
-  console.log(`[PAYROLL] NHS pension - Employee: £${nhsPensionResult.employeeContribution}, Employer: £${nhsPensionResult.employerContribution}, Tier: ${nhsPensionResult.tier}`);
+  payrollLogger.calculation('NHS pension', {
+    employeeContribution: nhsPensionResult.employeeContribution,
+    employerContribution: nhsPensionResult.employerContribution,
+    tier: nhsPensionResult.tier
+  }, 'PENSION');
   
   // Calculate totals
   const totalAdditionalDeductions = additionalDeductions.reduce((sum, item) => sum + item.amount, 0);
@@ -110,9 +117,11 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   const totalAllowances = totalAdditionalAllowances;
   const netPay = grossPay - totalDeductions + totalAllowances;
   
-  console.log(`[PAYROLL] Initial calculation results - Income tax: £${incomeTax}, Taxable pay: £${taxablePay}, NI: £${nationalInsurance}`);
-  console.log(`[PAYROLL] NI earnings bands - LEL: £${earningsAtLEL}, LEL to PT: £${earningsLELtoPT}, PT to UEL: £${earningsPTtoUEL}, Above UEL: £${earningsAboveUEL}, Above ST: £${earningsAboveST}`);
-  console.log(`[PAYROLL] Final net pay: £${netPay}`);
+  payrollLogger.calculation('Final totals', { 
+    totalDeductions, 
+    totalAllowances, 
+    netPay 
+  });
   
   const result = {
     employeeId,
@@ -150,7 +159,8 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     isNHSPensionMember
   };
   
-  console.log(`[PAYROLL] Final calculation result:`, result);
+  payrollLogger.debug('Payroll calculation complete', { employeeId, netPay: result.netPay });
+  
   return result;
 }
 

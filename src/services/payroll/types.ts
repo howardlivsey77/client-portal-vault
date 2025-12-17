@@ -17,6 +17,8 @@ export interface PayrollDetails {
   // NHS Pension fields
   isNHSPensionMember?: boolean;
   previousYearPensionablePay?: number | null;
+  // Tax year - optional, defaults to current tax year if not provided
+  taxYear?: string;
 }
 
 export interface PayrollResult {
