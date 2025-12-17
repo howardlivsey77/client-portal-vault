@@ -113,18 +113,19 @@ export function usePayrollBatchCalculation(
             });
           }
 
-          // Calculate payroll with adjustments
+          // Calculate payroll with adjustments using actual employee data
           const result = await calculateMonthlyPayroll({
             employeeId: employee.employeeId,
             employeeName: employee.name,
             payrollId: employee.payrollId,
             monthlySalary: employee.salary,
-            taxCode: '1257L', // TODO: Get from employee record
+            taxCode: employee.taxCode,
             additionalEarnings,
             additionalDeductions,
-            pensionPercentage: 0, // TODO: Get from employee
-            studentLoanPlan: null, // TODO: Get from employee
-            isNHSPensionMember: false, // TODO: Get from employee
+            pensionPercentage: employee.pensionPercentage,
+            studentLoanPlan: employee.studentLoanPlan,
+            isNHSPensionMember: employee.isNHSPensionMember,
+            previousYearPensionablePay: employee.previousYearPensionablePay,
           });
 
           // Save to database
