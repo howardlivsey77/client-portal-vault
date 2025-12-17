@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { CompaniesMenu } from "./sidebar/CompaniesMenu";
+import { useBrand } from "@/brand";
 
 interface NavbarProps {
   toggleSidebar?: () => void;
@@ -24,6 +25,7 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
   const { user, signOut } = useAuth();
   const { unreadCount, timesheetExceptionsCount } = useNotifications();
   const navigate = useNavigate();
+  const brand = useBrand();
   
   const hasNotifications = unreadCount > 0 || timesheetExceptionsCount > 0;
 
@@ -43,8 +45,8 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
       
       <div className="flex items-center">
         <img 
-          src="/lovable-uploads/3fca6e51-90f5-44c9-ae11-38b6db5ee9a0.png" 
-          alt="Dootsons Logo" 
+          src={brand.logoUrl} 
+          alt={`${brand.name} Logo`} 
           className="h-14" 
         />
       </div>
