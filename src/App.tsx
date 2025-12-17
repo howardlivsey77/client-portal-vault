@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrandProvider } from "@/brand";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AcceptInvite from "./pages/AcceptInvite";
@@ -39,53 +40,55 @@ import Setup2FA from "./pages/Setup2FA";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <CompanyProvider>
-            <NotificationsProvider>
-              <AuthInviteGuard />
-              <Routes>
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/create-password" element={<CreatePassword />} />
-                <Route path="/accept-invite" element={<AcceptInvite />} />
-                <Route path="/invite/accept" element={<AcceptInviteToken />} />
-                <Route path="/setup-2fa" element={<ProtectedRoute><Setup2FA /></ProtectedRoute>} />
-                <Route path="/" element={<ProtectedRoute><Require2FASetup><Index /></Require2FASetup></ProtectedRoute>} />
-                <Route path="/invites" element={<ProtectedRoute adminOnly={true}><Require2FASetup><InviteManagement /></Require2FASetup></ProtectedRoute>} />
-                <Route path="/employees" element={<ProtectedRoute><Require2FASetup><Employees /></Require2FASetup></ProtectedRoute>} />
-                <Route path="/employees/sickness/import" element={<ProtectedRoute><Require2FASetup><SicknessImport /></Require2FASetup></ProtectedRoute>} />
-                <Route path="/client-reports" element={<ProtectedRoute><Require2FASetup><ClientReports /></Require2FASetup></ProtectedRoute>} />
-                <Route path="/employee/new" element={<ProtectedRoute><Require2FASetup><EmployeeForm /></Require2FASetup></ProtectedRoute>} />
-                <Route path="/employee/:id" element={<ProtectedRoute><Require2FASetup><EmployeeDetails /></Require2FASetup></ProtectedRoute>} />
-                <Route path="/employee/edit/:id" element={<ProtectedRoute><Require2FASetup><EmployeeForm /></Require2FASetup></ProtectedRoute>} />
-                <Route path="/settings/timesheets" element={<ProtectedRoute><Require2FASetup><TimesheetSettings /></Require2FASetup></ProtectedRoute>} />
-                <Route path="/notifications" element={<ProtectedRoute><Require2FASetup><Notifications /></Require2FASetup></ProtectedRoute>} />
-                <Route path="/payroll-processing" element={<ProtectedRoute><Require2FASetup><PayrollProcessing /></Require2FASetup></ProtectedRoute>} />
-                <Route path="/security" element={<ProtectedRoute><Require2FASetup><Security /></Require2FASetup></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><Require2FASetup><Profile /></Require2FASetup></ProtectedRoute>} />
-                
-                {/* Company Settings Routes */}
-                <Route path="/settings/company/general" element={<ProtectedRoute><Require2FASetup><CompanySettings /></Require2FASetup></ProtectedRoute>} />
-                <Route path="/settings/company/sickness" element={<ProtectedRoute><Require2FASetup><CompanySettings /></Require2FASetup></ProtectedRoute>} />
-                <Route path="/settings/company/locations" element={<ProtectedRoute><Require2FASetup><CompanySettings /></Require2FASetup></ProtectedRoute>} />
-                <Route path="/settings/company/departments" element={<ProtectedRoute><Require2FASetup><CompanySettings /></Require2FASetup></ProtectedRoute>} />
-                
-                {/* Company Management Route - allow all authenticated users */}
-                <Route path="/settings/companies" element={<ProtectedRoute><Require2FASetup><CompanyManagement /></Require2FASetup></ProtectedRoute>} />
-                
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </NotificationsProvider>
-          </CompanyProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <BrandProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <CompanyProvider>
+              <NotificationsProvider>
+                <AuthInviteGuard />
+                <Routes>
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/create-password" element={<CreatePassword />} />
+                  <Route path="/accept-invite" element={<AcceptInvite />} />
+                  <Route path="/invite/accept" element={<AcceptInviteToken />} />
+                  <Route path="/setup-2fa" element={<ProtectedRoute><Setup2FA /></ProtectedRoute>} />
+                  <Route path="/" element={<ProtectedRoute><Require2FASetup><Index /></Require2FASetup></ProtectedRoute>} />
+                  <Route path="/invites" element={<ProtectedRoute adminOnly={true}><Require2FASetup><InviteManagement /></Require2FASetup></ProtectedRoute>} />
+                  <Route path="/employees" element={<ProtectedRoute><Require2FASetup><Employees /></Require2FASetup></ProtectedRoute>} />
+                  <Route path="/employees/sickness/import" element={<ProtectedRoute><Require2FASetup><SicknessImport /></Require2FASetup></ProtectedRoute>} />
+                  <Route path="/client-reports" element={<ProtectedRoute><Require2FASetup><ClientReports /></Require2FASetup></ProtectedRoute>} />
+                  <Route path="/employee/new" element={<ProtectedRoute><Require2FASetup><EmployeeForm /></Require2FASetup></ProtectedRoute>} />
+                  <Route path="/employee/:id" element={<ProtectedRoute><Require2FASetup><EmployeeDetails /></Require2FASetup></ProtectedRoute>} />
+                  <Route path="/employee/edit/:id" element={<ProtectedRoute><Require2FASetup><EmployeeForm /></Require2FASetup></ProtectedRoute>} />
+                  <Route path="/settings/timesheets" element={<ProtectedRoute><Require2FASetup><TimesheetSettings /></Require2FASetup></ProtectedRoute>} />
+                  <Route path="/notifications" element={<ProtectedRoute><Require2FASetup><Notifications /></Require2FASetup></ProtectedRoute>} />
+                  <Route path="/payroll-processing" element={<ProtectedRoute><Require2FASetup><PayrollProcessing /></Require2FASetup></ProtectedRoute>} />
+                  <Route path="/security" element={<ProtectedRoute><Require2FASetup><Security /></Require2FASetup></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><Require2FASetup><Profile /></Require2FASetup></ProtectedRoute>} />
+                  
+                  {/* Company Settings Routes */}
+                  <Route path="/settings/company/general" element={<ProtectedRoute><Require2FASetup><CompanySettings /></Require2FASetup></ProtectedRoute>} />
+                  <Route path="/settings/company/sickness" element={<ProtectedRoute><Require2FASetup><CompanySettings /></Require2FASetup></ProtectedRoute>} />
+                  <Route path="/settings/company/locations" element={<ProtectedRoute><Require2FASetup><CompanySettings /></Require2FASetup></ProtectedRoute>} />
+                  <Route path="/settings/company/departments" element={<ProtectedRoute><Require2FASetup><CompanySettings /></Require2FASetup></ProtectedRoute>} />
+                  
+                  {/* Company Management Route - allow all authenticated users */}
+                  <Route path="/settings/companies" element={<ProtectedRoute><Require2FASetup><CompanyManagement /></Require2FASetup></ProtectedRoute>} />
+                  
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </NotificationsProvider>
+            </CompanyProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </BrandProvider>
 );
 
 export default App;
