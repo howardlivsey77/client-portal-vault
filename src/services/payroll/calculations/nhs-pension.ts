@@ -1,6 +1,23 @@
+/**
+ * NHS Pension Calculator
+ * 
+ * Calculates NHS pension contributions based on tiered contribution rates.
+ * 
+ * REGULATORY BASIS:
+ * NHS Pension Scheme member contribution rates are based on whole-time
+ * equivalent pensionable pay and determined by NHS Employers.
+ * 
+ * References:
+ * - NHS Employers: https://www.nhsemployers.org/articles/contribution-rates
+ * - NHS Pensions: https://www.nhsbsa.nhs.uk/nhs-pensions
+ * 
+ * Tier determination uses previous year's pensionable pay where available,
+ * otherwise current annual salary (monthly × 12).
+ */
 
 import { supabase } from "@/integrations/supabase/client";
 import { roundToTwoDecimals } from "@/lib/formatters";
+import { payrollLogger } from "../utils/payrollLogger";
 
 interface NHSPensionBand {
   tier_number: number;
@@ -31,13 +48,13 @@ async function getNHSPensionBands(taxYear: string): Promise<NHSPensionBand[]> {
       .order('tier_number');
 
     if (error) {
-      console.error('Error fetching NHS pension bands:', error);
+      payrollLogger.error('Error fetching NHS pension bands', error, 'PENSION');
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getNHSPensionBands:', error);
+    payrollLogger.error('Error in getNHSPensionBands', error, 'PENSION');
     return [];
   }
 }
@@ -89,13 +106,16 @@ export async function calculateNHSPension(
     };
   }
 
-  console.log(`[NHS PENSION] Calculating for monthly salary: £${monthlySalary}, previous year pay: £${previousYearPensionablePay || 'N/A'}`);
+  payrollLogger.debug('NHS pension calculation started', { 
+    taxYear,
+    hasPreviousYearPay: previousYearPensionablePay !== null && previousYearPensionablePay > 0
+  }, 'PENSION');
 
   // Get NHS pension bands for the tax year
   const bands = await getNHSPensionBands(taxYear);
   
   if (bands.length === 0) {
-    console.warn(`[NHS PENSION] No NHS pension bands found for tax year ${taxYear}`);
+    payrollLogger.warn('No NHS pension bands found', { taxYear }, 'PENSION');
     return {
       employeeContribution: 0,
       employerContribution: 0,
@@ -111,18 +131,24 @@ export async function calculateNHSPension(
   if (previousYearPensionablePay && previousYearPensionablePay > 0) {
     // Use previous year's pensionable pay if available
     annualPensionablePay = previousYearPensionablePay;
-    console.log(`[NHS PENSION] Using previous year pensionable pay: £${annualPensionablePay}`);
+    payrollLogger.debug('Using previous year pensionable pay for tier', { 
+      taxYear,
+      usePreviousYear: true
+    }, 'PENSION');
   } else {
     // Use current annual salary (monthly salary * 12)
     annualPensionablePay = monthlySalary * 12;
-    console.log(`[NHS PENSION] Using current annual salary: £${annualPensionablePay}`);
+    payrollLogger.debug('Using current annual salary for tier', { 
+      taxYear,
+      usePreviousYear: false
+    }, 'PENSION');
   }
 
   // Determine the appropriate tier
   const tierBand = determineNHSPensionTier(annualPensionablePay, bands);
   
   if (!tierBand) {
-    console.warn(`[NHS PENSION] No tier found for annual pay: £${annualPensionablePay}`);
+    payrollLogger.warn('No tier found for annual pay', { taxYear }, 'PENSION');
     return {
       employeeContribution: 0,
       employerContribution: 0,
@@ -132,7 +158,11 @@ export async function calculateNHSPension(
     };
   }
 
-  console.log(`[NHS PENSION] Determined tier ${tierBand.tier_number} with employee rate ${tierBand.employee_contribution_rate}% and employer rate ${tierBand.employer_contribution_rate}%`);
+  payrollLogger.debug('NHS pension tier determined', { 
+    tier: tierBand.tier_number,
+    employeeRatePercent: tierBand.employee_contribution_rate,
+    employerRatePercent: tierBand.employer_contribution_rate
+  }, 'PENSION');
 
   // Calculate monthly contributions
   const employeeRate = tierBand.employee_contribution_rate / 100;
@@ -141,7 +171,11 @@ export async function calculateNHSPension(
   const employeeContribution = roundToTwoDecimals(monthlySalary * employeeRate);
   const employerContribution = roundToTwoDecimals(monthlySalary * employerRate);
 
-  console.log(`[NHS PENSION] Monthly contributions - Employee: £${employeeContribution}, Employer: £${employerContribution}`);
+  payrollLogger.calculation('NHS pension contributions', {
+    tier: tierBand.tier_number,
+    employeeContribution,
+    employerContribution
+  }, 'PENSION');
 
   return {
     employeeContribution,

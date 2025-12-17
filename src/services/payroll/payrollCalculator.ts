@@ -1,22 +1,36 @@
+/**
+ * Main Payroll Calculator
+ * 
+ * ROUNDING STRATEGY (HMRC-compliant):
+ * 
+ * 1. All intermediate calculations use full precision (unrounded)
+ * 2. Taxable pay: Rounded DOWN to nearest pound (HMRC requirement)
+ * 3. Final output values: Rounded to 2 decimal places
+ * 4. Database storage: Values stored in pennies as integers
+ * 
+ * WARNING: Do not re-add rounded values in downstream systems to avoid penny drift.
+ * All rounding occurs at the OUTPUT boundary only.
+ */
 
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { calculateMonthlyIncomeTaxAsync } from "./calculations/income-tax";
-import { calculateNationalInsurance, calculateNationalInsuranceAsync, NICalculationResult } from "./calculations/national-insurance";
+import { NICalculationResult } from "./calculations/national-insurance";
 import { calculateStudentLoan } from "./calculations/student-loan";
 import { calculatePension } from "./calculations/pension";
 import { calculateNHSPension } from "./calculations/nhs-pension";
 import { PayrollDetails, PayrollResult } from "./types";
-import { parseTaxCode } from "./utils/tax-code-utils";
 import { NationalInsuranceCalculator } from "./calculations/ni/services/NationalInsuranceCalculator";
 import { payrollLogger } from "./utils/payrollLogger";
 import { getCurrentTaxYear } from "./utils/taxYearUtils";
 import { roundDownToNearestPound } from "./utils/roundingUtils";
+import { PayrollCalculationError } from "./errors/PayrollCalculationError";
 
 /**
  * Main function to calculate monthly payroll
  * 
  * @param details Payroll details including employee info, salary, tax code, etc.
  * @returns Calculated payroll result
+ * @throws PayrollCalculationError with specific error codes for different failure types
  */
 export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<PayrollResult> {
   const {
@@ -38,11 +52,15 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   // Use provided tax year or calculate current one
   const taxYear = providedTaxYear || getCurrentTaxYear();
   
+  // Log states and flags only - no monetary amounts (data minimization)
   payrollLogger.debug('Starting payroll calculation', { 
     employeeId, 
-    monthlySalary, 
     taxYear,
-    isNHSPensionMember 
+    hasNHSPension: isNHSPensionMember,
+    hasAdditionalEarnings: additionalEarnings.length > 0,
+    hasStudentLoan: studentLoanPlan !== null,
+    studentLoanPlan,
+    hasPension: pensionPercentage > 0
   });
   
   // Calculate earnings
@@ -55,8 +73,20 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     grossPay 
   });
   
-  // Calculate deductions using enhanced async tax calculation from database
-  const incomeTaxResult = await calculateMonthlyIncomeTaxAsync(grossPay, taxCode, taxYear);
+  // Calculate income tax with structured error handling
+  let incomeTaxResult;
+  try {
+    incomeTaxResult = await calculateMonthlyIncomeTaxAsync(grossPay, taxCode, taxYear);
+  } catch (err) {
+    payrollLogger.error('Income tax calculation failed', err, 'TAX_CALC');
+    throw new PayrollCalculationError(
+      'INCOME_TAX_FAILED',
+      'Failed to calculate income tax',
+      err instanceof Error ? err : undefined,
+      { taxCode, taxYear, employeeId }
+    );
+  }
+  
   const incomeTax = incomeTaxResult.monthlyTax;
   const freePay = incomeTaxResult.freePay;
   
@@ -67,9 +97,21 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   
   payrollLogger.calculation('Taxable pay', { grossPay, freePay, taxablePay });
   
-  // Use the NI calculator service for National Insurance calculations
-  const niCalculator = new NationalInsuranceCalculator(taxYear, false);
-  const niResult: NICalculationResult = await niCalculator.calculate(grossPay);
+  // Calculate National Insurance with structured error handling
+  let niResult: NICalculationResult;
+  try {
+    const niCalculator = new NationalInsuranceCalculator(taxYear, false);
+    niResult = await niCalculator.calculate(grossPay);
+  } catch (err) {
+    payrollLogger.error('NI calculation failed', err, 'NI_CALC');
+    throw new PayrollCalculationError(
+      'NI_CALCULATION_FAILED',
+      'Failed to calculate National Insurance',
+      err instanceof Error ? err : undefined,
+      { taxYear, employeeId }
+    );
+  }
+  
   const nationalInsurance = niResult.nationalInsurance;
   
   // Get earnings in each NI band
@@ -89,19 +131,31 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   }, 'NI_CALC');
   
   // Calculate student loan on base monthly salary only, not gross pay
-  // Student loan deductions should only be based on regular salary, excluding additional earnings
+  // Per SLC/HMRC guidance: student loan deductions are calculated on regular earnings only
+  // Reference: https://www.gov.uk/guidance/paye-collection-of-student-loans
   const studentLoan = calculateStudentLoan(monthlySalary, studentLoanPlan);
   const pensionContribution = calculatePension(grossPay, pensionPercentage);
   
   payrollLogger.calculation('Student loan & pension', { studentLoan, pensionContribution });
   
-  // Calculate NHS pension contributions
-  const nhsPensionResult = await calculateNHSPension(
-    monthlySalary, 
-    previousYearPensionablePay, 
-    taxYear, 
-    isNHSPensionMember
-  );
+  // Calculate NHS pension contributions with structured error handling
+  let nhsPensionResult;
+  try {
+    nhsPensionResult = await calculateNHSPension(
+      monthlySalary, 
+      previousYearPensionablePay, 
+      taxYear, 
+      isNHSPensionMember
+    );
+  } catch (err) {
+    payrollLogger.error('NHS pension calculation failed', err, 'PENSION');
+    throw new PayrollCalculationError(
+      'NHS_PENSION_FAILED',
+      'Failed to calculate NHS pension contributions',
+      err instanceof Error ? err : undefined,
+      { taxYear, employeeId, isNHSPensionMember }
+    );
+  }
   
   payrollLogger.calculation('NHS pension', {
     employeeContribution: nhsPensionResult.employeeContribution,
@@ -159,7 +213,12 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     isNHSPensionMember
   };
   
-  payrollLogger.debug('Payroll calculation complete', { employeeId, netPay: result.netPay });
+  // Log completion with identifiers only - no monetary amounts
+  payrollLogger.debug('Payroll calculation complete', { 
+    employeeId,
+    taxYear,
+    calculationSuccess: true
+  });
   
   return result;
 }
