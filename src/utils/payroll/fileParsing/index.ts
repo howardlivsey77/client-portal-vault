@@ -1,4 +1,3 @@
-
 // Re-export functions from smaller utility files
 export { parseExtraHoursFile } from './extraHoursParser';
 export type { ParseExtraHoursOptions } from './extraHoursParser';
@@ -11,5 +10,8 @@ export { findRateColumns } from './rateColumnFinder';
 // Teamnet parser exports
 export { isTeamnetFormat, parseTeamnetData } from './teamnetParser';
 export { calculateTeamnetRates, parseTeamnetDate } from './teamnetRateCalculator';
-export type { TeamnetRateConfig, RateCondition, RateHours } from './teamnetRateCalculator';
+export type { RateHours } from './teamnetRateCalculator';
 export { detectFileFormat } from './teamnetFormatDetector';
+
+// Re-export types from centralized location
+export type { TeamnetRateConfig, RateCondition } from '@/features/company-settings/types/teamnetRateConfig';

@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Trash2, Save, X } from "lucide-react";
-import { TeamnetRateConfig, RateCondition } from "../hooks/useTeamnetRateConfigs";
+import { TeamnetRateConfig, RateCondition } from "../types/teamnetRateConfig";
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
