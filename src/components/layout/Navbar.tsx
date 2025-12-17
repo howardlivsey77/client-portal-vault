@@ -90,7 +90,7 @@ const Navbar = () => {
               <Button 
                 variant="outline" 
                 size="sm"
-                className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
                 onClick={() => navigate("/settings/companies")}
               >
                 <Plus className="mr-1 h-3.5 w-3.5" />

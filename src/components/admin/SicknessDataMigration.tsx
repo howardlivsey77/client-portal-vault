@@ -113,7 +113,7 @@ export const SicknessDataMigration = () => {
               {integrityReport.employeesWithoutSchemes === 0 && 
                integrityReport.employeesWithoutEntitlements === 0 && 
                integrityReport.recordsWithoutEntitlementUpdates === 0 && (
-                <div className="flex items-center gap-2 p-3 bg-green-50 text-green-700 rounded-lg">
+                <div className="flex items-center gap-2 p-3 bg-primary/10 text-primary rounded-lg">
                   <CheckCircle className="h-4 w-4" />
                   <span className="text-sm">All data integrity checks passed!</span>
                 </div>

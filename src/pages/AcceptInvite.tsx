@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle, XCircle, Mail } from "lucide-react";
 import { AuthContainer } from "@/components/auth";
+import { useBrandColors } from "@/brand/useBrandColors";
 
 interface InvitationDetails {
   email: string;
@@ -148,8 +149,8 @@ const AcceptInvite = () => {
       case 'success':
         return (
           <div className="flex flex-col items-center space-y-4 text-center">
-            <CheckCircle className="h-12 w-12 text-green-500" />
-            <h2 className="text-2xl font-semibold text-green-700">Welcome!</h2>
+            <CheckCircle className="h-12 w-12 text-primary" />
+            <h2 className="text-2xl font-semibold text-primary">Welcome!</h2>
             <div className="space-y-2">
               <p className="text-muted-foreground">
                 You've successfully accepted the invitation.

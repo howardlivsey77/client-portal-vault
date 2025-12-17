@@ -75,7 +75,7 @@ export function TaskList() {
     return (
       <div className="py-10 text-center">
         <h2 className="monday-section-title mb-2">Error Loading Tasks</h2>
-        <p className="text-monday-gray mb-4">There was an error loading tasks. Please try again.</p>
+        <p className="text-muted-foreground mb-4">There was an error loading tasks. Please try again.</p>
         <Button 
           variant="outline" 
           className="mt-4" 
@@ -110,9 +110,9 @@ export function TaskList() {
         </div>
       ) : (
         <Card className="monday-card py-10 text-center">
-          <h3 className="text-lg font-medium mb-2 text-monday-darkblue">No tasks found</h3>
-          <p className="text-monday-gray mb-4">Create a new task to get started</p>
-          <Button onClick={handleAddTask} variant="purple">
+          <h3 className="text-lg font-medium mb-2 text-foreground">No tasks found</h3>
+          <p className="text-muted-foreground mb-4">Create a new task to get started</p>
+          <Button onClick={handleAddTask}>
             <Plus className="mr-1 h-4 w-4" /> Add Task
           </Button>
         </Card>

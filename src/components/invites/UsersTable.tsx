@@ -100,12 +100,12 @@ export const UsersTable = ({
               <TableCell>
                 {user.is_admin ? (
                   <span className="flex items-center">
-                    <ShieldCheck className="h-4 w-4 mr-1 text-monday-blue" />
+                    <ShieldCheck className="h-4 w-4 mr-1 text-primary" />
                     Administrator
                   </span>
                 ) : (
                   <span className="flex items-center">
-                    <User className="h-4 w-4 mr-1 text-monday-gray" />
+                    <User className="h-4 w-4 mr-1 text-muted-foreground" />
                     Regular User
                   </span>
                 )}

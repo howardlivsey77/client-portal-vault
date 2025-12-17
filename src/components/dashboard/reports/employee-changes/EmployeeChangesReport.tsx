@@ -160,7 +160,7 @@ export function EmployeeChangesReport({ standalone = false }: EmployeeChangesRep
             <CardTitle className="text-lg font-medium text-monday-darkblue">
               Real Employee Changes
               {startDate && endDate && (
-                <span className="text-sm font-normal text-monday-gray ml-2">
+                <span className="text-sm font-normal text-muted-foreground ml-2">
                   ({format(startDate, "PP")} - {format(endDate, "PP")})
                 </span>
               )}
@@ -181,7 +181,7 @@ export function EmployeeChangesReport({ standalone = false }: EmployeeChangesRep
           {sortedChanges.length > 0 ? (
             <ChangesList changes={sortedChanges} />
           ) : (
-            <div className="p-6 text-center text-monday-gray">
+            <div className="p-6 text-center text-muted-foreground">
               No real employee changes found in the selected date range
             </div>
           )}

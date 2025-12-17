@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { SicknessEntitlementSummary } from "@/types";
 import { Calendar, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
+import { useBrandColors } from "@/brand/useBrandColors";
 
 interface SicknessEntitlementCardProps {
   summary: SicknessEntitlementSummary | null;
@@ -16,6 +17,7 @@ export const SicknessEntitlementCard = ({
   summary, 
   loading
 }: SicknessEntitlementCardProps) => {
+  const brandColors = useBrandColors();
   if (loading) {
     return (
       <Card className="border-[1.5px] border-foreground">
@@ -69,12 +71,12 @@ export const SicknessEntitlementCard = ({
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Rolling Period Information */}
-        <div className="bg-blue-50 p-3 rounded-lg">
+        <div className="bg-primary/10 p-3 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <Clock className="h-4 w-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-900">Rolling 12-Month Period</span>
+            <Clock className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium text-primary">Rolling 12-Month Period</span>
           </div>
-          <p className="text-sm text-blue-700">
+          <p className="text-sm text-primary/80">
             {format(new Date(summary.rolling_period_start), 'dd MMM yyyy')} - {format(new Date(summary.rolling_period_end), 'dd MMM yyyy')}
           </p>
         </div>
@@ -93,7 +95,7 @@ export const SicknessEntitlementCard = ({
             <span className="text-sm font-medium">Full Pay Days</span>
             <div className="flex items-center gap-2">
               {summary.full_pay_remaining > 5 ? (
-                <CheckCircle className="h-4 w-4 text-green-500" />
+                <CheckCircle className="h-4 w-4" style={{ color: `hsl(${brandColors.success})` }} />
               ) : summary.full_pay_remaining > 0 ? (
                 <AlertTriangle className="h-4 w-4 text-yellow-500" />
               ) : (
@@ -113,7 +115,7 @@ export const SicknessEntitlementCard = ({
             <span className="text-sm font-medium">Half Pay Days</span>
             <div className="flex items-center gap-2">
               {summary.half_pay_remaining > 5 ? (
-                <CheckCircle className="h-4 w-4 text-green-500" />
+                <CheckCircle className="h-4 w-4" style={{ color: `hsl(${brandColors.success})` }} />
               ) : summary.half_pay_remaining > 0 ? (
                 <AlertTriangle className="h-4 w-4 text-yellow-500" />
               ) : (
@@ -134,7 +136,7 @@ export const SicknessEntitlementCard = ({
               <span className="text-sm font-medium">SSP Days</span>
               <div className="flex items-center gap-2">
                 {summary.ssp_remaining_days && summary.ssp_remaining_days > 5 ? (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <CheckCircle className="h-4 w-4" style={{ color: `hsl(${brandColors.success})` }} />
                 ) : summary.ssp_remaining_days && summary.ssp_remaining_days > 0 ? (
                   <AlertTriangle className="h-4 w-4 text-yellow-500" />
                 ) : (

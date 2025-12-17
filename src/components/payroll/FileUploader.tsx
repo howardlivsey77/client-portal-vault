@@ -79,7 +79,7 @@ export function FileUploader({
     <div className="flex flex-col items-center justify-center w-full">
       <div
         className={`w-full p-6 rounded-md border-2 border-dashed ${
-          isDragging ? "border-monday-blue bg-monday-blue/5" : "border-gray-300"
+          isDragging ? "border-primary bg-primary/5" : "border-gray-300"
         } transition-colors duration-200 flex flex-col items-center justify-center cursor-pointer`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -90,7 +90,7 @@ export function FileUploader({
           <div className="flex flex-col items-center space-y-2">
             <div className="flex items-center justify-between w-full max-w-xs">
               <div className="flex items-center space-x-2">
-                <FileText className="h-8 w-8 text-monday-blue" />
+                <FileText className="h-8 w-8 text-primary" />
                 <div>
                   <p className="text-sm font-medium">{uploadedFile.name}</p>
                   <p className="text-xs text-muted-foreground">
@@ -113,7 +113,7 @@ export function FileUploader({
           </div>
         ) : (
           <div className="flex flex-col items-center space-y-4">
-            <Upload className="h-10 w-10 text-monday-blue" />
+            <Upload className="h-10 w-10 text-primary" />
             <div className="flex flex-col items-center space-y-1">
               <p className="text-sm font-medium">Click or drag file to upload</p>
               <p className="text-xs text-muted-foreground text-center max-w-xs">
