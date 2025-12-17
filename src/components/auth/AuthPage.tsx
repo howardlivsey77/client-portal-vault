@@ -17,13 +17,15 @@ export const AuthPage = ({ children }: AuthPageProps) => {
         <div className="absolute -bottom-20 right-1/4 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
       </div>
 
-      {/* Header with logo */}
-      <header className="relative w-full px-6 py-4">
-        <img 
-          src={brand.logoUrl} 
-          alt={`${brand.name} Logo`} 
-          className="h-10 md:h-12" 
-        />
+      {/* Header with logo - matches in-app header */}
+      <header className="relative z-10 flex h-20 items-center bg-[hsl(var(--header))] text-foreground border-[1.5px] border-foreground px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center">
+          <img 
+            src={brand.logoUrl} 
+            alt={`${brand.name} Logo`} 
+            className="h-14" 
+          />
+        </div>
       </header>
 
       {/* Main content - centered card */}
