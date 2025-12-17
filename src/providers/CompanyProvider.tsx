@@ -5,10 +5,14 @@ import { useAuth } from "./AuthProvider";
 import { Company, CompanyWithRole } from "@/types";
 import { useToast } from "@/hooks";
 
+export type CompanyRole = 'admin' | 'payroll' | 'user' | null;
+
 interface CompanyContextType {
   currentCompany: Company | null;
   companies: CompanyWithRole[];
   isLoading: boolean;
+  currentRole: CompanyRole;
+  isPayrollUser: boolean;
   switchCompany: (companyId: string) => Promise<void>;
   refreshCompanies: () => Promise<void>;
 }
@@ -17,6 +21,8 @@ const CompanyContext = createContext<CompanyContextType>({
   currentCompany: null,
   companies: [],
   isLoading: true,
+  currentRole: null,
+  isPayrollUser: false,
   switchCompany: async () => {},
   refreshCompanies: async () => {},
 });
@@ -237,10 +243,21 @@ const CompanyProvider = ({ children }: CompanyProviderProps) => {
     fetchCompanies();
   }, [user, fetchCompanies]);
 
+  // Calculate current role for the selected company
+  const currentRole: CompanyRole = isAdmin 
+    ? 'admin' 
+    : currentCompany 
+      ? (companies.find(c => c.id === currentCompany.id)?.role as CompanyRole) || 'user'
+      : null;
+  
+  const isPayrollUser = currentRole === 'payroll';
+
   const value = {
     currentCompany,
     companies,
     isLoading,
+    currentRole,
+    isPayrollUser,
     switchCompany,
     refreshCompanies,
   };
