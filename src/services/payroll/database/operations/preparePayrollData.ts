@@ -5,6 +5,9 @@ import { calculateYTDValues } from "./calculateYTDValues";
 
 /**
  * Prepare payroll data for database storage
+ * 
+ * CRITICAL: All YTD values are derived cumulatively from prior period YTD + unrounded calculation.
+ * Do NOT recompute YTD from summed period rows or rounded display values.
  */
 export async function preparePayrollData(result: PayrollResult, payPeriod: PayPeriod, companyId: string) {
   try {
@@ -34,8 +37,15 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       - Employer rate: ${result.nhsPensionEmployerRate}%
     `);
     
-    const payrollPeriodDate = new Date(payPeriod.year, payPeriod.month - 1, 1);
-    const formattedPayrollPeriod = payrollPeriodDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    // Calculate period dates
+    const periodStartDate = new Date(payPeriod.year, payPeriod.month - 1, 1);
+    const periodEndDate = new Date(payPeriod.year, payPeriod.month, 0); // Last day of month
+    const paymentDate = periodEndDate; // Default to end of period, can be customized
+    
+    const formattedPayrollPeriod = periodStartDate.toISOString().split('T')[0];
+    const formattedPeriodStartDate = periodStartDate.toISOString().split('T')[0];
+    const formattedPeriodEndDate = periodEndDate.toISOString().split('T')[0];
+    const formattedPaymentDate = paymentDate.toISOString().split('T')[0];
     
     // Tax year in format YYYY/YY
     const taxYear = `${payPeriod.year}/${(payPeriod.year + 1).toString().substring(2)}`;
@@ -43,25 +53,18 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
     
     console.log(`[PREPARE] Processing payroll for tax year: ${taxYear}, period: ${taxPeriod}, company: ${companyId}`);
     
-    // Get YTD values
+    // Get YTD values - these are cumulative from prior periods
     const ytdResult = await calculateYTDValues(result, payPeriod, taxYear, taxPeriod);
     
-    if (!ytdResult.success) {
+    if (!ytdResult.success || !ytdResult.data) {
       console.error(`[PREPARE] Error calculating YTD values: ${ytdResult.error}`);
       return { success: false, error: ytdResult.error };
     }
     
-    const { 
-      taxablePay,
-      grossPayYTD, 
-      taxablePayYTD, 
-      incomeTaxThisPeriod, 
-      incomeTaxYTD, 
-      nicEmployeeYTD 
-    } = ytdResult.data;
+    const ytdData = ytdResult.data;
     
-    console.log(`[PREPARE] Prepared taxable pay (rounded down): £${taxablePay}`);
-    console.log(`[PREPARE] Income tax this period (from YTD calc): £${incomeTaxThisPeriod/100}`);
+    console.log(`[PREPARE] Prepared taxable pay (rounded down): £${ytdData.taxablePay}`);
+    console.log(`[PREPARE] Income tax this period (from YTD calc): £${ytdData.incomeTaxThisPeriod/100}`);
     
     // Ensure we have valid values for all NI fields
     const niValue = Math.max(0, result.nationalInsurance || 0);
@@ -80,7 +83,7 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       - Above ST: £${earningsAboveST} (original: £${result.earningsAboveST})
     `);
     
-    // ADDED: Additional validation for NIC earnings bands according to HMRC rules
+    // Validation: NIC earnings bands should sum to gross pay
     const totalBandEarnings = earningsAtLEL + earningsLELtoPT + earningsPTtoUEL + earningsAboveUEL;
     if (Math.abs(totalBandEarnings - result.grossPay) > 0.01) {
       console.warn(`[PREPARE] WARNING: NIC earnings bands don't sum to gross pay`);
@@ -88,13 +91,9 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       console.warn(`[PREPARE] This indicates a potential issue with the NIC band calculations`);
     }
     
-    // ADDED: Validate HMRC reporting rules
-    if (result.grossPay > 542 && earningsAtLEL !== 542) {
-      console.warn(`[PREPARE] HMRC Rule Check: Salary above LEL (£542) but LEL band is not £542. Current LEL: £${earningsAtLEL}`);
-    }
-    if (result.grossPay > 1048 && earningsLELtoPT !== (1048 - 542)) {
-      console.warn(`[PREPARE] HMRC Rule Check: Salary above PT (£1048) but LEL to PT band is not £506. Current LEL to PT: £${earningsLELtoPT}`);
-    }
+    // NOTE: Removed hard-coded HMRC threshold checks (£542, £1048)
+    // These values are tax-year dependent and should be derived from the nic_bands table
+    // The actual threshold validation happens in the NI calculation service
     
     // Convert earnings band values to pennies for database storage
     const earningsAtLELPennies = Math.round(earningsAtLEL * 100);
@@ -103,14 +102,16 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
     const earningsAboveUELPennies = Math.round(earningsAboveUEL * 100);
     const earningsAboveSTPennies = Math.round(earningsAboveST * 100);
     const nicEmployeeThisPeriodPennies = Math.round(niValue * 100);
+    const nicEmployerThisPeriodPennies = Math.round((result.employerNationalInsurance || 0) * 100);
     
     // NHS Pension values in pennies
     const nhsPensionEmployeeThisPeriodPennies = Math.round((result.nhsPensionEmployeeContribution || 0) * 100);
     const nhsPensionEmployerThisPeriodPennies = Math.round((result.nhsPensionEmployerContribution || 0) * 100);
     
-    // Verify NI values before saving - This is critical for debugging
+    // Verify NI values before saving
     console.log(`[PREPARE] NI values in pennies for database: 
       - NI Employee: ${nicEmployeeThisPeriodPennies} pennies (£${nicEmployeeThisPeriodPennies/100})
+      - NI Employer: ${nicEmployerThisPeriodPennies} pennies (£${nicEmployerThisPeriodPennies/100})
       - LEL: ${earningsAtLELPennies} pennies (£${earningsAtLELPennies/100})
       - LEL to PT: ${earningsLELtoPTPennies} pennies (£${earningsLELtoPTPennies/100})
       - PT to UEL: ${earningsPTtoUELPennies} pennies (£${earningsPTtoUELPennies/100})
@@ -123,14 +124,17 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       - Employer contribution: ${nhsPensionEmployerThisPeriodPennies} pennies (£${nhsPensionEmployerThisPeriodPennies/100})
     `);
     
-    // Full salary info for NI eligibility check
     console.log(`[PREPARE] Full salary info for ${result.employeeName}: £${result.monthlySalary} monthly, £${result.grossPay} gross pay`);
     
     // Data to save to the database
+    // CRITICAL: YTD values come from calculateYTDValues which derives them cumulatively
     const payrollData = {
       employee_id: result.employeeId,
-      company_id: companyId, // ADDED: Include company_id
+      company_id: companyId,
       payroll_period: formattedPayrollPeriod,
+      period_start_date: formattedPeriodStartDate,
+      period_end_date: formattedPeriodEndDate,
+      payment_date: formattedPaymentDate,
       tax_year: taxYear,
       tax_period: taxPeriod,
       tax_code: result.taxCode,
@@ -138,13 +142,13 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       
       // Financial values - convert to pence/pennies for storage
       gross_pay_this_period: Math.round(result.grossPay * 100),
-      taxable_pay_this_period: Math.round(taxablePay * 100),
+      taxable_pay_this_period: Math.round(ytdData.taxablePay * 100),
       free_pay_this_period: Math.round(result.freePay * 100),
-      income_tax_this_period: incomeTaxThisPeriod,
+      income_tax_this_period: ytdData.incomeTaxThisPeriod,
       
       pay_liable_to_nic_this_period: Math.round(result.grossPay * 100),
       nic_employee_this_period: nicEmployeeThisPeriodPennies,
-      nic_employer_this_period: Math.round((result.employerNationalInsurance || 0) * 100),
+      nic_employer_this_period: nicEmployerThisPeriodPennies,
       nic_letter: 'A', // Default, update if available
       
       student_loan_this_period: Math.round(result.studentLoan * 100),
@@ -158,11 +162,9 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       earnings_above_uel_this_period: earningsAboveUELPennies,
       earnings_above_st_this_period: earningsAboveSTPennies,
       
-      // NHS Pension fields
+      // NHS Pension fields - this period
       nhs_pension_employee_this_period: nhsPensionEmployeeThisPeriodPennies,
       nhs_pension_employer_this_period: nhsPensionEmployerThisPeriodPennies,
-      nhs_pension_employee_ytd: nhsPensionEmployeeThisPeriodPennies, // For now, same as this period
-      nhs_pension_employer_ytd: nhsPensionEmployerThisPeriodPennies, // For now, same as this period
       nhs_pension_tier: result.nhsPensionTier || null,
       nhs_pension_employee_rate: result.nhsPensionEmployeeRate || null,
       nhs_pension_employer_rate: result.nhsPensionEmployerRate || null,
@@ -170,21 +172,42 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       // Net pay calculation
       net_pay_this_period: Math.round(result.netPay * 100),
       
-      // Year-to-date values
-      gross_pay_ytd: grossPayYTD,
-      taxable_pay_ytd: taxablePayYTD,
-      income_tax_ytd: incomeTaxYTD,
-      nic_employee_ytd: nicEmployeeYTD
+      // ============================================================
+      // Year-to-date values - ALL derived cumulatively from calculateYTDValues
+      // CRITICAL: These are NOT recomputed from period rows
+      // ============================================================
+      gross_pay_ytd: ytdData.grossPayYTD,
+      taxable_pay_ytd: ytdData.taxablePayYTD,
+      income_tax_ytd: ytdData.incomeTaxYTD,
+      nic_employee_ytd: ytdData.nicEmployeeYTD,
+      nic_employer_ytd: ytdData.nicEmployerYTD,
+      student_loan_ytd: ytdData.studentLoanYTD,
+      employee_pension_ytd: ytdData.employeePensionYTD,
+      employer_pension_ytd: ytdData.employerPensionYTD,
+      nhs_pension_employee_ytd: ytdData.nhsPensionEmployeeYTD, // FIXED: Now cumulative
+      nhs_pension_employer_ytd: ytdData.nhsPensionEmployerYTD, // FIXED: Now cumulative
+      free_pay_ytd: ytdData.freePayYTD,
+      net_pay_ytd: ytdData.netPayYTD
     };
     
-    console.log(`[PREPARE] Final payroll data prepared successfully with company_id ${companyId}:`, payrollData);
+    console.log(`[PREPARE] Final payroll data prepared successfully with company_id ${companyId}`);
+    console.log(`[PREPARE] YTD values:`, {
+      gross_pay_ytd: payrollData.gross_pay_ytd,
+      income_tax_ytd: payrollData.income_tax_ytd,
+      nic_employee_ytd: payrollData.nic_employee_ytd,
+      nic_employer_ytd: payrollData.nic_employer_ytd,
+      student_loan_ytd: payrollData.student_loan_ytd,
+      nhs_pension_employee_ytd: payrollData.nhs_pension_employee_ytd,
+      nhs_pension_employer_ytd: payrollData.nhs_pension_employer_ytd,
+      net_pay_ytd: payrollData.net_pay_ytd
+    });
     
     return { 
       success: true, 
       payrollData, 
       taxYear, 
       taxPeriod,
-      ytdData: ytdResult.data 
+      ytdData
     };
   } catch (error) {
     console.error("[PREPARE] Error preparing payroll data:", error);
