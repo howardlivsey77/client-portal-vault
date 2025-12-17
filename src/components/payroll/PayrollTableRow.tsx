@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import {
   OvertimeDialog,
   StatutoryPaymentDialog,
-  SicknessDialog,
   ExtraPaymentsDialog,
   ExtraDeductionsDialog,
   PayrollAdjustments,
@@ -18,7 +17,8 @@ import {
   emptyAdjustments,
 } from './adjustments';
 import { PayslipPreviewDialog } from './PayslipPreviewDialog';
-
+import { PayrollSicknessDialog } from './sickness';
+import { useCompany } from '@/providers/CompanyProvider';
 interface EmployeeRates {
   hourlyRate: number;
   rate2: number | null;
@@ -46,6 +46,7 @@ export function PayrollTableRowComponent({
   payPeriod = '',
 }: PayrollTableRowProps) {
   const [openDialog, setOpenDialog] = useState<DialogType>(null);
+  const { currentCompany } = useCompany();
 
   const formatCurrency = (value: number) => {
     if (value === 0) return '-';
@@ -138,10 +139,12 @@ export function PayrollTableRowComponent({
         onSave={(items: StatutoryPaymentItem[]) => onAdjustmentsChange({ ...adjustments, statutoryPayment: items })}
       />
 
-      <SicknessDialog
+      <PayrollSicknessDialog
         open={openDialog === 'sickness'}
         onOpenChange={(open) => setOpenDialog(open ? 'sickness' : null)}
+        employeeId={row.employeeId}
         employeeName={row.name}
+        companyId={currentCompany?.id || ''}
         initialItems={adjustments.sickness}
         onSave={(items: SicknessItem[]) => onAdjustmentsChange({ ...adjustments, sickness: items })}
       />
