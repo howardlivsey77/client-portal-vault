@@ -47,7 +47,7 @@ export function CustomNavbar({ toggleSidebar }: NavbarProps) {
         <img 
           src={brand.logoUrl} 
           alt={`${brand.name} Logo`} 
-          className="h-14" 
+          className="h-18" 
         />
       </div>
       
