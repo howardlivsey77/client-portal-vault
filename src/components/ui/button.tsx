@@ -10,18 +10,18 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-monday-blue hover:bg-monday-blue/90 text-white shadow-sm",
+        default: "bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm",
         destructive:
-          "bg-monday-red hover:bg-monday-red/90 text-white shadow-sm",
+          "bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-sm",
         outline:
-          "border border-input bg-background hover:bg-monday-lightgray hover:text-foreground",
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
         secondary:
-          "bg-monday-green hover:bg-monday-green/90 text-white shadow-sm",
-        ghost: "hover:bg-monday-lightgray hover:text-foreground",
-        link: "text-monday-blue underline-offset-4 hover:underline",
-        purple: "bg-monday-purple hover:bg-monday-purple/90 text-white shadow-sm",
-        teal: "bg-monday-teal hover:bg-monday-teal/90 text-white shadow-sm",
-        yellow: "bg-monday-yellow hover:bg-monday-yellow/90 text-monday-darkblue shadow-sm",
+          "bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-sm",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+        purple: "bg-accent hover:bg-accent/90 text-accent-foreground shadow-sm",
+        teal: "bg-muted hover:bg-muted/90 text-muted-foreground shadow-sm",
+        yellow: "bg-muted hover:bg-muted/90 text-foreground shadow-sm",
       },
       size: {
         default: "h-10 px-4 py-2",

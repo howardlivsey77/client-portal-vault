@@ -67,9 +67,9 @@ export const PayrollCalculator = ({ employee, payPeriod }: PayrollCalculatorProp
     <div className="space-y-6">
       {/* Company Context Card */}
       {currentCompany && (
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-primary/10 border-primary/20">
           <CardContent className="pt-4">
-            <div className="flex items-center gap-2 text-blue-700">
+            <div className="flex items-center gap-2 text-primary">
               <Building className="h-4 w-4" />
               <span className="text-sm font-medium">
                 Payroll calculations will be saved to: <strong>{currentCompany.name}</strong>

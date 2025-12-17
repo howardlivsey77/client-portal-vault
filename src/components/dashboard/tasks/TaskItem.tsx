@@ -43,9 +43,9 @@ export function TaskItem({ task, onEdit, onDelete, userEmails }: TaskItemProps) 
   
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'todo': return 'bg-monday-gray text-white';
-      case 'in_progress': return 'bg-monday-blue text-white';
-      case 'done': return 'bg-monday-green text-white';
+      case 'todo': return 'bg-muted text-muted-foreground';
+      case 'in_progress': return 'bg-primary text-primary-foreground';
+      case 'done': return 'bg-secondary text-secondary-foreground';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -148,7 +148,7 @@ export function TaskItem({ task, onEdit, onDelete, userEmails }: TaskItemProps) 
           {task.description || 'No description provided'}
         </p>
         
-        <div className="flex flex-wrap items-center mt-4 text-sm text-monday-gray gap-4">
+        <div className="flex flex-wrap items-center mt-4 text-sm text-muted-foreground gap-4">
           {task.due_date && (
             <div className="flex items-center">
               <Calendar className="w-4 h-4 mr-1" />

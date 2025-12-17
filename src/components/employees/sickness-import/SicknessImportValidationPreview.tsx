@@ -55,7 +55,7 @@ export const SicknessImportValidationPreview: React.FC<ValidationPreviewProps> =
               <div className="text-sm text-muted-foreground">Total Records</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{validRecords}</div>
+              <div className="text-2xl font-bold text-primary">{validRecords}</div>
               <div className="text-sm text-muted-foreground">Valid</div>
             </div>
             <div className="text-center">
@@ -81,7 +81,7 @@ export const SicknessImportValidationPreview: React.FC<ValidationPreviewProps> =
               <div 
                 key={index}
                 className={`p-3 rounded-lg border ${
-                  record.status === 'valid' ? 'bg-green-50 border-green-200' :
+                  record.status === 'valid' ? 'bg-primary/10 border-primary/20' :
                   record.status === 'warning' ? 'bg-yellow-50 border-yellow-200' :
                   'bg-red-50 border-red-200'
                 }`}
@@ -89,7 +89,7 @@ export const SicknessImportValidationPreview: React.FC<ValidationPreviewProps> =
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {record.status === 'valid' ? (
-                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <CheckCircle className="w-5 h-5 text-primary" />
                     ) : (
                       <AlertTriangle className={`w-5 h-5 ${
                         record.status === 'warning' ? 'text-yellow-600' : 'text-red-600'

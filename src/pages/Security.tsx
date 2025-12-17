@@ -139,7 +139,7 @@ const Security = () => {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Mail className={has2fa ? "text-green-500" : "text-amber-500"} />
+              <Mail className={has2fa ? "text-primary" : "text-amber-500"} />
               Email Two-Factor Authentication
             </CardTitle>
             <CardDescription>
@@ -148,8 +148,8 @@ const Security = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             {has2fa ? (
-              <Alert className="bg-green-50 border-green-200">
-                <ShieldCheck className="h-4 w-4 text-green-500" />
+              <Alert className="bg-primary/10 border-primary/20">
+                <ShieldCheck className="h-4 w-4 text-primary" />
                 <AlertTitle>Protected</AlertTitle>
                 <AlertDescription>
                   Your account is protected with email-based two-factor authentication. You'll receive a code at <strong>{user?.email}</strong> each time you sign in.

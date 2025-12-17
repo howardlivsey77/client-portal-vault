@@ -116,9 +116,9 @@ export const PrivacyRequestManager: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircle className="h-4 w-4 text-primary" />;
       case 'processing':
-        return <Clock className="h-4 w-4 text-blue-600" />;
+        return <Clock className="h-4 w-4 text-primary/70" />;
       case 'failed':
         return <AlertTriangle className="h-4 w-4 text-red-600" />;
       default:
@@ -262,11 +262,11 @@ export const PrivacyRequestManager: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-2xl font-bold text-primary">
                   {requests.filter(r => r.status === 'completed').length}
                 </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-600" />
+              <CheckCircle className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>

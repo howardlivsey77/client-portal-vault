@@ -44,7 +44,7 @@ const CompanySelector = ({
     return (
       <Button 
         variant="default" 
-        className={cn("h-9 w-auto bg-green-600 hover:bg-green-700", className)} 
+        className={cn("h-9 w-auto bg-primary hover:bg-primary/90", className)} 
         onClick={goToCompanyManagement}
       >
         <Plus className="mr-2 h-4 w-4" />
@@ -84,7 +84,7 @@ const CompanySelector = ({
         ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          className="bg-green-50 hover:bg-green-100 text-green-700 font-medium cursor-pointer"
+          className="bg-primary/10 hover:bg-primary/20 text-primary font-medium cursor-pointer"
           onClick={goToCompanyManagement}
         >
           <Plus className="mr-2 h-4 w-4" /> 

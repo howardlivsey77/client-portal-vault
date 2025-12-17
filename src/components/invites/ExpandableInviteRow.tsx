@@ -76,12 +76,12 @@ export const ExpandableInviteRow = ({ invitation, onDelete, onResend }: Expandab
           <TableCell>
             {invitation.role === "admin" ? (
               <span className="flex items-center">
-                <ShieldCheck className="h-4 w-4 mr-1 text-monday-blue" />
+                <ShieldCheck className="h-4 w-4 mr-1 text-primary" />
                 Administrator
               </span>
             ) : (
               <span className="flex items-center">
-                <User className="h-4 w-4 mr-1 text-monday-gray" />
+                <User className="h-4 w-4 mr-1 text-muted-foreground" />
                 Regular User
               </span>
             )}
@@ -90,7 +90,7 @@ export const ExpandableInviteRow = ({ invitation, onDelete, onResend }: Expandab
             <span 
               className={`inline-block px-2 py-1 text-xs rounded-full ${
                 invitation.is_accepted 
-                  ? "bg-green-100 text-green-800" 
+                  ? "bg-primary/20 text-primary" 
                   : "bg-amber-100 text-amber-800"
               }`}
             >
@@ -183,7 +183,7 @@ export const ExpandableInviteRow = ({ invitation, onDelete, onResend }: Expandab
                           key={log.id} 
                           className="text-xs p-3 rounded bg-background border flex items-start gap-2"
                         >
-                          <div className={`mt-0.5 ${log.success ? 'text-green-600' : 'text-red-600'}`}>
+                          <div className={`mt-0.5 ${log.success ? 'text-primary' : 'text-destructive'}`}>
                             {log.success ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                           </div>
                           <div className="flex-1">

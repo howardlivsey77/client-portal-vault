@@ -38,11 +38,11 @@ export function ReportsNavigation() {
       case "payment-hours-rates":
         return <PaymentHoursRatesReport />;
       case "payroll-summary":
-        return <div className="p-6 text-center text-monday-gray">Payroll Summary Report - Coming Soon</div>;
+        return <div className="p-6 text-center text-muted-foreground">Payroll Summary Report - Coming Soon</div>;
       case "time-off":
-        return <div className="p-6 text-center text-monday-gray">Time Off Report - Coming Soon</div>;
+        return <div className="p-6 text-center text-muted-foreground">Time Off Report - Coming Soon</div>;
       case "performance":
-        return <div className="p-6 text-center text-monday-gray">Performance Report - Coming Soon</div>;
+        return <div className="p-6 text-center text-muted-foreground">Performance Report - Coming Soon</div>;
       default:
         return <EmployeeChangesReport />;
     }

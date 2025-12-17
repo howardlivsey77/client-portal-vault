@@ -72,10 +72,10 @@ export const OverlapTrimView = ({ records, onProceed, onBack }: OverlapTrimViewP
         <Card>
           <CardHeader className="pb-3">
             <CardDescription className="flex items-center gap-1">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <CheckCircle2 className="h-4 w-4 text-primary" />
               No Overlap
             </CardDescription>
-            <CardTitle className="text-3xl text-green-600">{stats.noOverlap}</CardTitle>
+            <CardTitle className="text-3xl text-primary">{stats.noOverlap}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
@@ -154,7 +154,7 @@ export const OverlapTrimView = ({ records, onProceed, onBack }: OverlapTrimViewP
                           <TableCell className="font-medium">{mainRecord.employeeName}</TableCell>
                           <TableCell>
                             {mainRecord.trimStatus === 'no_overlap' && (
-                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                                 <CheckCircle2 className="h-3 w-3 mr-1" />
                                 No Overlap
                               </Badge>
@@ -240,7 +240,7 @@ export const OverlapTrimView = ({ records, onProceed, onBack }: OverlapTrimViewP
                                       <ul className="text-sm space-y-1">
                                         {group.map((record, idx) => (
                                           <li key={record.id} className="flex items-center gap-2">
-                                            <CheckCircle2 className="h-3 w-3 text-green-600" />
+                                            <CheckCircle2 className="h-3 w-3 text-primary" />
                                             <span>
                                               {record.startDate} - {record.endDate} ({record.sicknessDays} working days)
                                             </span>
