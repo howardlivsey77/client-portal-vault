@@ -2,6 +2,7 @@
 import { PayrollResult } from "@/services/payroll/types";
 import { PayPeriod } from "@/services/payroll/utils/financial-year-utils";
 import { calculateYTDValues } from "./calculateYTDValues";
+import { getCurrentTaxYear, getTaxPeriod } from "@/services/payroll/utils/taxYearUtils";
 
 /**
  * Prepare payroll data for database storage
@@ -47,9 +48,10 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
     const formattedPeriodEndDate = periodEndDate.toISOString().split('T')[0];
     const formattedPaymentDate = paymentDate.toISOString().split('T')[0];
     
-    // Tax year in format YYYY/YY
-    const taxYear = `${payPeriod.year}/${(payPeriod.year + 1).toString().substring(2)}`;
-    const taxPeriod = payPeriod.periodNumber;
+    // Tax year in format YYYY/YY - use the period end date to determine correct tax year
+    // This ensures December 2025 falls in 2025/26, not 2026/27
+    const taxYear = getCurrentTaxYear(periodEndDate);
+    const taxPeriod = getTaxPeriod(periodEndDate);
     
     console.log(`[PREPARE] Processing payroll for tax year: ${taxYear}, period: ${taxPeriod}, company: ${companyId}`);
     
