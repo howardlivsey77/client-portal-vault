@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,6 +10,8 @@ import { P11ReportTable } from "./P11ReportTable";
 import { P11ReportTotals } from "./P11ReportTotals";
 import { generateP11Pdf } from "./p11PdfGenerator";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/providers/CompanyProvider";
 
 // Generate tax year options (current year and previous 2 years)
 function getTaxYearOptions(): string[] {
@@ -28,15 +30,53 @@ function getTaxYearOptions(): string[] {
   ];
 }
 
+// Fetch distinct tax years from payroll_results for an employee
+async function fetchAvailableTaxYears(employeeId: string, companyId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("payroll_results")
+    .select("tax_year")
+    .eq("employee_id", employeeId)
+    .eq("company_id", companyId);
+  
+  if (error || !data) return [];
+  
+  // Get unique tax years
+  const uniqueYears = [...new Set(data.map(r => r.tax_year).filter(Boolean))] as string[];
+  return uniqueYears;
+}
+
 export function P11Report() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
   const [selectedTaxYear, setSelectedTaxYear] = useState<string>("");
+  const [dbTaxYears, setDbTaxYears] = useState<string[]>([]);
   const { employees, loading: employeesLoading } = useEmployees();
   const { reportData, loading: reportLoading, error, fetchReport } = useP11Report();
+  const { currentCompany } = useCompany();
 
-  const taxYearOptions = getTaxYearOptions();
+  const generatedTaxYearOptions = getTaxYearOptions();
+  
+  // Merge generated options with database tax years
+  const taxYearOptions = useMemo(() => {
+    const merged = [...new Set([...generatedTaxYearOptions, ...dbTaxYears])];
+    // Sort descending (most recent first)
+    return merged.sort((a, b) => {
+      const yearA = parseInt(a.split('/')[0]);
+      const yearB = parseInt(b.split('/')[0]);
+      return yearB - yearA;
+    });
+  }, [generatedTaxYearOptions, dbTaxYears]);
 
-  // Set default tax year on mount
+  // Fetch available tax years when employee changes
+  useEffect(() => {
+    if (selectedEmployeeId && currentCompany?.id) {
+      fetchAvailableTaxYears(selectedEmployeeId, currentCompany.id)
+        .then(setDbTaxYears);
+    } else {
+      setDbTaxYears([]);
+    }
+  }, [selectedEmployeeId, currentCompany?.id]);
+
+  // Set default tax year on mount or when options change
   useEffect(() => {
     if (!selectedTaxYear && taxYearOptions.length > 0) {
       setSelectedTaxYear(taxYearOptions[0]);
