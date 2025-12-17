@@ -12,7 +12,8 @@ export interface NICBand {
 }
 
 export interface NICalculationResult {
-  nationalInsurance: number;
+  nationalInsurance: number;          // Employee NI contribution
+  employerNationalInsurance: number;  // Employer NI contribution
   earningsAtLEL: number;
   earningsLELtoPT: number;
   earningsPTtoUEL: number;

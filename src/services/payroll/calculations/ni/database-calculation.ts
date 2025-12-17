@@ -1,19 +1,25 @@
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { NICalculationResult, NICBand } from "./types";
 import { calculateNICEarningsBands } from "./earnings-bands";
+import { NI_RATES } from "../../constants/tax-constants";
 
 /**
  * Calculate NI bands and contributions based on database bands
+ * 
+ * Uses 2025/26 and 2026/27 NI rates:
+ * - Employee: 8% between PT and UEL, 2% above UEL
+ * - Employer: 15% above ST
  */
 export function calculateFromBands(
   monthlySalary: number, 
   niBands: NICBand[]
-): NICalculationResult {
+): NICalculationResult | null {
   console.log("[NI DEBUG] Using NI bands from database:", niBands);
 
   // Initialize result with zeros
   const result: NICalculationResult = {
     nationalInsurance: 0,
+    employerNationalInsurance: 0,
     earningsAtLEL: 0,
     earningsLELtoPT: 0,
     earningsPTtoUEL: 0,
@@ -65,10 +71,10 @@ export function calculateFromBands(
       console.warn(`[NI DEBUG] WARNING: UEL should be £4189 for 2025/26, but got £${uel}`);
     }
     
-    // Get Secondary Threshold from employer bands
+    // Get Secondary Threshold from employer bands - default to £417 for 2025/26
     const employerBands = niBands.filter(band => band.contribution_type === 'Employer');
     const stBand = employerBands.find(band => band.name.includes('Above ST'));
-    const st = stBand ? stBand.threshold_from / 100 : 758; // Default to correct 2025/26 ST
+    const st = stBand ? stBand.threshold_from / 100 : 417; // Default to correct 2025/26 ST
     
     console.log(`[NI DEBUG] Secondary Threshold: £${st}`);
     
@@ -82,53 +88,45 @@ export function calculateFromBands(
     result.earningsAboveUEL = earningsBands.earningsAboveUEL;
     result.earningsAboveST = earningsBands.earningsAboveST;
     
-    console.log(`[NI DEBUG] Calculated earnings bands AFTER fix:
-      - LEL: £${result.earningsAtLEL} (should be £${Math.min(monthlySalary, lel)})
-      - LEL to PT: £${result.earningsLELtoPT} (should be £${monthlySalary > lel ? Math.min(monthlySalary - lel, pt - lel) : 0})
+    console.log(`[NI DEBUG] Calculated earnings bands:
+      - LEL: £${result.earningsAtLEL}
+      - LEL to PT: £${result.earningsLELtoPT}
       - PT to UEL: £${result.earningsPTtoUEL}
       - Above UEL: £${result.earningsAboveUEL}
       - Above ST: £${result.earningsAboveST}
     `);
     
-    // Additional validation for Klaudia's case
-    if (monthlySalary > 2000 && monthlySalary < 2100) {
-      console.log(`[NI DEBUG] KLAUDIA TEST CASE detected with salary £${monthlySalary}`);
-      console.log(`[NI DEBUG] Expected: LEL=£542, LEL to PT=£506, PT to UEL=£${monthlySalary - 1048}`);
-      console.log(`[NI DEBUG] Actual: LEL=£${result.earningsAtLEL}, LEL to PT=£${result.earningsLELtoPT}, PT to UEL=£${result.earningsPTtoUEL}`);
-    }
-    
-    // Calculate NI contributions based on bands with rates (unchanged logic)
-    // PT to UEL contribution (typically 12%)
+    // Calculate NI contributions using database rates or fallback to constants
+    // Employee: PT to UEL contribution (8%)
     if (result.earningsPTtoUEL > 0) {
-      const ptToUELRate = ptToUELBand.rate;
+      const ptToUELRate = ptToUELBand.rate || NI_RATES.EMPLOYEE_MAIN_RATE;
       console.log(`[NI DEBUG] PT to UEL rate: ${ptToUELRate} for earnings: £${result.earningsPTtoUEL}`);
       
       const ptToUELContribution = result.earningsPTtoUEL * ptToUELRate;
-      console.log(`[NI DEBUG] PT to UEL contribution calculation: £${result.earningsPTtoUEL} × ${ptToUELRate} = £${ptToUELContribution}`);
+      console.log(`[NI DEBUG] PT to UEL contribution: £${ptToUELContribution}`);
       result.nationalInsurance += ptToUELContribution;
-    } else {
-      console.log(`[NI DEBUG] No contribution for PT to UEL band - earnings: £${result.earningsPTtoUEL}`);
     }
     
-    // Above UEL contribution (typically 2%)
+    // Employee: Above UEL contribution (2%)
     if (result.earningsAboveUEL > 0) {
-      const aboveUELRate = aboveUELBand.rate;
+      const aboveUELRate = aboveUELBand.rate || NI_RATES.EMPLOYEE_HIGHER_RATE;
       console.log(`[NI DEBUG] Above UEL rate: ${aboveUELRate} for earnings: £${result.earningsAboveUEL}`);
       
       const aboveUELContribution = result.earningsAboveUEL * aboveUELRate;
-      console.log(`[NI DEBUG] Above UEL contribution calculation: £${result.earningsAboveUEL} × ${aboveUELRate} = £${aboveUELContribution}`);
+      console.log(`[NI DEBUG] Above UEL contribution: £${aboveUELContribution}`);
       result.nationalInsurance += aboveUELContribution;
-    } else {
-      console.log(`[NI DEBUG] No contribution for Above UEL band - earnings: £${result.earningsAboveUEL}`);
     }
     
-    console.log(`[NI DEBUG] Final calculated earnings bands SUMMARY: 
-      - LEL: £${result.earningsAtLEL} 
-      - LEL to PT: £${result.earningsLELtoPT} 
-      - PT to UEL: £${result.earningsPTtoUEL} 
-      - Above UEL: £${result.earningsAboveUEL}
-      - Above ST: £${result.earningsAboveST}
-      - Total NI: £${result.nationalInsurance}`);
+    // Employer: Above ST contribution (15%)
+    if (result.earningsAboveST > 0) {
+      const employerRate = stBand?.rate || NI_RATES.EMPLOYER_RATE;
+      result.employerNationalInsurance = roundToTwoDecimals(
+        result.earningsAboveST * employerRate
+      );
+      console.log(`[NI DEBUG] Employer NI: £${result.employerNationalInsurance} (£${result.earningsAboveST} × ${employerRate})`);
+    }
+    
+    console.log(`[NI DEBUG] Final: Employee NI: £${result.nationalInsurance}, Employer NI: £${result.employerNationalInsurance}`);
   } else {
     console.log("[NI DEBUG] Could not find all required NI bands. Missing bands:");
     if (!lelBand) console.log("- LEL band missing");
@@ -140,6 +138,6 @@ export function calculateFromBands(
   }
   
   result.nationalInsurance = roundToTwoDecimals(result.nationalInsurance);
-  console.log(`[NI DEBUG] Final NI contribution: £${result.nationalInsurance}`);
+  console.log(`[NI DEBUG] Final Employee NI contribution: £${result.nationalInsurance}`);
   return result;
 }
