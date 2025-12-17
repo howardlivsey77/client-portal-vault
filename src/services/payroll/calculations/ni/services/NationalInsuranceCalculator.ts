@@ -6,10 +6,12 @@
  */
 
 import { roundToTwoDecimals } from "@/lib/formatters";
-import { NICBand, NICalculationResult } from "../types";
+import { NICalculationResult } from "../types";
 import { fetchNIBands } from "../database";
 import { calculateFromBands, calculateNationalInsuranceFallback } from "../calculation-utils";
 import { payrollLogger } from "@/services/payroll/utils/payrollLogger";
+import { getCurrentTaxYear } from "@/services/payroll/utils/taxYearUtils";
+import { NICalculationIntegrityError } from "../errors";
 
 export class NationalInsuranceCalculator {
   private taxYear: string;
@@ -17,20 +19,21 @@ export class NationalInsuranceCalculator {
   
   /**
    * Create a new National Insurance calculator
-   * @param taxYear The tax year (e.g., '2025/26')
+   * @param taxYear The tax year (e.g., '2025/26') - defaults to current tax year
    * @param debugMode Enable additional debugging output
    */
-  constructor(taxYear: string = '2025/26', debugMode: boolean = false) {
-    this.taxYear = taxYear;
+  constructor(taxYear?: string, debugMode: boolean = false) {
+    this.taxYear = taxYear ?? getCurrentTaxYear();
     this.debugMode = debugMode;
     
     if (this.debugMode) {
-      payrollLogger.debug(`Initialized NI calculator for tax year ${taxYear}`, { taxYear }, 'NI_CALC');
+      payrollLogger.debug(`Initialized NI calculator`, { taxYear: this.taxYear }, 'NI_CALC');
     }
   }
   
   /**
    * Log a message if debug mode is enabled
+   * Note: Never log monetary amounts - only flags and counts
    */
   private log(message: string, data?: Record<string, unknown>): void {
     if (this.debugMode) {
@@ -39,62 +42,44 @@ export class NationalInsuranceCalculator {
   }
   
   /**
-   * Validate NI calculation result to ensure all values are valid
+   * Validate and sanitize NI calculation result
+   * This method ONLY sanitizes values - it does NOT invent tax liabilities
+   * If integrity check fails, throws NICalculationIntegrityError
    */
   private validateResult(result: NICalculationResult): NICalculationResult {
-    // Ensure all values are non-negative
-    result.nationalInsurance = Math.max(0, result.nationalInsurance || 0);
-    result.earningsAtLEL = Math.max(0, result.earningsAtLEL || 0);
-    result.earningsLELtoPT = Math.max(0, result.earningsLELtoPT || 0);
-    result.earningsPTtoUEL = Math.max(0, result.earningsPTtoUEL || 0);
-    result.earningsAboveUEL = Math.max(0, result.earningsAboveUEL || 0);
-    result.earningsAboveST = Math.max(0, result.earningsAboveST || 0);
-    
-    // Round monetary values to two decimal places
-    result.nationalInsurance = roundToTwoDecimals(result.nationalInsurance);
-    result.earningsAtLEL = roundToTwoDecimals(result.earningsAtLEL);
-    result.earningsLELtoPT = roundToTwoDecimals(result.earningsLELtoPT);
-    result.earningsPTtoUEL = roundToTwoDecimals(result.earningsPTtoUEL);
-    result.earningsAboveUEL = roundToTwoDecimals(result.earningsAboveUEL);
-    result.earningsAboveST = roundToTwoDecimals(result.earningsAboveST);
-    
-    // Validate 2025/26 LEL value (£542/month)
-    const expectedLEL2025 = 542;
-    if (result.earningsAtLEL > 0 && result.earningsAtLEL !== expectedLEL2025) {
-      this.log(`LEL validation: expected £${expectedLEL2025}, got £${result.earningsAtLEL}`, {
-        expected: expectedLEL2025,
-        actual: result.earningsAtLEL
-      });
+    // Clone to avoid mutation of original object
+    const sanitized: NICalculationResult = {
+      nationalInsurance: Math.max(0, roundToTwoDecimals(result.nationalInsurance || 0)),
+      employerNationalInsurance: Math.max(0, roundToTwoDecimals(result.employerNationalInsurance || 0)),
+      earningsAtLEL: Math.max(0, roundToTwoDecimals(result.earningsAtLEL || 0)),
+      earningsLELtoPT: Math.max(0, roundToTwoDecimals(result.earningsLELtoPT || 0)),
+      earningsPTtoUEL: Math.max(0, roundToTwoDecimals(result.earningsPTtoUEL || 0)),
+      earningsAboveUEL: Math.max(0, roundToTwoDecimals(result.earningsAboveUEL || 0)),
+      earningsAboveST: Math.max(0, roundToTwoDecimals(result.earningsAboveST || 0)),
+    };
+
+    // Integrity check - if NI is zero but there are taxable earnings, something is wrong
+    // Throw error to trigger explicit fallback rather than silently inventing liabilities
+    if (sanitized.nationalInsurance === 0 && 
+        (sanitized.earningsPTtoUEL > 10 || sanitized.earningsAboveUEL > 0)) {
+      throw new NICalculationIntegrityError(
+        'Zero NI despite taxable earnings above PT',
+        {
+          earningsPTtoUEL: sanitized.earningsPTtoUEL,
+          earningsAboveUEL: sanitized.earningsAboveUEL
+        }
+      );
     }
     
-    // Check for potential calculation errors
-    if (result.nationalInsurance === 0 && 
-        (result.earningsPTtoUEL > 0 || result.earningsAboveUEL > 0)) {
-      this.log(`Zero NI despite earnings above PT - possible calculation error`, {
-        earningsPTtoUEL: result.earningsPTtoUEL,
-        earningsAboveUEL: result.earningsAboveUEL
-      });
-      
-      // Force recalculation in situations where NI should not be zero
-      if (result.earningsPTtoUEL > 0 && result.earningsPTtoUEL > 10) {
-        // Apply typical 12% rate for PT to UEL earnings as fallback
-        result.nationalInsurance += roundToTwoDecimals(result.earningsPTtoUEL * 0.12);
-      }
-      
-      if (result.earningsAboveUEL > 0) {
-        // Apply typical 2% rate for earnings above UEL as fallback
-        result.nationalInsurance += roundToTwoDecimals(result.earningsAboveUEL * 0.02);
-      }
-    }
-    
-    return result;
+    return sanitized;
   }
   
   /**
    * Calculate National Insurance contributions asynchronously
    */
   public async calculate(monthlySalary: number): Promise<NICalculationResult> {
-    this.log(`Calculating NI for monthly salary`, { monthlySalary });
+    // Log flag only - never log monetary amounts
+    this.log(`Calculating NI`, { hasSalary: monthlySalary > 0 });
     
     try {
       // Fetch NI bands from the database
@@ -109,30 +94,48 @@ export class NationalInsuranceCalculator {
       if (niBands && niBands.length > 0) {
         this.log(`Using NI bands from database`, { bandsCount: niBands.length });
         
-        // For debugging, check if we have all the required bands
+        // Best-effort debug check - may not match if DB naming changes
         if (this.debugMode) {
-          const employeeBands = niBands.filter(band => band.contribution_type === 'Employee');
-          
-          // Verify we have all necessary bands
-          const hasLEL = employeeBands.some(band => band.name.includes('LEL') && !band.name.includes('to'));
-          const hasLELtoPT = employeeBands.some(band => band.name.includes('LEL to PT'));
-          const hasPTtoUEL = employeeBands.some(band => band.name.includes('PT to UEL'));
-          const hasAboveUEL = employeeBands.some(band => band.name.includes('Above UEL'));
-          
-          this.log(`Band check`, { hasLEL, hasLELtoPT, hasPTtoUEL, hasAboveUEL });
+          try {
+            const employeeBands = niBands.filter(band => band.contribution_type === 'Employee');
+            
+            const hasLEL = employeeBands.some(band => 
+              band.name?.toLowerCase().includes('lel') && !band.name?.toLowerCase().includes('to')
+            );
+            const hasLELtoPT = employeeBands.some(band => 
+              band.name?.toLowerCase().includes('lel to pt') || band.name?.toLowerCase().includes('lel-pt')
+            );
+            const hasPTtoUEL = employeeBands.some(band => 
+              band.name?.toLowerCase().includes('pt to uel') || band.name?.toLowerCase().includes('pt-uel')
+            );
+            const hasAboveUEL = employeeBands.some(band => 
+              band.name?.toLowerCase().includes('above uel') || band.name?.toLowerCase().includes('uel+')
+            );
+            
+            this.log(`Band check (best-effort)`, { hasLEL, hasLELtoPT, hasPTtoUEL, hasAboveUEL });
+          } catch {
+            this.log('Band validation skipped - naming mismatch');
+          }
         }
         
         const result = calculateFromBands(monthlySalary, niBands);
         
         if (result) {
-          // Validate and log the calculation result
-          const validatedResult = this.validateResult(result);
-          
-          this.log(`DATABASE calculation successful`, { 
-            nationalInsurance: validatedResult.nationalInsurance 
-          });
-          
-          return validatedResult;
+          try {
+            const validatedResult = this.validateResult(result);
+            this.log(`DATABASE calculation successful`);
+            return validatedResult;
+          } catch (error) {
+            if (error instanceof NICalculationIntegrityError) {
+              payrollLogger.warn(
+                `NI integrity check failed, using fallback calculation`,
+                { reason: error.message },
+                'NI_CALC'
+              );
+              return this.calculateWithFallback(monthlySalary);
+            }
+            throw error;
+          }
         }
       }
       
@@ -148,9 +151,19 @@ export class NationalInsuranceCalculator {
    * Calculate NI using fallback constants-based approach
    */
   private calculateWithFallback(monthlySalary: number): NICalculationResult {
-    this.log(`Using FALLBACK NI calculation`, { monthlySalary });
+    this.log(`Using FALLBACK NI calculation`, { hasSalary: monthlySalary > 0 });
     const result = calculateNationalInsuranceFallback(monthlySalary);
-    return this.validateResult(result);
+    
+    // Sanitize without integrity check for fallback (it's the last resort)
+    return {
+      nationalInsurance: Math.max(0, roundToTwoDecimals(result.nationalInsurance || 0)),
+      employerNationalInsurance: Math.max(0, roundToTwoDecimals(result.employerNationalInsurance || 0)),
+      earningsAtLEL: Math.max(0, roundToTwoDecimals(result.earningsAtLEL || 0)),
+      earningsLELtoPT: Math.max(0, roundToTwoDecimals(result.earningsLELtoPT || 0)),
+      earningsPTtoUEL: Math.max(0, roundToTwoDecimals(result.earningsPTtoUEL || 0)),
+      earningsAboveUEL: Math.max(0, roundToTwoDecimals(result.earningsAboveUEL || 0)),
+      earningsAboveST: Math.max(0, roundToTwoDecimals(result.earningsAboveST || 0)),
+    };
   }
   
   /**
