@@ -6,8 +6,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Mail, Link, Copy } from "lucide-react";
+import { CheckCircle, Mail, Link } from "lucide-react";
 import { InviteLinkDisplay } from "./CopyInviteButton";
+import { useBrandColors } from "@/brand";
 
 interface InviteSuccessDialogProps {
   open: boolean;
@@ -24,12 +25,17 @@ export function InviteSuccessDialog({
   inviteUrl,
   role
 }: InviteSuccessDialogProps) {
+  const brandColors = useBrandColors();
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <CheckCircle className="w-6 h-6 text-green-500" />
+            <CheckCircle 
+              className="w-6 h-6" 
+              style={{ color: `hsl(${brandColors.success})` }}
+            />
             <DialogTitle>Invitation Sent Successfully!</DialogTitle>
           </div>
         </DialogHeader>

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { EmployeeCardProps } from './types';
+import { useBrandColors } from "@/brand";
 
 export function EmployeeCard({
   match,
@@ -15,6 +16,7 @@ export function EmployeeCard({
   onMappingChange,
   onToggleExpansion
 }: EmployeeCardProps) {
+  const brandColors = useBrandColors();
   const employeeName = match.employeeData.employeeName;
   const selectedEmployeeId = userMappings[employeeName];
   const selectedEmployee = selectedEmployeeId 
@@ -25,7 +27,6 @@ export function EmployeeCard({
   const hasMultipleCandidates = match.candidates.length > 1;
   const displayCandidates = isExpanded ? match.candidates : match.candidates.slice(0, 2);
   
-  // Sort employees alphabetically by last name, then first name
   const sortedEmployees = [...allDatabaseEmployees].sort((a, b) => {
     if (a.last_name !== b.last_name) {
       return a.last_name.localeCompare(b.last_name);
@@ -107,8 +108,14 @@ export function EmployeeCard({
           </div>
           
           {selectedEmployee && (
-            <div className="p-2 bg-green-50 border border-green-200 rounded text-xs">
-              <div className="flex items-center text-green-800">
+            <div 
+              className="p-2 border rounded text-xs"
+              style={{
+                backgroundColor: `hsl(${brandColors.successLight})`,
+                borderColor: `hsl(${brandColors.success} / 0.3)`
+              }}
+            >
+              <div className="flex items-center" style={{ color: `hsl(${brandColors.success})` }}>
                 <CheckCircle className="h-3 w-3 mr-1" />
                 Mapped to: {selectedEmployee.full_name}
                 {selectedEmployee.payroll_id && ` (${selectedEmployee.payroll_id})`}

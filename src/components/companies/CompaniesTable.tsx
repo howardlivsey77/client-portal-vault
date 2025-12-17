@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Building, Search, Plus } from "lucide-react";
 import { CreateCompanyOption } from "@/components/auth";
+import { useBrandColors } from "@/brand";
 
 export function CompaniesTable() {
   const { companies, currentCompany, switchCompany, isLoading } = useCompany();
@@ -15,6 +16,7 @@ export function CompaniesTable() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateOption, setShowCreateOption] = useState(false);
+  const brandColors = useBrandColors();
 
   const filteredCompanies = companies.filter((company) =>
     company.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -77,7 +79,10 @@ export function CompaniesTable() {
 
         {/* Create Company Option */}
         {showCreateOption && (
-          <div className="mt-4 p-4 bg-green-50 rounded-md">
+          <div 
+            className="mt-4 p-4 rounded-md"
+            style={{ backgroundColor: `hsl(${brandColors.successLight})` }}
+          >
             <CreateCompanyOption userId={user?.id} />
             <Button 
               variant="ghost" 
@@ -107,9 +112,10 @@ export function CompaniesTable() {
               {filteredCompanies.map((company, index) => (
                 <TableRow 
                   key={company.id}
-                  className={`cursor-pointer hover:bg-muted/50 ${
-                    currentCompany?.id === company.id ? "bg-blue-50" : ""
-                  }`}
+                  className="cursor-pointer hover:bg-muted/50"
+                  style={currentCompany?.id === company.id ? {
+                    backgroundColor: `hsl(${brandColors.currentLight})`
+                  } : undefined}
                   onClick={() => handleCompanyClick(company.id)}
                 >
                   <TableCell className="font-mono text-sm">
@@ -119,9 +125,12 @@ export function CompaniesTable() {
                     <div className="flex items-center gap-2">
                       <Building className="h-4 w-4 text-muted-foreground" />
                       <div>
-                        <div className={`font-medium ${
-                          currentCompany?.id === company.id ? "text-blue-700" : ""
-                        }`}>
+                        <div 
+                          className="font-medium"
+                          style={currentCompany?.id === company.id ? {
+                            color: `hsl(${brandColors.current})`
+                          } : undefined}
+                        >
                           {company.name}
                         </div>
                       </div>
@@ -132,13 +141,19 @@ export function CompaniesTable() {
                     <span className="text-sm">Address not available</span>
                   </TableCell>
                   <TableCell>
-                    <span className="capitalize text-sm bg-gray-100 px-2 py-1 rounded">
+                    <span className="capitalize text-sm bg-muted px-2 py-1 rounded">
                       {company.role}
                     </span>
                   </TableCell>
                   <TableCell>
                     {currentCompany?.id === company.id ? (
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium">
+                      <span 
+                        className="text-xs px-2 py-1 rounded font-medium"
+                        style={{
+                          backgroundColor: `hsl(${brandColors.currentLight})`,
+                          color: `hsl(${brandColors.current})`
+                        }}
+                      >
                         Current
                       </span>
                     ) : (

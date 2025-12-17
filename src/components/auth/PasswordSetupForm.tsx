@@ -7,6 +7,7 @@ import { useToast } from "@/hooks";
 import { Loader2, Shield, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useBrandColors } from "@/brand";
 
 interface PasswordSetupFormProps {
   onSuccess: () => void;
@@ -21,6 +22,7 @@ export const PasswordSetupForm = ({ onSuccess, userEmail }: PasswordSetupFormPro
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const brandColors = useBrandColors();
 
   const getPasswordStrength = (password: string) => {
     let strength = 0;
@@ -33,10 +35,17 @@ export const PasswordSetupForm = ({ onSuccess, userEmail }: PasswordSetupFormPro
   };
 
   const getStrengthColor = (strength: number) => {
-    if (strength < 2) return "bg-red-500";
+    if (strength < 2) return "bg-destructive";
     if (strength < 3) return "bg-orange-500";
     if (strength < 4) return "bg-yellow-500";
-    return "bg-green-500";
+    return `bg-primary`;
+  };
+
+  const getStrengthTextStyle = (strength: number) => {
+    if (strength < 2) return { color: 'hsl(var(--destructive))' };
+    if (strength < 3) return { color: '#f97316' }; // orange-500
+    if (strength < 4) return { color: '#eab308' }; // yellow-500
+    return { color: `hsl(${brandColors.success})` };
   };
 
   const getStrengthText = (strength: number) => {
@@ -123,6 +132,7 @@ export const PasswordSetupForm = ({ onSuccess, userEmail }: PasswordSetupFormPro
   };
 
   const passwordStrength = getPasswordStrength(password);
+  const checkMet = (condition: boolean) => condition ? { color: `hsl(${brandColors.success})` } : undefined;
 
   return (
     <form onSubmit={handleSubmit}>
@@ -167,16 +177,11 @@ export const PasswordSetupForm = ({ onSuccess, userEmail }: PasswordSetupFormPro
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span>Password strength:</span>
-                <span className={`font-medium ${
-                  passwordStrength < 2 ? 'text-red-500' :
-                  passwordStrength < 3 ? 'text-orange-500' :
-                  passwordStrength < 4 ? 'text-yellow-500' :
-                  'text-green-500'
-                }`}>
+                <span className="font-medium" style={getStrengthTextStyle(passwordStrength)}>
                   {getStrengthText(passwordStrength)}
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-muted rounded-full h-2">
                 <div 
                   className={`h-2 rounded-full transition-all ${getStrengthColor(passwordStrength)}`}
                   style={{ width: `${(passwordStrength / 5) * 100}%` }}
@@ -216,11 +221,11 @@ export const PasswordSetupForm = ({ onSuccess, userEmail }: PasswordSetupFormPro
         <div className="text-xs text-muted-foreground space-y-1">
           <p>Your password should contain:</p>
           <ul className="list-disc list-inside space-y-1">
-            <li className={password.length >= 8 ? 'text-green-600' : ''}>At least 8 characters</li>
-            <li className={/[A-Z]/.test(password) ? 'text-green-600' : ''}>One uppercase letter</li>
-            <li className={/[a-z]/.test(password) ? 'text-green-600' : ''}>One lowercase letter</li>
-            <li className={/[0-9]/.test(password) ? 'text-green-600' : ''}>One number</li>
-            <li className={/[^A-Za-z0-9]/.test(password) ? 'text-green-600' : ''}>One special character</li>
+            <li style={checkMet(password.length >= 8)}>At least 8 characters</li>
+            <li style={checkMet(/[A-Z]/.test(password))}>One uppercase letter</li>
+            <li style={checkMet(/[a-z]/.test(password))}>One lowercase letter</li>
+            <li style={checkMet(/[0-9]/.test(password))}>One number</li>
+            <li style={checkMet(/[^A-Za-z0-9]/.test(password))}>One special character</li>
           </ul>
         </div>
       </CardContent>

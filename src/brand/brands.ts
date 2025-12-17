@@ -69,6 +69,15 @@ const defaultLightSemanticColors: SemanticColors = {
   info: '211 100% 45%',
   infoForeground: '0 0% 100%',
   infoLight: '211 100% 95%',
+  warning: '45 93% 47%',
+  warningForeground: '0 0% 0%',
+  warningLight: '45 93% 95%',
+  positive: '142 76% 36%',
+  positiveForeground: '0 0% 100%',
+  positiveLight: '142 76% 95%',
+  current: '211 100% 45%',
+  currentForeground: '0 0% 100%',
+  currentLight: '211 100% 95%',
   chartColors: ['#9b87f5', '#7E69AB', '#8B5CF6', '#D946EF', '#F97316', '#0EA5E9', '#1EAEDB', '#33C3F0', '#0FA0CE'],
 };
 
@@ -79,6 +88,15 @@ const defaultDarkSemanticColors: SemanticColors = {
   info: '211 100% 55%',
   infoForeground: '0 0% 100%',
   infoLight: '211 50% 20%',
+  warning: '45 93% 57%',
+  warningForeground: '0 0% 0%',
+  warningLight: '45 50% 20%',
+  positive: '142 76% 46%',
+  positiveForeground: '0 0% 100%',
+  positiveLight: '142 40% 20%',
+  current: '211 100% 55%',
+  currentForeground: '0 0% 100%',
+  currentLight: '211 50% 20%',
   chartColors: ['#9b87f5', '#7E69AB', '#8B5CF6', '#D946EF', '#F97316', '#0EA5E9', '#1EAEDB', '#33C3F0', '#0FA0CE'],
 };
 
@@ -141,6 +159,15 @@ const fergiLightSemanticColors: SemanticColors = {
   info: '353 60% 75%',
   infoForeground: '353 94% 30%',
   infoLight: '353 50% 95%',
+  warning: '30 95% 55%',
+  warningForeground: '0 0% 0%',
+  warningLight: '30 95% 95%',
+  positive: '353 94% 63%',
+  positiveForeground: '0 0% 100%',
+  positiveLight: '353 94% 95%',
+  current: '353 94% 63%',
+  currentForeground: '0 0% 100%',
+  currentLight: '353 94% 95%',
   chartColors: ['#fa4659', '#ff6b7a', '#ff8f9b', '#e63950', '#cc3347', '#ff4d5f', '#ff7380', '#f03a4d', '#d9334a'],
 };
 
@@ -151,6 +178,15 @@ const fergiDarkSemanticColors: SemanticColors = {
   info: '353 60% 55%',
   infoForeground: '0 0% 100%',
   infoLight: '353 40% 25%',
+  warning: '30 95% 45%',
+  warningForeground: '0 0% 0%',
+  warningLight: '30 50% 25%',
+  positive: '353 94% 63%',
+  positiveForeground: '0 0% 100%',
+  positiveLight: '353 50% 25%',
+  current: '353 94% 63%',
+  currentForeground: '0 0% 100%',
+  currentLight: '353 50% 25%',
   chartColors: ['#fa4659', '#ff6b7a', '#ff8f9b', '#e63950', '#cc3347', '#ff4d5f', '#ff7380', '#f03a4d', '#d9334a'],
 };
 

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/formatters";
 import { Separator } from "@/components/ui/separator";
+import { useBrandColors } from "@/brand";
 
 interface PayrollResultsProps {
   result: PayrollResult;
@@ -12,6 +13,10 @@ interface PayrollResultsProps {
 }
 
 export function PayrollResults({ result, payPeriod, onClearResults }: PayrollResultsProps) {
+  const brandColors = useBrandColors();
+  const positiveStyle = { color: `hsl(${brandColors.positive})` };
+  const infoStyle = { color: `hsl(${brandColors.info})` };
+  
   return (
     <div className="space-y-6">
       <Card>
@@ -54,28 +59,28 @@ export function PayrollResults({ result, payPeriod, onClearResults }: PayrollRes
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span>Income Tax:</span>
-                  <span className="text-red-600">{formatCurrency(result.incomeTax)}</span>
+                  <span className="text-destructive">{formatCurrency(result.incomeTax)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>National Insurance:</span>
-                  <span className="text-red-600">{formatCurrency(result.nationalInsurance)}</span>
+                  <span className="text-destructive">{formatCurrency(result.nationalInsurance)}</span>
                 </div>
                 {result.studentLoan > 0 && (
                   <div className="flex justify-between">
                     <span>Student Loan:</span>
-                    <span className="text-red-600">{formatCurrency(result.studentLoan)}</span>
+                    <span className="text-destructive">{formatCurrency(result.studentLoan)}</span>
                   </div>
                 )}
                 {result.pensionContribution > 0 && (
                   <div className="flex justify-between">
                     <span>Pension:</span>
-                    <span className="text-red-600">{formatCurrency(result.pensionContribution)}</span>
+                    <span className="text-destructive">{formatCurrency(result.pensionContribution)}</span>
                   </div>
                 )}
                 {result.nhsPensionEmployeeContribution > 0 && (
                   <div className="flex justify-between">
                     <span>NHS Pension:</span>
-                    <span className="text-red-600">{formatCurrency(result.nhsPensionEmployeeContribution)}</span>
+                    <span className="text-destructive">{formatCurrency(result.nhsPensionEmployeeContribution)}</span>
                   </div>
                 )}
               </div>
@@ -87,16 +92,16 @@ export function PayrollResults({ result, payPeriod, onClearResults }: PayrollRes
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span>Total Deductions:</span>
-                  <span className="text-red-600">{formatCurrency(result.totalDeductions)}</span>
+                  <span className="text-destructive">{formatCurrency(result.totalDeductions)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Total Allowances:</span>
-                  <span className="text-green-600">{formatCurrency(result.totalAllowances)}</span>
+                  <span style={positiveStyle}>{formatCurrency(result.totalAllowances)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between text-lg font-bold">
                   <span>Net Pay:</span>
-                  <span className="text-green-600">{formatCurrency(result.netPay)}</span>
+                  <span style={positiveStyle}>{formatCurrency(result.netPay)}</span>
                 </div>
               </div>
             </div>
@@ -118,7 +123,7 @@ export function PayrollResults({ result, payPeriod, onClearResults }: PayrollRes
                   </div>
                   <div className="flex justify-between">
                     <span>Employee Contribution:</span>
-                    <span className="text-red-600">{formatCurrency(result.nhsPensionEmployeeContribution)}</span>
+                    <span className="text-destructive">{formatCurrency(result.nhsPensionEmployeeContribution)}</span>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -128,7 +133,7 @@ export function PayrollResults({ result, payPeriod, onClearResults }: PayrollRes
                   </div>
                   <div className="flex justify-between">
                     <span>Employer Contribution:</span>
-                    <span className="text-blue-600">{formatCurrency(result.nhsPensionEmployerContribution)}</span>
+                    <span style={infoStyle}>{formatCurrency(result.nhsPensionEmployerContribution)}</span>
                   </div>
                 </div>
               </div>
@@ -146,7 +151,7 @@ export function PayrollResults({ result, payPeriod, onClearResults }: PayrollRes
                   {result.additionalEarnings.map((earning, index) => (
                     <div key={index} className="flex justify-between">
                       <span>{earning.description}:</span>
-                      <span className="text-green-600">{formatCurrency(earning.amount)}</span>
+                      <span style={positiveStyle}>{formatCurrency(earning.amount)}</span>
                     </div>
                   ))}
                 </div>
@@ -158,7 +163,7 @@ export function PayrollResults({ result, payPeriod, onClearResults }: PayrollRes
                   {result.additionalDeductions.map((deduction, index) => (
                     <div key={index} className="flex justify-between">
                       <span>{deduction.description}:</span>
-                      <span className="text-red-600">{formatCurrency(deduction.amount)}</span>
+                      <span className="text-destructive">{formatCurrency(deduction.amount)}</span>
                     </div>
                   ))}
                 </div>
@@ -170,7 +175,7 @@ export function PayrollResults({ result, payPeriod, onClearResults }: PayrollRes
                   {result.additionalAllowances.map((allowance, index) => (
                     <div key={index} className="flex justify-between">
                       <span>{allowance.description}:</span>
-                      <span className="text-green-600">{formatCurrency(allowance.amount)}</span>
+                      <span style={positiveStyle}>{formatCurrency(allowance.amount)}</span>
                     </div>
                   ))}
                 </div>
