@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { CheckSquare, ChartBar, Clock, FileText, Home, Receipt, Users, Building, UserCog, Stethoscope, FileBarChart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/providers";
+import { useCompany } from "@/providers/CompanyProvider";
 import {
   Tooltip,
   TooltipContent,
@@ -16,16 +17,20 @@ interface SidebarMainNavigationProps {
   isExpanded?: boolean;
 }
 
+type AllowedRole = 'admin' | 'payroll' | 'user';
+
 interface NavItem {
   icon: React.ElementType;
   label: string;
   to: string;
   isActive: boolean;
-  adminOnly?: boolean;
+  allowedRoles?: AllowedRole[]; // If set, only these roles can see the item
+  hiddenForRoles?: AllowedRole[]; // If set, hide from these roles
 }
 
 export function SidebarMainNavigation({ location, isExpanded = true }: SidebarMainNavigationProps) {
   const { isAdmin } = useAuth();
+  const { currentRole } = useCompany();
 
   const isTabActive = (tab: string) => {
     const params = new URLSearchParams(location.search);
@@ -56,7 +61,7 @@ export function SidebarMainNavigation({ location, isExpanded = true }: SidebarMa
       label: "Companies",
       to: getTabUrl("companies"),
       isActive: isTabActive("companies"),
-      adminOnly: true,
+      allowedRoles: ['admin'], // Super admins only
     },
     {
       icon: Building,
@@ -69,6 +74,7 @@ export function SidebarMainNavigation({ location, isExpanded = true }: SidebarMa
       label: "Tasks",
       to: getTabUrl("tasks"),
       isActive: isTabActive("tasks"),
+      hiddenForRoles: ['payroll'], // Hidden from payroll users
     },
     {
       icon: Users,
@@ -81,7 +87,7 @@ export function SidebarMainNavigation({ location, isExpanded = true }: SidebarMa
       label: "Sickness Import",
       to: "/employees/sickness/import",
       isActive: isRouteActive("/employees/sickness/import"),
-      adminOnly: true,
+      allowedRoles: ['admin'], // Super admins only
     },
     {
       icon: Clock,
@@ -94,26 +100,28 @@ export function SidebarMainNavigation({ location, isExpanded = true }: SidebarMa
       label: "Payroll Input",
       to: getTabUrl("payroll"),
       isActive: isTabActive("payroll"),
+      hiddenForRoles: ['payroll'], // Hidden from payroll users
     },
     {
       icon: Receipt,
       label: "Payroll Processing",
       to: "/payroll-processing",
       isActive: isRouteActive("/payroll-processing"),
-      adminOnly: true,
+      allowedRoles: ['admin', 'payroll'], // Admins and payroll users
     },
     {
       icon: FileText,
       label: "Documents",
       to: getTabUrl("documents"),
       isActive: isTabActive("documents"),
+      hiddenForRoles: ['payroll'], // Hidden from payroll users
     },
     {
       icon: ChartBar,
       label: "Bureau Reports",
       to: getTabUrl("reports"),
       isActive: isTabActive("reports"),
-      adminOnly: true,
+      allowedRoles: ['admin', 'payroll'], // Admins and payroll users
     },
     {
       icon: FileBarChart,
@@ -126,11 +134,30 @@ export function SidebarMainNavigation({ location, isExpanded = true }: SidebarMa
       label: "Users",
       to: "/invites",
       isActive: isRouteActive("/invites"),
-      adminOnly: true,
+      allowedRoles: ['admin'], // Super admins only
     },
   ];
 
-  const filteredItems = navItems.filter(item => !item.adminOnly || isAdmin);
+  // Filter items based on role
+  const filteredItems = navItems.filter(item => {
+    const effectiveRole = isAdmin ? 'admin' : (currentRole || 'user');
+    
+    // Check allowedRoles - if set, user must have one of these roles
+    if (item.allowedRoles) {
+      if (!item.allowedRoles.includes(effectiveRole as AllowedRole)) {
+        return false;
+      }
+    }
+    
+    // Check hiddenForRoles - if set, hide from these specific roles
+    if (item.hiddenForRoles && !isAdmin) {
+      if (item.hiddenForRoles.includes(effectiveRole as AllowedRole)) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
 
   return (
     <TooltipProvider delayDuration={0}>

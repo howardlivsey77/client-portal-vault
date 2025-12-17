@@ -210,27 +210,41 @@ export const useTeamMembers = () => {
     }
   };
 
-  const updateUserRole = async (userId: string, isAdmin: boolean): Promise<boolean> => {
+  const updateUserRole = async (userId: string, role: string): Promise<boolean> => {
     setLoading(true);
     try {
-      const { error } = await supabase
+      // For super admin, update profiles table
+      const isAdmin = role === 'admin';
+      const { error: profileError } = await supabase
         .from("profiles")
         .update({ is_admin: isAdmin })
         .eq("id", userId);
 
-      if (error) {
-        throw new Error(error.message || "Failed to update role");
+      if (profileError) {
+        throw new Error(profileError.message || "Failed to update role");
       }
 
+      // Update company_access role for non-admin roles
+      // Get all company_access records for this user and update them
+      const { error: accessError } = await supabase
+        .from("company_access")
+        .update({ role: role })
+        .eq("user_id", userId);
+
+      if (accessError) {
+        console.warn("Could not update company_access role:", accessError);
+      }
+
+      const roleLabel = role === 'admin' ? 'administrator' : role === 'payroll' ? 'payroll user' : 'regular user';
       toast({
         title: "Role updated",
-        description: `User's role has been updated to ${isAdmin ? 'administrator' : 'regular user'}.`,
+        description: `User's role has been updated to ${roleLabel}.`,
       });
 
       // Update local state
       setMembers(prev => prev.map(m => 
         m.userId === userId 
-          ? { ...m, role: isAdmin ? 'admin' : 'user', isAdmin } 
+          ? { ...m, role, isAdmin } 
           : m
       ));
       

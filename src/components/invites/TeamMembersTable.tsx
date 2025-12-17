@@ -19,7 +19,7 @@ interface TeamMembersTableProps {
   onDeleteInvitation: (invitationId: string) => Promise<boolean>;
   onDeleteUser: (userId: string) => Promise<boolean>;
   onResendInvitation: (invitationId: string) => Promise<boolean>;
-  onUpdateRole: (userId: string, isAdmin: boolean) => Promise<boolean>;
+  onUpdateRole: (userId: string, role: string) => Promise<boolean>;
 }
 
 export const TeamMembersTable = ({
@@ -83,7 +83,7 @@ export const TeamMembersTable = ({
 
   const handleChangeRoleClick = (member: TeamMember) => {
     setMemberToEdit(member);
-    setSelectedRole(member.isAdmin ? "admin" : "user");
+    setSelectedRole(member.role || (member.isAdmin ? "admin" : "user"));
     setRoleDialogOpen(true);
   };
 
@@ -92,7 +92,7 @@ export const TeamMembersTable = ({
     
     setIsUpdating(true);
     try {
-      await onUpdateRole(memberToEdit.userId, selectedRole === "admin");
+      await onUpdateRole(memberToEdit.userId, selectedRole);
     } finally {
       setIsUpdating(false);
       setRoleDialogOpen(false);
@@ -142,7 +142,9 @@ export const TeamMembersTable = ({
                 </div>
               </TableCell>
               <TableCell>
-                <span className="capitalize">{member.role === 'admin' ? 'Administrator' : 'User'}</span>
+                <span className="capitalize">
+                  {member.role === 'admin' ? 'Administrator' : member.role === 'payroll' ? 'Payroll User' : 'User'}
+                </span>
               </TableCell>
               <TableCell>
                 <Badge variant={member.status === 'active' ? 'default' : 'secondary'}>
@@ -275,6 +277,7 @@ export const TeamMembersTable = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="user">User</SelectItem>
+                <SelectItem value="payroll">Payroll User</SelectItem>
                 <SelectItem value="admin">Administrator</SelectItem>
               </SelectContent>
             </Select>

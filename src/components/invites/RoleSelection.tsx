@@ -1,8 +1,7 @@
-
 import React from "react";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ShieldCheck, User } from "lucide-react";
+import { ShieldCheck, User, Calculator } from "lucide-react";
 
 interface RoleSelectionProps {
   selectedRole: string;
@@ -19,6 +18,13 @@ export const RoleSelection = ({ selectedRole, setSelectedRole }: RoleSelectionPr
           <Label htmlFor="user-role" className="flex items-center">
             <User className="h-4 w-4 mr-2 text-muted-foreground" />
             Regular User
+          </Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem value="payroll" id="payroll-role" />
+          <Label htmlFor="payroll-role" className="flex items-center">
+            <Calculator className="h-4 w-4 mr-2 text-muted-foreground" />
+            Payroll User
           </Label>
         </div>
         <div className="flex items-center space-x-2">
