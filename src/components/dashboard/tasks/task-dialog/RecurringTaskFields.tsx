@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Repeat, Info } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RecurrencePattern } from "../types";
+import { useBrandColors } from "@/brand";
 import {
   Select,
   SelectContent,
@@ -29,6 +29,8 @@ export function RecurringTaskFields({
   onRecurrencePatternChange,
   onRecurrenceIntervalChange
 }: RecurringTaskFieldsProps) {
+  const brandColors = useBrandColors();
+  
   return (
     <div className="border-t pt-3 mt-2">
       <div className="flex items-center space-x-2 mb-3">
@@ -103,9 +105,12 @@ export function RecurringTaskFields({
             </p>
           </div>
           
-          <div className="col-span-2 mt-1 bg-blue-50 p-2 rounded-md flex items-start">
-            <Info className="h-4 w-4 text-blue-500 mt-0.5 mr-2 flex-shrink-0" />
-            <p className="text-xs text-blue-700">
+          <div 
+            className="col-span-2 mt-1 p-2 rounded-md flex items-start"
+            style={{ backgroundColor: `hsl(${brandColors.infoLight})` }}
+          >
+            <Info className="h-4 w-4 mt-0.5 mr-2 flex-shrink-0" style={{ color: `hsl(${brandColors.info})` }} />
+            <p className="text-xs" style={{ color: `hsl(${brandColors.infoForeground})` }}>
               Note: New recurring tasks will only be created after the 6th of each month,
               allowing time to complete existing tasks before new ones appear.
             </p>

@@ -29,6 +29,16 @@ export interface BrandColors {
   header: string;
 }
 
+export interface SemanticColors {
+  success: string;
+  successForeground: string;
+  successLight: string;
+  info: string;
+  infoForeground: string;
+  infoLight: string;
+  chartColors: string[];
+}
+
 export interface BrandConfig {
   id: string;
   name: string;
@@ -38,5 +48,9 @@ export interface BrandConfig {
   colors: {
     light: BrandColors;
     dark: BrandColors;
+  };
+  semanticColors: {
+    light: SemanticColors;
+    dark: SemanticColors;
   };
 }

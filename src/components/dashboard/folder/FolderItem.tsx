@@ -51,7 +51,7 @@ export function FolderTile({
       )}
       onClick={() => onFolderSelect(folder.id)}
     >
-      <Folder className="h-12 w-12 text-blue-500 mb-3" />
+      <Folder className="h-12 w-12 text-primary mb-3" />
       <span className="font-medium text-center text-sm">{folder.name}</span>
       
       {/* Dropdown for folder actions - visible on hover */}

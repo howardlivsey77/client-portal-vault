@@ -3,14 +3,11 @@ import { DepartmentDistributionCard } from "./DepartmentDistributionCard";
 import { HmrcDashboardCard } from "./HmrcDashboardCard";
 import { PayrollSummaryCard } from "./PayrollSummaryCard";
 import { useDashboardData } from "@/hooks";
-
-const DEPARTMENT_COLORS = [
-  "#9b87f5", "#7E69AB", "#8B5CF6", "#D946EF", "#F97316", 
-  "#0EA5E9", "#1EAEDB", "#33C3F0", "#0FA0CE"
-];
+import { useBrandColors } from "@/brand";
 
 export function EmployeeDashboard() {
-  const { stats, departmentData, genderData, loading } = useDashboardData(DEPARTMENT_COLORS);
+  const brandColors = useBrandColors();
+  const { stats, departmentData, genderData, loading } = useDashboardData(brandColors.chartColors);
 
   if (loading) {
     return <div className="flex justify-center p-8">Loading dashboard data...</div>;
