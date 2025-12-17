@@ -18,13 +18,9 @@ const formatPercentage = (value: number | null): string => {
   return `${value}%`;
 };
 
-// Calculate tier based on annual salary when no previous year pay is set
-const calculateTierFromSalary = (monthlySalary: number | null): { tier: number; rate: number } | null => {
-  if (!monthlySalary) return null;
-  
-  const annualSalary = monthlySalary * 12;
-  
-  // 2024/25 NHS Pension tiers
+// Calculate tier based on annual pensionable pay
+const calculateTierFromPay = (annualPay: number): { tier: number; rate: number } => {
+  // 2025/26 NHS Pension tiers
   const tiers = [
     { tier: 1, max: 13259, rate: 5.1 },
     { tier: 2, max: 16931, rate: 5.7 },
@@ -38,7 +34,7 @@ const calculateTierFromSalary = (monthlySalary: number | null): { tier: number; 
   ];
   
   for (const { tier, max, rate } of tiers) {
-    if (annualSalary <= max) {
+    if (annualPay <= max) {
       return { tier, rate };
     }
   }
@@ -46,15 +42,30 @@ const calculateTierFromSalary = (monthlySalary: number | null): { tier: number; 
   return { tier: 9, rate: 12.5 };
 };
 
+// Get calculated tier info: prioritize previous year pay, then current salary
+const getCalculatedTierInfo = (
+  previousYearPay: number | null, 
+  monthlySalary: number | null
+): { tier: number; rate: number; source: 'previous_year' | 'current_salary'; annualPay: number } | null => {
+  if (previousYearPay) {
+    return { ...calculateTierFromPay(previousYearPay), source: 'previous_year', annualPay: previousYearPay };
+  }
+  if (monthlySalary) {
+    const annualPay = monthlySalary * 12;
+    return { ...calculateTierFromPay(annualPay), source: 'current_salary', annualPay };
+  }
+  return null;
+};
+
 export const NhsPensionInfoDisplay = ({ employee }: NhsPensionInfoDisplayProps) => {
   const isMember = employee.nhs_pension_member ?? false;
-  const calculatedTier = calculateTierFromSalary(employee.monthly_salary);
+  const calculatedTierInfo = getCalculatedTierInfo(
+    employee.previous_year_pensionable_pay, 
+    employee.monthly_salary
+  );
   
-  // Show calculated tier if no previous year pay and no explicit tier set
-  const showCalculatedTier = isMember && 
-    !employee.previous_year_pensionable_pay && 
-    !employee.nhs_pension_tier && 
-    calculatedTier;
+  // Show calculated tier if no explicit tier set and we can calculate one
+  const showCalculatedTier = isMember && !employee.nhs_pension_tier && calculatedTierInfo;
   
   return (
     <div className="space-y-4">
@@ -74,7 +85,7 @@ export const NhsPensionInfoDisplay = ({ employee }: NhsPensionInfoDisplayProps) 
                 {employee.nhs_pension_tier 
                   ? `Tier ${employee.nhs_pension_tier}`
                   : showCalculatedTier 
-                    ? `Tier ${calculatedTier.tier} (calculated)`
+                    ? `Tier ${calculatedTierInfo.tier} (calculated)`
                     : "Not set"}
               </p>
             </div>
@@ -85,7 +96,7 @@ export const NhsPensionInfoDisplay = ({ employee }: NhsPensionInfoDisplayProps) 
                 {employee.nhs_pension_employee_rate 
                   ? `${employee.nhs_pension_employee_rate}%`
                   : showCalculatedTier 
-                    ? `${calculatedTier.rate}% (calculated)`
+                    ? `${calculatedTierInfo.rate}% (calculated)`
                     : "Auto-calculated"}
               </p>
             </div>
@@ -102,9 +113,9 @@ export const NhsPensionInfoDisplay = ({ employee }: NhsPensionInfoDisplayProps) 
         )}
       </div>
       
-      {isMember && showCalculatedTier && (
+      {isMember && showCalculatedTier && calculatedTierInfo && (
         <p className="text-xs text-muted-foreground italic">
-          Tier calculated from annual salary of {formatCurrency((employee.monthly_salary ?? 0) * 12)}
+          Tier calculated from {calculatedTierInfo.source === 'previous_year' ? 'previous year pensionable pay' : 'current annual salary'} of {formatCurrency(calculatedTierInfo.annualPay)}
         </p>
       )}
     </div>
