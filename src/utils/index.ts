@@ -5,7 +5,7 @@
 export * from "./common";
 
 // Company utilities
-export * from "./company/getCompanyId";
+export * from "./company";
 
 // Sickness utilities
 export * from "./sickness";
