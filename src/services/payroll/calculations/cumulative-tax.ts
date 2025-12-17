@@ -7,6 +7,48 @@ import {
 } from "../validation/payroll-validators";
 import { CalculationAnomalyError } from "../errors/payroll-errors";
 import { payrollLogger } from "../utils/payrollLogger";
+/**
+ * =============================================================================
+ * HMRC Cumulative & Week 1/Month 1 Tax Calculations
+ * =============================================================================
+ * 
+ * ROUNDING STRATEGY (HMRC-aligned):
+ * ---------------------------------
+ * This module follows a specific rounding order to match HMRC's methodology:
+ * 
+ * 1. Free Pay YTD: Rounded to 2 decimal places using roundToTwoDecimals()
+ *    Formula: monthlyFreePay × period
+ * 
+ * 2. Taxable Pay YTD: Rounded DOWN (floored) to nearest whole pound
+ *    Formula: Math.floor(grossPayYTD - freePayYTD)
+ *    This is per HMRC regulations - taxable pay is always whole pounds.
+ * 
+ * 3. Tax Due YTD: Calculated at full precision using tax bands
+ * 
+ * 4. Tax This Period: Rounded to 2 decimal places at OUTPUT only
+ *    Formula: roundToTwoDecimals(taxDueYTD - taxPaidYTD)
+ * 
+ * ⚠️  DO NOT change rounding order without thorough testing against HMRC 
+ *     test cases. The current order is validated by the test suite.
+ * 
+ * TAX CODE HANDLING:
+ * ------------------
+ * - Standard codes (1257L, etc.): Parsed via parseTaxCode() → positive monthlyFreePay
+ * - K codes (K497, etc.): Parsed via parseTaxCode() → NEGATIVE monthlyFreePay
+ *   → This correctly ADDS to taxable income rather than reducing it
+ *   → Taxable pay clamping to 0 is SKIPPED for K codes
+ * - Special codes (BR, D0, D1): Handled with explicit branches, flat rates applied
+ * - Emergency code (0T): Handled EXPLICITLY in parseTaxCode() → returns 0 allowance
+ *   → Falls through to standard banded calculation with 0 free pay
+ *   → See tax-code-utils.ts for explicit 0T handling
+ * - No Tax (NT): Returns 0 tax due and refunds any previously paid tax
+ * 
+ * DEPENDENCIES:
+ * -------------
+ * - parseTaxCode() from tax-code-utils.ts handles ALL tax code parsing
+ * - 0T behavior is deterministic: parseTaxCode('0T') → { allowance: 0, monthlyFreePay: 0 }
+ * - This module relies on parseTaxCode returning correct values for edge cases
+ */
 
 /**
  * Round to two decimal places (local version to avoid null handling)

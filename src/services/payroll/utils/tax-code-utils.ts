@@ -176,6 +176,10 @@ export function parseTaxCode(taxCode: string): TaxCode {
   }
   
   // 0T code (emergency tax - no personal allowance)
+  // EXPLICIT HANDLING: 0T is treated deterministically here, returning 0 allowance
+  // and 0 monthlyFreePay. The cumulative-tax.ts module depends on this behavior
+  // to correctly apply banded tax rates to full income without any free pay.
+  // DO NOT remove this explicit case - it ensures consistent 0T behavior.
   if (validatedCode === '0T') {
     return { 
       code: validatedCode, 
