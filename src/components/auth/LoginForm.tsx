@@ -276,7 +276,7 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
           <Button 
             type="submit" 
             disabled={loading || otp.length !== 6} 
-            className="w-full text-gray-950 bg-teal-500 hover:bg-teal-400"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             {loading ? <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -361,7 +361,7 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
         <Button 
           type="submit" 
           disabled={loading} 
-          className="w-full text-gray-950 bg-teal-500 hover:bg-teal-400"
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
         >
           {loading ? <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
