@@ -152,61 +152,67 @@ export function PayslipPreview({ payslipData, company }: PayslipPreviewProps) {
         {/* This Month */}
         <div>
           <h3 className="font-semibold mb-3 text-foreground">This Month</h3>
-          <table className="w-full text-xs">
-            <tbody>
-              <tr>
-                <td className="py-1.5 whitespace-nowrap">Taxable gross pay</td>
-                <td className="py-1.5 text-right font-medium whitespace-nowrap">{formatCurrency(payslipData.thisPeriod.taxableGrossPay)}</td>
-              </tr>
-              <tr>
-                <td className="py-1.5 whitespace-nowrap">Employer NI</td>
-                <td className="py-1.5 text-right font-medium whitespace-nowrap">{formatCurrency(payslipData.thisPeriod.employerNI)}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div className="border rounded overflow-hidden">
+            <table className="w-full text-xs">
+              <tbody>
+                <tr className="border-b">
+                  <td className="p-2 text-muted-foreground">Taxable gross pay</td>
+                  <td className="p-2 text-right font-medium whitespace-nowrap">{formatCurrency(payslipData.thisPeriod.taxableGrossPay)}</td>
+                </tr>
+                <tr>
+                  <td className="p-2 text-muted-foreground">Employer NI</td>
+                  <td className="p-2 text-right font-medium whitespace-nowrap">{formatCurrency(payslipData.thisPeriod.employerNI)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Year to Date */}
         <div>
           <h3 className="font-semibold mb-3 text-foreground">Year to Date</h3>
-          <table className="w-full text-xs">
-            <tbody>
-              <tr>
-                <td className="py-1.5 whitespace-nowrap">Taxable gross pay</td>
-                <td className="py-1.5 text-right font-medium whitespace-nowrap">{formatCurrency(payslipData.yearToDate.taxableGrossPay)}</td>
-              </tr>
-              <tr>
-                <td className="py-1.5 whitespace-nowrap">Tax</td>
-                <td className="py-1.5 text-right font-medium whitespace-nowrap">{formatCurrency(payslipData.yearToDate.tax)}</td>
-              </tr>
-              <tr>
-                <td className="py-1.5 whitespace-nowrap">Employee NI</td>
-                <td className="py-1.5 text-right font-medium whitespace-nowrap">{formatCurrency(payslipData.yearToDate.employeeNI)}</td>
-              </tr>
-              {payslipData.yearToDate.employeePension > 0 && (
-                <tr>
-                  <td className="py-1.5 whitespace-nowrap">Employee pension</td>
-                  <td className="py-1.5 text-right font-medium whitespace-nowrap">{formatCurrency(payslipData.yearToDate.employeePension)}</td>
+          <div className="border rounded overflow-hidden">
+            <table className="w-full text-xs">
+              <tbody>
+                <tr className="border-b">
+                  <td className="p-2 text-muted-foreground">Taxable gross pay</td>
+                  <td className="p-2 text-right font-medium whitespace-nowrap">{formatCurrency(payslipData.yearToDate.taxableGrossPay)}</td>
                 </tr>
-              )}
-              {payslipData.yearToDate.employerPension > 0 && (
-                <tr>
-                  <td className="py-1.5 whitespace-nowrap">Employer pension</td>
-                  <td className="py-1.5 text-right font-medium whitespace-nowrap">{formatCurrency(payslipData.yearToDate.employerPension)}</td>
+                <tr className="border-b">
+                  <td className="p-2 text-muted-foreground">Tax</td>
+                  <td className="p-2 text-right font-medium whitespace-nowrap">{formatCurrency(payslipData.yearToDate.tax)}</td>
                 </tr>
-              )}
-            </tbody>
-          </table>
+                <tr className="border-b">
+                  <td className="p-2 text-muted-foreground">Employee NI</td>
+                  <td className="p-2 text-right font-medium whitespace-nowrap">{formatCurrency(payslipData.yearToDate.employeeNI)}</td>
+                </tr>
+                {payslipData.yearToDate.employeePension > 0 && (
+                  <tr className="border-b">
+                    <td className="p-2 text-muted-foreground">Employee pension</td>
+                    <td className="p-2 text-right font-medium whitespace-nowrap">{formatCurrency(payslipData.yearToDate.employeePension)}</td>
+                  </tr>
+                )}
+                {payslipData.yearToDate.employerPension > 0 && (
+                  <tr>
+                    <td className="p-2 text-muted-foreground">Employer pension</td>
+                    <td className="p-2 text-right font-medium whitespace-nowrap">{formatCurrency(payslipData.yearToDate.employerPension)}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Payment */}
-        <div className="text-right">
+        <div>
           <h3 className="font-semibold mb-3 text-foreground">Payment</h3>
-          <div className="text-3xl font-bold text-primary mb-2">
-            {formatCurrency(payslipData.netPay)}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Paid {formatDate(payslipData.paymentDate)}
+          <div className="border rounded overflow-hidden p-4 text-right">
+            <div className="text-3xl font-bold text-primary mb-2">
+              {formatCurrency(payslipData.netPay)}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Paid {formatDate(payslipData.paymentDate)}
+            </div>
           </div>
         </div>
       </div>
