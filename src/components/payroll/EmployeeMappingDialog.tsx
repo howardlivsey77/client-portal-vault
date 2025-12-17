@@ -15,6 +15,7 @@ import { SummaryCards } from './mapping-dialog/SummaryCards';
 import { ProgressDisplay } from './mapping-dialog/ProgressDisplay';
 import { EmployeeCard } from './mapping-dialog/EmployeeCard';
 import { EmployeeMappingDialogProps } from './mapping-dialog/types';
+import { useBrandColors } from "@/brand";
 
 export function EmployeeMappingDialog({
   open,
@@ -25,6 +26,7 @@ export function EmployeeMappingDialog({
 }: EmployeeMappingDialogProps) {
   const [userMappings, setUserMappings] = useState<Record<string, string>>({});
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+  const brandColors = useBrandColors();
   
   // Initialize with best fuzzy matches
   React.useEffect(() => {
@@ -160,7 +162,10 @@ export function EmployeeMappingDialog({
           ) : (
             <div className="flex-1 flex items-center justify-center text-center text-muted-foreground">
               <div>
-                <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                <CheckCircle 
+                  className="h-12 w-12 mx-auto mb-4" 
+                  style={{ color: `hsl(${brandColors.success})` }}
+                />
                 <p>All employees have been automatically matched!</p>
               </div>
             </div>

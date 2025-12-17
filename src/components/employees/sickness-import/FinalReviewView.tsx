@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CheckCircle2, AlertTriangle, Split, ArrowRight } from "lucide-react";
 import { Loader2 } from "lucide-react";
+import { useBrandColors } from "@/brand";
 
 interface FinalReviewViewProps {
   records: ProcessedSicknessRecord[];
@@ -14,6 +15,8 @@ interface FinalReviewViewProps {
 }
 
 export const FinalReviewView = ({ records, onImport, onBack, isImporting }: FinalReviewViewProps) => {
+  const brandColors = useBrandColors();
+  
   // Filter out fully overlapping (skipped) records
   const recordsToImport = records.filter(r => r.trimStatus !== 'fully_overlapping');
   
@@ -52,11 +55,11 @@ export const FinalReviewView = ({ records, onImport, onBack, isImporting }: Fina
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Split Records</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.split}</p>
+              <p className="text-2xl font-bold" style={{ color: `hsl(${brandColors.info})` }}>{stats.split}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Skipped (Full Overlap)</p>
-              <p className="text-2xl font-bold text-red-600">{stats.skipped}</p>
+              <p className="text-2xl font-bold text-destructive">{stats.skipped}</p>
             </div>
           </div>
         </CardContent>
@@ -92,7 +95,14 @@ export const FinalReviewView = ({ records, onImport, onBack, isImporting }: Fina
                     </TableCell>
                     <TableCell>
                       {record.trimStatus === 'no_overlap' && (
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        <Badge 
+                          variant="outline" 
+                          style={{
+                            backgroundColor: `hsl(${brandColors.successLight})`,
+                            color: `hsl(${brandColors.success})`,
+                            borderColor: `hsl(${brandColors.success} / 0.3)`
+                          }}
+                        >
                           <CheckCircle2 className="h-3 w-3 mr-1" />
                           Original
                         </Badge>
@@ -104,7 +114,14 @@ export const FinalReviewView = ({ records, onImport, onBack, isImporting }: Fina
                         </Badge>
                       )}
                       {record.trimStatus === 'split' && (
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        <Badge 
+                          variant="outline"
+                          style={{
+                            backgroundColor: `hsl(${brandColors.infoLight})`,
+                            color: `hsl(${brandColors.info})`,
+                            borderColor: `hsl(${brandColors.info} / 0.3)`
+                          }}
+                        >
                           <Split className="h-3 w-3 mr-1" />
                           Split
                         </Badge>

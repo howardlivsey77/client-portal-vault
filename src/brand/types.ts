@@ -36,6 +36,15 @@ export interface SemanticColors {
   info: string;
   infoForeground: string;
   infoLight: string;
+  warning: string;
+  warningForeground: string;
+  warningLight: string;
+  positive: string;        // For positive values like net pay, earnings
+  positiveForeground: string;
+  positiveLight: string;
+  current: string;         // For current selection indicators
+  currentForeground: string;
+  currentLight: string;
   chartColors: string[];
 }
 
