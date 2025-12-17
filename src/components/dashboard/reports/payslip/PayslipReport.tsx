@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, FileText, Loader2 } from "lucide-react";
+import { Download, FileText, Loader2, AlertCircle } from "lucide-react";
 import { useCompany } from "@/providers/CompanyProvider";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,11 @@ import { PayslipPreview } from "./PayslipPreview";
 import { generatePayslipPdf } from "./payslipPdfGenerator";
 import { PayslipData, CompanyDetails } from "./types";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { mockEmployees, mockPayrollPeriods, mockPayrollResults, mockCompany } from "./mockData";
+
+// Set to true to use simulated data, false to use real database data
+const USE_SIMULATED_DATA = true;
 
 export function PayslipReport() {
   const { currentCompany } = useCompany();
@@ -23,8 +28,8 @@ export function PayslipReport() {
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Fetch employees
-  const { data: employees = [] } = useQuery({
+  // Fetch employees (real data)
+  const { data: realEmployees = [] } = useQuery({
     queryKey: ["employees", currentCompany?.id],
     queryFn: async () => {
       if (!currentCompany?.id) return [];
@@ -36,11 +41,11 @@ export function PayslipReport() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!currentCompany?.id,
+    enabled: !!currentCompany?.id && !USE_SIMULATED_DATA,
   });
 
-  // Fetch payroll periods
-  const { data: payrollPeriods = [] } = useQuery({
+  // Fetch payroll periods (real data)
+  const { data: realPayrollPeriods = [] } = useQuery({
     queryKey: ["payroll-periods", currentCompany?.id],
     queryFn: async () => {
       if (!currentCompany?.id) return [];
@@ -53,11 +58,11 @@ export function PayslipReport() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!currentCompany?.id,
+    enabled: !!currentCompany?.id && !USE_SIMULATED_DATA,
   });
 
-  // Fetch payroll results for selected employee and period
-  const { data: payrollResult } = useQuery({
+  // Fetch payroll results for selected employee and period (real data)
+  const { data: realPayrollResult } = useQuery({
     queryKey: ["payroll-result", selectedEmployee, selectedPeriod],
     queryFn: async () => {
       if (!selectedEmployee || !selectedPeriod) return null;
@@ -70,8 +75,18 @@ export function PayslipReport() {
       if (error && error.code !== "PGRST116") throw error;
       return data;
     },
-    enabled: !!selectedEmployee && !!selectedPeriod,
+    enabled: !!selectedEmployee && !!selectedPeriod && !USE_SIMULATED_DATA,
   });
+
+  // Use simulated or real data based on flag
+  const employees = USE_SIMULATED_DATA ? mockEmployees : realEmployees;
+  const payrollPeriods = USE_SIMULATED_DATA ? mockPayrollPeriods : realPayrollPeriods;
+  
+  // Get mock payroll result if using simulated data
+  const mockPayrollResultKey = `${selectedEmployee}_${selectedPeriod}`;
+  const payrollResult = USE_SIMULATED_DATA 
+    ? mockPayrollResults[mockPayrollResultKey] || null
+    : realPayrollResult;
 
   const selectedEmployeeData = employees.find(e => e.id === selectedEmployee);
   const selectedPeriodData = payrollPeriods.find(p => p.id === selectedPeriod);
@@ -149,16 +164,17 @@ export function PayslipReport() {
   };
 
   const getCompanyDetails = (): CompanyDetails => {
+    const company = USE_SIMULATED_DATA ? mockCompany : currentCompany;
     return {
-      name: currentCompany?.name || "Company Name",
-      tradingAs: currentCompany?.trading_as || undefined,
-      payeRef: currentCompany?.paye_ref || undefined,
-      addressLine1: currentCompany?.address_line1 || undefined,
-      addressLine2: currentCompany?.address_line2 || undefined,
-      addressLine3: currentCompany?.address_line3 || undefined,
-      addressLine4: currentCompany?.address_line4 || undefined,
-      postCode: currentCompany?.post_code || undefined,
-      logoUrl: currentCompany?.logo_url || undefined,
+      name: company?.name || "Company Name",
+      tradingAs: company?.trading_as || undefined,
+      payeRef: company?.paye_ref || undefined,
+      addressLine1: company?.address_line1 || undefined,
+      addressLine2: company?.address_line2 || undefined,
+      addressLine3: company?.address_line3 || undefined,
+      addressLine4: company?.address_line4 || undefined,
+      postCode: company?.post_code || undefined,
+      logoUrl: company?.logo_url || undefined,
     };
   };
 
@@ -188,6 +204,15 @@ export function PayslipReport() {
 
   return (
     <div className="space-y-6">
+      {USE_SIMULATED_DATA && (
+        <Alert variant="default" className="border-amber-500/50 bg-amber-500/10">
+          <AlertCircle className="h-4 w-4 text-amber-500" />
+          <AlertDescription className="text-amber-700 dark:text-amber-400">
+            <strong>Demo Mode:</strong> Displaying simulated payslip data for demonstration purposes.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Card className="p-6">
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="flex-1">
