@@ -73,48 +73,48 @@ export const defaultBrand: BrandConfig = {
   },
 };
 
-// Fergi brand - customize colors here
+// Fergi brand - coral (#fa4659) and dark (#202020)
 const fergiLightColors: BrandColors = {
   ...defaultLightColors,
-  // Override with Fergi-specific colors
-  background: '220 20% 97%',
-  foreground: '220 30% 15%',
-  primary: '280 70% 50%',
+  background: '0 0% 98%',
+  foreground: '0 0% 13%',
+  primary: '353 94% 63%',
   primaryForeground: '0 0% 100%',
-  secondary: '280 50% 60%',
+  secondary: '353 80% 50%',
   secondaryForeground: '0 0% 100%',
-  accent: '280 70% 50%',
+  accent: '353 94% 63%',
   accentForeground: '0 0% 100%',
-  ring: '280 70% 50%',
-  sidebarBackground: '220 20% 97%',
-  sidebarForeground: '220 30% 15%',
-  sidebarPrimary: '280 70% 50%',
+  ring: '353 94% 63%',
+  sidebarBackground: '0 0% 98%',
+  sidebarForeground: '0 0% 13%',
+  sidebarPrimary: '353 94% 63%',
   sidebarPrimaryForeground: '0 0% 100%',
-  sidebarRing: '280 70% 50%',
-  header: '280 60% 85%',
+  sidebarRing: '353 94% 63%',
+  header: '353 94% 63%',
 };
 
 const fergiDarkColors: BrandColors = {
   ...defaultDarkColors,
-  // Override with Fergi-specific dark colors
-  primary: '280 70% 60%',
+  background: '0 0% 10%',
+  foreground: '0 0% 95%',
+  primary: '353 94% 63%',
   primaryForeground: '0 0% 100%',
-  secondary: '280 50% 40%',
+  secondary: '353 70% 45%',
   secondaryForeground: '0 0% 100%',
-  accent: '280 50% 25%',
+  accent: '353 70% 30%',
   accentForeground: '0 0% 100%',
-  ring: '280 70% 60%',
-  sidebarPrimary: '280 70% 60%',
+  ring: '353 94% 63%',
+  sidebarPrimary: '353 94% 63%',
   sidebarPrimaryForeground: '0 0% 100%',
-  sidebarRing: '280 70% 60%',
-  header: '280 40% 30%',
+  sidebarRing: '353 94% 63%',
+  header: '353 70% 35%',
 };
 
 export const fergiBrand: BrandConfig = {
   id: 'fergi',
   name: 'Fergi',
   domains: ['fergi.app', 'www.fergi.app'],
-  logoUrl: '/lovable-uploads/3fca6e51-90f5-44c9-ae11-38b6db5ee9a0.png', // Replace with Fergi logo when available
+  logoUrl: '/fergi-logo.png',
   colors: {
     light: fergiLightColors,
     dark: fergiDarkColors,
