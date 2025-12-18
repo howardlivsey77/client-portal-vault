@@ -11,7 +11,6 @@ import {
   EmployeeNotFound,
   LoadingState,
   HmrcInfoCard,
-  EmploymentStatusCard,
   NhsPensionInfoCard
 } from "@/components/employees/details";
 
@@ -74,6 +73,13 @@ const EmployeeDetails = () => {
           canEdit={isAdmin || isOwnRecord}
         />
         
+        <WorkPatternCard 
+          employee={employee} 
+          isAdmin={isAdmin}
+          refetchEmployeeData={fetchEmployeeData}
+          updateEmployeeField={updateEmployeeField}
+        />
+
         <HmrcInfoCard
           employee={employee}
           isAdmin={isAdmin}
@@ -83,19 +89,6 @@ const EmployeeDetails = () => {
         <NhsPensionInfoCard
           employee={employee}
           isAdmin={isAdmin}
-          updateEmployeeField={updateEmployeeField}
-        />
-
-        <EmploymentStatusCard 
-          employee={employee}
-          isAdmin={isAdmin}
-          updateEmployeeField={updateEmployeeField}
-        />
-        
-        <WorkPatternCard 
-          employee={employee} 
-          isAdmin={isAdmin}
-          refetchEmployeeData={fetchEmployeeData}
           updateEmployeeField={updateEmployeeField}
         />
         
