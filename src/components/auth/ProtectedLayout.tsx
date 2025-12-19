@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/providers";
 import { Loader2 } from "lucide-react";
+import WhatsAppWidget from "@/components/layout/WhatsAppWidget";
 
 interface ProtectedLayoutProps {
   adminOnly?: boolean;
@@ -75,7 +76,12 @@ const ProtectedLayout = ({ adminOnly = false }: ProtectedLayoutProps) => {
   }
 
   // Render child routes
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      <WhatsAppWidget />
+    </>
+  );
 };
 
 export default ProtectedLayout;
