@@ -145,7 +145,7 @@ export function parseTeamnetData(jsonData: any[], rateConfig?: TeamnetRateConfig
     }
     
     // Calculate rate hours based on shift time (pass company config if available)
-    const rateHours = calculateTeamnetRates(timeFrom, timeTo, shiftDate, rateConfig);
+    const rateHours = calculateTeamnetRates(timeFrom, timeTo, shiftDate, rateConfig, employeeName);
     
     // Accumulate hours by employee
     const existing = employeeMap.get(employeeName);
