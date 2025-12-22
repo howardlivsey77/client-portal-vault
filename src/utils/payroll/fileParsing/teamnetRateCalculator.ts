@@ -142,13 +142,15 @@ function calculateWithDefaults(
  * @param timeTo - End time string (HH:MM)
  * @param date - Date of the shift
  * @param config - Optional company-specific rate configuration
+ * @param employeeName - Optional employee name for debug logging
  * @returns Object with rate2Hours, rate3Hours, and optionally rate4Hours
  */
 export function calculateTeamnetRates(
   timeFrom: string,
   timeTo: string,
   date: Date,
-  config?: TeamnetRateConfig | null
+  config?: TeamnetRateConfig | null,
+  employeeName?: string
 ): RateHours {
   const shiftStart = parseTimeToMinutes(timeFrom);
   let shiftEnd = parseTimeToMinutes(timeTo);
@@ -160,13 +162,44 @@ export function calculateTeamnetRates(
   
   const totalMinutes = shiftEnd - shiftStart;
   const dayOfWeek = date.getDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+  const dayName = DAY_NAMES[dayOfWeek];
   
-  // Use company config if provided, otherwise use defaults
-  if (config && config.conditions && config.conditions.length > 0) {
-    return calculateWithConfig(shiftStart, shiftEnd, dayOfWeek, totalMinutes, config);
+  // Debug logging for specific employees or all if DEBUG_RATES is true
+  const debugEmployees = ['Lewis Rushworth', 'Azra Javaid', 'Deborah Clifford'];
+  const shouldLog = employeeName && debugEmployees.some(name => 
+    employeeName.toLowerCase().includes(name.toLowerCase().split(' ')[0])
+  );
+  
+  if (shouldLog) {
+    console.log(`[RATE DEBUG] Employee: ${employeeName}`);
+    console.log(`[RATE DEBUG]   Date: ${date.toISOString().split('T')[0]} (${dayName}, dayOfWeek=${dayOfWeek})`);
+    console.log(`[RATE DEBUG]   Shift: ${timeFrom} - ${timeTo}`);
+    console.log(`[RATE DEBUG]   Shift in minutes: ${shiftStart} - ${shiftEnd} (total: ${totalMinutes} mins)`);
+    
+    // Calculate what Rate 3 overlap would be for weekday
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      const weekdayRate3Start = parseTimeToMinutes('18:30'); // 1110 minutes
+      const weekdayRate3End = parseTimeToMinutes('20:00');   // 1200 minutes
+      const overlap = calculateOverlap(shiftStart, shiftEnd, weekdayRate3Start, weekdayRate3End);
+      console.log(`[RATE DEBUG]   Weekday Rate 3 window: 18:30-20:00 (${weekdayRate3Start}-${weekdayRate3End} mins)`);
+      console.log(`[RATE DEBUG]   Rate 3 overlap calculation: max(${shiftStart}, ${weekdayRate3Start}) to min(${shiftEnd}, ${weekdayRate3End}) = ${overlap} mins`);
+    }
   }
   
-  return calculateWithDefaults(shiftStart, shiftEnd, dayOfWeek, totalMinutes);
+  // Use company config if provided, otherwise use defaults
+  let result: RateHours;
+  if (config && config.conditions && config.conditions.length > 0) {
+    result = calculateWithConfig(shiftStart, shiftEnd, dayOfWeek, totalMinutes, config);
+  } else {
+    result = calculateWithDefaults(shiftStart, shiftEnd, dayOfWeek, totalMinutes);
+  }
+  
+  if (shouldLog) {
+    console.log(`[RATE DEBUG]   Result: Rate2=${result.rate2Hours}h, Rate3=${result.rate3Hours}h`);
+    console.log(`[RATE DEBUG]   ---`);
+  }
+  
+  return result;
 }
 
 /**
