@@ -2,7 +2,7 @@
  * Calculate rate assignments for Teamnet overtime based on shift times
  * 
  * Default rules (when no company config):
- * Rate 3: Mon-Fri 18:30-20:00, Sat 10:00-14:00
+ * Rate 3: Sunday all day, Mon-Fri 18:30-20:00, Sat 10:00-14:00
  * Rate 2: All other times
  * 
  * Company-specific rules can be configured via the database
@@ -115,16 +115,18 @@ function calculateWithDefaults(
   const saturdayRate3Start = parseTimeToMinutes('10:00'); // 600 minutes
   const saturdayRate3End = parseTimeToMinutes('14:00');   // 840 minutes
   
+  // Check if Sunday (0) - all hours at Rate 3
+  if (dayOfWeek === 0) {
+    rate3Minutes = totalMinutes;
+  }
   // Check if weekday (Mon-Fri: 1-5)
-  if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+  else if (dayOfWeek >= 1 && dayOfWeek <= 5) {
     rate3Minutes = calculateOverlap(shiftStart, shiftEnd, weekdayRate3Start, weekdayRate3End);
   }
   // Check if Saturday (6)
   else if (dayOfWeek === 6) {
     rate3Minutes = calculateOverlap(shiftStart, shiftEnd, saturdayRate3Start, saturdayRate3End);
   }
-  // Sunday (0) - all Rate 2, rate3Minutes stays 0
-  
   const rate2Minutes = totalMinutes - rate3Minutes;
   
   return {
