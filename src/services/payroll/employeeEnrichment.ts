@@ -134,8 +134,8 @@ function applyRateToEmployee(empHours: any, dbEmployee: any): void {
           console.log(`Applied Rate 1 (hourly_rate) for ${empHours.employeeName}: ${empHours.rateValue}`);
           break;
         case 2:
-          empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_2) || 0;
-          console.log(`Applied Rate 2 (Standard Overtime) for ${empHours.employeeName}: ${empHours.rateValue}`);
+          empHours.rateValue = roundToTwoDecimals(dbEmployee.rate_2) || roundToTwoDecimals(dbEmployee.hourly_rate) || 0;
+          console.log(`Applied Rate 2 for ${empHours.employeeName}: ${empHours.rateValue} (fallback to hourly_rate: ${!dbEmployee.rate_2})`);
           break;
         case 3:
           // Fall back to rate_2 if rate_3 is not set

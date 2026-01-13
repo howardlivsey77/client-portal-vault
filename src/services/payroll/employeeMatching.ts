@@ -277,7 +277,7 @@ function applyRateToEmployeeHours(empHours: any, dbEmployee: { hourly_rate?: num
           empHours.rateValue = roundToTwoDecimals(safe(dbEmployee.hourly_rate));
           break;
         case 2:
-          empHours.rateValue = roundToTwoDecimals(safe(dbEmployee.rate_2));
+          empHours.rateValue = roundToTwoDecimals(safe(dbEmployee.rate_2)) || roundToTwoDecimals(safe(dbEmployee.hourly_rate));
           break;
         case 3:
           empHours.rateValue = roundToTwoDecimals(safe(dbEmployee.rate_3));
