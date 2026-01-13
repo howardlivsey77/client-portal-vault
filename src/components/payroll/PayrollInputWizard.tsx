@@ -56,7 +56,8 @@ export function PayrollInputWizard({ open, onOpenChange, payPeriod, financialYea
     onEmployeeMappingConfirm: handleEmployeeMappingConfirm,
     onEmployeeMappingCancel: handleEmployeeMappingCancel,
     selectedFormat,
-    onFormatChange: handleFormatChange
+    onFormatChange: handleFormatChange,
+    targetPeriod: payPeriod ? { periodNumber: payPeriod.periodNumber, year: payPeriod.year } : undefined
   });
   
   const currentStepData = steps[currentStep];

@@ -7,7 +7,15 @@ import { fetchWorkPatterns } from '@/components/employees/details/work-pattern/s
 import { calculateSicknessEntitlementSummary } from '@/utils';
 import { useToast } from '@/hooks';
 
-export const usePayrollSicknessData = (employeeId: string | null) => {
+export interface PayPeriodFilter {
+  periodNumber: number;
+  year: number;
+}
+
+export const usePayrollSicknessData = (
+  employeeId: string | null,
+  payPeriod?: PayPeriodFilter
+) => {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [sicknessScheme, setSicknessScheme] = useState<SicknessScheme | null>(null);
   const [sicknessRecords, setSicknessRecords] = useState<SicknessRecord[]>([]);
@@ -51,7 +59,16 @@ export const usePayrollSicknessData = (employeeId: string | null) => {
 
       // Fetch sickness records
       const records = await sicknessService.getSicknessRecords(employeeId);
-      setSicknessRecords(records);
+      
+      // Filter by payroll period if specified
+      const filteredRecords = payPeriod
+        ? records.filter(r => 
+            r.payroll_period_number === payPeriod.periodNumber &&
+            r.payroll_financial_year === payPeriod.year
+          )
+        : records;
+      
+      setSicknessRecords(filteredRecords);
 
       // Calculate entitlement summary
       const summary = await calculateSicknessEntitlementSummary(emp);
@@ -151,7 +168,7 @@ export const usePayrollSicknessData = (employeeId: string | null) => {
 
   useEffect(() => {
     fetchData();
-  }, [employeeId]);
+  }, [employeeId, payPeriod?.periodNumber, payPeriod?.year]);
 
   return {
     employee,

@@ -18,6 +18,7 @@ interface CreateWizardStepsProps {
   onSicknessImportComplete?: (count: number) => void;
   selectedFormat: ImportFormat;
   onFormatChange: (format: ImportFormat) => void;
+  targetPeriod?: { periodNumber: number; year: number };
 }
 
 export function createWizardSteps({
@@ -28,7 +29,8 @@ export function createWizardSteps({
   processedData,
   onSicknessImportComplete,
   selectedFormat,
-  onFormatChange
+  onFormatChange,
+  targetPeriod
 }: CreateWizardStepsProps): WizardStep[] {
   const steps: WizardStep[] = [
     {
@@ -68,6 +70,7 @@ export function createWizardSteps({
         <SicknessImportCore
           mode="embedded"
           onComplete={onSicknessImportComplete}
+          targetPeriod={targetPeriod}
         />
       ),
     },

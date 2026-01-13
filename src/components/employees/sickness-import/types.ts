@@ -57,4 +57,5 @@ export interface SicknessImportCoreProps {
   mode?: 'standalone' | 'embedded';
   onComplete?: (importedCount: number) => void;
   onCancel?: () => void;
+  targetPeriod?: { periodNumber: number; year: number };
 }

@@ -8,7 +8,7 @@ import { SicknessEntitlementCard } from '@/components/employees/details/sickness
 import { SicknessRecordsList } from '@/components/employees/details/sickness/SicknessRecordsList';
 import { SicknessRecordForm } from '@/components/employees/details/sickness/SicknessRecordForm';
 import { SspSummaryPanel } from './SspSummaryPanel';
-import { usePayrollSicknessData } from './usePayrollSicknessData';
+import { usePayrollSicknessData, PayPeriodFilter } from './usePayrollSicknessData';
 import { SicknessRecord } from '@/types';
 
 interface PayrollSicknessDialogProps {
@@ -17,6 +17,7 @@ interface PayrollSicknessDialogProps {
   employeeId: string;
   employeeName: string;
   companyId: string;
+  payPeriod?: PayPeriodFilter;
   initialItems: SicknessItem[];
   onSave: (items: SicknessItem[]) => void;
 }
@@ -27,6 +28,7 @@ export function PayrollSicknessDialog({
   employeeId,
   employeeName,
   companyId,
+  payPeriod,
   initialItems,
   onSave,
 }: PayrollSicknessDialogProps) {
@@ -45,7 +47,7 @@ export function PayrollSicknessDialog({
     addSicknessRecord,
     updateSicknessRecord,
     deleteSicknessRecord
-  } = usePayrollSicknessData(open ? employeeId : null);
+  } = usePayrollSicknessData(open ? employeeId : null, payPeriod);
 
   useEffect(() => {
     if (open) {

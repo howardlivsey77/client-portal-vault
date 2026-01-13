@@ -13,6 +13,9 @@ export interface SicknessRecord {
   created_at: string;
   updated_at: string;
   created_by?: string;
+  // Payroll period targeting - optional, for SSP calculation in specific periods
+  payroll_period_number?: number | null;
+  payroll_financial_year?: number | null;
 }
 
 export interface EntitlementUsage {
