@@ -17,12 +17,13 @@ interface TeamnetRateConfigFormProps {
 }
 
 export const TeamnetRateConfigForm = ({ config, onSave, onCancel }: TeamnetRateConfigFormProps) => {
-  const [name, setName] = useState(config?.name || "Standard Overtime Rates");
+  const [name, setName] = useState(config?.name || "");
   const [defaultRate, setDefaultRate] = useState(config?.default_rate || 2);
   const [conditions, setConditions] = useState<RateCondition[]>(
     config?.conditions || []
   );
   const [isActive, setIsActive] = useState(config?.is_active ?? true);
+  const [nameError, setNameError] = useState("");
 
   const handleAddCondition = () => {
     setConditions([
@@ -59,9 +60,17 @@ export const TeamnetRateConfigForm = ({ config, onSave, onCancel }: TeamnetRateC
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate name is not empty
+    if (!name.trim()) {
+      setNameError("Configuration name is required");
+      return;
+    }
+    setNameError("");
+    
     onSave({
       id: config?.id,
-      name,
+      name: name.trim(),
       default_rate: defaultRate,
       conditions,
       is_active: isActive
@@ -72,13 +81,20 @@ export const TeamnetRateConfigForm = ({ config, onSave, onCancel }: TeamnetRateC
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid gap-4">
         <div className="grid gap-2">
-          <Label htmlFor="name">Configuration Name</Label>
+          <Label htmlFor="name">Configuration Name <span className="text-destructive">*</span></Label>
           <Input
             id="name"
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g., Standard Overtime Rates"
+            onChange={(e) => {
+              setName(e.target.value);
+              if (nameError) setNameError("");
+            }}
+            placeholder="e.g., Weekday Rates, Weekend Rates"
+            className={nameError ? "border-destructive" : ""}
           />
+          {nameError && (
+            <p className="text-sm text-destructive">{nameError}</p>
+          )}
         </div>
 
         <div className="grid gap-2">
