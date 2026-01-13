@@ -383,21 +383,37 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
 
       setImportProgress(25);
 
-      // Find column indices
-      const employeeNameIndex = headers.findIndex(h => 
+      // Find column indices - handle separate first/last name columns (Teamnet format)
+      const firstNameIndex = headers.findIndex(h => 
+        h.includes('first') && h.includes('name')
+      );
+      const lastNameIndex = headers.findIndex(h => 
+        h.includes('last') && h.includes('name')
+      );
+      const hasSeparateNameColumns = firstNameIndex !== -1 && lastNameIndex !== -1;
+      
+      // Fall back to combined name column if separate columns not found
+      const employeeNameIndex = hasSeparateNameColumns ? -1 : headers.findIndex(h => 
         h.includes('name') || h.includes('employee')
       );
+      
       const sicknessDaysIndex = headers.findIndex(h => 
-        h.includes('days') || h.includes('sick')
+        h.includes('days') || 
+        h.includes('sick') ||
+        (h.includes('allowance') && h.includes('used'))
       );
       const schemeIndex = headers.findIndex(h => 
         h.includes('scheme') || h.includes('allocation')
       );
+      // Handle both "Start date" and "From date" formats
       const startDateIndex = headers.findIndex(h => 
-        h.includes('start') && h.includes('date')
+        (h.includes('start') && h.includes('date')) ||
+        (h.includes('from') && h.includes('date'))
       );
+      // Handle both "End date" and "To date" formats
       const endDateIndex = headers.findIndex(h => 
-        h.includes('end') && h.includes('date')
+        (h.includes('end') && h.includes('date')) ||
+        (h.includes('to') && h.includes('date'))
       );
       const reasonIndex = headers.findIndex(h => 
         h.includes('reason') || h.includes('description')
@@ -409,7 +425,7 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
         h.includes('notes') || h.includes('comment')
       );
 
-      if (employeeNameIndex === -1) {
+      if (employeeNameIndex === -1 && !hasSeparateNameColumns) {
         throw new Error('Could not find employee name column');
       }
       
@@ -520,7 +536,15 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
 
       const processedRecords: ProcessedSicknessRecord[] = await Promise.all(
         filteredRows.map(async (row, index) => {
-          const employeeName = String(row[employeeNameIndex]).trim();
+          // Get employee name - handle both combined and separate name columns
+          let employeeName: string;
+          if (hasSeparateNameColumns) {
+            const firstName = String(row[firstNameIndex] || '').trim();
+            const lastName = String(row[lastNameIndex] || '').trim();
+            employeeName = `${firstName} ${lastName}`.trim();
+          } else {
+            employeeName = String(row[employeeNameIndex]).trim();
+          }
           
           // Get sickness days from file if available, otherwise will be calculated
           const importedSicknessDays = hasSicknessDaysColumn ? Number(row[sicknessDaysIndex]) || 0 : undefined;
