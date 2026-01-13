@@ -21,6 +21,7 @@ import { overlapService } from '@/services/employees/sickness/overlapService';
 import { processRecordsWithAutoTrim } from '@/utils/sickness/import/autoTrimmer';
 import { OverlapTrimView } from './OverlapTrimView';
 import { FinalReviewView } from './FinalReviewView';
+import { sicknessService } from '@/services/employees';
 
 export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }: SicknessImportCoreProps) => {
   // File handling states
@@ -872,6 +873,7 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
         description: "Please ensure at least one record has a matched employee",
         variant: "destructive"
       });
+      setIsImporting(false);
       return;
     }
 
@@ -884,6 +886,7 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
       let failed = 0;
       const total = readyRecords.length;
       const failedRecords: Array<{record: ProcessedSicknessRecord, error: string}> = [];
+      const affectedEmployeeIds = new Set<string>();
 
       for (const record of readyRecords) {
         try {
@@ -995,8 +998,8 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
             }
           }
 
-          // Create actual sickness record
-          const sicknessRecord = {
+          // Create sickness record using the service layer (which triggers entitlement recalculation)
+          const sicknessRecordData = {
             employee_id: record.matchedEmployeeId!,
             company_id: employeeData.company_id,
             start_date: formatDateForDB(startDateParsed.date),
@@ -1008,19 +1011,15 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
             notes: record.notes || null
           };
 
-          console.log('Creating sickness record:', sicknessRecord);
+          console.log('Creating sickness record via service:', sicknessRecordData);
 
-          const { data: insertedRecord, error: sicknessError } = await supabase
-            .from('employee_sickness_records')
-            .insert(sicknessRecord)
-            .select()
-            .single();
-
-          if (sicknessError) {
-            throw new Error(`Failed to create sickness record: ${sicknessError.message}`);
-          }
+          // Use sicknessService.recordSicknessAbsence which triggers entitlement recalculation
+          const insertedRecord = await sicknessService.recordSicknessAbsence(sicknessRecordData);
 
           console.log(`Successfully created sickness record with ID: ${insertedRecord.id}`);
+          
+          // Track affected employee for final recalculation
+          affectedEmployeeIds.add(record.matchedEmployeeId!);
           processed++;
           
         } catch (recordError) {
@@ -1039,6 +1038,20 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
         console.log('Failed records:', failedRecords);
       }
 
+      // Final recalculation pass for all affected employees (belt-and-braces)
+      if (affectedEmployeeIds.size > 0) {
+        console.log(`Running final entitlement recalculation for ${affectedEmployeeIds.size} employees...`);
+        for (const employeeId of affectedEmployeeIds) {
+          try {
+            await sicknessService.recalculateEmployeeUsedDays(employeeId);
+            console.log(`Recalculated entitlements for employee ${employeeId}`);
+          } catch (recalcError) {
+            console.error(`Failed to recalculate entitlements for employee ${employeeId}:`, recalcError);
+          }
+        }
+        console.log('Final entitlement recalculation complete');
+      }
+
       // Store import results for display
       setImportResult({ processed, failed, failedRecords });
       setCurrentStep('complete');
@@ -1048,7 +1061,7 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
           title: "Import completed",
           description: failed > 0 
             ? `Created ${processed} sickness records. ${failed} records failed to import.`
-            : `Successfully created ${processed} sickness records and updated employee schemes`
+            : `Successfully created ${processed} sickness records and updated entitlements`
         });
       } else {
         toast({
