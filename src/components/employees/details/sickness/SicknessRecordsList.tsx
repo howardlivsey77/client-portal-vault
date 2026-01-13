@@ -49,25 +49,48 @@ export const SicknessRecordsList = ({
     if (!isAdmin) return;
     
     setRecalculating(true);
+    let updatedCount = 0;
+    let failedCount = 0;
+    const failedRecords: string[] = [];
+    
     try {
-      let updatedCount = 0;
-      
       for (const record of records) {
         const computedDays = getComputedWorkingDays(record);
         
         // Only update if the computed days differ from stored days
         if (computedDays !== record.total_days) {
-          await sicknessService.updateSicknessRecord(record.id, {
-            total_days: computedDays
-          });
-          updatedCount++;
+          try {
+            console.log(`Updating sickness record ${record.id}: ${record.total_days} -> ${computedDays}`);
+            await sicknessService.updateSicknessRecord(record.id, {
+              total_days: computedDays
+            });
+            updatedCount++;
+            console.log(`Successfully updated sickness record ${record.id}`);
+          } catch (recordError) {
+            console.error(`Failed to update sickness record ${record.id}:`, recordError);
+            failedCount++;
+            failedRecords.push(record.id);
+          }
         }
       }
 
-      toast({
-        title: "Recalculation Complete",
-        description: `Updated ${updatedCount} record(s) with correct working days.`,
-      });
+      if (failedCount > 0) {
+        toast({
+          title: "Recalculation Partially Complete",
+          description: `Updated ${updatedCount} record(s), ${failedCount} failed. Check console for details.`,
+          variant: "destructive",
+        });
+      } else if (updatedCount > 0) {
+        toast({
+          title: "Recalculation Complete",
+          description: `Updated ${updatedCount} record(s) with correct working days.`,
+        });
+      } else {
+        toast({
+          title: "No Updates Needed",
+          description: "All records already have correct working days.",
+        });
+      }
 
       if (updatedCount > 0) {
         onRecordsUpdated();
