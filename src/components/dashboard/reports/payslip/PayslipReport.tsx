@@ -62,22 +62,25 @@ export function PayslipReport() {
   });
 
   // Fetch payroll results for selected employee and period (real data)
-  // Note: payroll_results.payroll_period is a DATE field, not a UUID
-  // So we need to use the period's date_to to match
+  // Match on tax_period and tax_year for reliable querying
   const { data: realPayrollResult } = useQuery({
     queryKey: ["payroll-result", selectedEmployee, selectedPeriod, realPayrollPeriods],
     queryFn: async () => {
       if (!selectedEmployee || !selectedPeriod) return null;
       
-      // Find the selected period to get its date_to
+      // Find the selected period to get its period_number and financial_year
       const periodData = realPayrollPeriods.find(p => p.id === selectedPeriod);
       if (!periodData) return null;
+      
+      // Convert financial_year to tax_year format (e.g., 2026 -> "2026/27")
+      const taxYear = `${periodData.financial_year}/${(periodData.financial_year + 1).toString().slice(-2)}`;
       
       const { data, error } = await supabase
         .from("payroll_results")
         .select("*")
         .eq("employee_id", selectedEmployee)
-        .eq("payroll_period", periodData.date_to)
+        .eq("tax_period", periodData.period_number)
+        .eq("tax_year", taxYear)
         .single();
       if (error && error.code !== "PGRST116") throw error;
       return data;
