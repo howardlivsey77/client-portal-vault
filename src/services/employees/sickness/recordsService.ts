@@ -89,29 +89,11 @@ export const recordsService = {
   async recalculateEntitlementWithReference(employeeId: string, referenceDate: string) {
     // Import services to avoid circular dependencies
     const { sicknessService } = await import("@/services/employees");
-    const { calculateSicknessEntitlementSummary } = await import("@/utils");
     
-    // Get employee details
-    const { data: employeeData, error } = await supabase
-      .from('employees')
-      .select('*')
-      .eq('id', employeeId)
-      .maybeSingle();
-    
-    if (error || !employeeData) {
-      console.warn('Could not fetch employee for entitlement recalculation:', employeeId, error);
-      return;
-    }
-
     try {
-      // Cast to Employee type with default monthly_salary (not in database but required by interface)
-      const employee = {
-        ...employeeData,
-        monthly_salary: null
-      } as any; // Type assertion to handle database vs interface differences
-      
-      // Recalculate using the reference date
-      await calculateSicknessEntitlementSummary(employee, referenceDate);
+      // This actually updates the database with correct used days
+      await sicknessService.recalculateEmployeeUsedDays(employeeId);
+      console.log(`Recalculated entitlement for employee ${employeeId} with reference ${referenceDate}`);
     } catch (error) {
       console.error('Error recalculating entitlements with reference date:', error);
     }
