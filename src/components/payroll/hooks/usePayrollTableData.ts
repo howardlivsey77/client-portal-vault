@@ -9,6 +9,7 @@ import { calculateMonthlySalary } from '@/lib/formatters';
 import { calculateMonthlyIncomeTaxAsync } from '@/services/payroll/calculations/income-tax';
 import { calculateNationalInsuranceAsync } from '@/services/payroll/calculations/national-insurance';
 import { calculateStudentLoan } from '@/services/payroll/calculations/student-loan';
+import { OvertimeItem } from '../adjustments/types';
 
 // Helper to get the last day of the pay period month
 function getLastDayOfPayPeriod(payPeriod: PayPeriod): Date {
@@ -297,6 +298,32 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
     return map;
   }, [overtimeData]);
 
+  // Create overtimeItemsMap that returns OvertimeItem[] per employee for the dialog
+  const overtimeItemsMap = useMemo(() => {
+    const map = new Map<string, OvertimeItem[]>();
+    
+    overtimeData.forEach(record => {
+      const employeeKey = record.employee_id || record.employee_name;
+      if (!employeeKey) return;
+      
+      const hours = record.extra_hours || 0;
+      const rate = record.rate_value || 0;
+      
+      const item: OvertimeItem = {
+        id: crypto.randomUUID(),
+        hours: hours,
+        rateMultiplier: 1, // Imported data uses direct rate, so multiplier is 1
+        hourlyRate: rate,
+        amount: hours * rate
+      };
+      
+      const existing = map.get(employeeKey) || [];
+      map.set(employeeKey, [...existing, item]);
+    });
+    
+    return map;
+  }, [overtimeData]);
+
   // Combine employees with payroll results
   const tableData = useMemo((): PayrollTableRow[] => {
     return employees.map((emp) => {
@@ -499,5 +526,6 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
     setPaymentDate,
     employeeRates,
     refetch,
+    overtimeItemsMap,
   };
 }

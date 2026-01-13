@@ -43,10 +43,31 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
     setPaymentDate,
     employeeRates,
     refetch,
+    overtimeItemsMap,
   } = usePayrollTableData(payPeriod);
 
   // State to track adjustments per employee
   const [adjustmentsMap, setAdjustmentsMap] = useState<Record<string, PayrollAdjustments>>({});
+
+  // Get adjustments for an employee, using imported overtime items if no manual adjustments exist
+  const getEmployeeAdjustments = useCallback((employeeId: string, employeeName: string): PayrollAdjustments => {
+    // If user has manually edited adjustments, use those
+    if (adjustmentsMap[employeeId]) {
+      return adjustmentsMap[employeeId];
+    }
+    
+    // Otherwise, populate with imported overtime items
+    const importedOvertime = overtimeItemsMap.get(employeeId) || overtimeItemsMap.get(employeeName) || [];
+    
+    if (importedOvertime.length > 0) {
+      return {
+        ...emptyAdjustments,
+        overtime: importedOvertime,
+      };
+    }
+    
+    return emptyAdjustments;
+  }, [adjustmentsMap, overtimeItemsMap]);
 
   const handleAdjustmentsChange = useCallback((employeeId: string, adjustments: PayrollAdjustments) => {
     setAdjustmentsMap(prev => ({
@@ -208,7 +229,7 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
                     row={row} 
                     index={index}
                     employeeRates={employeeRates[row.employeeId] || { hourlyRate: 0, rate2: null, rate3: null, rate4: null }}
-                    adjustments={adjustmentsMap[row.employeeId] || emptyAdjustments}
+                    adjustments={getEmployeeAdjustments(row.employeeId, row.name)}
                     onAdjustmentsChange={(adj) => handleAdjustmentsChange(row.employeeId, adj)}
                     payPeriod={`Period ${payPeriod.periodNumber} - ${payPeriod.year}/${payPeriod.year + 1}`}
                   />
