@@ -7,6 +7,7 @@ import { useAuth } from "@/providers";
 import { useCompany } from "@/providers/CompanyProvider";
 import { ExtraHoursSummary, PayrollFiles } from "../types";
 import { ImportFormat } from "../FormatSelector";
+import { PayPeriod } from "@/services/payroll/utils/financial-year-utils";
 
 type WizardStep = 0 | 1 | 2 | 3 | 4; // Format Select -> Upload -> Review -> Absences -> Final Summary
 
@@ -21,7 +22,7 @@ interface ConsolidatedWizardState {
   error: string | null;
 }
 
-export function useConsolidatedPayrollWizard() {
+export function useConsolidatedPayrollWizard(payPeriod?: PayPeriod, financialYear?: number) {
   const { user } = useAuth();
   const { currentCompany } = useCompany();
   
@@ -166,8 +167,13 @@ export function useConsolidatedPayrollWizard() {
       if (state.processedData && user) {
         try {
           setState(prev => ({ ...prev, isProcessing: true }));
-          // Save with company ID
-          const saveResult = await savePayrollData(state.processedData, user.id, currentCompany?.id);
+          // Save with company ID and selected pay period
+          const saveResult = await savePayrollData(
+            state.processedData, 
+            user.id, 
+            currentCompany?.id,
+            payPeriod ? { periodNumber: payPeriod.periodNumber, year: financialYear || payPeriod.year } : undefined
+          );
           
           if (saveResult.success) {
             toast({
