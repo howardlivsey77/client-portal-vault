@@ -124,7 +124,7 @@ if (/^\d+(\.0+)?$/.test(dateStr)) {
     /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/
   ];
 
-  // Try DD/MM/YYYY format first (UK format)
+  // Try DD/MM/YYYY format first (UK format - 4-digit year)
   const ddmmMatch = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
   if (ddmmMatch) {
     const day = parseInt(ddmmMatch[1], 10);
@@ -136,6 +136,28 @@ if (/^\d+(\.0+)?$/.test(dateStr)) {
     
     // Verify the date components match (handles invalid dates like 31/02/2023)
     if (date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
+      return validateDateRange(date, originalValue);
+    }
+  }
+
+  // Try DD/MM/YY format (UK format - 2-digit year)
+  const ddmmYYMatch = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/);
+  if (ddmmYYMatch) {
+    const day = parseInt(ddmmYYMatch[1], 10);
+    const month = parseInt(ddmmYYMatch[2], 10);
+    let year = parseInt(ddmmYYMatch[3], 10);
+    
+    // Convert 2-digit year to 4-digit: 00-49 = 2000-2049, 50-99 = 1950-1999
+    if (year <= 49) {
+      year += 2000;
+    } else {
+      year += 1900;
+    }
+    
+    const date = new Date(year, month - 1, day);
+    
+    if (date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
+      console.log(`Parsed 2-digit year date: "${dateStr}" -> ${formatDateForDB(date)}`);
       return validateDateRange(date, originalValue);
     }
   }

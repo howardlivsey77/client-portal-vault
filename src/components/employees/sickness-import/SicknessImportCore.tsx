@@ -502,8 +502,17 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
 
       // Process each row with enhanced matching
       const filteredRows = rows.filter((row, rowIndex) => {
-        const nameCell = row[employeeNameIndex];
-        const hasName = nameCell !== undefined && nameCell !== null && String(nameCell).trim() !== '';
+        // Handle both combined and separate name columns for filtering
+        let hasName: boolean;
+        if (hasSeparateNameColumns) {
+          const firstName = row[firstNameIndex];
+          const lastName = row[lastNameIndex];
+          hasName = (firstName !== undefined && firstName !== null && String(firstName).trim() !== '') ||
+                    (lastName !== undefined && lastName !== null && String(lastName).trim() !== '');
+        } else {
+          const nameCell = row[employeeNameIndex];
+          hasName = nameCell !== undefined && nameCell !== null && String(nameCell).trim() !== '';
+        }
         
         if (!hasName) {
           console.log(`Row ${rowIndex + 2} skipped: No employee name`);
