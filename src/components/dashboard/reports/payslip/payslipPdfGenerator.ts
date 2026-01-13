@@ -109,7 +109,7 @@ export async function generatePayslipPdf(options: PayslipGeneratorOptions): Prom
       1: { cellWidth: 30, fontStyle: "bold", halign: "right" },
     },
   });
-
+  const employeeTableFinalY = (doc as any).lastAutoTable.finalY;
   // Payments Table
   const paymentsData = payslipData.payments.map((p) => [p.description, formatCurrency(p.amount)]);
   
@@ -147,6 +147,7 @@ export async function generatePayslipPdf(options: PayslipGeneratorOptions): Prom
       }
     },
   });
+  const paymentsTableFinalY = (doc as any).lastAutoTable.finalY;
 
   // Deductions Table
   const deductionsData = payslipData.deductions.map((d) => [d.description, formatCurrency(d.amount)]);
@@ -170,9 +171,11 @@ export async function generatePayslipPdf(options: PayslipGeneratorOptions): Prom
       }
     },
   });
+  const deductionsTableFinalY = (doc as any).lastAutoTable.finalY;
 
-  // Bottom section
-  const bottomY = (doc as any).lastAutoTable.finalY + 15;
+  // Bottom section - use the maximum Y position from all three tables
+  const maxTableY = Math.max(employeeTableFinalY, paymentsTableFinalY, deductionsTableFinalY);
+  const bottomY = maxTableY + 20;
 
   // Divider line
   doc.setDrawColor(200, 200, 200);
