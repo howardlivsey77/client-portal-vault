@@ -4,6 +4,7 @@ import { toast } from "@/hooks";
 import { processExtraHoursFile, savePayrollData } from "@/services";
 import { matchEmployees, applyUserMappings, EmployeeMatchingResults } from "@/services/payroll/employeeMatching";
 import { useAuth } from "@/providers";
+import { useCompany } from "@/providers/CompanyProvider";
 import { ExtraHoursSummary, PayrollFiles } from "../types";
 import { ImportFormat } from "../FormatSelector";
 
@@ -22,6 +23,7 @@ interface ConsolidatedWizardState {
 
 export function useConsolidatedPayrollWizard() {
   const { user } = useAuth();
+  const { currentCompany } = useCompany();
   
   const [state, setState] = useState<ConsolidatedWizardState>({
     currentStep: 0,
@@ -164,8 +166,8 @@ export function useConsolidatedPayrollWizard() {
       if (state.processedData && user) {
         try {
           setState(prev => ({ ...prev, isProcessing: true }));
-          
-          const saveResult = await savePayrollData(state.processedData, user.id);
+          // Save with company ID
+          const saveResult = await savePayrollData(state.processedData, user.id, currentCompany?.id);
           
           if (saveResult.success) {
             toast({

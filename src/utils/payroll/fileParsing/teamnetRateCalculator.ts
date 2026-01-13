@@ -203,26 +203,43 @@ export function calculateTeamnetRates(
 }
 
 /**
- * Parse a date string in various formats
+ * Parse a date string in various formats, including Excel serial dates
  */
 export function parseTeamnetDate(dateStr: string): Date | null {
   if (!dateStr) return null;
   
+  const trimmed = String(dateStr).trim();
+  
+  // Handle Excel serial dates (numeric string like "46002" or "45678.5")
+  const numericValue = parseFloat(trimmed);
+  if (!isNaN(numericValue) && /^\d+(\.\d+)?$/.test(trimmed)) {
+    // Validate range (1 to 100000 covers dates from 1900 to ~2173)
+    if (numericValue >= 1 && numericValue <= 100000) {
+      // Excel epoch adjustment (Excel incorrectly treats 1900 as leap year)
+      const adjustedDate = numericValue > 60 ? numericValue - 1 : numericValue;
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const jsDate = new Date(Date.UTC(1899, 11, 30) + (adjustedDate * msPerDay));
+      if (!isNaN(jsDate.getTime())) {
+        return jsDate;
+      }
+    }
+  }
+  
   // Try DD/MM/YYYY format first (common UK format)
-  const ukMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  const ukMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (ukMatch) {
     const [, day, month, year] = ukMatch;
     return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
   }
   
   // Try YYYY-MM-DD format (ISO)
-  const isoMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (isoMatch) {
     const [, year, month, day] = isoMatch;
     return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
   }
   
   // Fall back to Date.parse
-  const parsed = new Date(dateStr);
+  const parsed = new Date(trimmed);
   return isNaN(parsed.getTime()) ? null : parsed;
 }

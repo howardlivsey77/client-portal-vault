@@ -3,11 +3,13 @@ import { useState } from "react";
 import { toast } from "@/hooks";
 import { savePayrollData } from "@/services";
 import { useAuth } from "@/providers";
+import { useCompany } from "@/providers/CompanyProvider";
 import { ExtraHoursSummary, PayrollFiles } from "../types";
 
 export function useWizardNavigation() {
   const [currentStep, setCurrentStep] = useState<number>(0);
   const { user } = useAuth();
+  const { currentCompany } = useCompany();
 
   const handleNext = async (
     onOpenChange: (open: boolean) => void,
@@ -34,8 +36,8 @@ export function useWizardNavigation() {
       // Process all data and finish the wizard
       if (processedData && user) {
         try {
-          // Save data to Supabase
-          const saveResult = await savePayrollData(processedData, user.id);
+          // Save data to Supabase with company ID
+          const saveResult = await savePayrollData(processedData, user.id, currentCompany?.id);
           
           if (saveResult.success) {
             toast({
