@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, AlertTriangle, Settings } from "lucide-react";
+import { Upload, AlertTriangle, Settings, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
 import { 
   AVAILABLE_FINANCIAL_YEARS, 
@@ -213,7 +213,7 @@ const PayrollProcessing = () => {
           <TabsList>
             <TabsTrigger value="calculator">Employee Calculator</TabsTrigger>
             <TabsTrigger value="batch">Batch Processing</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="reports">Payslips</TabsTrigger>
           </TabsList>
           
           <TabsContent value="calculator">
@@ -249,10 +249,20 @@ const PayrollProcessing = () => {
           <TabsContent value="reports">
             <Card>
               <CardHeader>
-                <CardTitle>Payroll Reports</CardTitle>
+                <CardTitle>Employee Payslips</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>Payroll reports will be added here.</p>
+                <div className="space-y-4">
+                  <p className="text-muted-foreground">
+                    View and download individual employee payslips for {selectedPayPeriod.description}.
+                  </p>
+                  <Button asChild>
+                    <Link to="/client-reports?report=payslips">
+                      <FileText className="h-4 w-4 mr-2" />
+                      View Payslips
+                    </Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
