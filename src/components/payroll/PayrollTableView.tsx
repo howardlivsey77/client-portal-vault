@@ -232,6 +232,7 @@ export function PayrollTableView({ payPeriod }: PayrollTableViewProps) {
                     adjustments={getEmployeeAdjustments(row.employeeId, row.name)}
                     onAdjustmentsChange={(adj) => handleAdjustmentsChange(row.employeeId, adj)}
                     payPeriod={`Period ${payPeriod.periodNumber} - ${payPeriod.year}/${payPeriod.year + 1}`}
+                    payPeriodData={{ periodNumber: payPeriod.periodNumber, year: payPeriod.year }}
                   />
                 ))}
                 

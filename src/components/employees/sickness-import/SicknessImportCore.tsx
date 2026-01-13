@@ -23,7 +23,7 @@ import { OverlapTrimView } from './OverlapTrimView';
 import { FinalReviewView } from './FinalReviewView';
 import { sicknessService } from '@/services/employees';
 
-export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }: SicknessImportCoreProps) => {
+export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel, targetPeriod }: SicknessImportCoreProps) => {
   // File handling states
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -1008,7 +1008,10 @@ export const SicknessImportCore = ({ mode = 'standalone', onComplete, onCancel }
             is_certified: record.isCertified || false,
             certification_required_from_day: 8,
             reason: record.reason || null,
-            notes: record.notes || null
+            notes: record.notes || null,
+            // Tag with target payroll period if provided (for SSP processing in correct period)
+            payroll_period_number: targetPeriod?.periodNumber || null,
+            payroll_financial_year: targetPeriod?.year || null
           };
 
           console.log('Creating sickness record via service:', sicknessRecordData);

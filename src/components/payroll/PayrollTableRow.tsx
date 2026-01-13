@@ -33,6 +33,7 @@ interface PayrollTableRowProps {
   adjustments: PayrollAdjustments;
   onAdjustmentsChange: (adjustments: PayrollAdjustments) => void;
   payPeriod?: string;
+  payPeriodData?: { periodNumber: number; year: number };
 }
 
 type DialogType = 'overtime' | 'statutory' | 'sickness' | 'extraPayments' | 'extraDeductions' | 'payslip' | null;
@@ -44,6 +45,7 @@ export function PayrollTableRowComponent({
   adjustments,
   onAdjustmentsChange,
   payPeriod = '',
+  payPeriodData,
 }: PayrollTableRowProps) {
   const [openDialog, setOpenDialog] = useState<DialogType>(null);
   const { currentCompany } = useCompany();
@@ -152,6 +154,7 @@ export function PayrollTableRowComponent({
         employeeId={row.employeeId}
         employeeName={row.name}
         companyId={currentCompany?.id || ''}
+        payPeriod={payPeriodData}
         initialItems={adjustments.sickness}
         onSave={(items: SicknessItem[]) => onAdjustmentsChange({ ...adjustments, sickness: items })}
       />

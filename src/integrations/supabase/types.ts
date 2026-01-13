@@ -688,6 +688,8 @@ export type Database = {
           id: string
           is_certified: boolean | null
           notes: string | null
+          payroll_financial_year: number | null
+          payroll_period_number: number | null
           reason: string | null
           start_date: string
           total_days: number
@@ -703,6 +705,8 @@ export type Database = {
           id?: string
           is_certified?: boolean | null
           notes?: string | null
+          payroll_financial_year?: number | null
+          payroll_period_number?: number | null
           reason?: string | null
           start_date: string
           total_days?: number
@@ -718,6 +722,8 @@ export type Database = {
           id?: string
           is_certified?: boolean | null
           notes?: string | null
+          payroll_financial_year?: number | null
+          payroll_period_number?: number | null
           reason?: string | null
           start_date?: string
           total_days?: number
