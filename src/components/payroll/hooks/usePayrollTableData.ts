@@ -62,6 +62,8 @@ export interface PayrollTableRow {
   isNHSPensionMember: boolean;
   pensionPercentage: number;
   previousYearPensionablePay: number | null;
+  // Sickness days for display
+  fullPaySickDays: number;
 }
 
 export interface PayrollTotals {
@@ -92,6 +94,7 @@ export type SortField = 'payrollId' | 'name';
 export function usePayrollTableData(payPeriod: PayPeriod) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [payrollResults, setPayrollResults] = useState<any[]>([]);
+  const [sicknessRecords, setSicknessRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortField>('payrollId');
   const [paymentDate, setPaymentDate] = useState<Date | undefined>(() => getLastDayOfPayPeriod(payPeriod));
@@ -104,12 +107,25 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
     setPaymentDate(getLastDayOfPayPeriod(payPeriod));
   }, [payPeriod.periodNumber, payPeriod.year]);
 
-  // Fetch employees and payroll results
+  // Helper to calculate pay period date range
+  const getPayPeriodDateRange = (period: PayPeriod) => {
+    const monthIndex = ((period.periodNumber - 1 + 3) % 12);
+    const year = period.periodNumber <= 9 ? period.year : period.year + 1;
+    const firstDay = new Date(year, monthIndex, 1);
+    const lastDay = lastDayOfMonth(firstDay);
+    return {
+      start: firstDay.toISOString().split('T')[0],
+      end: lastDay.toISOString().split('T')[0],
+    };
+  };
+
+  // Fetch employees, payroll results, and sickness records
   useEffect(() => {
     const fetchData = async () => {
       if (!currentCompany?.id) {
         setEmployees([]);
         setPayrollResults([]);
+        setSicknessRecords([]);
         setLoading(false);
         return;
       }
@@ -117,27 +133,35 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
       setLoading(true);
       try {
         const periodDate = getPayPeriodDate(payPeriod);
+        const { start: periodStart, end: periodEnd } = getPayPeriodDateRange(payPeriod);
         
-        // Fetch employees
-        const { data: empData, error: empError } = await supabase
-          .from('employees')
-          .select('*')
-          .eq('company_id', currentCompany.id)
-          .eq('status', 'active');
+        // Fetch employees, payroll results, and sickness records in parallel
+        const [empResponse, payrollResponse, sicknessResponse] = await Promise.all([
+          supabase
+            .from('employees')
+            .select('*')
+            .eq('company_id', currentCompany.id)
+            .eq('status', 'active'),
+          supabase
+            .from('payroll_results')
+            .select('*')
+            .eq('company_id', currentCompany.id)
+            .eq('payroll_period', periodDate),
+          supabase
+            .from('employee_sickness_records')
+            .select('employee_id, total_days, start_date, end_date')
+            .eq('company_id', currentCompany.id)
+            .lte('start_date', periodEnd)
+            .or(`end_date.gte.${periodStart},end_date.is.null`),
+        ]);
 
-        if (empError) throw empError;
+        if (empResponse.error) throw empResponse.error;
+        if (payrollResponse.error) throw payrollResponse.error;
+        if (sicknessResponse.error) throw sicknessResponse.error;
 
-        // Fetch payroll results for this period
-        const { data: payrollData, error: payrollError } = await supabase
-          .from('payroll_results')
-          .select('*')
-          .eq('company_id', currentCompany.id)
-          .eq('payroll_period', periodDate);
-
-        if (payrollError) throw payrollError;
-
-        setEmployees((empData as unknown as Employee[]) || []);
-        setPayrollResults(payrollData || []);
+        setEmployees((empResponse.data as unknown as Employee[]) || []);
+        setPayrollResults(payrollResponse.data || []);
+        setSicknessRecords(sicknessResponse.data || []);
       } catch (error: any) {
         console.error('Error fetching payroll table data:', error);
         toast({
@@ -201,11 +225,37 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
     calculatePayrollForEmployees();
   }, [employees, payrollResults, payPeriod.year]);
 
+  // Calculate sick days per employee for the current period
+  const sickDaysMap = useMemo(() => {
+    const map = new Map<string, number>();
+    const { start: periodStart, end: periodEnd } = getPayPeriodDateRange(payPeriod);
+    const periodStartDate = new Date(periodStart);
+    const periodEndDate = new Date(periodEnd);
+
+    sicknessRecords.forEach(record => {
+      const recordStart = new Date(record.start_date);
+      const recordEnd = record.end_date ? new Date(record.end_date) : recordStart;
+
+      // Calculate overlap with pay period
+      const overlapStart = recordStart > periodStartDate ? recordStart : periodStartDate;
+      const overlapEnd = recordEnd < periodEndDate ? recordEnd : periodEndDate;
+
+      if (overlapStart <= overlapEnd) {
+        const overlapDays = Math.ceil((overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        const current = map.get(record.employee_id) || 0;
+        map.set(record.employee_id, current + overlapDays);
+      }
+    });
+
+    return map;
+  }, [sicknessRecords, payPeriod]);
+
   // Combine employees with payroll results
   const tableData = useMemo((): PayrollTableRow[] => {
     return employees.map((emp) => {
       const payrollResult = payrollResults.find((pr) => pr.employee_id === emp.id);
       const calculatedValues = calculatedPayroll.get(emp.id);
+      const fullPaySickDays = sickDaysMap.get(emp.id) || 0;
       
       // Convert pennies to pounds for display (payroll_results stores values in pennies)
       const toPounds = (pennies: number | null) => (pennies || 0) / 100;
@@ -248,9 +298,10 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
         isNHSPensionMember: emp.nhs_pension_member || false,
         pensionPercentage: 0, // Future: from employee record if available
         previousYearPensionablePay: emp.previous_year_pensionable_pay || null,
+        fullPaySickDays,
       };
     });
-  }, [employees, payrollResults, calculatedPayroll]);
+  }, [employees, payrollResults, calculatedPayroll, sickDaysMap]);
 
   // Sort the data
   const sortedData = useMemo(() => {

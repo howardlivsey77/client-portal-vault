@@ -34,6 +34,8 @@ interface PayslipPreviewDialogProps {
   // Totals
   grossPay: number;
   netPay: number;
+  // Sickness info
+  fullPaySickDays?: number;
 }
 
 export function PayslipPreviewDialog({
@@ -54,12 +56,18 @@ export function PayslipPreviewDialog({
   extraDeductions,
   grossPay,
   netPay,
+  fullPaySickDays = 0,
 }: PayslipPreviewDialogProps) {
   const { toast } = useToast();
 
+  // Build sickness note
+  const sicknessNote = fullPaySickDays > 0
+    ? `${fullPaySickDays} full paid sickness day${fullPaySickDays !== 1 ? 's' : ''} included in the salary`
+    : '';
+
   // Build earnings rows
-  const earningsRows: Array<{ description: string; amount: number }> = [
-    { description: 'Basic Salary', amount: basicSalary },
+  const earningsRows: Array<{ description: string; amount: number; note?: string }> = [
+    { description: 'Basic Salary', amount: basicSalary, note: sicknessNote },
   ];
   if (overtime > 0) earningsRows.push({ description: 'Overtime', amount: overtime });
   if (statutoryPayment > 0) earningsRows.push({ description: 'Statutory Payment', amount: statutoryPayment });
@@ -103,6 +111,7 @@ export function PayslipPreviewDialog({
           ...(ssp > 0 ? [{ description: 'SSP', amount: ssp }] : []),
           ...extraPayments,
         ],
+        sicknessNote,
         totalDeductions,
         totalAllowances: 0,
         netPay,
@@ -189,10 +198,19 @@ export function PayslipPreviewDialog({
               </thead>
               <tbody>
                 {earningsRows.map((row, idx) => (
-                  <tr key={idx} className={idx % 2 === 1 ? 'bg-muted/30' : ''}>
-                    <td className="px-3 py-2">{row.description}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(row.amount)}</td>
-                  </tr>
+                  <>
+                    <tr key={idx} className={idx % 2 === 1 ? 'bg-muted/30' : ''}>
+                      <td className="px-3 py-2">{row.description}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(row.amount)}</td>
+                    </tr>
+                    {row.note && (
+                      <tr key={`${idx}-note`} className="bg-muted/10">
+                        <td colSpan={2} className="px-3 py-1 text-xs text-muted-foreground italic">
+                          ({row.note})
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))}
               </tbody>
             </table>

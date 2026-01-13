@@ -34,16 +34,31 @@ export const generatePayslip = (payrollData: PayrollResult, period: string, file
   doc.setFontSize(12);
   doc.text('Earnings', 14, 65);
   
+  const earningsBody: string[][] = [
+    ['Basic Salary', formatCurrency(payrollData.grossPay)]
+  ];
+
+  // Add sickness note if present
+  if (payrollData.sicknessNote) {
+    earningsBody.push([`  (${payrollData.sicknessNote})`, '']);
+  }
+
   autoTable(doc, {
     startY: 68,
     head: [['Description', 'Amount']],
-    body: [
-      ['Basic Salary', formatCurrency(payrollData.grossPay)]
-    ],
+    body: earningsBody,
     theme: 'grid',
     headStyles: { fillColor: [220, 220, 220], textColor: [0, 0, 0] },
     columnStyles: {
       1: { halign: 'right' }
+    },
+    didParseCell: (data) => {
+      // Style the sickness note row differently
+      if (data.row.index === 1 && payrollData.sicknessNote) {
+        data.cell.styles.fontStyle = 'italic';
+        data.cell.styles.textColor = [100, 100, 100];
+        data.cell.styles.fontSize = 8;
+      }
     }
   });
   

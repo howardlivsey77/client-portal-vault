@@ -26,6 +26,7 @@ export interface PayslipData {
     amount: number;
   }>;
   grossPay: number;
+  sicknessNote?: string; // Note about sickness days included in salary
   
   // Deductions
   deductions: Array<{
