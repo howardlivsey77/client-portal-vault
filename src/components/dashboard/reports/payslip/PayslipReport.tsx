@@ -20,7 +20,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { mockEmployees, mockPayrollPeriods, mockPayrollResults, mockCompany } from "./mockData";
 
 // Set to true to use simulated data, false to use real database data
-const USE_SIMULATED_DATA = true;
+const USE_SIMULATED_DATA = false;
 
 export function PayslipReport() {
   const { currentCompany } = useCompany();
@@ -62,20 +62,27 @@ export function PayslipReport() {
   });
 
   // Fetch payroll results for selected employee and period (real data)
+  // Note: payroll_results.payroll_period is a DATE field, not a UUID
+  // So we need to use the period's date_to to match
   const { data: realPayrollResult } = useQuery({
-    queryKey: ["payroll-result", selectedEmployee, selectedPeriod],
+    queryKey: ["payroll-result", selectedEmployee, selectedPeriod, realPayrollPeriods],
     queryFn: async () => {
       if (!selectedEmployee || !selectedPeriod) return null;
+      
+      // Find the selected period to get its date_to
+      const periodData = realPayrollPeriods.find(p => p.id === selectedPeriod);
+      if (!periodData) return null;
+      
       const { data, error } = await supabase
         .from("payroll_results")
         .select("*")
         .eq("employee_id", selectedEmployee)
-        .eq("payroll_period", selectedPeriod)
+        .eq("payroll_period", periodData.date_to)
         .single();
       if (error && error.code !== "PGRST116") throw error;
       return data;
     },
-    enabled: !!selectedEmployee && !!selectedPeriod && !USE_SIMULATED_DATA,
+    enabled: !!selectedEmployee && !!selectedPeriod && !USE_SIMULATED_DATA && realPayrollPeriods.length > 0,
   });
 
   // Use simulated or real data based on flag
@@ -92,35 +99,40 @@ export function PayslipReport() {
   const selectedPeriodData = payrollPeriods.find(p => p.id === selectedPeriod);
 
   // Build payslip data for preview/PDF
+  // Helper to convert pence to pounds (database stores values in pence)
+  const penceToPounds = (pence: number | null | undefined): number => {
+    return (pence || 0) / 100;
+  };
+
   const buildPayslipData = (): PayslipData | null => {
     if (!selectedEmployeeData || !selectedPeriodData || !payrollResult) return null;
 
     const payments: Array<{ description: string; amount: number }> = [];
     
-    // Add basic salary/pay
+    // Add basic salary/pay (convert from pence to pounds)
     if (payrollResult.gross_pay_this_period > 0) {
       payments.push({
         description: "Basic Pay",
-        amount: payrollResult.gross_pay_this_period,
+        amount: penceToPounds(payrollResult.gross_pay_this_period),
       });
     }
 
     const deductions: Array<{ description: string; amount: number }> = [];
     
     if (payrollResult.income_tax_this_period > 0) {
-      deductions.push({ description: "Tax", amount: payrollResult.income_tax_this_period });
+      deductions.push({ description: "Tax", amount: penceToPounds(payrollResult.income_tax_this_period) });
     }
     if (payrollResult.nic_employee_this_period > 0) {
-      deductions.push({ description: "National Insurance", amount: payrollResult.nic_employee_this_period });
+      deductions.push({ description: "National Insurance", amount: penceToPounds(payrollResult.nic_employee_this_period) });
     }
     if (payrollResult.employee_pension_this_period > 0) {
-      deductions.push({ description: "Pension", amount: payrollResult.employee_pension_this_period });
+      deductions.push({ description: "Pension", amount: penceToPounds(payrollResult.employee_pension_this_period) });
     }
     if (payrollResult.nhs_pension_employee_this_period && payrollResult.nhs_pension_employee_this_period > 0) {
-      deductions.push({ description: "NHS Pension", amount: payrollResult.nhs_pension_employee_this_period });
+      deductions.push({ description: "NHS Pension", amount: penceToPounds(payrollResult.nhs_pension_employee_this_period) });
     }
     if (payrollResult.student_loan_this_period > 0) {
-      deductions.push({ description: `Student Loan (Plan ${payrollResult.student_loan_plan})`, amount: payrollResult.student_loan_this_period });
+      deductions.push({ description: `Student Loan (Plan ${payrollResult.student_loan_plan})`, amount: penceToPounds(payrollResult.student_loan_this_period) });
     }
 
     const totalDeductions = deductions.reduce((sum, d) => sum + d.amount, 0);
@@ -144,21 +156,21 @@ export function PayslipReport() {
       periodName: selectedPeriodData.period_name || `Month ${selectedPeriodData.period_number}`,
       paymentDate: selectedPeriodData.date_to,
       payments,
-      grossPay: payrollResult.gross_pay_this_period,
+      grossPay: penceToPounds(payrollResult.gross_pay_this_period),
       deductions,
       totalDeductions,
-      netPay: payrollResult.net_pay_this_period,
+      netPay: penceToPounds(payrollResult.net_pay_this_period),
       thisPeriod: {
-        taxableGrossPay: payrollResult.taxable_pay_this_period,
-        employerNI: payrollResult.nic_employer_this_period,
+        taxableGrossPay: penceToPounds(payrollResult.taxable_pay_this_period),
+        employerNI: penceToPounds(payrollResult.nic_employer_this_period),
       },
       yearToDate: {
-        taxableGrossPay: payrollResult.taxable_pay_ytd || 0,
-        tax: payrollResult.income_tax_ytd || 0,
-        employeeNI: payrollResult.nic_employee_ytd || 0,
+        taxableGrossPay: penceToPounds(payrollResult.taxable_pay_ytd),
+        tax: penceToPounds(payrollResult.income_tax_ytd),
+        employeeNI: penceToPounds(payrollResult.nic_employee_ytd),
         employerNI: 0,
-        employeePension: payrollResult.nhs_pension_employee_ytd || 0,
-        employerPension: payrollResult.nhs_pension_employer_ytd || 0,
+        employeePension: penceToPounds(payrollResult.nhs_pension_employee_ytd),
+        employerPension: penceToPounds(payrollResult.nhs_pension_employer_ytd),
       },
     };
   };
