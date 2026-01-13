@@ -32,7 +32,11 @@ export const processExtraHoursFile = async (file: File, format?: ImportFormat): 
  * Save processed payroll data to the database
  * This stores both summary and detailed employee records
  */
-export const savePayrollData = async (data: ExtraHoursSummary, userId: string): Promise<{success: boolean, message: string, periodId?: string}> => {
+export const savePayrollData = async (
+  data: ExtraHoursSummary, 
+  userId: string,
+  companyId?: string
+): Promise<{success: boolean, message: string, periodId?: string}> => {
   try {
     if (!data || !userId) {
       return { success: false, message: "Missing data or user ID" };
@@ -60,6 +64,7 @@ export const savePayrollData = async (data: ExtraHoursSummary, userId: string): 
       .from('payroll_periods')
       .insert({
         user_id: userId,
+        company_id: companyId || null,
         period_number: periodMonth,
         financial_year: financialYear,
         date_from: fromDate.toISOString().split('T')[0],

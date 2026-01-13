@@ -136,8 +136,8 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
         const periodDate = getPayPeriodDate(payPeriod);
         const { start: periodStart, end: periodEnd } = getPayPeriodDateRange(payPeriod);
         
-        // Fetch employees, payroll results, sickness records, and overtime in parallel
-        const [empResponse, payrollResponse, sicknessResponse, overtimeResponse] = await Promise.all([
+        // Fetch employees, payroll results, and sickness records first
+        const [empResponse, payrollResponse, sicknessResponse] = await Promise.all([
           supabase
             .from('employees')
             .select('*')
@@ -154,30 +154,38 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
             .eq('company_id', currentCompany.id)
             .lte('start_date', periodEnd)
             .or(`end_date.gte.${periodStart},end_date.is.null`),
-          supabase
-            .from('payroll_employee_details')
-            .select(`
-              employee_id,
-              employee_name,
-              extra_hours,
-              rate_type,
-              rate_value,
-              payroll_period_id
-            `)
-            .eq('payroll_periods.company_id', currentCompany.id)
-            .eq('payroll_periods.period_number', payPeriod.periodNumber)
-            .eq('payroll_periods.financial_year', payPeriod.year),
         ]);
 
         if (empResponse.error) throw empResponse.error;
         if (payrollResponse.error) throw payrollResponse.error;
         if (sicknessResponse.error) throw sicknessResponse.error;
-        // Overtime query might fail if no data exists, don't throw
+
+        // Now fetch overtime data using a two-step query approach
+        let overtimeRecords: any[] = [];
+        
+        // First, find the payroll period ID for this company/period/year
+        const { data: periodResult } = await supabase
+          .from('payroll_periods')
+          .select('id')
+          .eq('company_id', currentCompany.id)
+          .eq('period_number', payPeriod.periodNumber)
+          .eq('financial_year', payPeriod.year)
+          .maybeSingle();
+        
+        // If we found a period, fetch the employee details
+        if (periodResult?.id) {
+          const { data: overtimeData } = await supabase
+            .from('payroll_employee_details')
+            .select('employee_id, employee_name, extra_hours, rate_type, rate_value')
+            .eq('payroll_period_id', periodResult.id);
+          
+          overtimeRecords = overtimeData || [];
+        }
 
         setEmployees((empResponse.data as unknown as Employee[]) || []);
         setPayrollResults(payrollResponse.data || []);
         setSicknessRecords(sicknessResponse.data || []);
-        setOvertimeData(overtimeResponse.data || []);
+        setOvertimeData(overtimeRecords);
       } catch (error: any) {
         console.error('Error fetching payroll table data:', error);
         toast({
