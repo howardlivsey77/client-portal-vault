@@ -119,6 +119,8 @@ export const recordsService = {
 
   // Update sickness record
   async updateSicknessRecord(id: string, updates: Partial<SicknessRecord>): Promise<SicknessRecord> {
+    console.log(`Updating sickness record ${id}:`, updates);
+    
     const { data, error } = await supabase
       .from('employee_sickness_records')
       .update(updates)
@@ -126,8 +128,13 @@ export const recordsService = {
       .select()
       .maybeSingle();
 
-    if (error) throw error;
+    if (error) {
+      console.error(`Database error updating sickness record ${id}:`, error);
+      throw error;
+    }
+    
     if (data) {
+      console.log(`Sickness record ${id} updated successfully:`, data);
       // If start_date was updated, recalculate using new date as reference
       if (updates.start_date) {
         await this.recalculateEntitlementWithReference(data.employee_id, updates.start_date);
@@ -136,14 +143,36 @@ export const recordsService = {
     }
 
     // Fallback: fetch the record by id
+    console.log(`Update returned no data, fetching record ${id} as fallback...`);
     const { data: fallback, error: fallbackError } = await supabase
       .from('employee_sickness_records')
       .select('*')
       .eq('id', id)
       .maybeSingle();
 
-    if (fallbackError) throw fallbackError;
-    if (!fallback) throw new Error('Sickness record updated but no row returned');
+    if (fallbackError) {
+      console.error(`Fallback fetch error for sickness record ${id}:`, fallbackError);
+      throw fallbackError;
+    }
+    
+    if (!fallback) {
+      throw new Error(`Sickness record ${id} not found after update`);
+    }
+    
+    // Verify the update took effect by checking key fields
+    const updateKeys = Object.keys(updates) as (keyof typeof updates)[];
+    const updateApplied = updateKeys.every(key => {
+      const fallbackValue = fallback[key as keyof typeof fallback];
+      const updateValue = updates[key];
+      return fallbackValue === updateValue;
+    });
+    
+    if (!updateApplied) {
+      console.warn(`Update may not have been applied for record ${id}. Expected:`, updates, 'Got:', fallback);
+      throw new Error(`Sickness record ${id} update was not applied - this may be an RLS policy issue`);
+    }
+    
+    console.log(`Sickness record ${id} updated successfully (via fallback):`, fallback);
     
     // If start_date was updated, recalculate using new date as reference
     if (updates.start_date) {
