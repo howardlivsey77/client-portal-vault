@@ -95,6 +95,7 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [payrollResults, setPayrollResults] = useState<any[]>([]);
   const [sicknessRecords, setSicknessRecords] = useState<any[]>([]);
+  const [overtimeData, setOvertimeData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortField>('payrollId');
   const [paymentDate, setPaymentDate] = useState<Date | undefined>(() => getLastDayOfPayPeriod(payPeriod));
@@ -135,8 +136,8 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
         const periodDate = getPayPeriodDate(payPeriod);
         const { start: periodStart, end: periodEnd } = getPayPeriodDateRange(payPeriod);
         
-        // Fetch employees, payroll results, and sickness records in parallel
-        const [empResponse, payrollResponse, sicknessResponse] = await Promise.all([
+        // Fetch employees, payroll results, sickness records, and overtime in parallel
+        const [empResponse, payrollResponse, sicknessResponse, overtimeResponse] = await Promise.all([
           supabase
             .from('employees')
             .select('*')
@@ -153,15 +154,30 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
             .eq('company_id', currentCompany.id)
             .lte('start_date', periodEnd)
             .or(`end_date.gte.${periodStart},end_date.is.null`),
+          supabase
+            .from('payroll_employee_details')
+            .select(`
+              employee_id,
+              employee_name,
+              extra_hours,
+              rate_type,
+              rate_value,
+              payroll_period_id
+            `)
+            .eq('payroll_periods.company_id', currentCompany.id)
+            .eq('payroll_periods.period_number', payPeriod.periodNumber)
+            .eq('payroll_periods.financial_year', payPeriod.year),
         ]);
 
         if (empResponse.error) throw empResponse.error;
         if (payrollResponse.error) throw payrollResponse.error;
         if (sicknessResponse.error) throw sicknessResponse.error;
+        // Overtime query might fail if no data exists, don't throw
 
         setEmployees((empResponse.data as unknown as Employee[]) || []);
         setPayrollResults(payrollResponse.data || []);
         setSicknessRecords(sicknessResponse.data || []);
+        setOvertimeData(overtimeResponse.data || []);
       } catch (error: any) {
         console.error('Error fetching payroll table data:', error);
         toast({
@@ -250,6 +266,29 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
     return map;
   }, [sicknessRecords, payPeriod]);
 
+  // Calculate overtime totals per employee from imported data
+  const overtimeMap = useMemo(() => {
+    const map = new Map<string, { hours: number; amount: number }>();
+    
+    overtimeData.forEach(record => {
+      // Match by employee_id first, then by employee_name
+      const employeeKey = record.employee_id || record.employee_name;
+      if (!employeeKey) return;
+      
+      const hours = record.extra_hours || 0;
+      const rate = record.rate_value || 0;
+      const amount = hours * rate;
+      
+      const existing = map.get(employeeKey) || { hours: 0, amount: 0 };
+      map.set(employeeKey, {
+        hours: existing.hours + hours,
+        amount: existing.amount + amount
+      });
+    });
+    
+    return map;
+  }, [overtimeData]);
+
   // Combine employees with payroll results
   const tableData = useMemo((): PayrollTableRow[] => {
     return employees.map((emp) => {
@@ -261,14 +300,19 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
       const toPounds = (pennies: number | null) => (pennies || 0) / 100;
       const monthlySalary = calculateMonthlySalary(emp.hourly_rate || 0, emp.hours_per_week || 0);
       
+      // Get overtime from imported data - try by ID first, then by name
+      const employeeName = `${emp.first_name} ${emp.last_name}`;
+      const overtimeEntry = overtimeMap.get(emp.id) || overtimeMap.get(employeeName);
+      const overtimeAmount = overtimeEntry?.amount || 0;
+      
       return {
         employeeId: emp.id,
         payrollId: emp.payroll_id || '',
-        name: `${emp.first_name} ${emp.last_name}`,
+        name: employeeName,
         department: emp.department || 'Unassigned',
         salary: monthlySalary,
         statutoryPayment: 0, // Future: SMP, SPP, etc.
-        overtime: 0, // Future: calculated from timesheet data
+        overtime: overtimeAmount,
         ssp: 0, // Future: Statutory Sick Pay
         extraPayments: 0, // Future: additional earnings
         extraDeductions: 0, // Future: additional deductions
@@ -301,7 +345,7 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
         fullPaySickDays,
       };
     });
-  }, [employees, payrollResults, calculatedPayroll, sickDaysMap]);
+  }, [employees, payrollResults, calculatedPayroll, sickDaysMap, overtimeMap]);
 
   // Sort the data
   const sortedData = useMemo(() => {
