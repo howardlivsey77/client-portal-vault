@@ -104,7 +104,16 @@ export function useCompanyConfig<T extends { id?: string; name: string }>(
       }
       return { success: false, message: "Operation completed but with unexpected results." };
     } catch (error: any) {
-      console.error(`Error saving ${entityName}:`, error.message);
+      console.error(`Error saving ${entityName}:`, error.message, error.code);
+      
+      // Handle unique constraint violation (duplicate name)
+      if (error.code === '23505') {
+        return { 
+          success: false, 
+          message: `A configuration named "${item.name}" already exists. Please use a different name.`
+        };
+      }
+      
       return { 
         success: false, 
         message: `There was a problem saving the ${entityName}. Please try again.`
