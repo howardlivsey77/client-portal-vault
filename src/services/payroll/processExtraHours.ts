@@ -55,11 +55,51 @@ export const savePayrollData = async (
       return { success: false, message: "Invalid date format in data" };
     }
     
-    // Calculate period number (assuming month-based periods)
-    const periodMonth = fromDate.getMonth() + 1; // 1-12
-    const financialYear = fromDate.getFullYear();
+  // Calculate period number (assuming month-based periods)
+  const periodMonth = fromDate.getMonth() + 1; // 1-12
+  const financialYear = fromDate.getFullYear();
+
+  // Check if period already exists for this user/period/year
+  const { data: existingPeriod } = await supabase
+    .from('payroll_periods')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('period_number', periodMonth)
+    .eq('financial_year', financialYear)
+    .maybeSingle();
+
+  let periodId: string;
+
+  if (existingPeriod) {
+    // Period already exists - use it and update the totals
+    periodId = existingPeriod.id;
     
-    // First insert the period summary
+    // Update the existing period with new totals
+    const { error: updateError } = await supabase
+      .from('payroll_periods')
+      .update({
+        company_id: companyId || null,
+        date_from: fromDate.toISOString().split('T')[0],
+        date_to: toDate.toISOString().split('T')[0],
+        total_entries: data.totalEntries,
+        total_extra_hours: data.totalExtraHours,
+        employee_count: data.employeeCount,
+      })
+      .eq('id', periodId);
+      
+    if (updateError) {
+      console.error('Error updating payroll period:', updateError);
+      return { success: false, message: `Error updating payroll data: ${updateError.message}` };
+    }
+    
+    // Delete existing employee details for this period to avoid duplicates
+    await supabase
+      .from('payroll_employee_details')
+      .delete()
+      .eq('payroll_period_id', periodId);
+      
+  } else {
+    // No existing period - insert new one
     const { data: periodData, error: periodError } = await supabase
       .from('payroll_periods')
       .insert({
@@ -75,13 +115,14 @@ export const savePayrollData = async (
       })
       .select()
       .single();
-    
+
     if (periodError) {
       console.error('Error saving payroll period:', periodError);
       return { success: false, message: `Error saving payroll data: ${periodError.message}` };
     }
     
-    const periodId = periodData.id;
+    periodId = periodData.id;
+  }
     
     // Then insert all employee details
     const employeeDetailsInserts = data.employeeDetails.map(emp => ({
