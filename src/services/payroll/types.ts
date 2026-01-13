@@ -38,6 +38,7 @@ export interface PayrollResult {
   additionalDeductions: Array<{ description: string, amount: number }>;
   additionalAllowances: Array<{ description: string, amount: number }>;
   additionalEarnings: Array<{ description: string, amount: number }>;
+  sicknessNote?: string; // Note about sickness days included in salary
   totalDeductions: number;
   totalAllowances: number;
   netPay: number;

@@ -112,6 +112,12 @@ export async function generatePayslipPdf(options: PayslipGeneratorOptions): Prom
 
   // Payments Table
   const paymentsData = payslipData.payments.map((p) => [p.description, formatCurrency(p.amount)]);
+  
+  // Add sickness note after Basic Salary if present
+  if (payslipData.sicknessNote && paymentsData.length > 0) {
+    paymentsData.splice(1, 0, [`  (${payslipData.sicknessNote})`, '']);
+  }
+  
   paymentsData.push(["Total", formatCurrency(payslipData.grossPay)]);
 
   autoTable(doc, {
@@ -126,9 +132,18 @@ export async function generatePayslipPdf(options: PayslipGeneratorOptions): Prom
       1: { cellWidth: 20, halign: "right", fontStyle: "bold" },
     },
     didParseCell: (data) => {
-      if (data.row.index === paymentsData.length - 1) {
+      const totalRowIndex = paymentsData.length - 1;
+      const sicknessNoteRowIndex = payslipData.sicknessNote ? 1 : -1;
+      
+      if (data.row.index === totalRowIndex) {
         data.cell.styles.fillColor = [245, 245, 245];
         data.cell.styles.fontStyle = "italic";
+      }
+      // Style the sickness note row
+      if (data.row.index === sicknessNoteRowIndex) {
+        data.cell.styles.fontStyle = "italic";
+        data.cell.styles.textColor = [100, 100, 100];
+        data.cell.styles.fontSize = 7;
       }
     },
   });

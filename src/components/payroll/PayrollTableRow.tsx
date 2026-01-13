@@ -90,7 +90,14 @@ export function PayrollTableRowComponent({
           className={cn("text-right tabular-nums", clickableCellClass)}
           onClick={() => setOpenDialog('sickness')}
         >
-          {formatCurrency(sicknessTotal || row.ssp)}
+          <div className="flex flex-col items-end">
+            <span>{formatCurrency(sicknessTotal || row.ssp)}</span>
+            {row.fullPaySickDays > 0 && (
+              <span className="text-xs text-muted-foreground">
+                {row.fullPaySickDays} day{row.fullPaySickDays !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
         </TableCell>
         <TableCell 
           className={cn("text-right tabular-nums", clickableCellClass)}
@@ -183,6 +190,7 @@ export function PayrollTableRowComponent({
         extraDeductions={adjustments.extraDeductions}
         grossPay={adjustedGross}
         netPay={adjustedNetPay}
+        fullPaySickDays={row.fullPaySickDays}
       />
     </>
   );
