@@ -14,14 +14,18 @@ import { EmployeeMappingDialog } from "./EmployeeMappingDialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
+import { PayPeriod } from "@/services/payroll/utils/financial-year-utils";
+
 export { type EmployeeHoursData, type ExtraHoursSummary } from "./types";
 
 interface PayrollInputWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  payPeriod?: PayPeriod;
+  financialYear?: number;
 }
 
-export function PayrollInputWizard({ open, onOpenChange }: PayrollInputWizardProps) {
+export function PayrollInputWizard({ open, onOpenChange, payPeriod, financialYear }: PayrollInputWizardProps) {
   const {
     currentStep,
     selectedFormat,
@@ -39,7 +43,7 @@ export function PayrollInputWizard({ open, onOpenChange }: PayrollInputWizardPro
     handleEmployeeMappingConfirm,
     handleEmployeeMappingCancel,
     canProceed
-  } = useConsolidatedPayrollWizard();
+  } = useConsolidatedPayrollWizard(payPeriod, financialYear);
   
   const steps = createWizardSteps({
     uploadedFiles,

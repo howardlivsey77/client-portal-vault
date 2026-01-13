@@ -31,11 +31,16 @@ export const processExtraHoursFile = async (file: File, format?: ImportFormat): 
 /**
  * Save processed payroll data to the database
  * This stores both summary and detailed employee records
+ * @param data - The processed payroll data
+ * @param userId - The user ID
+ * @param companyId - Optional company ID
+ * @param targetPeriod - Optional target period (if not provided, will be derived from file dates)
  */
 export const savePayrollData = async (
   data: ExtraHoursSummary, 
   userId: string,
-  companyId?: string
+  companyId?: string,
+  targetPeriod?: { periodNumber: number; year: number }
 ): Promise<{success: boolean, message: string, periodId?: string}> => {
   try {
     if (!data || !userId) {
@@ -55,16 +60,37 @@ export const savePayrollData = async (
       return { success: false, message: "Invalid date format in data" };
     }
     
-  // Calculate period number (assuming month-based periods)
-  const periodMonth = fromDate.getMonth() + 1; // 1-12
-  const financialYear = fromDate.getFullYear();
+  // Use target period if provided, otherwise derive from file dates (UK financial period)
+  let periodNumber: number;
+  let financialYear: number;
+  
+  if (targetPeriod) {
+    // Use the user-selected period from UI
+    periodNumber = targetPeriod.periodNumber;
+    financialYear = targetPeriod.year;
+    console.log('Using target period from UI:', { periodNumber, financialYear });
+  } else {
+    // Fallback: derive from file dates using UK financial period calculation
+    const calendarMonth = fromDate.getMonth() + 1; // 1-12 (Jan-Dec)
+    
+    if (calendarMonth >= 4) {
+      // April-December: period = month - 3, year = calendar year
+      periodNumber = calendarMonth - 3; // April(4)->1, Dec(12)->9
+      financialYear = fromDate.getFullYear();
+    } else {
+      // January-March: period = month + 9, year = calendar year - 1
+      periodNumber = calendarMonth + 9; // Jan(1)->10, Mar(3)->12
+      financialYear = fromDate.getFullYear() - 1;
+    }
+    console.log('Derived period from file dates:', { calendarMonth, periodNumber, financialYear });
+  }
 
   // Check if period already exists for this user/period/year
   const { data: existingPeriod } = await supabase
     .from('payroll_periods')
     .select('id')
     .eq('user_id', userId)
-    .eq('period_number', periodMonth)
+    .eq('period_number', periodNumber)
     .eq('financial_year', financialYear)
     .maybeSingle();
 
@@ -105,7 +131,7 @@ export const savePayrollData = async (
       .insert({
         user_id: userId,
         company_id: companyId || null,
-        period_number: periodMonth,
+        period_number: periodNumber,
         financial_year: financialYear,
         date_from: fromDate.toISOString().split('T')[0],
         date_to: toDate.toISOString().split('T')[0],

@@ -261,7 +261,9 @@ const PayrollProcessing = () => {
         <PayrollErrorBoundary onReset={handleWizardReset}>
           <PayrollInputWizard 
             open={showWizard} 
-            onOpenChange={setShowWizard} 
+            onOpenChange={setShowWizard}
+            payPeriod={selectedPayPeriod}
+            financialYear={selectedFinancialYear.year}
           />
         </PayrollErrorBoundary>
       </div>
