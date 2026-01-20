@@ -130,6 +130,13 @@ export function parseTeamnetData(jsonData: any[], rateConfig?: TeamnetRateConfig
     
     // Parse the date
     const shiftDate = parseTeamnetDate(dateFrom);
+    
+    // Debug logging for Asqua Din to verify date parsing fix
+    if (employeeName.toLowerCase().includes('asqua')) {
+      const dayName = shiftDate ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][shiftDate.getDay()] : 'null';
+      console.log(`[ASQUA DEBUG] Raw dateFrom: "${dateFrom}" -> Parsed: ${shiftDate?.toISOString()} (${dayName})`);
+    }
+    
     if (!shiftDate) {
       console.warn(`[Teamnet Parser] Could not parse date: ${dateFrom} for employee ${employeeName}`);
       skippedRows++;
