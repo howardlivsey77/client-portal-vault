@@ -32,14 +32,19 @@ export const parseExtraHoursFile = async (
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
+        const workbook = XLSX.read(data, { 
+          type: 'array',
+          raw: true  // Preserve raw values, don't auto-convert dates
+        });
         
         // Assume first sheet contains the data
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         
-        // Convert to JSON
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        // Convert to JSON - use raw: true to preserve string dates for UK format parsing
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+          raw: true  // Return raw strings instead of auto-detected types
+        });
         
         console.log('Parsed file data:', jsonData);
         
