@@ -17,9 +17,9 @@ const convertToLegacyDocument = (dbDoc: any) => ({
   id: dbDoc.id,
   title: dbDoc.title,
   type: dbDoc.file_name.split('.').pop()?.toUpperCase() || "FILE",
-  updatedAt: new Date(dbDoc.updated_at).toLocaleDateString('en-US', { 
+  updatedAt: new Date(dbDoc.updated_at).toLocaleDateString('en-GB', { 
+    day: '2-digit',
     month: 'short', 
-    day: 'numeric', 
     year: 'numeric' 
   }),
   size: `${(dbDoc.file_size / (1024 * 1024)).toFixed(1)} MB`,

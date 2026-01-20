@@ -60,8 +60,8 @@ export function PaymentHoursRatesReport() {
               totalEntries: latestPeriod.total_entries,
               totalExtraHours: latestPeriod.total_extra_hours,
               dateRange: {
-                from: new Date(latestPeriod.date_from).toLocaleDateString(),
-                to: new Date(latestPeriod.date_to).toLocaleDateString()
+                from: new Date(latestPeriod.date_from).toLocaleDateString('en-GB'),
+                to: new Date(latestPeriod.date_to).toLocaleDateString('en-GB')
               },
               employeeCount: latestPeriod.employee_count,
               employeeDetails: formattedDetails

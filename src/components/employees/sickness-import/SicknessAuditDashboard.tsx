@@ -177,7 +177,7 @@ export const SicknessAuditDashboard: React.FC = () => {
                         {log.difference > 0 ? '+' : ''}{log.difference} days
                       </Badge>
                       <div className="text-xs text-muted-foreground mt-1">
-                        {new Date(log.created_at).toLocaleString()}
+                        {new Date(log.created_at).toLocaleString('en-GB')}
                       </div>
                     </div>
                   </div>

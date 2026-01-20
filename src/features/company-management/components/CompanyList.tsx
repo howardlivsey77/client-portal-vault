@@ -122,7 +122,7 @@ const CompanyTable = ({
               <TableCell>{company.trading_as || "-"}</TableCell>
               <TableCell>
                 {showCreatedAt ? (
-                  new Date(company.created_at).toLocaleDateString()
+                  new Date(company.created_at).toLocaleDateString('en-GB')
                 ) : (
                   <>
                     {company.contact_name || "-"}

@@ -193,7 +193,7 @@ export const DepartmentManagement = () => {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-2">
-                    Created: {new Date(department.created_at).toLocaleDateString()}
+                    Created: {new Date(department.created_at).toLocaleDateString('en-GB')}
                   </p>
                 </CardContent>
               </Card>

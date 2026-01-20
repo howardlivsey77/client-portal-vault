@@ -101,7 +101,7 @@ export const AuditLogViewer: React.FC = () => {
       const csvContent = [
         headers.join(','),
         ...allData.logs.map(log => [
-          new Date(log.created_at).toLocaleString(),
+          new Date(log.created_at).toLocaleString('en-GB'),
           log.user_id,
           log.accessed_table,
           log.access_type,
@@ -271,7 +271,7 @@ export const AuditLogViewer: React.FC = () => {
                       
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span>User: {log.user_id}</span>
-                        <span>{new Date(log.created_at).toLocaleString()}</span>
+                        <span>{new Date(log.created_at).toLocaleString('en-GB')}</span>
                       </div>
 
                       {log.sensitive_fields && log.sensitive_fields.length > 0 && (
