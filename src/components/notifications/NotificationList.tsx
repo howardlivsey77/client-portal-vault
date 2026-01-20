@@ -74,7 +74,7 @@ export const NotificationList = () => {
               </div>
               <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
               <div className="text-xs text-gray-400 mt-2">
-                {new Date(notification.createdAt).toLocaleString()}
+                {new Date(notification.createdAt).toLocaleString('en-GB')}
               </div>
             </div>
           ))}

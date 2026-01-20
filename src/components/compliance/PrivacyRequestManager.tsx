@@ -299,11 +299,11 @@ export const PrivacyRequestManager: React.FC = () => {
                         <span className="font-medium">Employee:</span> {request.employee_name}
                       </div>
                       <div>
-                        <span className="font-medium">Created:</span> {new Date(request.created_at).toLocaleDateString()}
+                        <span className="font-medium">Created:</span> {new Date(request.created_at).toLocaleDateString('en-GB')}
                       </div>
                       {request.completion_date && (
                         <div>
-                          <span className="font-medium">Completed:</span> {new Date(request.completion_date).toLocaleDateString()}
+                          <span className="font-medium">Completed:</span> {new Date(request.completion_date).toLocaleDateString('en-GB')}
                         </div>
                       )}
                     </div>

@@ -70,12 +70,12 @@ export function formatSummary(
   // Format date range - use ISO format for database compatibility and display format for UI
   const formatDateOption = { year: 'numeric', month: '2-digit', day: '2-digit' };
   const fromDate = earliestDate ? 
-    earliestDate.toLocaleDateString(undefined, formatDateOption as any) : 
-    oneMonthAgo.toLocaleDateString(undefined, formatDateOption as any);
+    earliestDate.toLocaleDateString('en-GB', formatDateOption as any) : 
+    oneMonthAgo.toLocaleDateString('en-GB', formatDateOption as any);
     
   const toDate = latestDate ? 
-    latestDate.toLocaleDateString(undefined, formatDateOption as any) : 
-    today.toLocaleDateString(undefined, formatDateOption as any);
+    latestDate.toLocaleDateString('en-GB', formatDateOption as any) : 
+    today.toLocaleDateString('en-GB', formatDateOption as any);
   
   // Also store ISO format for database operations
   const fromDateISO = earliestDate ? 
