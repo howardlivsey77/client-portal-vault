@@ -3,20 +3,49 @@ import { parseExtraHoursFile } from '@/utils/payroll/fileParsing';
 import { ExtraHoursSummary } from '@/components/payroll/types';
 import { enrichEmployeeData } from './employeeEnrichment';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
 import { ImportFormat } from '@/components/payroll/FormatSelector';
+import { TeamnetRateConfig, RateCondition } from '@/utils/payroll/fileParsing/teamnetRateCalculator';
 
 /**
  * Process an extra hours file and return summary data
  * @param file - The file to process
  * @param format - Optional format override (practice-index or teamnet)
+ * @param companyId - Optional company ID to load company-specific rate configuration
  */
-export const processExtraHoursFile = async (file: File, format?: ImportFormat): Promise<ExtraHoursSummary> => {
+export const processExtraHoursFile = async (
+  file: File, 
+  format?: ImportFormat,
+  companyId?: string
+): Promise<ExtraHoursSummary> => {
   try {
-    console.log('Processing extra hours file:', file.name, 'Format:', format || 'auto-detect');
+    console.log('Processing extra hours file:', file.name, 'Format:', format || 'auto-detect', 'Company:', companyId || 'none');
     
-    // Parse the file with the specified format
-    const parsedData = await parseExtraHoursFile(file, format);
+    // Fetch company-specific rate configuration if companyId provided
+    let rateConfig: TeamnetRateConfig | null = null;
+    if (companyId) {
+      const { data, error } = await supabase
+        .from('teamnet_rate_configs')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('is_active', true)
+        .maybeSingle();
+      
+      if (error) {
+        console.warn('Error fetching rate config:', error);
+      } else if (data) {
+        rateConfig = {
+          id: data.id,
+          name: data.name,
+          default_rate: data.default_rate,
+          conditions: (data.conditions as unknown) as RateCondition[],
+          is_active: data.is_active
+        };
+        console.log('Using company rate config:', rateConfig.name, 'with', rateConfig.conditions.length, 'conditions');
+      }
+    }
+    
+    // Parse the file with the specified format and rate config
+    const parsedData = await parseExtraHoursFile(file, { format, rateConfig });
     
     // Enrich with employee data from the database
     await enrichEmployeeData(parsedData);

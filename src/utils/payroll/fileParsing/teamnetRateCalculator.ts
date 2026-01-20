@@ -204,9 +204,15 @@ export function calculateTeamnetRates(
 
 /**
  * Parse a date string in various formats, including Excel serial dates
+ * IMPORTANT: Always interprets slash-delimited dates as UK format (DD/MM/YYYY)
  */
-export function parseTeamnetDate(dateStr: string): Date | null {
+export function parseTeamnetDate(dateStr: string | Date): Date | null {
   if (!dateStr) return null;
+  
+  // Handle Date objects (XLSX library might parse dates)
+  if (dateStr instanceof Date) {
+    return isNaN(dateStr.getTime()) ? null : dateStr;
+  }
   
   const trimmed = String(dateStr).trim();
   
@@ -220,26 +226,39 @@ export function parseTeamnetDate(dateStr: string): Date | null {
       const msPerDay = 24 * 60 * 60 * 1000;
       const jsDate = new Date(Date.UTC(1899, 11, 30) + (adjustedDate * msPerDay));
       if (!isNaN(jsDate.getTime())) {
+        console.log(`[Date Parse] Excel serial ${trimmed} -> ${jsDate.toISOString().split('T')[0]}`);
         return jsDate;
       }
     }
   }
   
-  // Try DD/MM/YYYY format first (common UK format)
+  // Try DD/MM/YYYY format (UK format - ALWAYS use this for slash-delimited dates)
   const ukMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (ukMatch) {
     const [, day, month, year] = ukMatch;
-    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    const parsedDay = parseInt(day, 10);
+    const parsedMonth = parseInt(month, 10);
+    const parsedYear = parseInt(year, 10);
+    
+    // Validate the date components
+    if (parsedMonth >= 1 && parsedMonth <= 12 && parsedDay >= 1 && parsedDay <= 31) {
+      const result = new Date(parsedYear, parsedMonth - 1, parsedDay);
+      console.log(`[Date Parse] UK format ${trimmed} -> ${result.toISOString().split('T')[0]} (${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][result.getDay()]})`);
+      return result;
+    }
   }
   
   // Try YYYY-MM-DD format (ISO)
   const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (isoMatch) {
     const [, year, month, day] = isoMatch;
-    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    const result = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    console.log(`[Date Parse] ISO format ${trimmed} -> ${result.toISOString().split('T')[0]}`);
+    return result;
   }
   
-  // Fall back to Date.parse
-  const parsed = new Date(trimmed);
-  return isNaN(parsed.getTime()) ? null : parsed;
+  // DO NOT fall back to Date.parse() for slash-delimited dates
+  // as JavaScript may interpret them as US MM/DD/YYYY format
+  console.warn(`[Date Parse] Could not parse date: "${trimmed}" - no matching format`);
+  return null;
 }
