@@ -67,8 +67,8 @@ export function useConsolidatedPayrollWizard(payPeriod?: PayPeriod, financialYea
     try {
       setState(prev => ({ ...prev, isProcessing: true, error: null }));
       
-      // Pass the selected format to the parser
-      const result = await processExtraHoursFile(file, state.selectedFormat);
+      // Pass the selected format and company ID to the parser for rate config loading
+      const result = await processExtraHoursFile(file, state.selectedFormat, currentCompany?.id);
       
       // Perform employee matching immediately
       const matching = await matchEmployees(result.employeeDetails);
@@ -101,7 +101,7 @@ export function useConsolidatedPayrollWizard(payPeriod?: PayPeriod, financialYea
       
       throw error;
     }
-  }, [state.processedData, state.selectedFormat]);
+  }, [state.processedData, state.selectedFormat, currentCompany?.id]);
 
   // Handle employee mapping confirmation
   const handleEmployeeMappingConfirm = useCallback((userMappings: Record<string, string>) => {
