@@ -28,6 +28,7 @@ export { useEmployeeInvite } from "./employees/useEmployeeInvite";
 export { useEmployeeTimesheet } from "./employees/useEmployeeTimesheet";
 export type { WeeklyTimesheetDay } from "./employees/useEmployeeTimesheet";
 export { useSicknessData } from "./employees/useSicknessData";
+export { useCostCentres } from "./employees/useCostCentres";
 
 // Reports hooks
 export { useHoursRatesReport } from "./reports/useHoursRatesReport";

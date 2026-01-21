@@ -8,6 +8,7 @@ import LocationsSettingsTab from "./tabs/LocationsSettingsTab";
 import DepartmentsSettingsTab from "./tabs/DepartmentsSettingsTab";
 import OvertimeRatesSettingsTab from "./tabs/OvertimeRatesSettingsTab";
 import HolidaysSettingsTab from "./tabs/HolidaysSettingsTab";
+import { CostCentresSettingsTab } from "./tabs/CostCentresSettingsTab";
 
 const CompanySettings = () => {
   const location = useLocation();
@@ -20,6 +21,7 @@ const CompanySettings = () => {
     if (currentPath.includes("/settings/company/departments")) return "departments";
     if (currentPath.includes("/settings/company/overtime")) return "overtime";
     if (currentPath.includes("/settings/company/holidays")) return "holidays";
+    if (currentPath.includes("/settings/company/cost-centres")) return "cost-centres";
     return "general"; // Default tab
   };
 
@@ -36,6 +38,7 @@ const CompanySettings = () => {
             <TabsTrigger value="holidays">Holidays</TabsTrigger>
             <TabsTrigger value="locations">Locations</TabsTrigger>
             <TabsTrigger value="departments">Departments</TabsTrigger>
+            <TabsTrigger value="cost-centres">Cost Centres</TabsTrigger>
           </TabsList>
           
           <TabsContent value="general">
@@ -60,6 +63,10 @@ const CompanySettings = () => {
           
           <TabsContent value="departments">
             <DepartmentsSettingsTab />
+          </TabsContent>
+          
+          <TabsContent value="cost-centres">
+            <CostCentresSettingsTab />
           </TabsContent>
         </Tabs>
       </div>
