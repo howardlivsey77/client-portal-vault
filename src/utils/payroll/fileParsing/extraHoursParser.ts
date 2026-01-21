@@ -5,12 +5,13 @@ import { extractDateRange } from './dateExtractor';
 import { extractEmployeeData } from './extractEmployeeData';
 import { formatSummary } from './formatSummary';
 import { isTeamnetFormat, parseTeamnetData } from './teamnetParser';
-import { TeamnetRateConfig } from './teamnetRateCalculator';
+import { TeamnetRateConfig, HolidayConfig } from './teamnetRateCalculator';
 import { ImportFormat } from '@/components/payroll/FormatSelector';
 
 export interface ParseExtraHoursOptions {
   format?: ImportFormat;
   rateConfig?: TeamnetRateConfig | null;
+  holidayConfig?: HolidayConfig;
 }
 
 /**
@@ -25,6 +26,7 @@ export const parseExtraHoursFile = async (
   // Handle backwards compatibility - if options is a string, it's the old format parameter
   const format = typeof options === 'string' ? options : options?.format;
   const rateConfig = typeof options === 'object' ? options?.rateConfig : undefined;
+  const holidayConfig = typeof options === 'object' ? options?.holidayConfig : undefined;
   
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -53,7 +55,7 @@ export const parseExtraHoursFile = async (
         
         if (useTeamnet) {
           console.log('Using Teamnet parser with time-based rate calculation');
-          const summary = parseTeamnetData(jsonData, rateConfig);
+          const summary = parseTeamnetData(jsonData, rateConfig, holidayConfig);
           resolve(summary);
         } else {
           console.log('Using Practice Index parser');

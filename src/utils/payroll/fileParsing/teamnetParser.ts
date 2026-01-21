@@ -5,7 +5,7 @@
  */
 
 import { ExtraHoursSummary, EmployeeHoursData } from '@/components/payroll/types';
-import { calculateTeamnetRates, parseTeamnetDate, RateHours, TeamnetRateConfig } from './teamnetRateCalculator';
+import { calculateTeamnetRates, parseTeamnetDate, RateHours, TeamnetRateConfig, HolidayConfig } from './teamnetRateCalculator';
 
 interface TeamnetRow {
   Name?: string;
@@ -77,8 +77,9 @@ export function isTeamnetFormat(jsonData: any[]): boolean {
  * Parse Teamnet data and calculate rates based on shift times
  * @param jsonData - The raw data from the Teamnet file
  * @param rateConfig - Optional company-specific rate configuration
+ * @param holidayConfig - Optional holiday configuration for rate overrides
  */
-export function parseTeamnetData(jsonData: any[], rateConfig?: TeamnetRateConfig | null): ExtraHoursSummary {
+export function parseTeamnetData(jsonData: any[], rateConfig?: TeamnetRateConfig | null, holidayConfig?: HolidayConfig): ExtraHoursSummary {
   const employeeMap = new Map<string, EmployeeRateAccumulator>();
   
   let earliestDate: Date | null = null;
@@ -151,8 +152,8 @@ export function parseTeamnetData(jsonData: any[], rateConfig?: TeamnetRateConfig
       latestDate = shiftDate;
     }
     
-    // Calculate rate hours based on shift time (pass company config if available)
-    const rateHours = calculateTeamnetRates(timeFrom, timeTo, shiftDate, rateConfig, employeeName);
+    // Calculate rate hours based on shift time (pass company config and holiday config if available)
+    const rateHours = calculateTeamnetRates(timeFrom, timeTo, shiftDate, rateConfig, employeeName, holidayConfig);
     
     // Accumulate hours by employee
     const existing = employeeMap.get(employeeName);
