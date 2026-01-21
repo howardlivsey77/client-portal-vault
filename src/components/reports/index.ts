@@ -19,3 +19,8 @@ export { P11ReportHeader } from "./p11/P11ReportHeader";
 export { P11ReportTable } from "./p11/P11ReportTable";
 export { P11ReportTotals } from "./p11/P11ReportTotals";
 export { generateP11Pdf } from "./p11/p11PdfGenerator";
+
+// Imported vs Paid Report
+export { ImportedVsPaidReport } from "./imported-vs-paid/ImportedVsPaidReport";
+export { ImportedVsPaidReportFilters } from "./imported-vs-paid/ImportedVsPaidReportFilters";
+export { ImportedVsPaidReportTable } from "./imported-vs-paid/ImportedVsPaidReportTable";

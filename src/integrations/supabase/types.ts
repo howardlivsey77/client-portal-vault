@@ -1519,6 +1519,88 @@ export type Database = {
           },
         ]
       }
+      payroll_import_audit: {
+        Row: {
+          company_id: string
+          created_at: string
+          employee_id: string
+          financial_year: number
+          id: string
+          import_type: string
+          imported_at: string
+          imported_by: string | null
+          imported_rate: number | null
+          imported_units: number | null
+          imported_value: number | null
+          payroll_period_id: string | null
+          period_number: number
+          rate_type: string | null
+          source_file_name: string | null
+          source_row_reference: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          employee_id: string
+          financial_year: number
+          id?: string
+          import_type?: string
+          imported_at?: string
+          imported_by?: string | null
+          imported_rate?: number | null
+          imported_units?: number | null
+          imported_value?: number | null
+          payroll_period_id?: string | null
+          period_number: number
+          rate_type?: string | null
+          source_file_name?: string | null
+          source_row_reference?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          employee_id?: string
+          financial_year?: number
+          id?: string
+          import_type?: string
+          imported_at?: string
+          imported_by?: string | null
+          imported_rate?: number | null
+          imported_units?: number | null
+          imported_value?: number | null
+          payroll_period_id?: string | null
+          period_number?: number
+          rate_type?: string | null
+          source_file_name?: string | null
+          source_row_reference?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_import_audit_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_import_audit_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_import_audit_payroll_period_id_fkey"
+            columns: ["payroll_period_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payroll_periods: {
         Row: {
           company_id: string | null

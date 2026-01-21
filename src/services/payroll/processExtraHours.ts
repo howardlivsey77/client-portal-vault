@@ -255,6 +255,37 @@ export const savePayrollData = async (
       return { success: false, message: `Error saving employee details: ${detailsError.message}` };
     }
     
+    // Insert audit records for import reconciliation
+    const auditInserts = data.employeeDetails
+      .filter(emp => emp.employeeId) // Only audit matched employees
+      .map(emp => ({
+        company_id: companyId,
+        employee_id: emp.employeeId,
+        payroll_period_id: periodId,
+        period_number: periodNumber,
+        financial_year: financialYear,
+        import_type: 'extra_hours' as const,
+        rate_type: emp.rateType || null,
+        imported_units: emp.extraHours,
+        imported_rate: emp.rateValue || null,
+        imported_value: emp.rateValue ? emp.extraHours * emp.rateValue : null,
+        source_file_name: null, // TODO: Add fileName to ExtraHoursSummary if needed
+        imported_by: userId
+      }));
+    
+    if (auditInserts.length > 0 && companyId) {
+      const { error: auditError } = await supabase
+        .from('payroll_import_audit')
+        .insert(auditInserts);
+      
+      if (auditError) {
+        // Log but don't fail - audit is supplementary
+        console.warn('Error saving import audit records:', auditError);
+      } else {
+        console.log(`Saved ${auditInserts.length} import audit records`);
+      }
+    }
+    
     return { 
       success: true, 
       message: "Payroll data saved successfully", 
