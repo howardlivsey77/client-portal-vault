@@ -4,7 +4,8 @@ import { ExtraHoursSummary } from '@/components/payroll/types';
 import { enrichEmployeeData } from './employeeEnrichment';
 import { supabase } from '@/integrations/supabase/client';
 import { ImportFormat } from '@/components/payroll/FormatSelector';
-import { TeamnetRateConfig, RateCondition } from '@/utils/payroll/fileParsing/teamnetRateCalculator';
+import { TeamnetRateConfig, RateCondition, HolidayConfig } from '@/utils/payroll/fileParsing/teamnetRateCalculator';
+import { CompanyHoliday, CompanyHolidaySettings } from '@/features/company-settings/types/companyHoliday';
 
 /**
  * Process an extra hours file and return summary data
@@ -44,8 +45,62 @@ export const processExtraHoursFile = async (
       }
     }
     
-    // Parse the file with the specified format and rate config
-    const parsedData = await parseExtraHoursFile(file, { format, rateConfig });
+    // Fetch company holiday settings
+    let holidaySettings: CompanyHolidaySettings | null = null;
+    if (companyId) {
+      const { data: settingsData, error: settingsError } = await supabase
+        .from('company_holiday_settings')
+        .select('*')
+        .eq('company_id', companyId)
+        .maybeSingle();
+      
+      if (settingsError) {
+        console.warn('Error fetching holiday settings:', settingsError);
+      } else if (settingsData) {
+        holidaySettings = {
+          use_uk_bank_holidays: settingsData.use_uk_bank_holidays,
+          bank_holiday_rate: settingsData.bank_holiday_rate as 2 | 3 | 4
+        };
+        console.log('Using holiday settings:', holidaySettings);
+      }
+    }
+    
+    // Fetch custom company holidays
+    let customHolidays: CompanyHoliday[] = [];
+    if (companyId) {
+      const { data: holidaysData, error: holidaysError } = await supabase
+        .from('company_holidays')
+        .select('*')
+        .eq('company_id', companyId);
+      
+      if (holidaysError) {
+        console.warn('Error fetching company holidays:', holidaysError);
+      } else if (holidaysData) {
+        customHolidays = holidaysData.map(h => ({
+          id: h.id,
+          company_id: h.company_id,
+          date: h.date,
+          name: h.name,
+          rate_override: h.rate_override as 2 | 3 | 4,
+          all_day: h.all_day,
+          time_from: h.time_from,
+          time_to: h.time_to,
+          is_recurring: h.is_recurring ?? false,
+          created_at: h.created_at,
+          updated_at: h.updated_at
+        }));
+        console.log('Loaded', customHolidays.length, 'custom company holidays');
+      }
+    }
+    
+    // Create holidayConfig object
+    const holidayConfig: HolidayConfig = {
+      holidays: customHolidays,
+      settings: holidaySettings
+    };
+    
+    // Parse the file with the specified format, rate config, and holiday config
+    const parsedData = await parseExtraHoursFile(file, { format, rateConfig, holidayConfig });
     
     // Enrich with employee data from the database
     await enrichEmployeeData(parsedData);
