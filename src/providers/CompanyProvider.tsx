@@ -5,7 +5,7 @@ import { useAuth } from "./AuthProvider";
 import { Company, CompanyWithRole } from "@/types";
 import { useToast } from "@/hooks";
 
-export type CompanyRole = 'admin' | 'payroll' | 'user' | null;
+export type CompanyRole = 'admin' | 'payroll' | 'user' | 'bureau' | null;
 
 interface CompanyContextType {
   currentCompany: Company | null;
