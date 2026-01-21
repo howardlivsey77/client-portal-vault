@@ -11,7 +11,8 @@ import {
   EmployeeNotFound,
   LoadingState,
   HmrcInfoCard,
-  NhsPensionInfoCard
+  NhsPensionInfoCard,
+  SalaryInfoCard
 } from "@/components/employees/details";
 
 const EmployeeDetails = () => {
@@ -71,6 +72,13 @@ const EmployeeDetails = () => {
           isAdmin={isAdmin}
           updateEmployeeField={updateEmployeeField}
           canEdit={isAdmin || isOwnRecord}
+        />
+
+        <SalaryInfoCard 
+          employee={employee}
+          isAdmin={isAdmin}
+          updateEmployeeField={updateEmployeeField}
+          canEdit={isAdmin}
         />
         
         <WorkPatternCard 
