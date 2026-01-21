@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/providers";
@@ -63,7 +63,7 @@ export function usePayrollSummaryReport() {
   const { currentCompany } = useCompany();
   const companyId = currentCompany?.id;
 
-  // Initialize with current period
+  // Initialize with current period as fallback
   const currentDate = new Date();
   const currentFinancialYear = getFinancialYearForDate(currentDate);
   const currentPeriod = getCurrentPayPeriod(currentDate);
@@ -72,6 +72,39 @@ export function usePayrollSummaryReport() {
     financialYear: currentFinancialYear.description,
     periodNumber: currentPeriod.periodNumber,
   });
+
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Fetch the most recent period with payroll data
+  const { data: latestPeriodData } = useQuery({
+    queryKey: ["payroll-latest-period", companyId],
+    queryFn: async () => {
+      if (!companyId) return null;
+      
+      const { data, error } = await supabase
+        .from("payroll_results")
+        .select("tax_year, tax_period")
+        .eq("company_id", companyId)
+        .order("tax_year", { ascending: false })
+        .order("tax_period", { ascending: false })
+        .limit(1);
+      
+      if (error || !data || data.length === 0) return null;
+      return { taxYear: data[0].tax_year, taxPeriod: data[0].tax_period };
+    },
+    enabled: !!companyId,
+  });
+
+  // Initialize filters to the latest period with data
+  useEffect(() => {
+    if (latestPeriodData && !hasInitialized) {
+      setFilters({
+        financialYear: latestPeriodData.taxYear,
+        periodNumber: latestPeriodData.taxPeriod,
+      });
+      setHasInitialized(true);
+    }
+  }, [latestPeriodData, hasInitialized]);
 
   // Fetch payroll results with employee data
   const { data: payrollData, isLoading: isLoadingPayroll, refetch } = useQuery({
