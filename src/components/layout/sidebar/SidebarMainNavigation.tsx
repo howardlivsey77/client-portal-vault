@@ -121,7 +121,7 @@ export function SidebarMainNavigation({ location, isExpanded = true }: SidebarMa
       label: "Payroll Reports",
       to: getTabUrl("reports"),
       isActive: isTabActive("reports"),
-      allowedRoles: ['admin', 'payroll'], // Admins and payroll users
+      // Available to all users
     },
     {
       icon: FileBarChart,
