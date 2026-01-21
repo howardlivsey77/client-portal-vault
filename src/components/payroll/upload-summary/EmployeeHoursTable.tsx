@@ -26,7 +26,7 @@ export function EmployeeHoursTable({ employeeDetails }: EmployeeHoursTableProps)
           Employee Hours Breakdown ({employeeDetails.length} entries)
         </h3>
       </div>
-      <div className="w-full max-h-[60vh] overflow-auto">
+      <div className="w-full overflow-x-auto">
         <div className="min-w-[600px]">
           <Table>
             <TableHeader>
