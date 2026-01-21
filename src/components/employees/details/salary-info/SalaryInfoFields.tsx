@@ -48,7 +48,7 @@ export const SalaryInfoFields = ({ control }: SalaryInfoFieldsProps) => {
           name="hourly_rate"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Default Hourly Rate (£)</FormLabel>
+              <FormLabel>Default Hourly Rate</FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -75,7 +75,7 @@ export const SalaryInfoFields = ({ control }: SalaryInfoFieldsProps) => {
           name="rate_2"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Standard Overtime (£)</FormLabel>
+              <FormLabel>Standard Overtime</FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -100,7 +100,7 @@ export const SalaryInfoFields = ({ control }: SalaryInfoFieldsProps) => {
           name="rate_3"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Enhanced Access (£)</FormLabel>
+              <FormLabel>Enhanced Access</FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -127,7 +127,7 @@ export const SalaryInfoFields = ({ control }: SalaryInfoFieldsProps) => {
           name="rate_4"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Rate 4 (Optional) (£)</FormLabel>
+              <FormLabel>Rate 4 (Optional)</FormLabel>
               <FormControl>
                 <Input
                   type="number"
