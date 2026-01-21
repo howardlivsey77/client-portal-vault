@@ -12,6 +12,7 @@ export interface PersonalInfoFormValues {
   first_name: string;
   last_name: string;
   department: string;
+  cost_centre: string | null;
   gender: "Male" | "Female" | "Other" | "Prefer not to say" | null;
   payroll_id: string | null;
   date_of_birth: Date | null;

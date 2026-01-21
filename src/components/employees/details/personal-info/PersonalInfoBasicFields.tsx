@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 import { genderOptions } from "@/types";
 import { useDepartments } from "@/hooks";
+import { useCostCentres } from "@/hooks/employees/useCostCentres";
 import { PersonalInfoFormValues } from "./types";
 import { useNavigate } from "react-router-dom";
 
@@ -16,6 +17,7 @@ interface PersonalInfoBasicFieldsProps {
 
 export const PersonalInfoBasicFields = ({ control }: PersonalInfoBasicFieldsProps) => {
   const { departmentNames, loading } = useDepartments();
+  const { costCentreNames, loading: costCentresLoading } = useCostCentres();
   const navigate = useNavigate();
 
   return (
@@ -103,6 +105,61 @@ export const PersonalInfoBasicFields = ({ control }: PersonalInfoBasicFieldsProp
                     className="text-xs"
                   >
                     Create Departments
+                    <ExternalLink className="ml-1 h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+            </FormItem>
+          )}
+        />
+      </div>
+
+      <div>
+        <FormField
+          control={control}
+          name="cost_centre"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cost Centre</FormLabel>
+              <Select 
+                onValueChange={(value) => field.onChange(value === "none" ? null : value)} 
+                value={field.value || "none"}
+                disabled={costCentresLoading}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={costCentresLoading ? "Loading cost centres..." : "Select a cost centre"} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {/* Always include current value if set and not in list yet (handles loading state) */}
+                  {field.value && field.value !== "none" && !costCentreNames.includes(field.value) && (
+                    <SelectItem key={field.value} value={field.value}>
+                      {field.value}
+                    </SelectItem>
+                  )}
+                  {costCentreNames.map((cc) => (
+                    <SelectItem key={cc} value={cc}>
+                      {cc}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+              {costCentreNames.length === 0 && !costCentresLoading && (
+                <div className="flex items-center gap-2 mt-2">
+                  <p className="text-sm text-muted-foreground">
+                    No cost centres found.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/settings/company/cost-centres')}
+                    className="text-xs"
+                  >
+                    Create Cost Centres
                     <ExternalLink className="ml-1 h-3 w-3" />
                   </Button>
                 </div>
