@@ -246,7 +246,8 @@ export function calculateTeamnetRates(
   config?: TeamnetRateConfig | null,
   employeeName?: string,
   holidayConfig?: HolidayConfig,
-  sourceDuration?: number // Optional: use Duration column from source file instead of calculating
+  sourceDuration?: number, // Optional: use Duration column from source file instead of calculating
+  explicitRate?: number // Optional: explicit rate from file (2, 3, or 4) - bypasses all time-window calculation
 ): RateHours {
   const shiftStart = parseTimeToMinutes(timeFrom);
   let shiftEnd = parseTimeToMinutes(timeTo);
@@ -264,6 +265,16 @@ export function calculateTeamnetRates(
   const totalHours = minutesToHours(totalMinutes);
   const dayOfWeek = date.getDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
   const dayName = DAY_NAMES[dayOfWeek];
+  
+  // PRIORITY 0: If explicit rate is provided from file, use it directly (bypass all calculation)
+  if (explicitRate !== undefined && explicitRate >= 2 && explicitRate <= 4) {
+    console.log(`[RATE] Using explicit rate from file: Rate ${explicitRate} for ${totalHours}h (${employeeName || 'unknown'})`);
+    return {
+      rate2Hours: explicitRate === 2 ? totalHours : 0,
+      rate3Hours: explicitRate === 3 ? totalHours : 0,
+      rate4Hours: explicitRate === 4 ? totalHours : 0,
+    };
+  }
   
   // Debug logging for specific employees or all if DEBUG_RATES is true
   const debugEmployees = ['Lewis Rushworth', 'Azra Javaid', 'Deborah Clifford'];

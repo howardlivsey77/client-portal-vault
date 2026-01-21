@@ -108,6 +108,26 @@ export function parseTeamnetData(jsonData: any[], rateConfig?: TeamnetRateConfig
     const duration = getColumnValue(row, ['Duration', 'duration']);
     const units = getColumnValue(row, ['Units', 'units']);
     
+    // Check for explicit rate column (e.g., "Rate 2", "Rate 3", "2", "3")
+    const explicitRateStr = getColumnValue(row, [
+      'Rate', 'rate', 'Rate Type', 'rate type', 'RateType', 'ratetype',
+      'Pay Rate', 'pay rate', 'PayRate', 'payrate',
+      'OT Rate', 'ot rate', 'OTRate', 'otrate',
+      'Overtime Rate', 'overtime rate'
+    ]);
+    
+    // Parse explicit rate value (handles "Rate 2", "Rate 3", "2", "3", etc.)
+    let explicitRate: number | undefined;
+    if (explicitRateStr) {
+      const rateMatch = explicitRateStr.match(/(\d)/);
+      if (rateMatch) {
+        const parsedRate = parseInt(rateMatch[1], 10);
+        if (parsedRate >= 2 && parsedRate <= 4) {
+          explicitRate = parsedRate;
+        }
+      }
+    }
+    
     // Parse source Duration if available and units are hours
     let sourceDuration: number | undefined;
     if (duration) {
@@ -167,8 +187,8 @@ export function parseTeamnetData(jsonData: any[], rateConfig?: TeamnetRateConfig
       latestDate = shiftDate;
     }
     
-    // Calculate rate hours based on shift time (pass company config, holiday config, and source duration if available)
-    const rateHours = calculateTeamnetRates(timeFrom, timeTo, shiftDate, rateConfig, employeeName, holidayConfig, sourceDuration);
+    // Calculate rate hours based on shift time (pass company config, holiday config, source duration, and explicit rate if available)
+    const rateHours = calculateTeamnetRates(timeFrom, timeTo, shiftDate, rateConfig, employeeName, holidayConfig, sourceDuration, explicitRate);
     
     // Accumulate hours by employee
     const existing = employeeMap.get(employeeName);
