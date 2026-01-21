@@ -13,7 +13,7 @@ import { PayslipReport } from "./payslip";
 import { ImportedVsPaidReport } from "@/components/reports/imported-vs-paid";
 import { PayrollSummaryReport } from "./payroll-summary";
 
-type ReportType = "payment-hours-rates" | "payslips" | "payroll-summary" | "imported-vs-paid";
+type ReportType = "payment-hours-rates" | "payslips" | "payroll-summary" | "imported-vs-paid" | "gp1" | "sd55" | "p32";
 
 export function ReportsNavigation() {
   const [selectedReport, setSelectedReport] = useState<ReportType>("payment-hours-rates");
@@ -33,6 +33,12 @@ export function ReportsNavigation() {
         return <ImportedVsPaidReport />;
       case "payroll-summary":
         return <PayrollSummaryReport />;
+      case "gp1":
+        return <div className="p-6 text-center text-muted-foreground">GP1 Report - Coming Soon</div>;
+      case "sd55":
+        return <div className="p-6 text-center text-muted-foreground">SD55 Report - Coming Soon</div>;
+      case "p32":
+        return <div className="p-6 text-center text-muted-foreground">P32 Report - Coming Soon</div>;
       default:
         return <PaymentHoursRatesReport />;
     }
@@ -56,6 +62,9 @@ export function ReportsNavigation() {
               <SelectItem value="payslips">Payslips</SelectItem>
               <SelectItem value="imported-vs-paid">Imported vs Paid Report</SelectItem>
               <SelectItem value="payroll-summary">Payroll Summary Report</SelectItem>
+              <SelectItem value="gp1">GP1</SelectItem>
+              <SelectItem value="sd55">SD55</SelectItem>
+              <SelectItem value="p32">P32</SelectItem>
             </SelectContent>
           </Select>
         </div>
