@@ -11,6 +11,7 @@ import { ChartBar } from "lucide-react";
 import { PaymentHoursRatesReport } from "./PaymentHoursRatesReport";
 import { PayslipReport } from "./payslip";
 import { ImportedVsPaidReport } from "@/components/reports/imported-vs-paid";
+import { PayrollSummaryReport } from "./payroll-summary";
 
 type ReportType = "payment-hours-rates" | "payslips" | "payroll-summary" | "imported-vs-paid";
 
@@ -31,7 +32,7 @@ export function ReportsNavigation() {
       case "imported-vs-paid":
         return <ImportedVsPaidReport />;
       case "payroll-summary":
-        return <div className="p-6 text-center text-muted-foreground">Payroll Summary Report - Coming Soon</div>;
+        return <PayrollSummaryReport />;
       default:
         return <PaymentHoursRatesReport />;
     }
