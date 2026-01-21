@@ -6,7 +6,6 @@ import {
   DialogHeader,
   DialogTitle 
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useConsolidatedPayrollWizard } from "./hooks/useConsolidatedPayrollWizard";
 import { WizardNavigation } from "./WizardNavigation";
 import { createWizardSteps } from "./WizardSteps";
@@ -81,11 +80,11 @@ export function PayrollInputWizard({ open, onOpenChange, payPeriod, financialYea
             </Alert>
           )}
           
-          <ScrollArea className="flex-1 py-4">
-            <div className="pr-4">
+          <div className="flex-1 min-h-0 overflow-y-auto py-4 pr-2">
+            <div className="pb-6">
               {currentStepData.component}
             </div>
-          </ScrollArea>
+          </div>
 
           <DialogFooter className="border-t pt-4">
             <WizardNavigation 
