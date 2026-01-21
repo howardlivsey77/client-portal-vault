@@ -8,6 +8,7 @@ export interface Employee {
   first_name: string;
   last_name: string;
   department: string;
+  cost_centre: string | null;
   hire_date: string;
   hours_per_week: number | null;
   hourly_rate: number | null;
