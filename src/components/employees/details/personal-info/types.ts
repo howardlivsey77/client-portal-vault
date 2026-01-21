@@ -17,9 +17,4 @@ export interface PersonalInfoFormValues {
   payroll_id: string | null;
   date_of_birth: Date | null;
   hire_date: Date;
-  hours_per_week: number;
-  hourly_rate: number;
-  rate_2: number | null;
-  rate_3: number | null;
-  rate_4: number | null;
 }

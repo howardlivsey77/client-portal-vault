@@ -7,7 +7,6 @@ import { personalInfoSchema } from "./PersonalInfoSchema";
 import { PersonalInfoFormValues, PersonalInfoProps } from "./types";
 import { PersonalInfoBasicFields } from "./PersonalInfoBasicFields";
 import { PersonalInfoDateField } from "./PersonalInfoDateField";
-import { PersonalInfoRateFields } from "./PersonalInfoRateFields";
 import { PersonalInfoDisplay } from "./PersonalInfoDisplay";
 
 interface PersonalInfoFormComponentProps extends PersonalInfoProps {
@@ -37,11 +36,6 @@ export const PersonalInfoFormComponent = forwardRef<PersonalInfoFormRef, Persona
     payroll_id: employee.payroll_id,
     date_of_birth: employee.date_of_birth ? new Date(employee.date_of_birth) : null,
     hire_date: employee.hire_date ? new Date(employee.hire_date) : new Date(),
-    hours_per_week: employee.hours_per_week ?? 40,
-    hourly_rate: employee.hourly_rate ?? 0,
-    rate_2: employee.rate_2,
-    rate_3: employee.rate_3,
-    rate_4: employee.rate_4,
   });
 
   const form = useForm<PersonalInfoFormValues>({
@@ -71,7 +65,6 @@ export const PersonalInfoFormComponent = forwardRef<PersonalInfoFormRef, Persona
           <>
             <PersonalInfoBasicFields control={form.control} />
             <PersonalInfoDateField control={form.control} />
-            <PersonalInfoRateFields control={form.control} />
           </>
         ) : (
           <PersonalInfoDisplay employee={employee} />
