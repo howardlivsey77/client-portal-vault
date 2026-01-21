@@ -85,9 +85,20 @@ export function useConsolidatedPayrollWizard(payPeriod?: PayPeriod, financialYea
         });
       }
       
+      // If no mapping needed, apply rates immediately for exact matches
+      let finalResult = result;
+      if (!needsMapping) {
+        const enrichedEmployeeData = applyUserMappings(matching, {});
+        finalResult = {
+          ...result,
+          employeeDetails: enrichedEmployeeData,
+          employeeCount: enrichedEmployeeData.length,
+        };
+      }
+      
       setState(prev => ({
         ...prev,
-        processedData: result,
+        processedData: finalResult,
         matchingResults: matching,
         showEmployeeMapping: false, // Don't auto-show - wait for user to click Next on step 2
         mappingCompleted: !needsMapping, // Mark as completed if no mapping needed
