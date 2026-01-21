@@ -17,7 +17,7 @@ interface SidebarMainNavigationProps {
   isExpanded?: boolean;
 }
 
-type AllowedRole = 'admin' | 'payroll' | 'user';
+type AllowedRole = 'admin' | 'payroll' | 'user' | 'bureau';
 
 interface NavItem {
   icon: React.ElementType;
@@ -55,6 +55,7 @@ export function SidebarMainNavigation({ location, isExpanded = true }: SidebarMa
       label: "Dashboard",
       to: getTabUrl("overview"),
       isActive: isTabActive("overview") && !isRouteActive("/employees"),
+      hiddenForRoles: ['bureau'], // Hidden from bureau users
     },
     {
       icon: Building,
@@ -94,6 +95,7 @@ export function SidebarMainNavigation({ location, isExpanded = true }: SidebarMa
       label: "Timesheets",
       to: getTabUrl("timesheets"),
       isActive: isTabActive("timesheets"),
+      hiddenForRoles: ['bureau'], // Hidden from bureau users
     },
     {
       icon: Receipt,
@@ -134,7 +136,7 @@ export function SidebarMainNavigation({ location, isExpanded = true }: SidebarMa
       label: "Users",
       to: "/invites",
       isActive: isRouteActive("/invites"),
-      allowedRoles: ['admin'], // Super admins only
+      allowedRoles: ['admin', 'bureau'], // Admins and bureau users
     },
   ];
 
