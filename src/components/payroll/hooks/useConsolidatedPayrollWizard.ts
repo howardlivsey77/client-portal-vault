@@ -105,7 +105,7 @@ export function useConsolidatedPayrollWizard(payPeriod?: PayPeriod, financialYea
         isProcessing: false,
       }));
       
-      return result;
+      return finalResult;
     } catch (error) {
       console.error("Error processing file:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to process file";
