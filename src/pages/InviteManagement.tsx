@@ -76,6 +76,22 @@ const InviteManagement = () => {
     checkAuth();
   }, [navigate, toast]);
 
+  // Listen for auth state changes to handle session expiration
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        toast({
+          title: "Session ended",
+          description: "Your session has expired. Redirecting to login...",
+          variant: "destructive"
+        });
+        navigate("/auth");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, toast]);
+
   useEffect(() => {
     if (!selectedCompanyId && currentCompany?.id) {
       setSelectedCompanyId(currentCompany.id);
@@ -87,6 +103,19 @@ const InviteManagement = () => {
     setInviteLoading(true);
 
     try {
+      // Validate session before proceeding
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !sessionData.session) {
+        toast({
+          title: "Session Expired",
+          description: "Your session has expired. Please log in again.",
+          variant: "destructive"
+        });
+        navigate("/auth");
+        return;
+      }
+
       if (!email.trim()) {
         toast({
           title: "Email required",
@@ -115,6 +144,16 @@ const InviteManagement = () => {
       const { data, error } = await invokeFunction('admin-invite', { body: payload });
 
       if (error) {
+        // Check for auth-specific errors
+        if (error.message?.includes('not authenticated') || error.message?.includes('401')) {
+          toast({
+            title: "Session Expired",
+            description: "Your session has expired. Please log in again.",
+            variant: "destructive"
+          });
+          navigate("/auth");
+          return;
+        }
         throw new Error(error.message || 'Failed to send invitation');
       }
 

@@ -144,7 +144,17 @@ const handler = async (req: Request): Promise<Response> => {
     // Get the user's JWT token from the request
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('No authorization header');
+      console.error(JSON.stringify({
+        evt: "invite.error",
+        reqId,
+        message: "No authorization header",
+        duration_ms: Date.now() - startTime,
+        timestamp: new Date().toISOString()
+      }));
+      return new Response(
+        JSON.stringify({ success: false, error: 'No authorization header' }),
+        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
     }
 
     // Create Supabase client with user's token for auth validation
@@ -157,7 +167,18 @@ const handler = async (req: Request): Promise<Response> => {
     // Verify user is authenticated
     const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
     if (userError || !user) {
-      throw new Error('User not authenticated');
+      console.error(JSON.stringify({
+        evt: "invite.error",
+        reqId,
+        message: "User not authenticated",
+        detail: userError?.message || "No user found",
+        duration_ms: Date.now() - startTime,
+        timestamp: new Date().toISOString()
+      }));
+      return new Response(
+        JSON.stringify({ success: false, error: 'User not authenticated - session may have expired' }),
+        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
     }
 
     // Create admin client for privileged operations
