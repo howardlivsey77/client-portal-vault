@@ -3,8 +3,10 @@ import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle, ChevronDown, ChevronUp, Save } from "lucide-react";
 import { EmployeeCardProps } from './types';
 import { useBrandColors } from "@/brand";
 
@@ -13,8 +15,10 @@ export function EmployeeCard({
   userMappings,
   allDatabaseEmployees,
   expandedCards,
+  rememberMappings,
   onMappingChange,
-  onToggleExpansion
+  onToggleExpansion,
+  onRememberChange
 }: EmployeeCardProps) {
   const brandColors = useBrandColors();
   const employeeName = match.employeeData.employeeName;
@@ -26,6 +30,9 @@ export function EmployeeCard({
   const isExpanded = expandedCards[employeeName];
   const hasMultipleCandidates = match.candidates.length > 1;
   const displayCandidates = isExpanded ? match.candidates : match.candidates.slice(0, 2);
+  
+  // Default to true if not explicitly set
+  const shouldRemember = rememberMappings[employeeName] !== false;
   
   const sortedEmployees = [...allDatabaseEmployees].sort((a, b) => {
     if (a.last_name !== b.last_name) {
@@ -108,19 +115,36 @@ export function EmployeeCard({
           </div>
           
           {selectedEmployee && (
-            <div 
-              className="p-2 border rounded text-xs"
-              style={{
-                backgroundColor: `hsl(${brandColors.successLight})`,
-                borderColor: `hsl(${brandColors.success} / 0.3)`
-              }}
-            >
-              <div className="flex items-center" style={{ color: `hsl(${brandColors.success})` }}>
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Mapped to: {selectedEmployee.full_name}
-                {selectedEmployee.payroll_id && ` (${selectedEmployee.payroll_id})`}
+            <>
+              <div 
+                className="p-2 border rounded text-xs"
+                style={{
+                  backgroundColor: `hsl(${brandColors.successLight})`,
+                  borderColor: `hsl(${brandColors.success} / 0.3)`
+                }}
+              >
+                <div className="flex items-center" style={{ color: `hsl(${brandColors.success})` }}>
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Mapped to: {selectedEmployee.full_name}
+                  {selectedEmployee.payroll_id && ` (${selectedEmployee.payroll_id})`}
+                </div>
               </div>
-            </div>
+              
+              <div className="flex items-center space-x-2 pt-1">
+                <Checkbox 
+                  id={`remember-${employeeName}`}
+                  checked={shouldRemember}
+                  onCheckedChange={(checked) => onRememberChange(employeeName, checked === true)}
+                />
+                <Label 
+                  htmlFor={`remember-${employeeName}`} 
+                  className="text-xs text-muted-foreground cursor-pointer flex items-center"
+                >
+                  <Save className="h-3 w-3 mr-1" />
+                  Remember this match for future imports
+                </Label>
+              </div>
+            </>
           )}
         </div>
       </CardContent>

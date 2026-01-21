@@ -13,6 +13,7 @@ import { createWizardSteps } from "./WizardSteps";
 import { EmployeeMappingDialog } from "./EmployeeMappingDialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { useCompany } from "@/providers/CompanyProvider";
 
 import { PayPeriod } from "@/services/payroll/utils/financial-year-utils";
 
@@ -26,6 +27,8 @@ interface PayrollInputWizardProps {
 }
 
 export function PayrollInputWizard({ open, onOpenChange, payPeriod, financialYear }: PayrollInputWizardProps) {
+  const { currentCompany } = useCompany();
+  
   const {
     currentStep,
     selectedFormat,
@@ -57,7 +60,8 @@ export function PayrollInputWizard({ open, onOpenChange, payPeriod, financialYea
     onEmployeeMappingCancel: handleEmployeeMappingCancel,
     selectedFormat,
     onFormatChange: handleFormatChange,
-    targetPeriod: payPeriod ? { periodNumber: payPeriod.periodNumber, year: payPeriod.year } : undefined
+    targetPeriod: payPeriod ? { periodNumber: payPeriod.periodNumber, year: payPeriod.year } : undefined,
+    companyId: currentCompany?.id
   });
   
   const currentStepData = steps[currentStep];
@@ -108,6 +112,7 @@ export function PayrollInputWizard({ open, onOpenChange, payPeriod, financialYea
           matchingResults={matchingResults}
           onConfirm={handleEmployeeMappingConfirm}
           onCancel={handleEmployeeMappingCancel}
+          companyId={currentCompany?.id}
         />
       )}
     </>

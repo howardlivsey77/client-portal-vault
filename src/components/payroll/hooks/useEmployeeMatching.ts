@@ -2,16 +2,17 @@
 import { useState } from "react";
 import { toast } from "@/hooks";
 import { matchEmployees, applyUserMappings, EmployeeMatchingResults } from "@/services/payroll/employeeMatching";
+import { saveAliases } from "@/services/payroll/employeeNameAliases";
 import { ExtraHoursSummary } from "../types";
 import { setProcessedPayrollData } from "./services/payrollDataService";
 
-export function useEmployeeMatching() {
+export function useEmployeeMatching(companyId?: string) {
   const [matchingResults, setMatchingResults] = useState<EmployeeMatchingResults | null>(null);
   const [showEmployeeMapping, setShowEmployeeMapping] = useState(false);
 
   const performEmployeeMatching = async (processedData: ExtraHoursSummary) => {
     try {
-      const matching = await matchEmployees(processedData.employeeDetails);
+      const matching = await matchEmployees(processedData.employeeDetails, companyId);
       setMatchingResults(matching);
       
       const needsMapping = matching.fuzzyMatches.length > 0 || matching.unmatchedEmployees.length > 0;
@@ -19,6 +20,14 @@ export function useEmployeeMatching() {
         console.log("Employee mapping required:", {
           fuzzy: matching.fuzzyMatches.length,
           unmatched: matching.unmatchedEmployees.length
+        });
+      }
+      
+      // Show toast if aliases were used
+      if (matching.aliasMatchCount > 0) {
+        toast({
+          title: "Saved mappings applied",
+          description: `${matching.aliasMatchCount} employee${matching.aliasMatchCount !== 1 ? 's' : ''} matched using saved aliases.`,
         });
       }
       
@@ -34,10 +43,33 @@ export function useEmployeeMatching() {
     }
   };
 
-  const handleEmployeeMappingConfirm = (userMappings: Record<string, string>, processedData: ExtraHoursSummary) => {
+  const handleEmployeeMappingConfirm = async (
+    userMappings: Record<string, string>,
+    rememberMappings: Record<string, boolean>,
+    processedData: ExtraHoursSummary
+  ) => {
     if (!matchingResults) return null;
     
     console.log("User mappings confirmed:", userMappings);
+    console.log("Remember mappings:", rememberMappings);
+    
+    // Save aliases for mappings that should be remembered
+    if (companyId) {
+      const aliasesToSave = Object.entries(userMappings)
+        .filter(([sourceName, _]) => rememberMappings[sourceName] !== false)
+        .map(([sourceName, employeeId]) => ({ sourceName, employeeId }));
+      
+      if (aliasesToSave.length > 0) {
+        const result = await saveAliases(companyId, aliasesToSave);
+        if (result.saved > 0) {
+          console.log(`Saved ${result.saved} employee name aliases for future imports`);
+          toast({
+            title: "Mappings saved",
+            description: `${result.saved} mapping${result.saved !== 1 ? 's' : ''} will be remembered for future imports.`,
+          });
+        }
+      }
+    }
     
     // Apply user mappings to get final employee data
     const finalEmployeeData = applyUserMappings(matchingResults, userMappings);
