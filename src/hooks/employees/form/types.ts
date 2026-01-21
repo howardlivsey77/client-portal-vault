@@ -5,6 +5,7 @@ export interface EmployeeFormData {
   first_name: string;
   last_name: string;
   department: string;
+  cost_centre?: string | null;
   hours_per_week: number;
   hourly_rate: number;
   date_of_birth: Date | null;

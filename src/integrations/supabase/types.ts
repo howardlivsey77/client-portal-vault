@@ -916,6 +916,7 @@ export type Database = {
           address3: string | null
           address4: string | null
           company_id: string | null
+          cost_centre: string | null
           created_at: string
           date_of_birth: string | null
           department: string
@@ -961,6 +962,7 @@ export type Database = {
           address3?: string | null
           address4?: string | null
           company_id?: string | null
+          cost_centre?: string | null
           created_at?: string
           date_of_birth?: string | null
           department: string
@@ -1006,6 +1008,7 @@ export type Database = {
           address3?: string | null
           address4?: string | null
           company_id?: string | null
+          cost_centre?: string | null
           created_at?: string
           date_of_birth?: string | null
           department?: string

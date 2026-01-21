@@ -78,6 +78,7 @@ export const useEmployeeDataFetching = (
         first_name: employeeData.first_name,
         last_name: employeeData.last_name,
         department: employeeData.department,
+        cost_centre: (employeeData as any).cost_centre || null,
         hours_per_week: employeeData.hours_per_week || 40,
         hourly_rate: employeeData.hourly_rate || 0,
         date_of_birth: dateOfBirth,

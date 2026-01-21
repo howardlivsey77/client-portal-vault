@@ -15,6 +15,7 @@ export const useEmployeeFormState = () => {
       first_name: "",
       last_name: "",
       department: "",
+      cost_centre: null,
       hours_per_week: 40,
       hourly_rate: 0,
       date_of_birth: null,
