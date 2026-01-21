@@ -3,6 +3,7 @@ import { useState, useCallback } from "react";
 import { toast } from "@/hooks";
 import { processExtraHoursFile, savePayrollData } from "@/services";
 import { matchEmployees, applyUserMappings, EmployeeMatchingResults } from "@/services/payroll/employeeMatching";
+import { saveAliases } from "@/services/payroll/employeeNameAliases";
 import { useAuth } from "@/providers";
 import { useCompany } from "@/providers/CompanyProvider";
 import { ExtraHoursSummary, PayrollFiles } from "../types";
@@ -70,9 +71,17 @@ export function useConsolidatedPayrollWizard(payPeriod?: PayPeriod, financialYea
       // Pass the selected format and company ID to the parser for rate config loading
       const result = await processExtraHoursFile(file, state.selectedFormat, currentCompany?.id);
       
-      // Perform employee matching immediately
-      const matching = await matchEmployees(result.employeeDetails);
+      // Perform employee matching immediately - pass company ID to check for saved aliases
+      const matching = await matchEmployees(result.employeeDetails, currentCompany?.id);
       const needsMapping = matching.fuzzyMatches.length > 0 || matching.unmatchedEmployees.length > 0;
+      
+      // Show info about alias matches
+      if (matching.aliasMatchCount > 0) {
+        toast({
+          title: "Saved mappings applied",
+          description: `${matching.aliasMatchCount} employee${matching.aliasMatchCount !== 1 ? 's' : ''} matched using saved aliases.`,
+        });
+      }
       
       setState(prev => ({
         ...prev,
@@ -104,10 +113,32 @@ export function useConsolidatedPayrollWizard(payPeriod?: PayPeriod, financialYea
   }, [state.processedData, state.selectedFormat, currentCompany?.id]);
 
   // Handle employee mapping confirmation
-  const handleEmployeeMappingConfirm = useCallback((userMappings: Record<string, string>) => {
+  const handleEmployeeMappingConfirm = useCallback(async (
+    userMappings: Record<string, string>,
+    rememberMappings: Record<string, boolean>
+  ) => {
     if (!state.matchingResults || !state.processedData) return;
     
     console.log("User mappings confirmed:", userMappings);
+    console.log("Remember mappings:", rememberMappings);
+    
+    // Save aliases for mappings that should be remembered
+    if (currentCompany?.id) {
+      const aliasesToSave = Object.entries(userMappings)
+        .filter(([sourceName, _]) => rememberMappings[sourceName] !== false)
+        .map(([sourceName, employeeId]) => ({ sourceName, employeeId }));
+      
+      if (aliasesToSave.length > 0) {
+        const result = await saveAliases(currentCompany.id, aliasesToSave);
+        if (result.saved > 0) {
+          console.log(`Saved ${result.saved} employee name aliases for future imports`);
+          toast({
+            title: "Mappings saved",
+            description: `${result.saved} mapping${result.saved !== 1 ? 's' : ''} will be remembered for future imports.`,
+          });
+        }
+      }
+    }
     
     // Apply user mappings to get final employee data
     const finalEmployeeData = applyUserMappings(state.matchingResults, userMappings);
@@ -130,7 +161,7 @@ export function useConsolidatedPayrollWizard(payPeriod?: PayPeriod, financialYea
       title: "Employee mapping completed",
       description: `${finalEmployeeData.length} employees successfully mapped.`,
     });
-  }, [state.matchingResults, state.processedData]);
+  }, [state.matchingResults, state.processedData, currentCompany?.id]);
 
   // Handle employee mapping cancellation
   const handleEmployeeMappingCancel = useCallback(() => {

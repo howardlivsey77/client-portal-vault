@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCircle, AlertCircle, Users } from "lucide-react";
+import { CheckCircle, AlertCircle, Users, Save } from "lucide-react";
 import { EmployeeMatchingResults } from '@/services/payroll/employeeMatching';
 import { SummaryCards } from './mapping-dialog/SummaryCards';
 import { ProgressDisplay } from './mapping-dialog/ProgressDisplay';
@@ -22,10 +22,12 @@ export function EmployeeMappingDialog({
   onOpenChange,
   matchingResults,
   onConfirm,
-  onCancel
+  onCancel,
+  companyId
 }: EmployeeMappingDialogProps) {
   const [userMappings, setUserMappings] = useState<Record<string, string>>({});
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+  const [rememberMappings, setRememberMappings] = useState<Record<string, boolean>>({});
   const brandColors = useBrandColors();
   
   // Initialize with best fuzzy matches
@@ -55,6 +57,13 @@ export function EmployeeMappingDialog({
     });
   };
   
+  const handleRememberChange = (employeeName: string, remember: boolean) => {
+    setRememberMappings(prev => ({
+      ...prev,
+      [employeeName]: remember
+    }));
+  };
+  
   const toggleCardExpansion = (employeeName: string) => {
     setExpandedCards(prev => ({
       ...prev,
@@ -63,7 +72,7 @@ export function EmployeeMappingDialog({
   };
   
   const handleConfirm = () => {
-    onConfirm(userMappings);
+    onConfirm(userMappings, rememberMappings);
     // Don't close the main dialog here - let the parent handle the flow
   };
   
@@ -94,6 +103,11 @@ export function EmployeeMappingDialog({
   // Total mapped = exact matches + resolved fuzzy matches + resolved unmatched employees
   const totalMapped = exactMatchesCount + resolvedFuzzyMatches + resolvedUnmatchedEmployees;
   
+  // Count how many mappings will be remembered
+  const mappingsToRemember = Object.keys(userMappings).filter(
+    name => rememberMappings[name] !== false
+  ).length;
+  
   // Enhanced debug logging
   console.log('Progress calculation:', {
     exactMatchesCount,
@@ -103,16 +117,7 @@ export function EmployeeMappingDialog({
     totalMapped,
     userMappings,
     userMappingsCount: Object.keys(userMappings).length,
-    fuzzyMatchDetails: matchingResults.fuzzyMatches.map(match => ({
-      name: match.employeeData.employeeName,
-      hasUserMapping: userMappings.hasOwnProperty(match.employeeData.employeeName),
-      hasHighConfidenceCandidate: match.candidates.length > 0 && match.candidates[0].confidence > 0.8,
-      topConfidence: match.candidates.length > 0 ? match.candidates[0].confidence : 0
-    })),
-    unmatchedDetails: matchingResults.unmatchedEmployees.map(match => ({
-      name: match.employeeData.employeeName,
-      hasUserMapping: userMappings.hasOwnProperty(match.employeeData.employeeName)
-    }))
+    mappingsToRemember
   });
   
   return (
@@ -152,8 +157,10 @@ export function EmployeeMappingDialog({
                       userMappings={userMappings}
                       allDatabaseEmployees={matchingResults.allDatabaseEmployees}
                       expandedCards={expandedCards}
+                      rememberMappings={rememberMappings}
                       onMappingChange={handleMappingChange}
                       onToggleExpansion={toggleCardExpansion}
+                      onRememberChange={handleRememberChange}
                     />
                   ))}
                 </div>
@@ -173,12 +180,24 @@ export function EmployeeMappingDialog({
         </div>
         
         <DialogFooter className="flex-shrink-0 border-t pt-4">
-          <Button variant="outline" onClick={handleCancel}>
-            Cancel
-          </Button>
-          <Button onClick={handleConfirm}>
-            Continue with {totalMapped} employees
-          </Button>
+          <div className="flex items-center justify-between w-full">
+            <div className="text-xs text-muted-foreground flex items-center">
+              {mappingsToRemember > 0 && companyId && (
+                <>
+                  <Save className="h-3 w-3 mr-1" />
+                  {mappingsToRemember} mapping{mappingsToRemember !== 1 ? 's' : ''} will be remembered
+                </>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleCancel}>
+                Cancel
+              </Button>
+              <Button onClick={handleConfirm}>
+                Continue with {totalMapped} employees
+              </Button>
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

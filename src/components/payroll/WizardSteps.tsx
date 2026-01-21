@@ -13,12 +13,13 @@ interface CreateWizardStepsProps {
   processedData?: any;
   showEmployeeMapping?: boolean;
   matchingResults?: any;
-  onEmployeeMappingConfirm?: (mappings: Record<string, string>) => void;
+  onEmployeeMappingConfirm?: (mappings: Record<string, string>, rememberMappings: Record<string, boolean>) => void;
   onEmployeeMappingCancel?: () => void;
   onSicknessImportComplete?: (count: number) => void;
   selectedFormat: ImportFormat;
   onFormatChange: (format: ImportFormat) => void;
   targetPeriod?: { periodNumber: number; year: number };
+  companyId?: string;
 }
 
 export function createWizardSteps({

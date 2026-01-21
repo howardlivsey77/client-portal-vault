@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { EmployeeHoursData } from '@/components/payroll/types';
 import { roundToTwoDecimals } from '@/lib/formatters';
+import { getSavedAliases } from './employeeNameAliases';
 
 export interface EmployeeMatchCandidate {
   id: string;
@@ -19,9 +20,10 @@ export interface EmployeeMatchCandidate {
 
 export interface EmployeeMatchResult {
   employeeData: EmployeeHoursData;
-  matchType: 'exact' | 'fuzzy' | 'unmatched';
+  matchType: 'exact' | 'fuzzy' | 'unmatched' | 'alias';
   candidates: EmployeeMatchCandidate[];
   selectedMatch?: EmployeeMatchCandidate;
+  matchedViaAlias?: boolean;
 }
 
 export interface EmployeeMatchingResults {
@@ -29,6 +31,7 @@ export interface EmployeeMatchingResults {
   fuzzyMatches: EmployeeMatchResult[];
   unmatchedEmployees: EmployeeMatchResult[];
   allDatabaseEmployees: EmployeeMatchCandidate[];
+  aliasMatchCount: number;
 }
 
 /**
@@ -163,9 +166,22 @@ function findMatchingCandidates(
 
 /**
  * Match employees from payroll file with database employees
+ * @param employeeHoursData - Array of employee hours data from payroll file
+ * @param companyId - Optional company ID to check for saved name aliases
  */
-export async function matchEmployees(employeeHoursData: EmployeeHoursData[]): Promise<EmployeeMatchingResults> {
+export async function matchEmployees(
+  employeeHoursData: EmployeeHoursData[],
+  companyId?: string
+): Promise<EmployeeMatchingResults> {
   try {
+    // Fetch saved aliases if companyId is provided
+    const savedAliases = companyId ? await getSavedAliases(companyId) : {};
+    const hasAliases = Object.keys(savedAliases).length > 0;
+    
+    if (hasAliases) {
+      console.log(`Loaded ${Object.keys(savedAliases).length} saved employee name aliases`);
+    }
+
     // Fetch all employees from database
     const { data: employees, error } = await supabase
       .from('employees')
@@ -201,9 +217,31 @@ export async function matchEmployees(employeeHoursData: EmployeeHoursData[]): Pr
     const exactMatches: EmployeeMatchResult[] = [];
     const fuzzyMatches: EmployeeMatchResult[] = [];
     const unmatchedEmployees: EmployeeMatchResult[] = [];
+    let aliasMatchCount = 0;
     
     // Process each employee from the payroll file
     for (const employeeData of employeeHoursData) {
+      // PRIORITY 0: Check saved aliases first (highest priority)
+      const normalizedName = employeeData.employeeName.toLowerCase().trim();
+      const aliasEmployeeId = savedAliases[normalizedName];
+      
+      if (aliasEmployeeId) {
+        const aliasEmployee = databaseEmployees.find(emp => emp.id === aliasEmployeeId);
+        if (aliasEmployee) {
+          console.log(`✅ ALIAS MATCH: "${employeeData.employeeName}" matched to ${aliasEmployee.full_name} via saved alias`);
+          exactMatches.push({
+            employeeData,
+            matchType: 'exact',
+            candidates: [{ ...aliasEmployee, confidence: 1.0 }],
+            selectedMatch: { ...aliasEmployee, confidence: 1.0 },
+            matchedViaAlias: true
+          });
+          aliasMatchCount++;
+          continue;
+        }
+      }
+      
+      // PRIORITY 1-2: Check email and name matching
       const candidates = findMatchingCandidates(employeeData, databaseEmployees);
       
       let matchResult: EmployeeMatchResult;
@@ -236,22 +274,23 @@ export async function matchEmployees(employeeHoursData: EmployeeHoursData[]): Pr
       }
     }
     
-    console.log(`Employee matching results: ${exactMatches.length} exact, ${fuzzyMatches.length} fuzzy, ${unmatchedEmployees.length} unmatched`);
+    console.log(`Employee matching results: ${exactMatches.length} exact (${aliasMatchCount} via aliases), ${fuzzyMatches.length} fuzzy, ${unmatchedEmployees.length} unmatched`);
     
     // Log breakdown of exact match methods
     const emailMatches = exactMatches.filter(m => 
-      m.employeeData.email && m.selectedMatch?.email && 
+      !m.matchedViaAlias && m.employeeData.email && m.selectedMatch?.email && 
       m.employeeData.email.toLowerCase() === m.selectedMatch.email.toLowerCase()
     ).length;
-    const nameMatches = exactMatches.length - emailMatches;
+    const nameMatches = exactMatches.length - emailMatches - aliasMatchCount;
     
-    console.log(`  └─ Exact matches breakdown: ${emailMatches} via email, ${nameMatches} via name`);
+    console.log(`  └─ Exact matches breakdown: ${aliasMatchCount} via saved aliases, ${emailMatches} via email, ${nameMatches} via name`);
     
     return {
       exactMatches,
       fuzzyMatches,
       unmatchedEmployees,
-      allDatabaseEmployees: databaseEmployees
+      allDatabaseEmployees: databaseEmployees,
+      aliasMatchCount
     };
   } catch (error) {
     console.error('Error in employee matching:', error);
