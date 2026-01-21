@@ -35,26 +35,31 @@ export const ImportedVsPaidReport = () => {
         'Imported Units': data.imported_units || 0,
         'Imported Rate': data.imported_rate || 0,
         'Imported Value': data.imported_value || 0,
+        'Processed Units': data.processed_units ?? 'N/A',
+        'Processed Rate': data.processed_rate ?? 'N/A',
+        'Processed Value': data.processed_value ?? 'N/A',
+        'Units Variance': data.units_variance ?? 'N/A',
+        'Value Variance': data.value_variance ?? 'N/A',
         'Import Date': new Date(data.imported_at).toLocaleDateString(),
         'Source File': data.source_file_name || 'N/A'
       }));
 
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Import Audit');
+      XLSX.utils.book_append_sheet(wb, ws, 'Import vs Paid');
       
-      const filename = `imported-data-period${filters.periodNumber}-${filters.financialYear}.xlsx`;
+      const filename = `imported-vs-paid-period${filters.periodNumber}-${filters.financialYear}.xlsx`;
       XLSX.writeFile(wb, filename);
       
       toast({
         title: "Export successful",
-        description: "Import audit report has been exported to Excel."
+        description: "Imported vs Paid report has been exported to Excel."
       });
     } catch (error) {
       console.error("Error exporting to Excel:", error);
       toast({
         title: "Export failed",
-        description: "Failed to export the import audit report.",
+        description: "Failed to export the report.",
         variant: "destructive"
       });
     }
@@ -99,7 +104,7 @@ export const ImportedVsPaidReport = () => {
       />
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Period</CardDescription>
@@ -110,15 +115,34 @@ export const ImportedVsPaidReport = () => {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Total Imported Units</CardDescription>
-            <CardTitle className="text-xl">{totals.importedUnits.toFixed(2)}</CardTitle>
+            <CardDescription>Total Imported</CardDescription>
+            <CardTitle className="text-xl">£{totals.importedValue.toFixed(2)}</CardTitle>
           </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-sm text-muted-foreground">{totals.importedUnits.toFixed(2)} units</p>
+          </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Total Imported Value</CardDescription>
-            <CardTitle className="text-xl">£{totals.importedValue.toFixed(2)}</CardTitle>
+            <CardDescription>Total Processed</CardDescription>
+            <CardTitle className="text-xl">£{totals.processedValue.toFixed(2)}</CardTitle>
           </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-sm text-muted-foreground">{totals.processedUnits.toFixed(2)} units</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Total Variance</CardDescription>
+            <CardTitle className={`text-xl ${Math.abs(totals.valueVariance) < 0.01 ? 'text-green-600 dark:text-green-400' : 'text-destructive'}`}>
+              {totals.valueVariance >= 0 ? '+' : '-'}£{Math.abs(totals.valueVariance).toFixed(2)}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className={`text-sm ${Math.abs(totals.unitsVariance) < 0.01 ? 'text-green-600 dark:text-green-400' : 'text-destructive'}`}>
+              {totals.unitsVariance >= 0 ? '+' : ''}{totals.unitsVariance.toFixed(2)} units
+            </p>
+          </CardContent>
         </Card>
       </div>
 
