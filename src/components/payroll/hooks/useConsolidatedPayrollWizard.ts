@@ -20,6 +20,7 @@ interface ConsolidatedWizardState {
   isProcessing: boolean;
   showEmployeeMapping: boolean;
   matchingResults: EmployeeMatchingResults | null;
+  mappingCompleted: boolean;
   error: string | null;
 }
 
@@ -35,6 +36,7 @@ export function useConsolidatedPayrollWizard(payPeriod?: PayPeriod, financialYea
     isProcessing: false,
     showEmployeeMapping: false,
     matchingResults: null,
+    mappingCompleted: false,
     error: null,
   });
 
@@ -87,7 +89,8 @@ export function useConsolidatedPayrollWizard(payPeriod?: PayPeriod, financialYea
         ...prev,
         processedData: result,
         matchingResults: matching,
-        showEmployeeMapping: needsMapping,
+        showEmployeeMapping: false, // Don't auto-show - wait for user to click Next on step 2
+        mappingCompleted: !needsMapping, // Mark as completed if no mapping needed
         isProcessing: false,
       }));
       
@@ -154,7 +157,7 @@ export function useConsolidatedPayrollWizard(payPeriod?: PayPeriod, financialYea
       ...prev,
       processedData: updatedProcessedData,
       showEmployeeMapping: false,
-      currentStep: 3, // Advance to Upload Absences step (adjusted for format selection step)
+      mappingCompleted: true, // Mark mapping as done - stay on step 2 to review summary
     }));
     
     toast({
@@ -178,13 +181,14 @@ export function useConsolidatedPayrollWizard(payPeriod?: PayPeriod, financialYea
   const handleNext = useCallback(async (onOpenChange: (open: boolean) => void) => {
     console.log("HandleNext called - Current step:", state.currentStep);
     
-    // Check if we need to show employee mapping after summary step (step 2, adjusted for format selection)
-    if (state.currentStep === 2 && !state.showEmployeeMapping && state.matchingResults) {
+    // Check if we need to show employee mapping after summary step (step 2)
+    // Only show mapping dialog if mapping hasn't been completed yet
+    if (state.currentStep === 2 && !state.showEmployeeMapping && state.matchingResults && !state.mappingCompleted) {
       const needsMapping = state.matchingResults.fuzzyMatches.length > 0 || state.matchingResults.unmatchedEmployees.length > 0;
       if (needsMapping) {
         console.log("Showing employee mapping dialog");
         setState(prev => ({ ...prev, showEmployeeMapping: true }));
-        return; // Don't advance step yet - mapping completion will advance to step 3
+        return; // Don't advance step yet - user will review summary after mapping
       }
     }
     
@@ -290,6 +294,7 @@ export function useConsolidatedPayrollWizard(payPeriod?: PayPeriod, financialYea
       isProcessing: false,
       showEmployeeMapping: false,
       matchingResults: null,
+      mappingCompleted: false,
       error: null,
     });
   }, []);
