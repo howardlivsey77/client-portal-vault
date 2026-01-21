@@ -1,6 +1,5 @@
 
 import React, { useState } from "react";
-import { Card } from "@/components/ui/card";
 import { 
   Select,
   SelectContent,
@@ -8,23 +7,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ChartBar, ChevronDown } from "lucide-react";
-import { EmployeeChangesReport } from "./EmployeeChangesReport";
+import { ChartBar } from "lucide-react";
 import { PaymentHoursRatesReport } from "./PaymentHoursRatesReport";
-import { EmployeeDetailsReport } from "./employee-details/EmployeeDetailsReport";
 import { PayslipReport } from "./payslip";
 import { ImportedVsPaidReport } from "@/components/reports/imported-vs-paid";
 
-type ReportType = "employee-changes" | "employee-details" | "payment-hours-rates" | "payslips" | "payroll-summary" | "time-off" | "performance" | "imported-vs-paid";
+type ReportType = "payment-hours-rates" | "payslips" | "payroll-summary" | "time-off" | "performance" | "imported-vs-paid";
 
 export function ReportsNavigation() {
-  const [selectedReport, setSelectedReport] = useState<ReportType>("employee-changes");
+  const [selectedReport, setSelectedReport] = useState<ReportType>("payment-hours-rates");
 
   const handleReportChange = (value: string) => {
     setSelectedReport(value as ReportType);
@@ -33,10 +24,6 @@ export function ReportsNavigation() {
   // Render the selected report component
   const renderReportComponent = () => {
     switch (selectedReport) {
-      case "employee-changes":
-        return <EmployeeChangesReport />;
-      case "employee-details":
-        return <EmployeeDetailsReport />;
       case "payment-hours-rates":
         return <PaymentHoursRatesReport />;
       case "payslips":
@@ -50,7 +37,7 @@ export function ReportsNavigation() {
       case "performance":
         return <div className="p-6 text-center text-muted-foreground">Performance Report - Coming Soon</div>;
       default:
-        return <EmployeeChangesReport />;
+        return <PaymentHoursRatesReport />;
     }
   };
 
@@ -68,8 +55,6 @@ export function ReportsNavigation() {
               <SelectValue placeholder="Select report type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="employee-changes">Employee Changes Report</SelectItem>
-              <SelectItem value="employee-details">Employee Details Report</SelectItem>
               <SelectItem value="payment-hours-rates">Payment Hours and Rates</SelectItem>
               <SelectItem value="payslips">Payslips</SelectItem>
               <SelectItem value="imported-vs-paid">Imported vs Paid Report</SelectItem>
