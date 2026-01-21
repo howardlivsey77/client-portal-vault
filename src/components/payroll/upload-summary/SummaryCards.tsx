@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, Calendar, Users, FileText, Timer, DollarSign } from "lucide-react";
+import { Clock, Calendar, Users, FileText, Timer } from "lucide-react";
 import { ExtraHoursSummary } from "../types";
 
 interface SummaryCardsProps {
@@ -37,7 +37,7 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
             <Card>
               <CardHeader className="p-3">
                 <CardTitle className="text-sm flex items-center">
-                  <DollarSign className="h-4 w-4 mr-2" />
+                  <Timer className="h-4 w-4 mr-2" />
                   Rate 2 Hours
                 </CardTitle>
               </CardHeader>
@@ -52,7 +52,7 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
             <Card>
               <CardHeader className="p-3">
                 <CardTitle className="text-sm flex items-center">
-                  <DollarSign className="h-4 w-4 mr-2 text-amber-500" />
+                  <Timer className="h-4 w-4 mr-2 text-amber-500" />
                   Rate 3 Hours
                 </CardTitle>
               </CardHeader>
