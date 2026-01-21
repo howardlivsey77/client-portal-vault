@@ -4,6 +4,7 @@ export * from './contact-info/ContactInfoCard';
 export { EmployeeHeader } from './EmployeeHeader';
 export { SystemInfoCard } from './SystemInfoCard';
 export { WorkPatternCard } from './WorkPatternCard';
+export { SicknessTrackingCard } from './sickness/SicknessTrackingCard';
 export { EmployeeNotFound } from './EmployeeNotFound';
 export { LoadingState } from './LoadingState';
 export * from './hmrc-info';
