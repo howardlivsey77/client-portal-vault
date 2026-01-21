@@ -5,3 +5,5 @@ export { useSicknessReport } from "./useSicknessReport";
 export type { SicknessReportData, SicknessReportFilters } from "./useSicknessReport";
 export { useP11Report } from "./useP11Report";
 export type { P11ReportData, P11PeriodData, P11YTDTotals, P11EmployeeDetails, P11CompanyDetails } from "./useP11Report";
+export { usePayrollSummaryReport, getPeriodMonthName } from "./usePayrollSummaryReport";
+export type { PayrollSummaryRecord, PayrollSummaryTotals, PayrollSummaryFilters, PayrollSummaryReportData } from "./usePayrollSummaryReport";
