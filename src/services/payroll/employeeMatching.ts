@@ -151,8 +151,8 @@ function findMatchingCandidates(
       );
     }
     
-    // Only include candidates with reasonable similarity
-    if (confidence > 0.6) {
+    // Only include candidates with reasonable similarity (lowered from 0.6 to catch near-matches like typos)
+    if (confidence > 0.5) {
       candidates.push({
         ...dbEmployee,
         confidence
