@@ -130,18 +130,20 @@ function findHolidayRate(
 
 /**
  * Calculate rate hours using company-specific configuration
+ * If sourceDurationMinutes differs from calculatedMinutes, rates are proportionally scaled
  */
 function calculateWithConfig(
   shiftStart: number,
   shiftEnd: number,
   dayOfWeek: number,
-  totalMinutes: number,
+  calculatedMinutes: number,
+  sourceDurationMinutes: number,
   config: TeamnetRateConfig
 ): RateHours {
   const dayName = DAY_NAMES[dayOfWeek];
   const rateMinutes: Record<number, number> = { 2: 0, 3: 0, 4: 0 };
   
-  // Calculate minutes for each matching condition
+  // Calculate minutes for each matching condition based on time range overlap
   for (const condition of config.conditions) {
     if (condition.days.includes(dayName)) {
       const windowStart = parseTimeToMinutes(condition.time_from);
@@ -154,14 +156,22 @@ function calculateWithConfig(
     }
   }
   
-  // Calculate total assigned minutes
+  // Calculate total assigned minutes from time-range calculation
   const assignedMinutes = rateMinutes[2] + rateMinutes[3] + rateMinutes[4];
   
   // Remaining minutes go to default rate
-  const remainingMinutes = totalMinutes - assignedMinutes;
+  const remainingMinutes = calculatedMinutes - assignedMinutes;
   if (remainingMinutes > 0) {
     const defaultRate = Math.max(2, Math.min(4, config.default_rate));
     rateMinutes[defaultRate] += remainingMinutes;
+  }
+  
+  // If source duration differs from calculated, scale proportionally
+  if (sourceDurationMinutes !== calculatedMinutes && calculatedMinutes > 0) {
+    const scale = sourceDurationMinutes / calculatedMinutes;
+    rateMinutes[2] = rateMinutes[2] * scale;
+    rateMinutes[3] = rateMinutes[3] * scale;
+    rateMinutes[4] = rateMinutes[4] * scale;
   }
   
   return {
@@ -173,12 +183,14 @@ function calculateWithConfig(
 
 /**
  * Calculate rate hours using hardcoded default rules
+ * If sourceDurationMinutes differs from calculatedMinutes, rates are proportionally scaled
  */
 function calculateWithDefaults(
   shiftStart: number,
   shiftEnd: number,
   dayOfWeek: number,
-  totalMinutes: number
+  calculatedMinutes: number,
+  sourceDurationMinutes: number
 ): RateHours {
   let rate3Minutes = 0;
   
@@ -190,7 +202,7 @@ function calculateWithDefaults(
   
   // Check if Sunday (0) - all hours at Rate 3
   if (dayOfWeek === 0) {
-    rate3Minutes = totalMinutes;
+    rate3Minutes = calculatedMinutes;
   }
   // Check if weekday (Mon-Fri: 1-5)
   else if (dayOfWeek >= 1 && dayOfWeek <= 5) {
@@ -200,7 +212,15 @@ function calculateWithDefaults(
   else if (dayOfWeek === 6) {
     rate3Minutes = calculateOverlap(shiftStart, shiftEnd, saturdayRate3Start, saturdayRate3End);
   }
-  const rate2Minutes = totalMinutes - rate3Minutes;
+  
+  let rate2Minutes = calculatedMinutes - rate3Minutes;
+  
+  // If source duration differs from calculated, scale proportionally
+  if (sourceDurationMinutes !== calculatedMinutes && calculatedMinutes > 0) {
+    const scale = sourceDurationMinutes / calculatedMinutes;
+    rate2Minutes = rate2Minutes * scale;
+    rate3Minutes = rate3Minutes * scale;
+  }
   
   return {
     rate2Hours: minutesToHours(rate2Minutes),
@@ -225,7 +245,8 @@ export function calculateTeamnetRates(
   date: Date,
   config?: TeamnetRateConfig | null,
   employeeName?: string,
-  holidayConfig?: HolidayConfig
+  holidayConfig?: HolidayConfig,
+  sourceDuration?: number // Optional: use Duration column from source file instead of calculating
 ): RateHours {
   const shiftStart = parseTimeToMinutes(timeFrom);
   let shiftEnd = parseTimeToMinutes(timeTo);
@@ -235,7 +256,11 @@ export function calculateTeamnetRates(
     shiftEnd += 24 * 60; // Add 24 hours
   }
   
-  const totalMinutes = shiftEnd - shiftStart;
+  // Use source duration if provided, otherwise calculate from time range
+  const calculatedMinutes = shiftEnd - shiftStart;
+  const totalMinutes = sourceDuration !== undefined && sourceDuration > 0 
+    ? sourceDuration * 60 
+    : calculatedMinutes;
   const totalHours = minutesToHours(totalMinutes);
   const dayOfWeek = date.getDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
   const dayName = DAY_NAMES[dayOfWeek];
@@ -276,9 +301,9 @@ export function calculateTeamnetRates(
   // PRIORITY 4: Otherwise use defaults
   let result: RateHours;
   if (config && config.conditions && config.conditions.length > 0) {
-    result = calculateWithConfig(shiftStart, shiftEnd, dayOfWeek, totalMinutes, config);
+    result = calculateWithConfig(shiftStart, shiftEnd, dayOfWeek, calculatedMinutes, totalMinutes, config);
   } else {
-    result = calculateWithDefaults(shiftStart, shiftEnd, dayOfWeek, totalMinutes);
+    result = calculateWithDefaults(shiftStart, shiftEnd, dayOfWeek, calculatedMinutes, totalMinutes);
   }
   
   if (shouldLog) {

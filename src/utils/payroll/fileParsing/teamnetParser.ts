@@ -105,6 +105,21 @@ export function parseTeamnetData(jsonData: any[], rateConfig?: TeamnetRateConfig
     const dateFrom = getColumnValue(row, ['Date from', 'date from', 'Date_from', 'date_from']);
     const timeFrom = getColumnValue(row, ['Time from', 'time from', 'Time_from', 'time_from']);
     const timeTo = getColumnValue(row, ['Time to', 'time to', 'Time_to', 'time_to']);
+    const duration = getColumnValue(row, ['Duration', 'duration']);
+    const units = getColumnValue(row, ['Units', 'units']);
+    
+    // Parse source Duration if available and units are hours
+    let sourceDuration: number | undefined;
+    if (duration) {
+      const parsed = parseFloat(duration);
+      if (!isNaN(parsed) && parsed > 0) {
+        // Check if units indicate hours (default to hours if not specified)
+        const isHours = !units || units.toLowerCase().includes('hour');
+        if (isHours) {
+          sourceDuration = parsed;
+        }
+      }
+    }
     
     // Build employee name - handle both separate and combined name columns
     let employeeName: string;
@@ -152,8 +167,8 @@ export function parseTeamnetData(jsonData: any[], rateConfig?: TeamnetRateConfig
       latestDate = shiftDate;
     }
     
-    // Calculate rate hours based on shift time (pass company config and holiday config if available)
-    const rateHours = calculateTeamnetRates(timeFrom, timeTo, shiftDate, rateConfig, employeeName, holidayConfig);
+    // Calculate rate hours based on shift time (pass company config, holiday config, and source duration if available)
+    const rateHours = calculateTeamnetRates(timeFrom, timeTo, shiftDate, rateConfig, employeeName, holidayConfig, sourceDuration);
     
     // Accumulate hours by employee
     const existing = employeeMap.get(employeeName);
