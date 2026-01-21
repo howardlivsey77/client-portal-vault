@@ -200,6 +200,91 @@ export type Database = {
           },
         ]
       }
+      company_holiday_settings: {
+        Row: {
+          bank_holiday_rate: number | null
+          company_id: string
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          use_uk_bank_holidays: boolean | null
+        }
+        Insert: {
+          bank_holiday_rate?: number | null
+          company_id: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          use_uk_bank_holidays?: boolean | null
+        }
+        Update: {
+          bank_holiday_rate?: number | null
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          use_uk_bank_holidays?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_holiday_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_holidays: {
+        Row: {
+          all_day: boolean | null
+          company_id: string
+          created_at: string | null
+          date: string
+          id: string
+          is_recurring: boolean | null
+          name: string
+          rate_override: number | null
+          time_from: string | null
+          time_to: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          all_day?: boolean | null
+          company_id: string
+          created_at?: string | null
+          date: string
+          id?: string
+          is_recurring?: boolean | null
+          name: string
+          rate_override?: number | null
+          time_from?: string | null
+          time_to?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          all_day?: boolean | null
+          company_id?: string
+          created_at?: string | null
+          date?: string
+          id?: string
+          is_recurring?: boolean | null
+          name?: string
+          rate_override?: number | null
+          time_from?: string | null
+          time_to?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_holidays_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       data_access_audit_log: {
         Row: {
           access_type: string
