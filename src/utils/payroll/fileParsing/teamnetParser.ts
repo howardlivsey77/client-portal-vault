@@ -6,6 +6,7 @@
 
 import { ExtraHoursSummary, EmployeeHoursData } from '@/components/payroll/types';
 import { calculateTeamnetRates, parseTeamnetDate, RateHours, TeamnetRateConfig, HolidayConfig } from './teamnetRateCalculator';
+import { roundToTwoDecimals } from '@/services/payroll/utils/roundingUtils';
 
 interface TeamnetRow {
   Name?: string;
@@ -217,7 +218,7 @@ export function parseTeamnetData(jsonData: any[], rateConfig?: TeamnetRateConfig
   let totalRate2Hours = 0;
   let totalRate3Hours = 0;
   let totalRate4Hours = 0;
-  let totalEntries = 0;
+  const totalEntries = processedRows; // Use actual count from parsing loop
   
   for (const [, emp] of employeeMap) {
     // Add Rate 2 entry if there are Rate 2 hours
@@ -230,7 +231,6 @@ export function parseTeamnetData(jsonData: any[], rateConfig?: TeamnetRateConfig
         rateType: 'Rate 2'
       });
       totalRate2Hours += emp.rate2Hours;
-      totalEntries += emp.entries;
     }
     
     // Add Rate 3 entry if there are Rate 3 hours
@@ -271,7 +271,7 @@ export function parseTeamnetData(jsonData: any[], rateConfig?: TeamnetRateConfig
   
   return {
     totalEntries,
-    totalExtraHours: totalRate2Hours + totalRate3Hours + totalRate4Hours,
+    totalExtraHours: roundToTwoDecimals(totalRate2Hours + totalRate3Hours + totalRate4Hours),
     dateRange: {
       from: formatDate(earliestDate),
       to: formatDate(latestDate),
