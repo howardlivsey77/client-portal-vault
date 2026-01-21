@@ -9,6 +9,18 @@ import { useCompany } from "@/providers/CompanyProvider";
 import { ExtraHoursSummary, PayrollFiles } from "../types";
 import { ImportFormat } from "../FormatSelector";
 import { PayPeriod } from "@/services/payroll/utils/financial-year-utils";
+import { EmployeeHoursData } from "../types";
+
+// Helper to compute unique employee count from breakdown rows
+function computeUniqueCount(employees: EmployeeHoursData[]): number {
+  const seen = new Set<string>();
+  for (const emp of employees) {
+    // Prefer employeeId, then payrollId, then normalized name
+    const key = emp.employeeId || emp.payrollId || emp.employeeName?.toLowerCase().trim() || '';
+    if (key) seen.add(key);
+  }
+  return seen.size;
+}
 
 type WizardStep = 0 | 1 | 2 | 3 | 4; // Format Select -> Upload -> Review -> Absences -> Final Summary
 
@@ -92,7 +104,7 @@ export function useConsolidatedPayrollWizard(payPeriod?: PayPeriod, financialYea
         finalResult = {
           ...result,
           employeeDetails: enrichedEmployeeData,
-          employeeCount: enrichedEmployeeData.length,
+          employeeCount: computeUniqueCount(enrichedEmployeeData),
         };
       }
       
@@ -158,10 +170,11 @@ export function useConsolidatedPayrollWizard(payPeriod?: PayPeriod, financialYea
     const finalEmployeeData = applyUserMappings(state.matchingResults, userMappings);
     
     // Update processed data with mapped employee information
+    const uniqueCount = computeUniqueCount(finalEmployeeData);
     const updatedProcessedData = {
       ...state.processedData,
       employeeDetails: finalEmployeeData,
-      employeeCount: finalEmployeeData.length
+      employeeCount: uniqueCount
     };
     
     setState(prev => ({
@@ -173,7 +186,7 @@ export function useConsolidatedPayrollWizard(payPeriod?: PayPeriod, financialYea
     
     toast({
       title: "Employee mapping completed",
-      description: `${finalEmployeeData.length} employees successfully mapped.`,
+      description: `Mapped ${uniqueCount} employees (${finalEmployeeData.length} breakdown lines).`,
     });
   }, [state.matchingResults, state.processedData, currentCompany?.id]);
 
