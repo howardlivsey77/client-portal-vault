@@ -9,7 +9,7 @@ import { EmployeeYtdStep } from "./steps/EmployeeYtdStep";
 import { HmrcStep } from "./steps/HmrcStep";
 import { PensionStep } from "./steps/PensionStep";
 import { useNewEmployeeWizard, WIZARD_STEPS } from "@/hooks/employees/useNewEmployeeWizard";
-import { useDepartments } from "@/hooks";
+import { useDepartments, useCostCentres } from "@/hooks";
 import { ChevronLeft, ChevronRight, Loader2, UserPlus } from "lucide-react";
 import { useEffect } from "react";
 
@@ -33,8 +33,9 @@ export const NewEmployeeWizard = ({ open, onOpenChange, onSuccess }: NewEmployee
     resetWizard,
   } = useNewEmployeeWizard();
 
-  // Fetch departments at wizard level to avoid timing issues when step 2 mounts
+  // Fetch departments and cost centres at wizard level to avoid timing issues when step 2 mounts
   const { departments, loading: departmentsLoading, fetchDepartments } = useDepartments();
+  const { costCentres, loading: costCentresLoading } = useCostCentres();
 
   // Refetch departments when dialog opens if they're empty
   useEffect(() => {
@@ -67,8 +68,15 @@ export const NewEmployeeWizard = ({ open, onOpenChange, onSuccess }: NewEmployee
       case 1:
         return <PersonalDetailsStep form={form} />;
       case 2:
-        return <EmploymentInfoStep form={form} departments={departments} departmentsLoading={departmentsLoading} />;
-      case 3:
+        return (
+          <EmploymentInfoStep 
+            form={form} 
+            departments={departments} 
+            departmentsLoading={departmentsLoading}
+            costCentres={costCentres}
+            costCentresLoading={costCentresLoading}
+          />
+        );
         return <PayStep form={form} />;
       case 4:
         return <EmployeeYtdStep form={form} />;

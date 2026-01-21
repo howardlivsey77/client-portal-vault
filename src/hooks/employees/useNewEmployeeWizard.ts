@@ -19,7 +19,7 @@ export const WIZARD_STEPS = [
     number: 2,
     title: "Employment",
     description: "Role & schedule",
-    fields: ["department", "hire_date", "payroll_id", "status"] as const,
+    fields: ["department", "cost_centre", "hire_date", "payroll_id", "status"] as const,
   },
   {
     number: 3,
@@ -84,6 +84,7 @@ export const useNewEmployeeWizard = () => {
       first_name: "",
       last_name: "",
       department: "",
+      cost_centre: null,
       hours_per_week: 40,
       hourly_rate: 0,
       date_of_birth: null,

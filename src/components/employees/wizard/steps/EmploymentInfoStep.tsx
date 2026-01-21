@@ -5,14 +5,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EmployeeFormValues, statusOptions } from "@/types";
 import { DateInputField } from "../../DateInputField";
 import { Department } from "@/services/employees/departmentService";
+import { CostCentre } from "@/services/employees/costCentreService";
 
 interface EmploymentInfoStepProps {
   form: UseFormReturn<EmployeeFormValues>;
   departments: Department[];
   departmentsLoading: boolean;
+  costCentres?: CostCentre[];
+  costCentresLoading?: boolean;
 }
 
-export const EmploymentInfoStep = ({ form, departments, departmentsLoading }: EmploymentInfoStepProps) => {
+export const EmploymentInfoStep = ({ 
+  form, 
+  departments, 
+  departmentsLoading,
+  costCentres = [],
+  costCentresLoading = false
+}: EmploymentInfoStepProps) => {
   return (
     <div className="space-y-4">
       <FormField
@@ -47,6 +56,45 @@ export const EmploymentInfoStep = ({ form, departments, departmentsLoading }: Em
             </Select>
             <FormDescription>
               Which team or department will this employee work in?
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="cost_centre"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Cost Centre</FormLabel>
+            <Select 
+              onValueChange={(value) => field.onChange(value === "none" ? null : value)} 
+              value={field.value || "none"}
+              disabled={costCentresLoading}
+            >
+              <FormControl>
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder={costCentresLoading ? "Loading..." : "Select cost centre"} />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {costCentres.length === 0 && !costCentresLoading ? (
+                  <SelectItem value="_no_cost_centres" disabled>
+                    No cost centres found
+                  </SelectItem>
+                ) : (
+                  costCentres.map((cc) => (
+                    <SelectItem key={cc.id} value={cc.name}>
+                      {cc.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            <FormDescription>
+              Optional cost centre for budget allocation
             </FormDescription>
             <FormMessage />
           </FormItem>

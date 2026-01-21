@@ -44,6 +44,7 @@ export const employeeSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
   department: z.string().min(1, "Department is required"),
+  cost_centre: z.string().optional().nullable(),
   hours_per_week: z.coerce.number().min(0, "Hours per week must be a positive number").default(40),
   hourly_rate: z.coerce.number().min(0, "Hourly rate must be a positive number").default(0),
   rate_2: z.coerce.number().min(0, "Rate must be a positive number").nullable().optional(),
