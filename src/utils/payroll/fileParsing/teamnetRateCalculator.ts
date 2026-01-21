@@ -1,6 +1,12 @@
 /**
  * Calculate rate assignments for Teamnet overtime based on shift times
  * 
+ * Priority order:
+ * 1. Custom company holidays (highest priority)
+ * 2. UK bank holidays (if enabled)
+ * 3. Day-of-week conditions from company config
+ * 4. Default rules
+ * 
  * Default rules (when no company config):
  * Rate 3: Sunday all day, Mon-Fri 18:30-20:00, Sat 10:00-14:00
  * Rate 2: All other times
@@ -9,11 +15,19 @@
  */
 
 import { RateCondition, TeamnetRateConfig } from "@/features/company-settings/types/teamnetRateConfig";
+import { CompanyHoliday, CompanyHolidaySettings } from "@/features/company-settings/types/companyHoliday";
+import { isUkBankHoliday, getUkBankHolidayName } from "@/utils/ukBankHolidays";
+import { format } from "date-fns";
 
 export interface RateHours {
   rate2Hours: number;
   rate3Hours: number;
   rate4Hours?: number;
+}
+
+export interface HolidayConfig {
+  holidays?: CompanyHoliday[];
+  settings?: CompanyHolidaySettings | null;
 }
 
 // Re-export types for backward compatibility
@@ -53,6 +67,65 @@ function calculateOverlap(
   const overlapStart = Math.max(shiftStart, windowStart);
   const overlapEnd = Math.min(shiftEnd, windowEnd);
   return Math.max(0, overlapEnd - overlapStart);
+}
+
+/**
+ * Check if a date matches a holiday (custom or UK bank holiday)
+ * Returns the holiday rate if matched, null otherwise
+ */
+function findHolidayRate(
+  date: Date,
+  holidayConfig?: HolidayConfig
+): { rate: number; name: string; isAllDay: boolean } | null {
+  if (!holidayConfig) return null;
+  
+  const { holidays, settings } = holidayConfig;
+  const dateStr = format(date, "yyyy-MM-dd");
+  const monthDay = format(date, "MM-dd"); // For recurring holidays
+  
+  // Priority 1: Check custom company holidays first
+  if (holidays && holidays.length > 0) {
+    for (const holiday of holidays) {
+      // Check exact date match
+      if (holiday.date === dateStr) {
+        console.log(`[Holiday Match] ${dateStr} matches custom holiday: ${holiday.name} (Rate ${holiday.rate_override})`);
+        return {
+          rate: holiday.rate_override,
+          name: holiday.name,
+          isAllDay: holiday.all_day,
+        };
+      }
+      
+      // Check recurring holidays (same month and day)
+      if (holiday.is_recurring) {
+        const holidayMonthDay = holiday.date.substring(5); // "MM-DD" from "YYYY-MM-DD"
+        if (holidayMonthDay === monthDay) {
+          console.log(`[Holiday Match] ${dateStr} matches recurring holiday: ${holiday.name} (Rate ${holiday.rate_override})`);
+          return {
+            rate: holiday.rate_override,
+            name: holiday.name,
+            isAllDay: holiday.all_day,
+          };
+        }
+      }
+    }
+  }
+  
+  // Priority 2: Check UK bank holidays if enabled
+  if (settings?.use_uk_bank_holidays !== false) {
+    const bankHolidayName = getUkBankHolidayName(date);
+    if (bankHolidayName) {
+      const rate = settings?.bank_holiday_rate ?? 3;
+      console.log(`[Holiday Match] ${dateStr} is UK bank holiday: ${bankHolidayName} (Rate ${rate})`);
+      return {
+        rate,
+        name: bankHolidayName,
+        isAllDay: true,
+      };
+    }
+  }
+  
+  return null;
 }
 
 /**
@@ -143,6 +216,7 @@ function calculateWithDefaults(
  * @param date - Date of the shift
  * @param config - Optional company-specific rate configuration
  * @param employeeName - Optional employee name for debug logging
+ * @param holidayConfig - Optional holiday configuration (custom holidays + settings)
  * @returns Object with rate2Hours, rate3Hours, and optionally rate4Hours
  */
 export function calculateTeamnetRates(
@@ -150,7 +224,8 @@ export function calculateTeamnetRates(
   timeTo: string,
   date: Date,
   config?: TeamnetRateConfig | null,
-  employeeName?: string
+  employeeName?: string,
+  holidayConfig?: HolidayConfig
 ): RateHours {
   const shiftStart = parseTimeToMinutes(timeFrom);
   let shiftEnd = parseTimeToMinutes(timeTo);
@@ -161,6 +236,7 @@ export function calculateTeamnetRates(
   }
   
   const totalMinutes = shiftEnd - shiftStart;
+  const totalHours = minutesToHours(totalMinutes);
   const dayOfWeek = date.getDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
   const dayName = DAY_NAMES[dayOfWeek];
   
@@ -175,18 +251,29 @@ export function calculateTeamnetRates(
     console.log(`[RATE DEBUG]   Date: ${date.toISOString().split('T')[0]} (${dayName}, dayOfWeek=${dayOfWeek})`);
     console.log(`[RATE DEBUG]   Shift: ${timeFrom} - ${timeTo}`);
     console.log(`[RATE DEBUG]   Shift in minutes: ${shiftStart} - ${shiftEnd} (total: ${totalMinutes} mins)`);
-    
-    // Calculate what Rate 3 overlap would be for weekday
-    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-      const weekdayRate3Start = parseTimeToMinutes('18:30'); // 1110 minutes
-      const weekdayRate3End = parseTimeToMinutes('20:00');   // 1200 minutes
-      const overlap = calculateOverlap(shiftStart, shiftEnd, weekdayRate3Start, weekdayRate3End);
-      console.log(`[RATE DEBUG]   Weekday Rate 3 window: 18:30-20:00 (${weekdayRate3Start}-${weekdayRate3End} mins)`);
-      console.log(`[RATE DEBUG]   Rate 3 overlap calculation: max(${shiftStart}, ${weekdayRate3Start}) to min(${shiftEnd}, ${weekdayRate3End}) = ${overlap} mins`);
-    }
   }
   
-  // Use company config if provided, otherwise use defaults
+  // PRIORITY 1 & 2: Check for holiday override (custom or UK bank holiday)
+  const holidayMatch = findHolidayRate(date, holidayConfig);
+  if (holidayMatch && holidayMatch.isAllDay) {
+    // Entire shift goes to holiday rate
+    const result: RateHours = {
+      rate2Hours: holidayMatch.rate === 2 ? totalHours : 0,
+      rate3Hours: holidayMatch.rate === 3 ? totalHours : 0,
+      rate4Hours: holidayMatch.rate === 4 ? totalHours : 0,
+    };
+    
+    if (shouldLog) {
+      console.log(`[RATE DEBUG]   Holiday override: ${holidayMatch.name} -> Rate ${holidayMatch.rate}`);
+      console.log(`[RATE DEBUG]   Result: Rate2=${result.rate2Hours}h, Rate3=${result.rate3Hours}h, Rate4=${result.rate4Hours}h`);
+      console.log(`[RATE DEBUG]   ---`);
+    }
+    
+    return result;
+  }
+  
+  // PRIORITY 3: Use company config if provided
+  // PRIORITY 4: Otherwise use defaults
   let result: RateHours;
   if (config && config.conditions && config.conditions.length > 0) {
     result = calculateWithConfig(shiftStart, shiftEnd, dayOfWeek, totalMinutes, config);
@@ -195,6 +282,14 @@ export function calculateTeamnetRates(
   }
   
   if (shouldLog) {
+    // Calculate what Rate 3 overlap would be for weekday
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      const weekdayRate3Start = parseTimeToMinutes('18:30'); // 1110 minutes
+      const weekdayRate3End = parseTimeToMinutes('20:00');   // 1200 minutes
+      const overlap = calculateOverlap(shiftStart, shiftEnd, weekdayRate3Start, weekdayRate3End);
+      console.log(`[RATE DEBUG]   Weekday Rate 3 window: 18:30-20:00 (${weekdayRate3Start}-${weekdayRate3End} mins)`);
+      console.log(`[RATE DEBUG]   Rate 3 overlap calculation: max(${shiftStart}, ${weekdayRate3Start}) to min(${shiftEnd}, ${weekdayRate3End}) = ${overlap} mins`);
+    }
     console.log(`[RATE DEBUG]   Result: Rate2=${result.rate2Hours}h, Rate3=${result.rate3Hours}h`);
     console.log(`[RATE DEBUG]   ---`);
   }
