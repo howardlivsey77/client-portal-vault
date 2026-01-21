@@ -14,6 +14,13 @@ export interface ImportAuditRecord {
   imported_value: number | null;
   imported_at: string;
   source_file_name: string | null;
+  // Processed/Paid fields
+  processed_units: number | null;
+  processed_rate: number | null;
+  processed_value: number | null;
+  // Variance fields
+  units_variance: number | null;
+  value_variance: number | null;
 }
 
 export interface ImportedVsPaidFilters {
@@ -73,8 +80,8 @@ export function useImportedVsPaidReport() {
 
     setLoading(true);
     try {
-      // Fetch import audit records with employee info
-      const { data, error } = await supabase
+      // Fetch import audit records
+      const { data: auditData, error: auditError } = await supabase
         .from('payroll_import_audit')
         .select(`
           id,
@@ -85,7 +92,8 @@ export function useImportedVsPaidReport() {
           imported_rate,
           imported_value,
           imported_at,
-          source_file_name
+          source_file_name,
+          payroll_period_id
         `)
         .eq('company_id', currentCompany.id)
         .eq('period_number', filters.periodNumber)
@@ -93,10 +101,10 @@ export function useImportedVsPaidReport() {
         .eq('import_type', filters.importType)
         .order('imported_at', { ascending: false });
 
-      if (error) throw error;
+      if (auditError) throw auditError;
 
       // Fetch employee names for the records
-      const employeeIds = [...new Set(data?.map(r => r.employee_id) || [])];
+      const employeeIds = [...new Set(auditData?.map(r => r.employee_id) || [])];
       
       let employeeMap: Record<string, { name: string; payroll_id: string | null }> = {};
       if (employeeIds.length > 0) {
@@ -113,12 +121,57 @@ export function useImportedVsPaidReport() {
         });
       }
 
-      // Combine data
-      const enrichedData: ImportAuditRecord[] = (data || []).map(record => ({
-        ...record,
-        employee_name: employeeMap[record.employee_id]?.name || 'Unknown',
-        payroll_id: employeeMap[record.employee_id]?.payroll_id || null
-      }));
+      // Fetch processed data from payroll_employee_details
+      // Get unique payroll_period_ids from the audit data
+      const periodIds = [...new Set(auditData?.map(r => r.payroll_period_id).filter(Boolean) || [])];
+      
+      let processedMap: Record<string, { units: number; rate: number; value: number }> = {};
+      
+      if (periodIds.length > 0) {
+        const { data: processedData, error: processedError } = await supabase
+          .from('payroll_employee_details')
+          .select('employee_id, rate_type, extra_hours, rate_value, payroll_period_id')
+          .in('payroll_period_id', periodIds);
+
+        if (processedError) {
+          console.error('Error fetching processed data:', processedError);
+        } else {
+          // Build a map keyed by employee_id + rate_type for matching
+          processedData?.forEach(row => {
+            const key = `${row.employee_id}-${row.rate_type || 'Standard'}`;
+            const units = Number(row.extra_hours) || 0;
+            const rate = Number(row.rate_value) || 0;
+            processedMap[key] = {
+              units,
+              rate,
+              value: units * rate
+            };
+          });
+        }
+      }
+
+      // Combine data with processed information
+      const enrichedData: ImportAuditRecord[] = (auditData || []).map(record => {
+        const rateTypeKey = record.rate_type || 'Standard';
+        const processedKey = `${record.employee_id}-${rateTypeKey}`;
+        const processed = processedMap[processedKey];
+        
+        const importedUnits = record.imported_units || 0;
+        const importedValue = record.imported_value || 0;
+        const processedUnits = processed?.units ?? null;
+        const processedValue = processed?.value ?? null;
+        
+        return {
+          ...record,
+          employee_name: employeeMap[record.employee_id]?.name || 'Unknown',
+          payroll_id: employeeMap[record.employee_id]?.payroll_id || null,
+          processed_units: processedUnits,
+          processed_rate: processed?.rate ?? null,
+          processed_value: processedValue,
+          units_variance: processedUnits !== null ? importedUnits - processedUnits : null,
+          value_variance: processedValue !== null ? importedValue - processedValue : null
+        };
+      });
 
       setReportData(enrichedData);
     } catch (error) {
@@ -146,9 +199,13 @@ export function useImportedVsPaidReport() {
   const totals = reportData.reduce(
     (acc, record) => ({
       importedUnits: acc.importedUnits + (record.imported_units || 0),
-      importedValue: acc.importedValue + (record.imported_value || 0)
+      importedValue: acc.importedValue + (record.imported_value || 0),
+      processedUnits: acc.processedUnits + (record.processed_units || 0),
+      processedValue: acc.processedValue + (record.processed_value || 0),
+      unitsVariance: acc.unitsVariance + (record.units_variance || 0),
+      valueVariance: acc.valueVariance + (record.value_variance || 0)
     }),
-    { importedUnits: 0, importedValue: 0 }
+    { importedUnits: 0, importedValue: 0, processedUnits: 0, processedValue: 0, unitsVariance: 0, valueVariance: 0 }
   );
 
   return {
