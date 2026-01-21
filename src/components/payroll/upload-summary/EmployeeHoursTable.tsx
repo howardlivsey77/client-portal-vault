@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface EmployeeHoursTableProps {
   employeeDetails: EmployeeHoursData[];
@@ -27,7 +26,7 @@ export function EmployeeHoursTable({ employeeDetails }: EmployeeHoursTableProps)
           Employee Hours Breakdown ({employeeDetails.length} entries)
         </h3>
       </div>
-      <ScrollArea className="w-full h-[400px]">
+      <div className="w-full max-h-[60vh] overflow-auto">
         <div className="min-w-[600px]">
           <Table>
             <TableHeader>
@@ -59,7 +58,7 @@ export function EmployeeHoursTable({ employeeDetails }: EmployeeHoursTableProps)
             </TableBody>
           </Table>
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }
