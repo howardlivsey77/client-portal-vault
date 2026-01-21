@@ -3,8 +3,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SicknessReport } from "./sickness/SicknessReport";
 import { HoursRatesReport } from "./hours-rates/HoursRatesReport";
 import { P11Report } from "./p11/P11Report";
+import { ImportedVsPaidReport } from "./imported-vs-paid/ImportedVsPaidReport";
 
-type ReportType = "sickness" | "employee-details" | "hours-rates" | "p11";
+type ReportType = "sickness" | "employee-details" | "hours-rates" | "p11" | "imported-vs-paid";
 
 export function ClientReportsNavigation() {
   const [selectedReport, setSelectedReport] = useState<ReportType>("sickness");
@@ -28,6 +29,8 @@ export function ClientReportsNavigation() {
         return <HoursRatesReport />;
       case "p11":
         return <P11Report />;
+      case "imported-vs-paid":
+        return <ImportedVsPaidReport />;
       default:
         return <SicknessReport />;
     }
@@ -50,6 +53,7 @@ export function ClientReportsNavigation() {
             <SelectItem value="employee-details">Employee Details Report</SelectItem>
             <SelectItem value="hours-rates">Employee Hours and Rates Report</SelectItem>
             <SelectItem value="p11">P11 Deductions Working Sheet</SelectItem>
+            <SelectItem value="imported-vs-paid">Imported vs Paid Report</SelectItem>
           </SelectContent>
         </Select>
       </div>
