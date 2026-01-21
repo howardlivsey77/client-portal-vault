@@ -52,6 +52,15 @@ export function CompanySettingsMenu() {
                 Departments
               </Link>
             </Button>
+            <Button 
+              variant="ghost" 
+              className="monday-sidebar-item w-full justify-start text-xs py-1 h-7" 
+              asChild
+            >
+              <Link to="/settings/company/cost-centres">
+                Cost Centres
+              </Link>
+            </Button>
           </div>
         </AccordionContent>
       </AccordionItem>

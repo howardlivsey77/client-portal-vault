@@ -18,6 +18,15 @@ export {
 } from "./departmentService";
 export type { Department, CreateDepartmentData, UpdateDepartmentData } from "./departmentService";
 
+// Cost Centre services
+export {
+  fetchCostCentresByCompany,
+  createCostCentre,
+  updateCostCentre,
+  deleteCostCentre,
+  getCostCentreNames
+} from "./costCentreService";
+export type { CostCentre, CreateCostCentreData, UpdateCostCentreData } from "./costCentreService";
 // Timesheet services
 export {
   fetchTimesheetSettings,

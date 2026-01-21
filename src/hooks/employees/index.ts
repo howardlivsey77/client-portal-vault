@@ -11,3 +11,4 @@ export { useEmployeeInvite } from "./useEmployeeInvite";
 export { useEmployeeTimesheet } from "./useEmployeeTimesheet";
 export type { WeeklyTimesheetDay } from "./useEmployeeTimesheet";
 export { useSicknessData } from "./useSicknessData";
+export { useCostCentres } from "./useCostCentres";
