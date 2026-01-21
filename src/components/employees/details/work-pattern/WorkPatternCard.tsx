@@ -10,9 +10,6 @@ import { fetchWorkPatterns, saveWorkPatterns } from "./utils";
 import { defaultWorkPattern } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import { SicknessSchemeSelector } from "./SicknessSchemeSelector";
-import { SicknessTrackingCard } from "../sickness/SicknessTrackingCard";
-import { supabase } from "@/integrations/supabase/client";
-import { SicknessScheme } from "./types";
 
 export const WorkPatternCard = ({ 
   employee, 
@@ -22,7 +19,6 @@ export const WorkPatternCard = ({
 }: WorkPatternCardProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [sicknessScheme, setSicknessScheme] = useState<SicknessScheme | null>(null);
   const [workPattern, setWorkPattern] = useState<WorkDay[]>(
     // Initialize with payrollId
     defaultWorkPattern.map(pattern => ({
@@ -34,7 +30,6 @@ export const WorkPatternCard = ({
   
   useEffect(() => {
     loadWorkPattern();
-    fetchSicknessScheme();
   }, [employee.id]);
   
   const loadWorkPattern = async () => {
@@ -54,39 +49,6 @@ export const WorkPatternCard = ({
       setLoading(false);
     }
   };
-
-  const fetchSicknessScheme = async () => {
-    if (!employee.sickness_scheme_id) {
-      setSicknessScheme(null);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('sickness_schemes')
-        .select('id, name, eligibility_rules')
-        .eq('id', employee.sickness_scheme_id)
-        .single();
-
-      if (error) throw error;
-
-      if (data) {
-        setSicknessScheme({
-          id: data.id,
-          name: data.name,
-          eligibilityRules: data.eligibility_rules ? JSON.parse(data.eligibility_rules as string) : null
-        });
-      }
-    } catch (error: any) {
-      console.error("Error fetching sickness scheme:", error);
-      setSicknessScheme(null);
-    }
-  };
-
-  // Re-fetch sickness scheme when the employee's scheme changes
-  useEffect(() => {
-    fetchSicknessScheme();
-  }, [employee.sickness_scheme_id]);
   
   const saveWorkPattern = async () => {
     if (!isAdmin || !employee.id) return false;
@@ -124,50 +86,41 @@ export const WorkPatternCard = ({
   };
 
   return (
-    <div className="space-y-6">
-      <Card className="border-[1.5px] border-foreground bg-white">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Work Pattern</CardTitle>
-          {isAdmin && (
-            <Button variant="outline" onClick={() => setDialogOpen(true)}>
-              Edit
-            </Button>
+    <Card className="border-[1.5px] border-foreground bg-white">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Work Pattern</CardTitle>
+        {isAdmin && (
+          <Button variant="outline" onClick={() => setDialogOpen(true)}>
+            Edit
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          <WorkPatternDisplay workPattern={workPattern} />
+          
+          {updateEmployeeField && (
+            <>
+              <Separator className="my-4" />
+              
+              <SicknessSchemeSelector 
+                employeeId={employee.id}
+                currentSchemeId={employee.sickness_scheme_id || null}
+                isAdmin={isAdmin}
+                updateEmployeeField={updateEmployeeField}
+              />
+            </>
           )}
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <WorkPatternDisplay workPattern={workPattern} />
-            
-            {updateEmployeeField && (
-              <>
-                <Separator className="my-4" />
-                
-                <SicknessSchemeSelector 
-                  employeeId={employee.id}
-                  currentSchemeId={employee.sickness_scheme_id || null}
-                  isAdmin={isAdmin}
-                  updateEmployeeField={updateEmployeeField}
-                />
-              </>
-            )}
-          </div>
-        </CardContent>
+        </div>
+      </CardContent>
 
-        <WorkPatternDialog
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-          workPattern={workPattern}
-          setWorkPattern={setWorkPattern}
-          saveWorkPattern={saveWorkPattern}
-        />
-      </Card>
-
-      {/* Sickness Tracking Section */}
-      <SicknessTrackingCard
-        employee={employee}
-        sicknessScheme={sicknessScheme}
-        isAdmin={isAdmin}
+      <WorkPatternDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        workPattern={workPattern}
+        setWorkPattern={setWorkPattern}
+        saveWorkPattern={saveWorkPattern}
       />
-    </div>
+    </Card>
   );
 };
