@@ -21,6 +21,8 @@ import { Badge } from "@/components/ui/badge";
 import { Task, TaskStatus } from "./types";
 import { updateTask, deleteTask } from "./taskService";
 import { toast } from "@/hooks";
+import { useConfirmation } from "@/hooks/useConfirmation";
+import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 
 interface TaskItemProps {
   task: Task;
@@ -31,6 +33,8 @@ interface TaskItemProps {
 
 export function TaskItem({ task, onEdit, onDelete, userEmails }: TaskItemProps) {
   const [isUpdating, setIsUpdating] = useState(false);
+  
+  const { confirm, confirmationProps } = useConfirmation();
   
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -69,23 +73,28 @@ export function TaskItem({ task, onEdit, onDelete, userEmails }: TaskItemProps) 
     }
   };
   
-  const handleDelete = async () => {
-    if (window.confirm("Are you sure you want to delete this task?")) {
-      try {
-        await deleteTask(task.id);
-        onDelete(task.id);
-        toast({
-          title: "Task deleted",
-          description: "Task has been successfully deleted"
-        });
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to delete task",
-          variant: "destructive"
-        });
-      }
-    }
+  const handleDelete = () => {
+    confirm({
+      title: "Delete task?",
+      description: "This action cannot be undone. The task will be permanently removed.",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          await deleteTask(task.id);
+          onDelete(task.id);
+          toast({
+            title: "Task deleted",
+            description: "Task has been successfully deleted"
+          });
+        } catch (error) {
+          toast({
+            title: "Error",
+            description: "Failed to delete task",
+            variant: "destructive"
+          });
+        }
+      },
+    });
   };
   
   const formatDate = (dateString: string | null) => {
@@ -197,6 +206,7 @@ export function TaskItem({ task, onEdit, onDelete, userEmails }: TaskItemProps) 
           </Button>
         </div>
       </CardFooter>
+      <ConfirmationDialog {...confirmationProps} />
     </Card>
   );
 }

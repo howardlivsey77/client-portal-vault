@@ -10,23 +10,23 @@ import { fetchWorkPatterns, saveWorkPatterns } from "./utils";
 import { defaultWorkPattern } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import { SicknessSchemeSelector } from "./SicknessSchemeSelector";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export const WorkPatternCard = ({ 
   employee, 
-  isAdmin,
   refetchEmployeeData,
   updateEmployeeField
 }: WorkPatternCardProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [workPattern, setWorkPattern] = useState<WorkDay[]>(
-    // Initialize with payrollId
     defaultWorkPattern.map(pattern => ({
       ...pattern,
       payrollId: employee.payroll_id || null
     }))
   );
   const { toast } = useToast();
+  const { canEditWorkPattern } = usePermissions();
   
   useEffect(() => {
     loadWorkPattern();
@@ -51,11 +51,10 @@ export const WorkPatternCard = ({
   };
   
   const saveWorkPattern = async () => {
-    if (!isAdmin || !employee.id) return false;
+    if (!canEditWorkPattern || !employee.id) return false;
     
     setLoading(true);
     try {
-      // Make sure payrollId is set in all work patterns
       const patternsWithPayrollId = workPattern.map(pattern => ({
         ...pattern,
         payrollId: pattern.payrollId || employee.payroll_id || null
@@ -89,7 +88,7 @@ export const WorkPatternCard = ({
     <Card className="border-[1.5px] border-foreground bg-white">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Work Pattern</CardTitle>
-        {isAdmin && (
+        {canEditWorkPattern && (
           <Button variant="outline" onClick={() => setDialogOpen(true)}>
             Edit
           </Button>
@@ -106,7 +105,6 @@ export const WorkPatternCard = ({
               <SicknessSchemeSelector 
                 employeeId={employee.id}
                 currentSchemeId={employee.sickness_scheme_id || null}
-                isAdmin={isAdmin}
                 updateEmployeeField={updateEmployeeField}
               />
             </>

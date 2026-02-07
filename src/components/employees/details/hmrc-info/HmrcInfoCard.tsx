@@ -6,15 +6,16 @@ import { HmrcInfoForm } from "./HmrcInfoForm";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PenLine, ShieldCheck } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface HmrcInfoCardProps {
   employee: Employee;
-  isAdmin: boolean;
   updateEmployeeField: (fieldName: string, value: any) => Promise<boolean>;
 }
 
-export const HmrcInfoCard = ({ employee, isAdmin, updateEmployeeField }: HmrcInfoCardProps) => {
+export const HmrcInfoCard = ({ employee, updateEmployeeField }: HmrcInfoCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
+  const { canEditHmrc } = usePermissions();
   
   const toggleEditMode = () => {
     setIsEditing((prev) => !prev);
@@ -22,34 +23,23 @@ export const HmrcInfoCard = ({ employee, isAdmin, updateEmployeeField }: HmrcInf
   
   const handleSubmit = async (values: any) => {
     try {
-      // Update national insurance number
       if (values.national_insurance_number !== employee.national_insurance_number) {
         await updateEmployeeField("national_insurance_number", values.national_insurance_number);
       }
-      
-      // Update tax code
       if (values.tax_code !== employee.tax_code) {
         await updateEmployeeField("tax_code", values.tax_code);
       }
-      
-      // Update week one/month one
       if (values.week_one_month_one !== employee.week_one_month_one) {
         await updateEmployeeField("week_one_month_one", values.week_one_month_one);
       }
-      
-      // Update NIC code
       if (values.nic_code !== employee.nic_code) {
         await updateEmployeeField("nic_code", values.nic_code);
       }
-      
-      // Update student loan plan
       if (values.student_loan_plan !== employee.student_loan_plan) {
         await updateEmployeeField("student_loan_plan", values.student_loan_plan);
       }
       
-      // Exit edit mode
       setIsEditing(false);
-      
       return true;
     } catch (error) {
       console.error("Error updating HMRC info:", error);
@@ -63,7 +53,7 @@ export const HmrcInfoCard = ({ employee, isAdmin, updateEmployeeField }: HmrcInf
         <CardTitle className="text-xl flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-muted-foreground" /> HMRC Information
         </CardTitle>
-        {isAdmin && !isEditing && (
+        {canEditHmrc && !isEditing && (
           <Button
             onClick={toggleEditMode}
             variant="outline"

@@ -13,6 +13,8 @@ import {
 import { ColumnMapping, availableFields, fieldLabels } from "./ImportConstants";
 import { areRequiredFieldsMapped, saveMappings, clearSavedMappings } from "./ImportUtils";
 import { useToast } from "@/hooks";
+import { useConfirmation } from "@/hooks/useConfirmation";
+import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 
 interface ColumnMappingUIProps {
   columnMappings: ColumnMapping[];
@@ -27,6 +29,7 @@ export const ColumnMappingUI = ({
 }: ColumnMappingUIProps) => {
   const requiredFieldsMapped = areRequiredFieldsMapped(columnMappings);
   const { toast } = useToast();
+  const { confirm, confirmationProps } = useConfirmation();
   
   const handleSaveMappings = () => {
     saveMappings(columnMappings);
@@ -37,13 +40,18 @@ export const ColumnMappingUI = ({
   };
   
   const handleClearMappings = () => {
-    if (confirm("Are you sure you want to clear your saved mappings?")) {
-      clearSavedMappings();
-      toast({
-        title: "Mappings cleared",
-        description: "Your saved column mappings have been deleted",
-      });
-    }
+    confirm({
+      title: "Clear saved mappings?",
+      description: "Your saved column mappings will be deleted. You can re-create them later.",
+      variant: "destructive",
+      onConfirm: () => {
+        clearSavedMappings();
+        toast({
+          title: "Mappings cleared",
+          description: "Your saved column mappings have been deleted",
+        });
+      },
+    });
   };
   
   return (
@@ -117,6 +125,7 @@ export const ColumnMappingUI = ({
           </div>
         ))}
       </div>
+      <ConfirmationDialog {...confirmationProps} />
     </div>
   );
 };

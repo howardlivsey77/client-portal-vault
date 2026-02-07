@@ -61,10 +61,6 @@ export const useEmployees = () => {
       return;
     }
     
-    if (!confirm("Are you sure you want to delete this employee record?")) {
-      return;
-    }
-    
     try {
       setLoading(true);
       const { error } = await supabase

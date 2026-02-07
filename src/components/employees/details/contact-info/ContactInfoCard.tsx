@@ -12,17 +12,18 @@ import { Pencil } from "lucide-react";
 import { ContactInfoCardProps, ContactInfoFormValues } from "./types";
 import { ContactInfoDisplay } from "./ContactInfoDisplay";
 import { ContactInfoForm } from "./ContactInfoForm";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export const ContactInfoCard = ({ 
   employee, 
   formattedAddress,
-  isAdmin,
   updateEmployeeField,
-  canEdit
+  isOwnRecord
 }: ContactInfoCardProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { canEditOwnRecord } = usePermissions();
+  const canEdit = canEditOwnRecord(isOwnRecord);
 
-  // Form default values
   const defaultValues: ContactInfoFormValues = {
     email: employee.email || "",
     address1: employee.address1 || "",
@@ -32,7 +33,6 @@ export const ContactInfoCard = ({
     postcode: employee.postcode || "",
   };
 
-  // Handle save
   const onSubmit = async (data: ContactInfoFormValues) => {
     const fieldsToUpdate: Record<string, any> = {
       email: data.email,
@@ -43,7 +43,6 @@ export const ContactInfoCard = ({
       postcode: data.postcode,
     };
 
-    // Update fields one by one
     for (const [field, value] of Object.entries(fieldsToUpdate)) {
       await updateEmployeeField(field, value);
     }

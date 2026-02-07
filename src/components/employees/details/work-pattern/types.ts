@@ -11,7 +11,6 @@ export interface WorkDay {
 
 export interface WorkPatternCardProps {
   employee: Employee;
-  isAdmin: boolean;
   refetchEmployeeData: () => Promise<void>;
   updateEmployeeField?: (fieldName: string, value: any) => Promise<boolean>;
 }
@@ -33,8 +32,7 @@ export interface EligibilityRule {
   fullPayUnit: 'days' | 'weeks' | 'months';
   halfPayUnit: 'days' | 'weeks' | 'months';
   sicknessPay: string;
-  hasWaitingDays?: boolean; // If true, 3 working day wait before company entitlement kicks in
-  // Legacy fields for backward compatibility
+  hasWaitingDays?: boolean;
   serviceMonthsFrom?: number;
   serviceMonthsTo?: number | null;
   fullPayDays?: number;

@@ -4,11 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useImperativeHandle, forwardRef } from "react";
 import { Form } from "@/components/ui/form";
 import { salaryInfoSchema } from "./SalaryInfoSchema";
-import { SalaryInfoFormValues, SalaryInfoProps } from "./types";
+import { SalaryInfoFormValues } from "./types";
 import { SalaryInfoFields } from "./SalaryInfoFields";
 import { SalaryInfoDisplay } from "./SalaryInfoDisplay";
+import { Employee } from "@/types";
 
-interface SalaryInfoFormComponentProps extends SalaryInfoProps {
+interface SalaryInfoFormComponentProps {
+  employee: Employee;
   isEditing: boolean;
   toggleEditMode: () => void;
   onSubmit: (data: SalaryInfoFormValues) => Promise<void>;

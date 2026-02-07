@@ -4,9 +4,8 @@ import { Employee } from "@/types";
 export interface ContactInfoCardProps {
   employee: Employee;
   formattedAddress: string;
-  isAdmin: boolean;
   updateEmployeeField: (fieldName: string, value: any) => Promise<boolean>;
-  canEdit: boolean;
+  isOwnRecord: boolean;
 }
 
 export interface ContactInfoFormValues {

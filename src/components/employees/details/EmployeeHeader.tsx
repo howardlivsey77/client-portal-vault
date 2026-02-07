@@ -3,10 +3,12 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowLeftCircle, ArrowRightCircle, Pencil, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Employee } from "@/types";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useConfirmation } from "@/hooks/useConfirmation";
+import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 
 interface EmployeeHeaderProps {
   employee: Employee | null;
-  isAdmin: boolean;
   nextEmployeeId: string | null;
   prevEmployeeId: string | null;
   navigateToEmployee: (id: string | null) => void;
@@ -15,13 +17,23 @@ interface EmployeeHeaderProps {
 
 export const EmployeeHeader = ({ 
   employee, 
-  isAdmin, 
   nextEmployeeId,
   prevEmployeeId,
   navigateToEmployee,
   deleteEmployee 
 }: EmployeeHeaderProps) => {
   const navigate = useNavigate();
+  const { canDeleteEmployee, canEditEmployee } = usePermissions();
+  const { confirm, confirmationProps } = useConfirmation();
+
+  const handleDelete = () => {
+    confirm({
+      title: "Delete employee?",
+      description: "This action cannot be undone. The employee record and all associated data will be permanently removed.",
+      variant: "destructive",
+      onConfirm: deleteEmployee,
+    });
+  };
   
   return (
     <div className="mb-6">
@@ -57,20 +69,24 @@ export const EmployeeHeader = ({
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Employee Details</h1>
         
-        {isAdmin && employee && (
+        {canEditEmployee && employee && (
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => navigate(`/employee/edit/${employee.id}`)}>
               <Pencil className="mr-2 h-4 w-4" />
               Edit
             </Button>
             
-            <Button variant="destructive" onClick={deleteEmployee}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </Button>
+            {canDeleteEmployee && (
+              <Button variant="destructive" onClick={handleDelete}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </Button>
+            )}
           </div>
         )}
       </div>
+
+      <ConfirmationDialog {...confirmationProps} />
     </div>
   );
 };

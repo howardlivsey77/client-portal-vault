@@ -5,23 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Edit, Save, X } from "lucide-react";
 import { PersonalInfoFormComponent, PersonalInfoFormRef } from "./PersonalInfoForm";
 import { PersonalInfoProps, PersonalInfoFormValues } from "./types";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface PersonalInfoCardProps extends PersonalInfoProps {}
 
-export const PersonalInfoCard = ({ employee, isAdmin, updateEmployeeField, canEdit = false }: PersonalInfoCardProps) => {
+export const PersonalInfoCard = ({ employee, updateEmployeeField }: PersonalInfoCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const formRef = useRef<PersonalInfoFormRef>(null);
+  const { canEditEmployee } = usePermissions();
 
-  // Handle edit mode toggle
   const toggleEditMode = () => {
     if (isEditing && formRef.current) {
-      // Reset form when canceling edit
       formRef.current.resetForm();
     }
     setIsEditing(!isEditing);
   };
 
-  // Handle save button click
   const handleSave = () => {
     if (formRef.current) {
       formRef.current.submitForm();
@@ -32,8 +31,6 @@ export const PersonalInfoCard = ({ employee, isAdmin, updateEmployeeField, canEd
     console.log("Form submission data:", data);
     
     try {
-      // Update each field individually using the existing updateEmployeeField function
-      // which already handles loading states and toast notifications
       for (const [fieldName, value] of Object.entries(data)) {
         const success = await updateEmployeeField(fieldName, value);
         if (!success) {
@@ -44,7 +41,6 @@ export const PersonalInfoCard = ({ employee, isAdmin, updateEmployeeField, canEd
       setIsEditing(false);
     } catch (error) {
       console.error("Error updating personal information:", error);
-      // updateEmployeeField already shows error toasts, so we don't need to duplicate them
     }
   };
 
@@ -52,7 +48,7 @@ export const PersonalInfoCard = ({ employee, isAdmin, updateEmployeeField, canEd
     <Card className="border-[1.5px] border-foreground bg-white">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Personal Information</CardTitle>
-        {canEdit && (
+        {canEditEmployee && (
           <div className="flex gap-2">
             {isEditing ? (
               <>
@@ -87,8 +83,6 @@ export const PersonalInfoCard = ({ employee, isAdmin, updateEmployeeField, canEd
         <PersonalInfoFormComponent 
           ref={formRef}
           employee={employee} 
-          isAdmin={isAdmin} 
-          updateEmployeeField={updateEmployeeField} 
           isEditing={isEditing} 
           toggleEditMode={toggleEditMode} 
           onSubmit={onSubmit}

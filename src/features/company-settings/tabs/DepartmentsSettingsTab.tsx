@@ -1,5 +1,7 @@
 
 import { useState } from "react";
+import { useConfirmation } from "@/hooks/useConfirmation";
+import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +21,7 @@ const DepartmentsSettingsTab = () => {
   const [newDepartmentName, setNewDepartmentName] = useState("");
   const [newDepartmentDescription, setNewDepartmentDescription] = useState("");
   const { isAdmin } = useAuth();
+  const { confirm, confirmationProps } = useConfirmation();
   const { 
     departments, 
     loading, 
@@ -62,15 +65,18 @@ const DepartmentsSettingsTab = () => {
   };
 
   const handleDeleteDepartment = async (department: Department) => {
-    if (!confirm(`Are you sure you want to delete the "${department.name}" department?`)) {
-      return;
-    }
-
-    try {
-      await removeDepartment(department.id);
-    } catch (error) {
-      // Error handling is done in the hook
-    }
+    confirm({
+      title: `Delete "${department.name}" department?`,
+      description: "This action cannot be undone. The department will be permanently removed.",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          await removeDepartment(department.id);
+        } catch (error) {
+          // Error handling is done in the hook
+        }
+      },
+    });
   };
 
   const openEditDialog = (department: Department) => {
@@ -247,6 +253,7 @@ const DepartmentsSettingsTab = () => {
           </DialogContent>
         </Dialog>
       </CardContent>
+      <ConfirmationDialog {...confirmationProps} />
     </Card>
   );
 };
