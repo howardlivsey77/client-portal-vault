@@ -17,6 +17,7 @@ import {
   SicknessTrackingCard
 } from "@/components/employees/details";
 import { supabase } from "@/integrations/supabase/client";
+import { useCompany } from "@/providers/CompanyProvider";
 
 interface SicknessScheme {
   id: string;
@@ -41,6 +42,9 @@ const EmployeeDetails = () => {
     updateEmployeeField,
     isOwnRecord
   } = useEmployeeDetails(id);
+
+  const { currentRole } = useCompany();
+  const canManageSickness = isAdmin || currentRole === 'admin' || currentRole === 'payroll';
 
   // Fetch sickness scheme when employee changes
   useEffect(() => {
@@ -140,7 +144,7 @@ const EmployeeDetails = () => {
         <SicknessTrackingCard
           employee={employee}
           sicknessScheme={sicknessScheme}
-          isAdmin={isAdmin}
+          isAdmin={canManageSickness}
         />
 
         {/* Right Column */}
