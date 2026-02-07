@@ -1,126 +1,114 @@
 
+# Refactoring Analysis Report
 
-# Fix: Allow Payroll Role Users to Delete Absence/Sickness Records
+## 1. Inconsistent Permission Model (High Priority)
 
-## Problem Analysis
+The codebase has a fragmented approach to role-based permissions:
 
-The user `techsupport@ingenisoft.co.uk` has a `payroll` role for "High Street Surgery (test)" company. While the database RLS policies correctly allow `payroll` users to manage sickness records (INSERT, UPDATE, DELETE), the UI components only show management buttons (Add, Edit, Delete) when `isAdmin === true`.
+- **`isAdmin`** from `AuthProvider` means system-wide admin only
+- **`currentRole`** from `CompanyProvider` reflects company-level role (admin, payroll, user, bureau)
+- **`canEdit`** is computed ad-hoc in `EmployeeDetails.tsx`
+- **`canManageSickness`** was just added as a one-off fix
 
-The `isAdmin` flag represents **system-wide** administrator privileges, not company-specific roles like `payroll`.
-
-## Root Cause
-
-| Component | Current Logic | Issue |
-|-----------|---------------|-------|
-| `SicknessRecordsList.tsx` | `{isAdmin && (...buttons...)}` | Only system admins see buttons |
-| `SicknessTrackingCard.tsx` | Receives `isAdmin` prop only | No awareness of payroll role |
-| `EmployeeDetails.tsx` | Passes only `isAdmin` from auth | Missing company role context |
-
-## Solution
-
-Update the component chain to check for both system admin status **OR** payroll role permissions.
-
----
-
-### Step 1: Update EmployeeDetails.tsx
-
-Import `useCompany` and pass both `isAdmin` and `currentRole` to child components.
-
+Currently, each page independently computes permissions like:
 ```text
-File: src/pages/EmployeeDetails.tsx
-
-Changes:
-- Import useCompany from providers
-- Get currentRole from useCompany()
-- Create a derived permission: canManageSickness = isAdmin || currentRole === 'admin' || currentRole === 'payroll'
-- Pass canManageSickness to SicknessTrackingCard
-```
-
----
-
-### Step 2: Update SicknessTrackingCard Interface
-
-Rename or extend the `isAdmin` prop to accept broader permission context.
-
-```text
-File: src/components/employees/details/sickness/SicknessTrackingCard.tsx
-
-Changes:
-- Update prop interface to use canManageRecords (or accept isAdmin as-is but callers pass combined permission)
-- Pass canManageRecords to SicknessRecordsList instead of isAdmin
-```
-
----
-
-### Step 3: Update SicknessRecordsList Logic
-
-The component already uses `isAdmin` to control button visibility. With the updated prop passing the combined permission, the buttons will appear for payroll users.
-
-```text
-File: src/components/employees/details/sickness/SicknessRecordsList.tsx
-
-No changes needed if we pass the combined permission as isAdmin prop.
-Alternatively, rename prop to canManageRecords for clarity.
-```
-
----
-
-## Implementation Details
-
-### File: src/pages/EmployeeDetails.tsx
-
-```typescript
-// Add import
-import { useCompany } from "@/providers/CompanyProvider";
-
-// Inside component, add:
-const { currentRole } = useCompany();
-
-// Create combined permission
 const canManageSickness = isAdmin || currentRole === 'admin' || currentRole === 'payroll';
-
-// Update SicknessTrackingCard props:
-<SicknessTrackingCard
-  employee={employee}
-  sicknessScheme={sicknessScheme}
-  isAdmin={canManageSickness}  // Pass combined permission
-/>
 ```
 
----
+This pattern will need repeating for every feature, leading to scattered permission logic.
 
-## Database Verification
+**Recommendation**: Create a centralised `usePermissions()` hook that exposes clear capabilities:
 
-The RLS policies already support this change. Current policies on `employee_sickness_records`:
+| Permission | Roles Allowed |
+|------------|---------------|
+| `canViewEmployees` | admin, payroll, user |
+| `canEditEmployee` | admin |
+| `canEditOwnRecord` | self |
+| `canManageSickness` | admin, payroll |
+| `canManagePayroll` | admin, payroll |
+| `canDeleteEmployee` | admin |
+| `canInviteUsers` | admin |
 
-```sql
--- FOR ALL operations (including DELETE)
-USING (
-  is_admin(auth.uid()) OR 
-  user_has_company_access(auth.uid(), company_id, 'admin'::text) OR
-  user_has_company_access(auth.uid(), company_id, 'payroll'::text)
-)
-```
-
-No database changes required.
-
----
-
-## Summary of Changes
-
-| File | Change |
-|------|--------|
-| `src/pages/EmployeeDetails.tsx` | Import `useCompany`, compute `canManageSickness`, pass to `SicknessTrackingCard` |
-
-This is a minimal change that aligns the UI permissions with the existing database RLS policies.
+This single hook would replace all the scattered `isAdmin` prop-drilling and ad-hoc role checks.
 
 ---
 
-## Testing Steps
+## 2. Prop Drilling of `isAdmin` (High Priority)
 
-1. Log in as `techsupport@ingenisoft.co.uk` (payroll role user)
-2. Navigate to an employee's details page
-3. Go to Sickness Tracking section
-4. Verify Add, Edit, and Delete buttons are now visible
-5. Attempt to delete a sickness record - should succeed without RLS error
+The `isAdmin` prop is passed through many layers of components -- at least 17 component files in the employee details section alone. Many of these could use the `useAuth()` or `useCompany()` hooks directly instead of receiving the prop.
 
+**Affected components include**:
+- PersonalInfoCard, ContactInfoCard, SalaryInfoCard
+- HmrcInfoCard, NhsPensionInfoCard, WorkPatternCard
+- SicknessTrackingCard, SicknessRecordsList
+- EmployeeHeader, EmploymentStatusCard
+- EmployeeTable, EmployeePortalStatus
+- EmployeeFormContainer, EmployeeActions
+
+**Recommendation**: Components that need permission context should use the proposed `usePermissions()` hook directly, eliminating the need to pass `isAdmin`, `canEdit`, and `canManage*` props through 3-4 levels.
+
+---
+
+## 3. Direct Supabase Calls in Page Components (Medium Priority)
+
+`EmployeeDetails.tsx` contains an inline `useEffect` that directly queries Supabase to fetch the sickness scheme (lines 50-80). This breaks the established pattern where data fetching lives in hooks (`useEmployeeDetails`, `useSicknessData`) or service files (`src/services/`).
+
+**Recommendation**: Move the sickness scheme fetching into either:
+- The existing `useEmployeeDetails` hook, or
+- A new `useSicknessScheme(schemeId)` hook in `src/hooks/employees/`
+
+---
+
+## 4. Use of `confirm()` / `window.confirm()` (Medium Priority)
+
+Native browser `confirm()` dialogs are used in at least 8 places across the codebase for destructive actions (delete employee, delete sickness record, delete department, clear mappings, etc.). These:
+- Cannot be styled or branded
+- Break the application's visual consistency
+- Have no loading state
+- Cannot be customised with additional context
+
+**Recommendation**: Replace all `confirm()` calls with the existing `AlertDialog` component from Radix UI (already installed). This would provide a consistent, branded confirmation experience.
+
+---
+
+## 5. CompanyProvider Fallback Complexity (Medium Priority)
+
+`CompanyProvider.tsx` contains deeply nested try/catch blocks with multiple fallback strategies for fetching companies (lines 46-186). There are three levels of retry logic with hardcoded delays (`setTimeout` with 100ms, 500ms). This makes the code difficult to maintain and debug.
+
+**Recommendation**: Simplify to a single fetch strategy with a generic retry utility, or use TanStack Query (already installed) for company data fetching, which provides built-in retry, caching, and error handling.
+
+---
+
+## 6. Duplicate Delete Logic (Low Priority)
+
+Employee deletion is implemented in two separate places:
+- `useEmployeeDetails.ts` (line 62) -- used on the details page
+- `useEmployees.tsx` -- used on the employee list page
+
+Both contain the same `confirm()` call, permission check, and toast notifications.
+
+**Recommendation**: Extract a shared `deleteEmployee` service function and confirmation flow.
+
+---
+
+## 7. Missing Type Safety on `eligibilityRules` (Low Priority)
+
+In `EmployeeDetails.tsx`, the `SicknessScheme` interface uses `any` for `eligibilityRules` (line 25). This loses the benefit of TypeScript's type checking for a data structure that likely has a known shape.
+
+**Recommendation**: Define a proper `EligibilityRules` type based on the actual data structure stored in the database.
+
+---
+
+## Suggested Priority Order
+
+| Priority | Item | Effort |
+|----------|------|--------|
+| 1 | Create `usePermissions()` hook | Medium |
+| 2 | Replace `isAdmin` prop drilling with hook usage | Medium |
+| 3 | Move sickness scheme fetch to a hook | Small |
+| 4 | Replace `confirm()` with AlertDialog | Medium |
+| 5 | Simplify CompanyProvider fallbacks | Medium |
+| 6 | Consolidate duplicate delete logic | Small |
+| 7 | Type the eligibility rules properly | Small |
+
+Items 1 and 2 should be done together as they directly relate. Item 3 is a quick win. Items 4-7 can be tackled independently over time.
