@@ -1,97 +1,126 @@
 
-# Fix RLS Policies for Payroll Role Users
 
-## Problem Summary
+# Fix: Allow Payroll Role Users to Delete Absence/Sickness Records
 
-The user `techsupport@ingenisoft.co.uk` has a `payroll` role for "High Street Surgery (test)" company, but cannot import extra hours data because the Row Level Security (RLS) policies on two critical tables only allow `admin` users.
+## Problem Analysis
 
-## Tables Affected
+The user `techsupport@ingenisoft.co.uk` has a `payroll` role for "High Street Surgery (test)" company. While the database RLS policies correctly allow `payroll` users to manage sickness records (INSERT, UPDATE, DELETE), the UI components only show management buttons (Add, Edit, Delete) when `isAdmin === true`.
 
-| Table | Current Policy | Needed Change |
-|-------|----------------|---------------|
-| `payroll_periods` | Only `admin` can manage | Add `payroll` role |
-| `payroll_employee_details` | Only `admin` can manage | Add `payroll` role |
+The `isAdmin` flag represents **system-wide** administrator privileges, not company-specific roles like `payroll`.
+
+## Root Cause
+
+| Component | Current Logic | Issue |
+|-----------|---------------|-------|
+| `SicknessRecordsList.tsx` | `{isAdmin && (...buttons...)}` | Only system admins see buttons |
+| `SicknessTrackingCard.tsx` | Receives `isAdmin` prop only | No awareness of payroll role |
+| `EmployeeDetails.tsx` | Passes only `isAdmin` from auth | Missing company role context |
 
 ## Solution
 
-Update the RLS policies to include the `payroll` role, consistent with how other payroll-related tables are configured.
+Update the component chain to check for both system admin status **OR** payroll role permissions.
 
-### Database Migration
+---
+
+### Step 1: Update EmployeeDetails.tsx
+
+Import `useCompany` and pass both `isAdmin` and `currentRole` to child components.
+
+```text
+File: src/pages/EmployeeDetails.tsx
+
+Changes:
+- Import useCompany from providers
+- Get currentRole from useCompany()
+- Create a derived permission: canManageSickness = isAdmin || currentRole === 'admin' || currentRole === 'payroll'
+- Pass canManageSickness to SicknessTrackingCard
+```
+
+---
+
+### Step 2: Update SicknessTrackingCard Interface
+
+Rename or extend the `isAdmin` prop to accept broader permission context.
+
+```text
+File: src/components/employees/details/sickness/SicknessTrackingCard.tsx
+
+Changes:
+- Update prop interface to use canManageRecords (or accept isAdmin as-is but callers pass combined permission)
+- Pass canManageRecords to SicknessRecordsList instead of isAdmin
+```
+
+---
+
+### Step 3: Update SicknessRecordsList Logic
+
+The component already uses `isAdmin` to control button visibility. With the updated prop passing the combined permission, the buttons will appear for payroll users.
+
+```text
+File: src/components/employees/details/sickness/SicknessRecordsList.tsx
+
+No changes needed if we pass the combined permission as isAdmin prop.
+Alternatively, rename prop to canManageRecords for clarity.
+```
+
+---
+
+## Implementation Details
+
+### File: src/pages/EmployeeDetails.tsx
+
+```typescript
+// Add import
+import { useCompany } from "@/providers/CompanyProvider";
+
+// Inside component, add:
+const { currentRole } = useCompany();
+
+// Create combined permission
+const canManageSickness = isAdmin || currentRole === 'admin' || currentRole === 'payroll';
+
+// Update SicknessTrackingCard props:
+<SicknessTrackingCard
+  employee={employee}
+  sicknessScheme={sicknessScheme}
+  isAdmin={canManageSickness}  // Pass combined permission
+/>
+```
+
+---
+
+## Database Verification
+
+The RLS policies already support this change. Current policies on `employee_sickness_records`:
 
 ```sql
--- Drop existing policies
-DROP POLICY IF EXISTS "Company admins can manage payroll periods" ON public.payroll_periods;
-DROP POLICY IF EXISTS "Company admins can manage payroll details" ON public.payroll_employee_details;
-
--- Create updated policy for payroll_periods
-CREATE POLICY "Company admins and payroll can manage payroll periods"
-ON public.payroll_periods
-FOR ALL
-TO authenticated
+-- FOR ALL operations (including DELETE)
 USING (
+  is_admin(auth.uid()) OR 
   user_has_company_access(auth.uid(), company_id, 'admin'::text) OR
-  user_has_company_access(auth.uid(), company_id, 'payroll'::text) OR
-  is_admin(auth.uid())
+  user_has_company_access(auth.uid(), company_id, 'payroll'::text)
 )
-WITH CHECK (
-  user_has_company_access(auth.uid(), company_id, 'admin'::text) OR
-  user_has_company_access(auth.uid(), company_id, 'payroll'::text) OR
-  is_admin(auth.uid())
-);
-
--- Create updated policy for payroll_employee_details
-CREATE POLICY "Company admins and payroll can manage payroll details"
-ON public.payroll_employee_details
-FOR ALL
-TO authenticated
-USING (
-  EXISTS (
-    SELECT 1 FROM public.payroll_periods pp
-    WHERE pp.id = payroll_employee_details.payroll_period_id
-    AND (
-      user_has_company_access(auth.uid(), pp.company_id, 'admin'::text) OR
-      user_has_company_access(auth.uid(), pp.company_id, 'payroll'::text)
-    )
-  )
-  OR is_admin(auth.uid())
-)
-WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM public.payroll_periods pp
-    WHERE pp.id = payroll_employee_details.payroll_period_id
-    AND (
-      user_has_company_access(auth.uid(), pp.company_id, 'admin'::text) OR
-      user_has_company_access(auth.uid(), pp.company_id, 'payroll'::text)
-    )
-  )
-  OR is_admin(auth.uid())
-);
 ```
 
-## Why This Works
+No database changes required.
 
-- The `payroll` role is already trusted for managing sickness records and entitlements
-- The `payroll_import_audit` table already uses `user_has_payroll_access()` which allows `payroll` role
-- This change makes the payroll tables consistent with the rest of the system
+---
 
-## Technical Details
+## Summary of Changes
 
-The current policies check for:
-```sql
-user_has_company_access(auth.uid(), company_id, 'admin'::text)
-```
+| File | Change |
+|------|--------|
+| `src/pages/EmployeeDetails.tsx` | Import `useCompany`, compute `canManageSickness`, pass to `SicknessTrackingCard` |
 
-This function only returns `true` if the user's role **exactly matches** `'admin'`. The `payroll` role is not included.
+This is a minimal change that aligns the UI permissions with the existing database RLS policies.
 
-By adding:
-```sql
-user_has_company_access(auth.uid(), company_id, 'payroll'::text)
-```
+---
 
-Users with the `payroll` role will also be granted access.
+## Testing Steps
 
-## Impact
+1. Log in as `techsupport@ingenisoft.co.uk` (payroll role user)
+2. Navigate to an employee's details page
+3. Go to Sickness Tracking section
+4. Verify Add, Edit, and Delete buttons are now visible
+5. Attempt to delete a sickness record - should succeed without RLS error
 
-- **Sickness Import**: Should already work (policies already include `payroll` role)
-- **Extra Hours Import**: Will work after this fix
-- **No breaking changes**: Existing admin users retain full access
