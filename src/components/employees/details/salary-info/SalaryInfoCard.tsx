@@ -6,15 +6,15 @@ import { Pencil, X, Check, DollarSign } from "lucide-react";
 import { SalaryInfoFormComponent, SalaryInfoFormRef } from "./SalaryInfoForm";
 import { SalaryInfoFormValues, SalaryInfoProps } from "./types";
 import { toast } from "sonner";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export const SalaryInfoCard = ({ 
   employee, 
-  isAdmin, 
   updateEmployeeField,
-  canEdit = false
 }: SalaryInfoProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const formRef = useRef<SalaryInfoFormRef>(null);
+  const { canEditSalary } = usePermissions();
 
   const toggleEditMode = () => {
     if (isEditing) {
@@ -60,7 +60,7 @@ export const SalaryInfoCard = ({
           <DollarSign className="h-5 w-5 text-muted-foreground" />
           Salary Details
         </CardTitle>
-        {canEdit && (
+        {canEditSalary && (
           <div className="flex gap-2">
             {isEditing ? (
               <>
@@ -98,8 +98,6 @@ export const SalaryInfoCard = ({
         <SalaryInfoFormComponent
           ref={formRef}
           employee={employee}
-          isAdmin={isAdmin}
-          updateEmployeeField={updateEmployeeField}
           isEditing={isEditing}
           toggleEditMode={toggleEditMode}
           onSubmit={handleSubmit}

@@ -6,24 +6,24 @@ import { SicknessScheme } from "./types";
 import { useToast } from "@/hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/providers";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface SicknessSchemeSelectorProps {
   employeeId: string;
   currentSchemeId: string | null;
-  isAdmin: boolean;
   updateEmployeeField: (fieldName: string, value: any) => Promise<boolean>;
 }
 
 export const SicknessSchemeSelector = ({
   employeeId,
   currentSchemeId,
-  isAdmin,
   updateEmployeeField
 }: SicknessSchemeSelectorProps) => {
   const [schemes, setSchemes] = useState<SicknessScheme[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { currentCompany } = useCompany();
+  const { canEditWorkPattern } = usePermissions();
   
   useEffect(() => {
     fetchSicknessSchemes();
@@ -49,21 +49,17 @@ export const SicknessSchemeSelector = ({
       }
       
       if (data && data.length > 0) {
-        // Transform the data to match our SicknessScheme interface
         const transformedData: SicknessScheme[] = data.map(item => ({
           id: item.id,
           name: item.name,
-          // Parse the JSON eligibility rules
           eligibilityRules: item.eligibility_rules ? JSON.parse(item.eligibility_rules as string) : null
         }));
         setSchemes(transformedData);
       } else {
-        // No company-specific schemes found
         setSchemes([]);
       }
     } catch (error: any) {
       console.error("Error fetching sickness schemes:", error.message);
-      // Set empty schemes on error
       setSchemes([]);
     } finally {
       setLoading(false);
@@ -71,9 +67,8 @@ export const SicknessSchemeSelector = ({
   };
   
   const handleSchemeChange = async (schemeId: string) => {
-    if (!isAdmin) return;
+    if (!canEditWorkPattern) return;
     
-    // Handle "none" selection
     if (schemeId === "none") {
       schemeId = null;
     }
@@ -99,7 +94,6 @@ export const SicknessSchemeSelector = ({
     }
   };
   
-  // Convert null currentSchemeId to "none" for the Select component
   const selectValue = currentSchemeId || "none";
   
   return (
@@ -108,7 +102,7 @@ export const SicknessSchemeSelector = ({
       <Select
         value={selectValue}
         onValueChange={handleSchemeChange}
-        disabled={!isAdmin || loading}
+        disabled={!canEditWorkPattern || loading}
       >
         <SelectTrigger id="sickness-scheme" className="w-full">
           <SelectValue placeholder="Select a sickness scheme" />

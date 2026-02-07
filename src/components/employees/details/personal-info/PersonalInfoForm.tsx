@@ -4,12 +4,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useImperativeHandle, forwardRef } from "react";
 import { Form } from "@/components/ui/form";
 import { personalInfoSchema } from "./PersonalInfoSchema";
-import { PersonalInfoFormValues, PersonalInfoProps } from "./types";
+import { PersonalInfoFormValues } from "./types";
 import { PersonalInfoBasicFields } from "./PersonalInfoBasicFields";
 import { PersonalInfoDateField } from "./PersonalInfoDateField";
 import { PersonalInfoDisplay } from "./PersonalInfoDisplay";
+import { Employee } from "@/types";
 
-interface PersonalInfoFormComponentProps extends PersonalInfoProps {
+interface PersonalInfoFormComponentProps {
+  employee: Employee;
   isEditing: boolean;
   toggleEditMode: () => void;
   onSubmit: (data: PersonalInfoFormValues) => Promise<void>;

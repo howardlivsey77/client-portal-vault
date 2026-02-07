@@ -28,7 +28,15 @@ export { useEmployeeInvite } from "./employees/useEmployeeInvite";
 export { useEmployeeTimesheet } from "./employees/useEmployeeTimesheet";
 export type { WeeklyTimesheetDay } from "./employees/useEmployeeTimesheet";
 export { useSicknessData } from "./employees/useSicknessData";
+export { useSicknessScheme } from "./employees/useSicknessScheme";
 export { useCostCentres } from "./employees/useCostCentres";
+
+// Permissions hook
+export { usePermissions } from "./usePermissions";
+export type { Permissions } from "./usePermissions";
+
+// Confirmation dialog hook
+export { useConfirmation } from "./useConfirmation";
 
 // Reports hooks
 export { useHoursRatesReport } from "./reports/useHoursRatesReport";

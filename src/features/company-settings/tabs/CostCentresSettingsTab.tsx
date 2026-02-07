@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useConfirmation } from "@/hooks/useConfirmation";
+import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +17,7 @@ import { CostCentre } from "@/services/employees/costCentreService";
 export function CostCentresSettingsTab() {
   const { costCentres, loading, addCostCentre, editCostCentre, removeCostCentre } = useCostCentres();
   const { isAdmin } = useAuth();
+  const { confirm, confirmationProps } = useConfirmation();
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -56,13 +59,18 @@ export function CostCentresSettingsTab() {
   };
 
   const handleDeleteCostCentre = async (costCentreId: string) => {
-    if (!confirm("Are you sure you want to delete this cost centre?")) return;
-    
-    try {
-      await removeCostCentre(costCentreId);
-    } catch (error) {
-      // Error handled in hook
-    }
+    confirm({
+      title: "Delete cost centre?",
+      description: "This action cannot be undone. The cost centre will be permanently removed.",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          await removeCostCentre(costCentreId);
+        } catch (error) {
+          // Error handled in hook
+        }
+      },
+    });
   };
 
   const openEditDialog = (costCentre: CostCentre) => {
@@ -230,6 +238,7 @@ export function CostCentresSettingsTab() {
           </DialogContent>
         </Dialog>
       </CardContent>
+      <ConfirmationDialog {...confirmationProps} />
     </Card>
   );
 }

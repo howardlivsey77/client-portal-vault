@@ -70,10 +70,6 @@ export const useEmployeeDetails = (employeeId: string | undefined): EmployeeDeta
       return;
     }
     
-    if (!confirm("Are you sure you want to delete this employee record?")) {
-      return;
-    }
-    
     try {
       setLoading(true);
       

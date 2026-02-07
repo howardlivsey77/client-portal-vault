@@ -13,23 +13,25 @@ import { Activity, AlertCircle } from "lucide-react";
 import { SicknessReportPDFButton } from "./SicknessReportPDFButton";
 import { fetchWorkPatterns } from "@/components/employees/details/work-pattern/services/fetchPatterns";
 import { calculateWorkingDaysPerWeek } from "@/components/employees/details/sickness/utils/workPatternCalculations";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useConfirmation } from "@/hooks/useConfirmation";
+import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 
 interface SicknessTrackingCardProps {
   employee: Employee;
   sicknessScheme: SicknessScheme | null;
-  isAdmin: boolean;
 }
 
 export const SicknessTrackingCard = ({
   employee,
   sicknessScheme,
-  isAdmin
 }: SicknessTrackingCardProps) => {
   const [formOpen, setFormOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<SicknessRecord | null>(null);
   const [entitlementSummary, setEntitlementSummary] = useState<SicknessEntitlementSummary | null>(null);
   const [workPattern, setWorkPattern] = useState<WorkDay[]>([]);
-
+  const { canManageSickness } = usePermissions();
+  const { confirm, confirmationProps } = useConfirmation();
   const {
     sicknessRecords,
     entitlementUsage,
@@ -41,7 +43,6 @@ export const SicknessTrackingCard = ({
     deleteSicknessRecord
   } = useSicknessData(employee, sicknessScheme);
 
-  // Fetch work pattern
   useEffect(() => {
     const loadWorkPattern = async () => {
       if (employee?.id) {
@@ -78,9 +79,12 @@ export const SicknessTrackingCard = ({
   };
 
   const handleDeleteRecord = async (id: string) => {
-    if (confirm('Are you sure you want to delete this sickness record?')) {
-      await deleteSicknessRecord(id);
-    }
+    confirm({
+      title: "Delete sickness record?",
+      description: "This action cannot be undone. The sickness record will be permanently removed.",
+      variant: "destructive",
+      onConfirm: () => deleteSicknessRecord(id),
+    });
   };
 
   const handleSaveRecord = async (recordData: Omit<SicknessRecord, 'id' | 'created_at' | 'updated_at'>) => {
@@ -90,7 +94,6 @@ export const SicknessTrackingCard = ({
       await addSicknessRecord(recordData);
     }
   };
-
 
   if (!sicknessScheme) {
     return (
@@ -150,7 +153,7 @@ export const SicknessTrackingCard = ({
             <SicknessRecordsList
               records={sicknessRecords}
               loading={loading}
-              isAdmin={isAdmin}
+              isAdmin={canManageSickness}
               workPattern={workPattern}
               employeeId={employee.id}
               onAddRecord={handleAddRecord}
@@ -170,6 +173,7 @@ export const SicknessTrackingCard = ({
           onSave={handleSaveRecord}
         />
 
+        <ConfirmationDialog {...confirmationProps} />
       </CardContent>
     </Card>
   );

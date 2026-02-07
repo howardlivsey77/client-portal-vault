@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useConfirmation } from '@/hooks/useConfirmation';
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -35,6 +37,8 @@ export function PayrollSicknessDialog({
   const [sspItems, setSspItems] = useState<SicknessItem[]>(initialItems);
   const [formOpen, setFormOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<SicknessRecord | null>(null);
+
+  const { confirm, confirmationProps } = useConfirmation();
 
   const {
     employee,
@@ -91,9 +95,12 @@ export function PayrollSicknessDialog({
   };
 
   const handleDeleteRecord = async (id: string) => {
-    if (confirm('Are you sure you want to delete this sickness record?')) {
-      await deleteSicknessRecord(id);
-    }
+    confirm({
+      title: "Delete sickness record?",
+      description: "This action cannot be undone. The sickness record will be permanently removed.",
+      variant: "destructive",
+      onConfirm: () => deleteSicknessRecord(id),
+    });
   };
 
   const handleSaveRecord = async (recordData: Omit<SicknessRecord, 'id' | 'created_at' | 'updated_at'>) => {
@@ -189,6 +196,7 @@ export function PayrollSicknessDialog({
           onSave={handleSaveRecord}
         />
       )}
+      <ConfirmationDialog {...confirmationProps} />
     </>
   );
 }
