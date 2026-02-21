@@ -65,7 +65,7 @@ export const employeeSchema = z.object({
   tax_code: HmrcTaxCodeSchema.optional().nullable().or(z.literal('')).transform(val => val === '' ? null : val),
   week_one_month_one: z.boolean().optional().nullable(),
   nic_code: nicCodeValidation.nullable(),
-  student_loan_plan: z.number().min(1).max(6).optional().nullable(),
+  student_loan_plan: z.number().min(1).max(4).optional().nullable().or(z.literal(6).optional().nullable()),
   // P45/P46 fields
   has_p45: z.boolean().optional().nullable(),
   taxable_pay_ytd: z.coerce.number().min(0, "Taxable pay YTD must be a positive number").optional().nullable(),
@@ -109,8 +109,7 @@ export const studentLoanPlanOptions = [
   { label: "Plan 1", value: 1 },
   { label: "Plan 2", value: 2 },
   { label: "Plan 4", value: 4 },
-  { label: "Plan 5", value: 5 },
-  { label: "Plan 6 (Postgraduate)", value: 6 },
+  { label: "Postgraduate Loan (PGL)", value: 6 },
 ];
 
 export const nicCodeOptions = [

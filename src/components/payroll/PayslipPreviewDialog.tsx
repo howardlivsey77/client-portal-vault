@@ -129,6 +129,8 @@ export function PayslipPreviewDialog({
         nhsPensionEmployerRate: 0,
         isNHSPensionMember: false,
         niCategory: 'A',
+        reimbursements: [],
+        niableGrossPay: grossPay,
       };
 
       const filename = `${employeeName.replace(/\s+/g, '-').toLowerCase()}-payslip-${payPeriod.replace(/\s+/g, '-').toLowerCase()}.pdf`;

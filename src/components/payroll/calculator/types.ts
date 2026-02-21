@@ -6,7 +6,7 @@ export interface PayrollFormValues {
   monthlySalary: number;
   taxCode: string;
   pensionPercentage: number;
-  studentLoanPlan: 1 | 2 | 4 | 5 | null;
+  studentLoanPlan: 1 | 2 | 4 | 'PGL' | null;
   additionalDeductions: Array<{ description: string; amount: number }>;
   additionalAllowances: Array<{ description: string; amount: number }>;
   additionalEarnings: Array<{ description: string; amount: number }>;

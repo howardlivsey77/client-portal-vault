@@ -28,11 +28,11 @@ export function EmployeeInfoFields({
         employee.hours_per_week || 0
       );
 
-      // Convert student loan plan to the correct type (1, 2, 4, 5 or null)
+      // Convert student loan plan to the correct type (1, 2, 4, PGL or null)
       const studentLoanPlan = employee.student_loan_plan === 1 ? 1 :
                               employee.student_loan_plan === 2 ? 2 :
                               employee.student_loan_plan === 4 ? 4 :
-                              employee.student_loan_plan === 5 ? 5 : null;
+                              employee.student_loan_plan === 6 ? 'PGL' as const : null;
 
       onChange({
         ...formValues,

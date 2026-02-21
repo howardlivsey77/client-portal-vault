@@ -49,6 +49,7 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     additionalEarnings = [],
     additionalDeductions = [],
     additionalAllowances = [],
+    reimbursements = [],
     isNHSPensionMember = false,
     previousYearPensionablePay = null,
     taxYear: providedTaxYear,
@@ -137,6 +138,17 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     }
   }
 
+  for (const item of reimbursements) {
+    if (typeof item.amount !== 'number' || isNaN(item.amount) || item.amount < 0) {
+      throw new PayrollCalculationError(
+        'INVALID_INPUT',
+        'All reimbursements items must have a non-negative numeric amount',
+        undefined,
+        { employeeId }
+      );
+    }
+  }
+
   // --- End input validation ---
 
   const VALID_NI_CATEGORIES: NICategory[] = ['A', 'B', 'C', 'M', 'H', 'Z', 'J', 'V'];
@@ -154,19 +166,20 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     taxYear,
     hasNHSPension: isNHSPensionMember,
     hasAdditionalEarnings: additionalEarnings.length > 0,
+    hasReimbursements: reimbursements.length > 0,
     hasStudentLoan: studentLoanPlan !== null,
     studentLoanPlan,
     hasPension: pensionPercentage > 0,
     niCategory,
   });
 
-  const earnings = calculateEarnings(monthlySalary, additionalEarnings);
+  const earnings = calculateEarnings(monthlySalary, additionalEarnings, reimbursements);
 
   const [tax, ni, pensions] = await Promise.all([
-    calculateTaxDeductions(earnings.grossPay, taxCode, taxYear, employeeId),
-    calculateNIContributions(earnings.grossPay, taxYear, employeeId, niCategory),
+    calculateTaxDeductions(earnings.niableGrossPay, taxCode, taxYear, employeeId),
+    calculateNIContributions(earnings.niableGrossPay, taxYear, employeeId, niCategory),
     calculatePensionDeductions(
-      earnings.grossPay,
+      earnings.niableGrossPay,
       monthlySalary,
       pensionPercentage,
       previousYearPensionablePay,
@@ -176,9 +189,9 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     ),
   ]);
 
-  // Student loan is calculated on base monthly salary only — not grossPay.
-  // Per SLC/HMRC guidance: https://www.gov.uk/guidance/paye-collection-of-student-loans
-  const studentLoan = calculateStudentLoan(monthlySalary, studentLoanPlan);
+  // Student loan: calculated on NI-able gross pay per HMRC spec
+  // (earnings subject to Class 1 NI contributions, excluding non-NI-able reimbursements)
+  const studentLoan = calculateStudentLoan(earnings.niableGrossPay, studentLoanPlan);
 
   const result = assemblePayrollResult(details, taxYear, earnings, tax, ni, pensions, studentLoan);
 

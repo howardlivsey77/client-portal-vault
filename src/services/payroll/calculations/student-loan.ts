@@ -1,40 +1,45 @@
 /**
  * Student Loan Repayment Calculator
- * 
+ *
  * REGULATORY BASIS:
- * Per SLC/HMRC guidance, student loan deductions are calculated on regular
- * earnings only, excluding bonuses, overtime, and other additional payments.
- * 
+ * Per HMRC Student Loan guidance for software developers 2025-2026:
+ * Loan deductions are calculated as a percentage of employee earnings
+ * that are subject to Class 1 National Insurance contributions (E)
+ * above an earnings threshold.
+ *
+ * ROUNDING: Loan deductions are rounded DOWN to the nearest pound per HMRC spec.
+ * This differs from standard payroll rounding (2dp) — see section 3 of the spec.
+ *
+ * PGL (Postgraduate Loan) can run alongside one plan type (1, 2, or 4).
+ * Plan 5 does not exist in HMRC guidance and has been removed.
+ *
  * References:
  * - HMRC PAYE Manual: https://www.gov.uk/guidance/paye-collection-of-student-loans
- * - Student Loans Company: https://www.slc.co.uk/
- * 
- * Thresholds are updated annually and stored in STUDENT_LOAN_THRESHOLDS.
- * Current thresholds: 2025/26 tax year
+ * - HMRC Student Loan guidance for software developers 2025-2026
  */
-
-import { roundToTwoDecimals } from "@/lib/formatters";
 import { STUDENT_LOAN_THRESHOLDS } from "../constants/tax-constants";
 import { payrollLogger } from "../utils/payrollLogger";
 
 /**
  * Calculate student loan repayments using HMRC monthly thresholds
- * 
- * @param monthlySalary - The employee's base monthly salary (excluding additional earnings)
- * @param planType - The student loan plan type (1, 2, 4, 5, 6, or null)
- * @returns Monthly student loan repayment amount
+ *
+ * @param niableGrossPay - NI-able gross pay (gross pay excluding non-NI-able reimbursements)
+ * @param planType - The student loan plan type (1, 2, 4, 'PGL', or null)
+ * @returns Monthly student loan repayment amount, rounded DOWN to nearest pound per HMRC spec
  */
-export function calculateStudentLoan(monthlySalary: number, planType: 1 | 2 | 4 | 5 | 6 | null): number {
+export function calculateStudentLoan(
+  niableGrossPay: number,
+  planType: 1 | 2 | 4 | 'PGL' | null
+): number {
   if (!planType) return 0;
-  
-  // Defensive validation - guard against invalid salary values
-  if (!Number.isFinite(monthlySalary) || monthlySalary < 0) {
+
+  if (!Number.isFinite(niableGrossPay) || niableGrossPay < 0) {
     return 0;
   }
-  
-  let monthlyThreshold: number;
-  let rate: number;
-  
+
+  let monthlyThreshold!: number;
+  let rate!: number;
+
   switch (planType) {
     case 1:
       monthlyThreshold = STUDENT_LOAN_THRESHOLDS.PLAN_1.monthly;
@@ -48,37 +53,31 @@ export function calculateStudentLoan(monthlySalary: number, planType: 1 | 2 | 4 
       monthlyThreshold = STUDENT_LOAN_THRESHOLDS.PLAN_4.monthly;
       rate = STUDENT_LOAN_THRESHOLDS.PLAN_4.rate;
       break;
-    case 5:
-      monthlyThreshold = STUDENT_LOAN_THRESHOLDS.PLAN_5.monthly;
-      rate = STUDENT_LOAN_THRESHOLDS.PLAN_5.rate;
+    case 'PGL':
+      monthlyThreshold = STUDENT_LOAN_THRESHOLDS.PGL.monthly;
+      rate = STUDENT_LOAN_THRESHOLDS.PGL.rate;
       break;
-    case 6:
-      monthlyThreshold = STUDENT_LOAN_THRESHOLDS.PLAN_6.monthly;
-      rate = STUDENT_LOAN_THRESHOLDS.PLAN_6.rate;
-      break;
-    // No default needed - TypeScript enforces exhaustive matching on planType
   }
-  
-  // Log plan type and rate only - no monetary amounts
-  payrollLogger.calculation('Student loan parameters', { 
-    planType,
-    ratePercent: rate * 100 
+
+  payrollLogger.debug('Student loan parameters', {
+    planType: String(planType),
+    ratePercent: rate * 100,
   });
-  
-  if (monthlySalary <= monthlyThreshold) {
-    payrollLogger.debug('Student loan: below threshold', { 
+
+  if (niableGrossPay <= monthlyThreshold) {
+    payrollLogger.debug('Student loan: below threshold', {
       planType,
-      belowThreshold: true 
+      belowThreshold: true,
     });
     return 0;
   }
-  
-  const monthlyRepayment = (monthlySalary - monthlyThreshold) * rate;
-  const finalRepayment = roundToTwoDecimals(monthlyRepayment);
-  
-  payrollLogger.calculation('Student loan result', { 
-    monthlyRepayment: finalRepayment 
+
+  // HMRC spec: round DOWN to nearest pound (not 2dp)
+  const monthlyRepayment = Math.floor((niableGrossPay - monthlyThreshold) * rate);
+
+  payrollLogger.calculation('Student loan result', {
+    monthlyRepayment,
   });
-  
-  return finalRepayment;
+
+  return monthlyRepayment;
 }

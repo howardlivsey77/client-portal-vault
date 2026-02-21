@@ -59,7 +59,7 @@ export interface PayrollTableRow {
   hasPayrollResult: boolean;
   // Employee-specific fields for payroll calculation
   taxCode: string;
-  studentLoanPlan: 1 | 2 | 4 | 5 | null;
+  studentLoanPlan: 1 | 2 | 4 | 'PGL' | null;
   isNHSPensionMember: boolean;
   pensionPercentage: number;
   previousYearPensionablePay: number | null;
@@ -228,7 +228,8 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
           ]);
 
           // Calculate student loan (synchronous - uses hardcoded thresholds)
-          const studentLoanPlan = emp.student_loan_plan as 1 | 2 | 4 | 5 | 6 | null;
+          const studentLoanPlan = emp.student_loan_plan === 6 ? 'PGL' as const :
+            (emp.student_loan_plan as 1 | 2 | 4 | null);
           const studentLoanDeduction = calculateStudentLoan(monthlySalary, studentLoanPlan);
 
           newCalculations.set(emp.id, {
@@ -373,7 +374,7 @@ export function usePayrollTableData(payPeriod: PayPeriod) {
         hasPayrollResult: !!payrollResult,
         // Employee-specific fields for payroll calculation
         taxCode: emp.tax_code || '1257L',
-        studentLoanPlan: emp.student_loan_plan as 1 | 2 | 4 | 5 | null,
+        studentLoanPlan: emp.student_loan_plan === 6 ? 'PGL' as const : (emp.student_loan_plan as 1 | 2 | 4 | null),
         isNHSPensionMember: emp.nhs_pension_member || false,
         pensionPercentage: 0, // Future: from employee record if available
         previousYearPensionablePay: emp.previous_year_pensionable_pay || null,

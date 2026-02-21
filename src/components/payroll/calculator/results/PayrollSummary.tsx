@@ -9,13 +9,13 @@ interface PayrollSummaryProps {
 
 export function PayrollSummary({ result, payPeriod }: PayrollSummaryProps) {
   // Map student loan plan numbers to descriptive text
-  const getStudentLoanPlanName = (plan: number | null) => {
+  const getStudentLoanPlanName = (plan: number | string | null) => {
     if (!plan) return "None";
-    const planMap: Record<number, string> = {
+    const planMap: Record<string | number, string> = {
       1: "Plan 1",
       2: "Plan 2",
       4: "Plan 4",
-      5: "Plan 5"
+      PGL: "Postgraduate Loan"
     };
     return planMap[plan] || `Plan ${plan}`;
   };

@@ -23,8 +23,10 @@ import type { NICategory } from "./constants/tax-constants";
 // ---------------------------------------------------------------------------
 
 export interface EarningsResult {
-  grossPay: number;
+  grossPay: number;              // monthlySalary + additionalEarnings + reimbursements
+  niableGrossPay: number;        // grossPay - reimbursements (used for NI, tax, student loan)
   totalAdditionalEarnings: number;
+  totalReimbursements: number;
 }
 
 export interface TaxResult {
@@ -58,19 +60,26 @@ export interface PensionResult {
 
 export function calculateEarnings(
   monthlySalary: number,
-  additionalEarnings: Array<{ amount: number }>
+  additionalEarnings: Array<{ amount: number }>,
+  reimbursements: Array<{ amount: number }> = []
 ): EarningsResult {
   const totalAdditionalEarnings =
     additionalEarnings?.reduce((sum, item) => sum + item.amount, 0) ?? 0;
-  const grossPay = monthlySalary + totalAdditionalEarnings;
+  const totalReimbursements =
+    reimbursements?.reduce((sum, item) => sum + item.amount, 0) ?? 0;
+
+  const grossPay = monthlySalary + totalAdditionalEarnings + totalReimbursements;
+  const niableGrossPay = monthlySalary + totalAdditionalEarnings;
 
   payrollLogger.calculation("Gross pay", {
     monthlySalary,
     additionalEarnings: totalAdditionalEarnings,
+    totalReimbursements,
     grossPay,
+    niableGrossPay,
   });
 
-  return { grossPay, totalAdditionalEarnings };
+  return { grossPay, niableGrossPay, totalAdditionalEarnings, totalReimbursements };
 }
 
 // ---------------------------------------------------------------------------
@@ -243,6 +252,7 @@ export function assemblePayrollResult(
     additionalDeductions = [],
     additionalAllowances = [],
     additionalEarnings = [],
+    reimbursements = [],
     isNHSPensionMember = false,
     niCategory = 'A' as NICategory,
   } = details;
@@ -286,6 +296,8 @@ export function assemblePayrollResult(
     additionalDeductions,
     additionalAllowances,
     additionalEarnings,
+    reimbursements,
+    niableGrossPay: roundToTwoDecimals(earnings.niableGrossPay),
     totalDeductions: roundToTwoDecimals(totalDeductions),
     totalAllowances: roundToTwoDecimals(totalAllowances),
     netPay: roundToTwoDecimals(netPay),
