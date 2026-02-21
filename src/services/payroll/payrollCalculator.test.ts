@@ -522,7 +522,19 @@ describe('calculateNIContributions', () => {
         const err = e as PayrollCalculationError;
         expect(err.context).toMatchObject({ taxYear: '2025/26', employeeId: 'EMP001' });
       }
-});
+    });
+
+    it('wraps original error as cause', async () => {
+      const originalError = new Error('original NI error');
+      mockCalculate.mockRejectedValue(originalError);
+      try {
+        await calculateNIContributions(4000, '2025/26', 'EMP001');
+      } catch (e) {
+        expect((e as PayrollCalculationError).cause).toBe(originalError);
+      }
+    });
+  }); // closes error handling
+}); // closes calculateNIContributions
 
 // ---------------------------------------------------------------------------
 // Phase 4.5 — calculatePensionDeductions
@@ -1013,17 +1025,7 @@ describe('calculateMonthlyPayroll — K code employee', () => {
   });
 });
 
-    it('wraps original error as cause', async () => {
-      const originalError = new Error('original NI error');
-      mockCalculate.mockRejectedValue(originalError);
-      try {
-        await calculateNIContributions(4000, '2025/26', 'EMP001');
-      } catch (e) {
-        expect((e as PayrollCalculationError).cause).toBe(originalError);
-      }
-    });
-  });
-});
+
 
 // ---------------------------------------------------------------------------
 // HMRC Worked Examples — exact figure verification
