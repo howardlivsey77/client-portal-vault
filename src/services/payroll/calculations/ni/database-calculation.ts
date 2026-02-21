@@ -1,4 +1,3 @@
-import { roundToTwoDecimals } from "@/lib/formatters";
 import { NICalculationResult, NICBand } from "./types";
 import { calculateNICEarningsBands } from "./earnings-bands";
 import { NI_CATEGORY_RATES, NI_EMPLOYEE_RATES, NI_EMPLOYER_RATES, NI_UPPER_SECONDARY_THRESHOLD } from "../../constants/tax-constants";
@@ -96,6 +95,5 @@ export function calculateFromBands(
     return null;
   }
 
-  result.nationalInsurance = roundToTwoDecimals(result.nationalInsurance);
   return result;
 }

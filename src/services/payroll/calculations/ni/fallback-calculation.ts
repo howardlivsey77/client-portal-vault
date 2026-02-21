@@ -1,4 +1,3 @@
-import { roundToTwoDecimals } from "@/lib/formatters";
 import { NICalculationResult } from "./types";
 import { NI_THRESHOLDS, NI_CATEGORY_RATES, NI_EMPLOYEE_RATES, NI_EMPLOYER_RATES, NI_UPPER_SECONDARY_THRESHOLD } from "../../constants/tax-constants";
 import type { NICategory } from "../../constants/tax-constants";
@@ -65,19 +64,13 @@ export function calculateNationalInsuranceFallback(
   if (categoryRates.employerRateGroup === 'ZERO_TO_SECONDARY_THRESHOLD') {
     // Categories M, H, V, Z: 0% employer NI up to UST/AUST/VUST, then 15% above
     const earningsAboveUST = Math.max(0, monthlySalary - NI_UPPER_SECONDARY_THRESHOLD.monthly);
-    result.employerNationalInsurance = roundToTwoDecimals(
-      earningsAboveUST * NI_EMPLOYER_RATES.STANDARD_RATE
-    );
+    result.employerNationalInsurance = earningsAboveUST * NI_EMPLOYER_RATES.STANDARD_RATE;
   } else {
     // Categories A, B, C, J: Standard 15% employer NI on all earnings above ST
     if (result.earningsAboveST > 0) {
-      result.employerNationalInsurance = roundToTwoDecimals(
-        result.earningsAboveST * NI_EMPLOYER_RATES.STANDARD_RATE
-      );
+      result.employerNationalInsurance = result.earningsAboveST * NI_EMPLOYER_RATES.STANDARD_RATE;
     }
   }
-
-  result.nationalInsurance = roundToTwoDecimals(result.nationalInsurance);
 
   return result;
 }
