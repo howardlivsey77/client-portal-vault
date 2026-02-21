@@ -3,6 +3,8 @@
  * Types for payroll calculations
  */
 
+import type { NICategory } from "./constants/tax-constants";
+
 export interface PayrollDetails {
   employeeId: string;
   employeeName: string;
@@ -19,6 +21,8 @@ export interface PayrollDetails {
   previousYearPensionablePay?: number | null;
   // Tax year - optional, defaults to current tax year if not provided
   taxYear?: string;
+  // NI category letter - optional, defaults to 'A' if not provided
+  niCategory?: NICategory;
 }
 
 export interface PayrollResult {
@@ -57,4 +61,6 @@ export interface PayrollResult {
   nhsPensionEmployeeRate: number;
   nhsPensionEmployerRate: number;
   isNHSPensionMember: boolean;
+  // NI category
+  niCategory: NICategory;
 }

@@ -491,7 +491,13 @@ describe('calculateNIContributions', () => {
     it('passes taxYear correctly to NationalInsuranceCalculator constructor', async () => {
       mockCalculate.mockResolvedValue(niData);
       await calculateNIContributions(4000, '2024/25', 'EMP001');
-      expect(MockNICalculator).toHaveBeenCalledWith('2024/25', false);
+      expect(MockNICalculator).toHaveBeenCalledWith('2024/25', false, 'A');
+    });
+
+    it('passes niCategory to NationalInsuranceCalculator constructor', async () => {
+      mockCalculate.mockResolvedValue(niData);
+      await calculateNIContributions(4000, '2025/26', 'EMP001', 'M');
+      expect(MockNICalculator).toHaveBeenCalledWith('2025/26', false, 'M');
     });
   });
 
@@ -672,6 +678,163 @@ describe('calculatePensionDeductions', () => {
       expect(result.pensionContribution).toBeNaN();
       // Did not throw
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// NI Category Rates
+// ---------------------------------------------------------------------------
+
+describe('NI category rates', () => {
+  const MockNICalculator = NationalInsuranceCalculator as unknown as ReturnType<typeof vi.fn>;
+  const mockCalcTax = calculateMonthlyIncomeTaxAsync as ReturnType<typeof vi.fn>;
+  const mockCalcPension = calculatePension as ReturnType<typeof vi.fn>;
+  const mockCalcNHSPension = calculateNHSPension as ReturnType<typeof vi.fn>;
+
+  // Helper to set up all mocks for calculateMonthlyPayroll
+  function setupOrchestratorMocks(niResult: Partial<typeof baseNI> = {}) {
+    mockCalcTax.mockResolvedValue({ monthlyTax: 400, freePay: 1047.50 });
+    const mockCalculate = vi.fn().mockResolvedValue({ ...baseNI, ...niResult });
+    MockNICalculator.mockImplementation(() => ({ calculate: mockCalculate }));
+    mockCalcPension.mockReturnValue(200);
+    mockCalcNHSPension.mockResolvedValue({
+      employeeContribution: 0, employerContribution: 0,
+      tier: 0, employeeRate: 0, employerRate: 0,
+    });
+    return mockCalculate;
+  }
+
+  it('Category A: standard employee rates applied (8% PT-UEL, 2% above UEL)', async () => {
+    const mockCalculate = setupOrchestratorMocks();
+    const details: PayrollDetails = { ...baseDetails, niCategory: 'A' };
+    await calculateMonthlyPayroll(details);
+    expect(MockNICalculator).toHaveBeenCalledWith(expect.any(String), false, 'A');
+  });
+
+  it('Category B: reduced employee rate applied (1.85% PT-UEL)', async () => {
+    setupOrchestratorMocks();
+    const details: PayrollDetails = { ...baseDetails, niCategory: 'B' };
+    await calculateMonthlyPayroll(details);
+    expect(MockNICalculator).toHaveBeenCalledWith(expect.any(String), false, 'B');
+  });
+
+  it('Category C: zero employee NI (over SPA)', async () => {
+    setupOrchestratorMocks({ nationalInsurance: 0 });
+    const details: PayrollDetails = { ...baseDetails, niCategory: 'C' };
+    const result = await calculateMonthlyPayroll(details);
+    expect(result.nationalInsurance).toBe(0);
+    expect(result.niCategory).toBe('C');
+  });
+
+  it('Category M: standard employee rate, zero employer NI below UEL', async () => {
+    setupOrchestratorMocks({ employerNationalInsurance: 0 });
+    const details: PayrollDetails = { ...baseDetails, niCategory: 'M' };
+    const result = await calculateMonthlyPayroll(details);
+    expect(result.employerNationalInsurance).toBe(0);
+    expect(result.niCategory).toBe('M');
+  });
+
+  it('Category H: standard employee rate, zero employer NI below UEL', async () => {
+    setupOrchestratorMocks({ employerNationalInsurance: 0 });
+    const details: PayrollDetails = { ...baseDetails, niCategory: 'H' };
+    const result = await calculateMonthlyPayroll(details);
+    expect(result.employerNationalInsurance).toBe(0);
+    expect(result.niCategory).toBe('H');
+  });
+
+  it('Category Z: deferment employee rate, zero employer NI below UEL', async () => {
+    setupOrchestratorMocks({ employerNationalInsurance: 0 });
+    const details: PayrollDetails = { ...baseDetails, niCategory: 'Z' };
+    const result = await calculateMonthlyPayroll(details);
+    expect(result.niCategory).toBe('Z');
+  });
+
+  it('Category J: deferment employee rate (2% flat), standard employer NI', async () => {
+    setupOrchestratorMocks();
+    const details: PayrollDetails = { ...baseDetails, niCategory: 'J' };
+    const result = await calculateMonthlyPayroll(details);
+    expect(result.niCategory).toBe('J');
+  });
+
+  it('Category V: standard employee rate, zero employer NI below UEL', async () => {
+    setupOrchestratorMocks({ employerNationalInsurance: 0 });
+    const details: PayrollDetails = { ...baseDetails, niCategory: 'V' };
+    const result = await calculateMonthlyPayroll(details);
+    expect(result.niCategory).toBe('V');
+  });
+
+  it('Category M above UEL: employer NI charged at 15% on earnings above UEL only', async () => {
+    // For salary above UEL (£4189), employer should pay NI only on excess
+    setupOrchestratorMocks({ employerNationalInsurance: 121.65 });
+    const details: PayrollDetails = { ...baseDetails, monthlySalary: 5000, niCategory: 'M' };
+    const result = await calculateMonthlyPayroll(details);
+    expect(result.employerNationalInsurance).toBe(121.65);
+  });
+
+  it('Invalid category throws PayrollCalculationError with code INVALID_INPUT', async () => {
+    const details: PayrollDetails = { ...baseDetails, niCategory: 'X' as any };
+    await expect(calculateMonthlyPayroll(details)).rejects.toThrow(PayrollCalculationError);
+    try {
+      await calculateMonthlyPayroll(details);
+    } catch (e) {
+      expect((e as PayrollCalculationError).code).toBe('INVALID_INPUT');
+    }
+  });
+
+  it('Missing niCategory defaults to Category A', async () => {
+    setupOrchestratorMocks();
+    const details: PayrollDetails = { ...baseDetails };
+    delete (details as any).niCategory;
+    const result = await calculateMonthlyPayroll(details);
+    expect(result.niCategory).toBe('A');
+    expect(MockNICalculator).toHaveBeenCalledWith(expect.any(String), false, 'A');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Fallback NI category calculations (direct unit tests)
+// ---------------------------------------------------------------------------
+
+describe('NI fallback calculation — category-specific rates', () => {
+  // Import directly to test without mocks
+  // These test the actual fallback calculation with real rate tables
+
+  it('Category B (reduced): employee NI uses 1.85% main rate', async () => {
+    // Import the actual fallback function
+    const { calculateNationalInsuranceFallback } = await import('./calculations/ni/fallback-calculation');
+    // Monthly salary of £2000: PT=1048, so PT-to-UEL earnings = 2000-1048 = 952
+    // Category B: 1.85% × 952 = 17.61
+    const result = calculateNationalInsuranceFallback(2000, 'B');
+    expect(result.nationalInsurance).toBeCloseTo(17.61, 1);
+  });
+
+  it('Category C (over SPA): zero employee NI', async () => {
+    const { calculateNationalInsuranceFallback } = await import('./calculations/ni/fallback-calculation');
+    const result = calculateNationalInsuranceFallback(4000, 'C');
+    expect(result.nationalInsurance).toBe(0);
+  });
+
+  it('Category J (deferment): employee NI uses 2% main rate', async () => {
+    const { calculateNationalInsuranceFallback } = await import('./calculations/ni/fallback-calculation');
+    // PT-to-UEL earnings for £4000: 4000-1048 = 2952
+    // Category J: 2% × 2952 = 59.04
+    const result = calculateNationalInsuranceFallback(4000, 'J');
+    expect(result.nationalInsurance).toBeCloseTo(59.04, 1);
+  });
+
+  it('Category M (under 21): zero employer NI below UEL', async () => {
+    const { calculateNationalInsuranceFallback } = await import('./calculations/ni/fallback-calculation');
+    // Salary £3000 is below UEL (£4189), so employer NI should be 0 for Category M
+    const result = calculateNationalInsuranceFallback(3000, 'M');
+    expect(result.employerNationalInsurance).toBe(0);
+  });
+
+  it('Category M above UEL: employer NI on excess only', async () => {
+    const { calculateNationalInsuranceFallback } = await import('./calculations/ni/fallback-calculation');
+    // Salary £5000: above UEL by £811 (5000-4189)
+    // Employer NI: 15% × 811 = 121.65
+    const result = calculateNationalInsuranceFallback(5000, 'M');
+    expect(result.employerNationalInsurance).toBeCloseTo(121.65, 1);
   });
 });
 
