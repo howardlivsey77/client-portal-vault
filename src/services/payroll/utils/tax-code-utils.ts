@@ -205,11 +205,13 @@ export function parseTaxCode(taxCode: string): TaxCode {
   if (/^K\d+$/.test(validatedCode)) {
     const numberPart = parseInt(validatedCode.replace('K', ''), 10);
     // K codes work in reverse - they reduce free pay (add to taxable income)
+    // Calculate free pay from numeric part (not the full K-prefixed code)
+    const kFreePayResult = calculateMonthlyFreePayFromTaxCode(numberPart.toString());
     return { 
       code: validatedCode, 
       allowance: -numberPart * 10,
-      monthlyFreePay: -freePayResult.monthlyFreePay,
-      breakdown: { ...freePayResult.breakdown, numericPart: numberPart }
+      monthlyFreePay: -kFreePayResult.monthlyFreePay,
+      breakdown: { ...kFreePayResult.breakdown, numericPart: numberPart }
     };
   }
   

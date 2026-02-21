@@ -30,16 +30,40 @@ vi.mock('./calculations/ni/services/NationalInsuranceCalculator', () => ({
   })),
 }));
 
+// Mock pension for calculatePensionDeductions tests
+vi.mock('./calculations/pension', () => ({
+  calculatePension: vi.fn(),
+}));
+
+// Mock NHS pension for calculatePensionDeductions tests
+vi.mock('./calculations/nhs-pension', () => ({
+  calculateNHSPension: vi.fn(),
+}));
+
+// Mock tax-bands-utils for cumulative tax tests
+vi.mock('./utils/tax-bands-utils', () => ({
+  getIncomeTaxBands: vi.fn(),
+  calculateTaxByBands: vi.fn(),
+  clearTaxBandsCache: vi.fn(),
+}));
+
 // Import after mocks are set up
 import {
   calculateEarnings,
   calculateTaxDeductions,
   calculateNIContributions,
+  calculatePensionDeductions,
   assemblePayrollResult,
 } from './payrollCalculator.internal';
 
 import { calculateMonthlyIncomeTaxAsync } from './calculations/income-tax';
 import { NationalInsuranceCalculator } from './calculations/ni/services/NationalInsuranceCalculator';
+import { calculatePension } from './calculations/pension';
+import { calculateNHSPension } from './calculations/nhs-pension';
+import { parseTaxCode } from './utils/tax-code-utils';
+import { calculateCumulativeTax, calculateWeek1Month1Tax } from './calculations/cumulative-tax';
+import { getIncomeTaxBands, calculateTaxByBands } from './utils/tax-bands-utils';
+import { calculateMonthlyPayroll } from './payrollCalculator';
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
@@ -492,7 +516,339 @@ describe('calculateNIContributions', () => {
         const err = e as PayrollCalculationError;
         expect(err.context).toMatchObject({ taxYear: '2025/26', employeeId: 'EMP001' });
       }
+});
+
+// ---------------------------------------------------------------------------
+// Phase 4.5 — calculatePensionDeductions
+// ---------------------------------------------------------------------------
+
+describe('calculatePensionDeductions', () => {
+  const mockCalcPension = calculatePension as ReturnType<typeof vi.fn>;
+  const mockCalcNHSPension = calculateNHSPension as ReturnType<typeof vi.fn>;
+
+  const nhsPensionData = {
+    employeeContribution: 208,
+    employerContribution: 575.20,
+    tier: 2,
+    employeeRate: 5.2,
+    employerRate: 14.38,
+  };
+
+  const zeroNHSPension = {
+    employeeContribution: 0,
+    employerContribution: 0,
+    tier: 0,
+    employeeRate: 0,
+    employerRate: 0,
+  };
+
+  beforeEach(() => {
+    mockCalcPension.mockReset();
+    mockCalcNHSPension.mockReset();
+  });
+
+  describe('happy path', () => {
+    beforeEach(() => {
+      mockCalcPension.mockReturnValue(200);
+      mockCalcNHSPension.mockResolvedValue(nhsPensionData);
     });
+
+    it('returns pensionContribution from calculatePension result', async () => {
+      const result = await calculatePensionDeductions(4000, 4000, 5, null, '2025/26', true, 'EMP001');
+      expect(result.pensionContribution).toBe(200);
+    });
+
+    it('returns nhsPensionEmployeeContribution from calculateNHSPension result', async () => {
+      const result = await calculatePensionDeductions(4000, 4000, 5, null, '2025/26', true, 'EMP001');
+      expect(result.nhsPensionEmployeeContribution).toBe(208);
+    });
+
+    it('returns nhsPensionEmployerContribution from calculateNHSPension result', async () => {
+      const result = await calculatePensionDeductions(4000, 4000, 5, null, '2025/26', true, 'EMP001');
+      expect(result.nhsPensionEmployerContribution).toBe(575.20);
+    });
+
+    it('returns nhsPensionTier from calculateNHSPension result', async () => {
+      const result = await calculatePensionDeductions(4000, 4000, 5, null, '2025/26', true, 'EMP001');
+      expect(result.nhsPensionTier).toBe(2);
+    });
+
+    it('returns nhsPensionEmployeeRate from calculateNHSPension result', async () => {
+      const result = await calculatePensionDeductions(4000, 4000, 5, null, '2025/26', true, 'EMP001');
+      expect(result.nhsPensionEmployeeRate).toBe(5.2);
+    });
+
+    it('returns nhsPensionEmployerRate from calculateNHSPension result', async () => {
+      const result = await calculatePensionDeductions(4000, 4000, 5, null, '2025/26', true, 'EMP001');
+      expect(result.nhsPensionEmployerRate).toBe(14.38);
+    });
+
+    it('passes grossPay to calculatePension', async () => {
+      await calculatePensionDeductions(5500, 4000, 5, null, '2025/26', true, 'EMP001');
+      expect(mockCalcPension).toHaveBeenCalledWith(5500, 5);
+    });
+
+    it('passes pensionPercentage to calculatePension', async () => {
+      await calculatePensionDeductions(4000, 4000, 7.5, null, '2025/26', true, 'EMP001');
+      expect(mockCalcPension).toHaveBeenCalledWith(4000, 7.5);
+    });
+
+    it('passes monthlySalary (not grossPay) to calculateNHSPension', async () => {
+      await calculatePensionDeductions(5500, 4000, 5, null, '2025/26', true, 'EMP001');
+      expect(mockCalcNHSPension).toHaveBeenCalledWith(4000, null, '2025/26', true);
+    });
+
+    it('passes taxYear to calculateNHSPension', async () => {
+      await calculatePensionDeductions(4000, 4000, 5, null, '2024/25', true, 'EMP001');
+      expect(mockCalcNHSPension).toHaveBeenCalledWith(4000, null, '2024/25', true);
+    });
+
+    it('passes isNHSPensionMember to calculateNHSPension', async () => {
+      await calculatePensionDeductions(4000, 4000, 5, null, '2025/26', false, 'EMP001');
+      expect(mockCalcNHSPension).toHaveBeenCalledWith(4000, null, '2025/26', false);
+    });
+  });
+
+  describe('non-NHS member', () => {
+    it('returns zero NHS contributions when isNHSPensionMember is false', async () => {
+      mockCalcPension.mockReturnValue(200);
+      mockCalcNHSPension.mockResolvedValue(zeroNHSPension);
+      const result = await calculatePensionDeductions(4000, 4000, 5, null, '2025/26', false, 'EMP001');
+      expect(result.nhsPensionEmployeeContribution).toBe(0);
+      expect(result.nhsPensionEmployerContribution).toBe(0);
+      expect(result.nhsPensionTier).toBe(0);
+    });
+
+    it('still returns standard pensionContribution when isNHSPensionMember is false', async () => {
+      mockCalcPension.mockReturnValue(200);
+      mockCalcNHSPension.mockResolvedValue(zeroNHSPension);
+      const result = await calculatePensionDeductions(4000, 4000, 5, null, '2025/26', false, 'EMP001');
+      expect(result.pensionContribution).toBe(200);
+    });
+  });
+
+  describe('error handling', () => {
+    it('throws PayrollCalculationError with code NHS_PENSION_FAILED when calculateNHSPension throws', async () => {
+      mockCalcPension.mockReturnValue(200);
+      mockCalcNHSPension.mockRejectedValue(new Error('DB error'));
+      await expect(calculatePensionDeductions(4000, 4000, 5, null, '2025/26', true, 'EMP001'))
+        .rejects.toThrow(PayrollCalculationError);
+
+      try {
+        await calculatePensionDeductions(4000, 4000, 5, null, '2025/26', true, 'EMP001');
+      } catch (e) {
+        expect((e as PayrollCalculationError).code).toBe('NHS_PENSION_FAILED');
+      }
+    });
+
+    it('error context includes taxYear, employeeId, isNHSPensionMember', async () => {
+      mockCalcPension.mockReturnValue(200);
+      mockCalcNHSPension.mockRejectedValue(new Error('fail'));
+      try {
+        await calculatePensionDeductions(4000, 4000, 5, null, '2025/26', true, 'EMP001');
+      } catch (e) {
+        const err = e as PayrollCalculationError;
+        expect(err.context).toMatchObject({ taxYear: '2025/26', employeeId: 'EMP001', isNHSPensionMember: true });
+      }
+    });
+
+    it('wraps original error as cause', async () => {
+      mockCalcPension.mockReturnValue(200);
+      const originalError = new Error('original NHS error');
+      mockCalcNHSPension.mockRejectedValue(originalError);
+      try {
+        await calculatePensionDeductions(4000, 4000, 5, null, '2025/26', true, 'EMP001');
+      } catch (e) {
+        expect((e as PayrollCalculationError).cause).toBe(originalError);
+      }
+    });
+
+    it('does NOT throw if only calculatePension fails (it is synchronous and does not throw in normal use)', async () => {
+      // calculatePension is sync — if it somehow returns NaN or unexpected value,
+      // calculatePensionDeductions should still complete without throwing
+      mockCalcPension.mockReturnValue(NaN);
+      mockCalcNHSPension.mockResolvedValue(zeroNHSPension);
+      const result = await calculatePensionDeductions(4000, 4000, 5, null, '2025/26', false, 'EMP001');
+      expect(result.pensionContribution).toBeNaN();
+      // Did not throw
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 2 — K code coverage
+// ---------------------------------------------------------------------------
+
+// 2a — parseTaxCode K codes (pure function, no mocking)
+describe('parseTaxCode — K codes', () => {
+  it('K497 returns negative allowance (-4970)', () => {
+    const result = parseTaxCode('K497');
+    expect(result.allowance).toBe(-4970);
+  });
+
+  it('K497 returns negative monthlyFreePay', () => {
+    const result = parseTaxCode('K497');
+    expect(result.monthlyFreePay).toBeLessThan(0);
+  });
+
+  it('K100 returns negative allowance (-1000)', () => {
+    const result = parseTaxCode('K100');
+    expect(result.allowance).toBe(-1000);
+  });
+
+  it('K1 returns negative allowance (-10)', () => {
+    const result = parseTaxCode('K1');
+    expect(result.allowance).toBe(-10);
+  });
+
+  it('monthlyFreePay for K497 is negative and equals the negation of the equivalent positive code free pay', () => {
+    const kResult = parseTaxCode('K497');
+    const standardResult = parseTaxCode('497L');
+    expect(kResult.monthlyFreePay).toBe(-standardResult.monthlyFreePay);
+  });
+
+  it('K code allowance magnitude follows same formula as standard codes (numericPart × 10)', () => {
+    const result = parseTaxCode('K250');
+    expect(Math.abs(result.allowance)).toBe(2500);
+  });
+
+  it('K0 is handled without throwing (edge case — zero K code)', () => {
+    expect(() => parseTaxCode('K0')).not.toThrow();
+    const result = parseTaxCode('K0');
+    // K0 produces -0 allowance which is mathematically equivalent to 0
+    expect(result.allowance).toBe(-0);
+  });
+});
+
+// 2b — calculateCumulativeTax with K codes
+describe('calculateCumulativeTax — K codes', () => {
+  const mockGetBands = getIncomeTaxBands as ReturnType<typeof vi.fn>;
+  const mockCalcByBands = calculateTaxByBands as ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    mockGetBands.mockResolvedValue({
+      BASIC_RATE: { rate: 0.20, threshold_from: 0, threshold_to: 3770000 },
+      HIGHER_RATE: { rate: 0.40, threshold_from: 3770000, threshold_to: 12514000 },
+      ADDITIONAL_RATE: { rate: 0.45, threshold_from: 12514000, threshold_to: null },
+    });
+    mockCalcByBands.mockImplementation((taxablePayYTD: number) => {
+      let tax = 0;
+      if (taxablePayYTD > 0) tax += Math.min(taxablePayYTD, 37700) * 0.20;
+      if (taxablePayYTD > 37700) tax += Math.min(taxablePayYTD - 37700, 87440) * 0.40;
+      if (taxablePayYTD > 125140) tax += (taxablePayYTD - 125140) * 0.45;
+      return tax;
+    });
+  });
+
+  it('taxablePayYTD exceeds grossPayYTD for K code (taxable > gross is correct)', async () => {
+    // K497 has negative free pay, so taxable = gross - (negative free pay) = gross + |free pay|
+    const result = await calculateCumulativeTax(1, 4000, 'K497', 0, '2025/26');
+    expect(result.taxablePayYTD).toBeGreaterThan(4000);
+  });
+
+  it('taxablePayYTD is NOT clamped to 0 for K codes (unlike standard codes)', async () => {
+    // Even with zero gross, K code should produce positive taxable pay
+    const result = await calculateCumulativeTax(1, 0, 'K497', 0, '2025/26');
+    expect(result.taxablePayYTD).toBeGreaterThan(0);
+  });
+
+  it('freePayYTD is negative for K codes', async () => {
+    const result = await calculateCumulativeTax(1, 4000, 'K497', 0, '2025/26');
+    expect(result.freePayYTD).toBeLessThan(0);
+  });
+
+  it('tax is higher for K497 than equivalent standard code with same gross', async () => {
+    const kResult = await calculateCumulativeTax(1, 4000, 'K497', 0, '2025/26');
+    const stdResult = await calculateCumulativeTax(1, 4000, '497L', 0, '2025/26');
+    expect(kResult.taxThisPeriod).toBeGreaterThan(stdResult.taxThisPeriod);
+  });
+
+  it('K code with zero gross still calculates positive taxable pay (from negative free pay)', async () => {
+    const result = await calculateCumulativeTax(1, 0, 'K100', 0, '2025/26');
+    expect(result.taxablePayYTD).toBeGreaterThan(0);
+    expect(result.freePayYTD).toBeLessThan(0);
+  });
+});
+
+// 2c — calculateWeek1Month1Tax with K codes
+describe('calculateWeek1Month1Tax — K codes', () => {
+  const mockGetBands = getIncomeTaxBands as ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    mockGetBands.mockResolvedValue({
+      BASIC_RATE: { rate: 0.20, threshold_from: 0, threshold_to: 3770000 },
+      HIGHER_RATE: { rate: 0.40, threshold_from: 3770000, threshold_to: 12514000 },
+      ADDITIONAL_RATE: { rate: 0.45, threshold_from: 12514000, threshold_to: null },
+    });
+  });
+
+  it('taxablePayThisPeriod exceeds grossPayThisPeriod for K code', async () => {
+    const result = await calculateWeek1Month1Tax(4000, 'K497', '2025/26');
+    expect(result.taxablePayThisPeriod).toBeGreaterThan(4000);
+  });
+
+  it('taxablePayThisPeriod is NOT clamped to 0 for K codes', async () => {
+    // With zero gross, K code should still produce positive taxable pay
+    // Note: grossPayThisPeriod must be >= 0 per validation, but K code adds to it
+    const result = await calculateWeek1Month1Tax(0, 'K497', '2025/26');
+    expect(result.taxablePayThisPeriod).toBeGreaterThan(0);
+  });
+
+  it('freePayMonthly is negative for K codes', async () => {
+    const result = await calculateWeek1Month1Tax(4000, 'K497', '2025/26');
+    expect(result.freePayMonthly).toBeLessThan(0);
+  });
+
+  it('tax is higher for K code than standard code on same gross', async () => {
+    const kResult = await calculateWeek1Month1Tax(4000, 'K497', '2025/26');
+    const stdResult = await calculateWeek1Month1Tax(4000, '497L', '2025/26');
+    expect(kResult.taxThisPeriod).toBeGreaterThan(stdResult.taxThisPeriod);
+  });
+});
+
+// 2d — End-to-end orchestrator with K code employee
+describe('calculateMonthlyPayroll — K code employee', () => {
+  const mockCalcTax = calculateMonthlyIncomeTaxAsync as ReturnType<typeof vi.fn>;
+  const MockNICalculator = NationalInsuranceCalculator as unknown as ReturnType<typeof vi.fn>;
+  const mockCalcPension = calculatePension as ReturnType<typeof vi.fn>;
+  const mockCalcNHSPension = calculateNHSPension as ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    mockCalcTax.mockResolvedValue({ monthlyTax: 800, freePay: -4141.58 });
+    const mockCalculate = vi.fn().mockResolvedValue({
+      nationalInsurance: 200,
+      employerNationalInsurance: 400,
+      earningsAtLEL: 533,
+      earningsLELtoPT: 0,
+      earningsPTtoUEL: 3467,
+      earningsAboveUEL: 0,
+      earningsAboveST: 3467,
+    });
+    MockNICalculator.mockImplementation(() => ({ calculate: mockCalculate }));
+    mockCalcPension.mockReturnValue(200);
+    mockCalcNHSPension.mockResolvedValue({
+      employeeContribution: 0, employerContribution: 0,
+      tier: 0, employeeRate: 0, employerRate: 0,
+    });
+  });
+
+  it('does not throw for a valid K code (K497)', async () => {
+    const details: PayrollDetails = { ...baseDetails, taxCode: 'K497' };
+    await expect(calculateMonthlyPayroll(details)).resolves.toBeDefined();
+  });
+
+  it('passes K code through to calculateTaxDeductions correctly', async () => {
+    const details: PayrollDetails = { ...baseDetails, taxCode: 'K497' };
+    await calculateMonthlyPayroll(details);
+    expect(mockCalcTax).toHaveBeenCalledWith(4000, 'K497', expect.any(String));
+  });
+
+  it('taxCode is preserved unchanged in the result', async () => {
+    const details: PayrollDetails = { ...baseDetails, taxCode: 'K497' };
+    const result = await calculateMonthlyPayroll(details);
+    expect(result.taxCode).toBe('K497');
+  });
+});
 
     it('wraps original error as cause', async () => {
       const originalError = new Error('original NI error');
