@@ -1,5 +1,4 @@
 
-import { roundToTwoDecimals } from "@/lib/formatters";
 import { parseTaxCode } from "../utils/tax-code-utils";
 import { 
   getIncomeTaxBands, 
@@ -34,7 +33,7 @@ export async function calculateIncomeTaxAsync(annualSalary: number, taxCode: str
   // Calculate tax using our utility function
   const tax = calculateTaxByBands(taxableIncome, taxBands);
   
-  return roundToTwoDecimals(tax);
+  return tax;
 }
 
 /**
@@ -66,10 +65,11 @@ export async function calculateMonthlyIncomeTaxAsync(monthlySalary: number, taxC
   // Calculate annual tax using the async method
   const annualTax = await calculateIncomeTaxAsync(annualSalary, taxCode, taxYear);
   
-  // Return monthly tax and free pay
+  // Return full precision — rounding happens at the output boundary
+  // in assemblePayrollResult (payrollCalculator.ts)
   return {
-    monthlyTax: roundToTwoDecimals(annualTax / 12),
-    freePay: roundToTwoDecimals(monthlyFreePay)
+    monthlyTax: annualTax / 12,
+    freePay: monthlyFreePay
   };
 }
 
@@ -95,7 +95,7 @@ export async function calculateIncomeTaxFromYTDAsync(taxablePayYTD: number, taxC
   // Calculate tax using our utility function
   const tax = calculateTaxByBands(taxablePayYTD, taxBands);
   
-  return roundToTwoDecimals(tax);
+  return tax;
 }
 
 /**
