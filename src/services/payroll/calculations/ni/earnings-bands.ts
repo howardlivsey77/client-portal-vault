@@ -1,10 +1,17 @@
 
 import { roundToTwoDecimals } from "@/lib/formatters";
 import { NICalculationResult } from "./types";
+import { payrollLogger } from "@/services/payroll/utils/payrollLogger";
 
 /**
- * Calculate NIC earnings bands according to HMRC reporting rules
- * This ensures proper reporting of earnings bands while maintaining correct NIC calculations
+ * Calculate NIC earnings bands for standard payroll categories (A, B, C, M, H, Z, J, V).
+ *
+ * NOTE: This implementation treats the full PT-to-UEL range as a single band.
+ * For Freeports (F, I) and Investment Zone (D, E, K, N, S, L) categories,
+ * the FUST/IZUST threshold splits this band — those categories are out of scope.
+ *
+ * For 2025/26, UST = AUST = VUST = UEL = £4,189/month, so no separate
+ * upper secondary threshold band is needed for M, H, V, Z categories.
  */
 export function calculateNICEarningsBands(
   monthlySalary: number,
@@ -13,9 +20,6 @@ export function calculateNICEarningsBands(
   uel: number,
   st: number
 ): Pick<NICalculationResult, 'earningsAtLEL' | 'earningsLELtoPT' | 'earningsPTtoUEL' | 'earningsAboveUEL' | 'earningsAboveST'> {
-  console.log(`[NIC BANDS] Calculating NIC earnings bands for salary: £${monthlySalary}`);
-  console.log(`[NIC BANDS] Thresholds - LEL: £${lel}, PT: £${pt}, UEL: £${uel}, ST: £${st}`);
-  
   let earningsAtLEL = 0;
   let earningsLELtoPT = 0;
   let earningsPTtoUEL = 0;
@@ -23,33 +27,25 @@ export function calculateNICEarningsBands(
   let earningsAboveST = 0;
   
   if (monthlySalary <= lel) {
-    // If salary doesn't exceed LEL, all earnings are at LEL level
     earningsAtLEL = monthlySalary;
     earningsLELtoPT = 0;
     earningsPTtoUEL = 0;
     earningsAboveUEL = 0;
-    console.log(`[NIC BANDS] Salary below LEL - All earnings (£${monthlySalary}) reported at LEL`);
   } else if (monthlySalary <= pt) {
-    // If salary exceeds LEL but not PT
-    earningsAtLEL = lel; // Full LEL amount
+    earningsAtLEL = lel;
     earningsLELtoPT = monthlySalary - lel;
     earningsPTtoUEL = 0;
     earningsAboveUEL = 0;
-    console.log(`[NIC BANDS] Salary above LEL but below PT - LEL: £${earningsAtLEL}, LEL to PT: £${earningsLELtoPT}`);
   } else if (monthlySalary <= uel) {
-    // If salary exceeds PT but not UEL
-    earningsAtLEL = lel; // Full LEL amount
-    earningsLELtoPT = pt - lel; // Full LEL to PT amount
+    earningsAtLEL = lel;
+    earningsLELtoPT = pt - lel;
     earningsPTtoUEL = monthlySalary - pt;
     earningsAboveUEL = 0;
-    console.log(`[NIC BANDS] Salary above PT but below UEL - LEL: £${earningsAtLEL}, LEL to PT: £${earningsLELtoPT}, PT to UEL: £${earningsPTtoUEL}`);
   } else {
-    // If salary exceeds UEL
-    earningsAtLEL = lel; // Full LEL amount
-    earningsLELtoPT = pt - lel; // Full LEL to PT amount
-    earningsPTtoUEL = uel - pt; // Full PT to UEL amount
+    earningsAtLEL = lel;
+    earningsLELtoPT = pt - lel;
+    earningsPTtoUEL = uel - pt;
     earningsAboveUEL = monthlySalary - uel;
-    console.log(`[NIC BANDS] Salary above UEL - LEL: £${earningsAtLEL}, LEL to PT: £${earningsLELtoPT}, PT to UEL: £${earningsPTtoUEL}, Above UEL: £${earningsAboveUEL}`);
   }
   
   // Calculate earnings above ST (Secondary Threshold) for employer NIC
@@ -58,8 +54,11 @@ export function calculateNICEarningsBands(
   // Validation - ensure all earnings bands add up to the total salary
   const totalEarnings = earningsAtLEL + earningsLELtoPT + earningsPTtoUEL + earningsAboveUEL;
   if (Math.abs(totalEarnings - monthlySalary) > 0.01) {
-    console.warn(`[NIC BANDS] WARNING: Earnings bands don't sum to total salary. Total: £${totalEarnings}, Salary: £${monthlySalary}`);
-    console.warn(`[NIC BANDS] Bands: LEL: £${earningsAtLEL}, LEL to PT: £${earningsLELtoPT}, PT to UEL: £${earningsPTtoUEL}, Above UEL: £${earningsAboveUEL}`);
+    payrollLogger.warn('NIC earnings bands sum mismatch', {
+      belowLEL: monthlySalary <= lel,
+      belowPT: monthlySalary <= pt,
+      belowUEL: monthlySalary <= uel,
+    }, 'NI_CALC');
   }
   
   return {

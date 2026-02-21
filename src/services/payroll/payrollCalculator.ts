@@ -17,6 +17,7 @@ import { PayrollDetails, PayrollResult } from "./types";
 import { payrollLogger } from "./utils/payrollLogger";
 import { getCurrentTaxYear } from "./utils/taxYearUtils";
 import { PayrollCalculationError } from "./errors/PayrollCalculationError";
+import type { NICategory } from "./constants/tax-constants";
 
 // Import phase functions from internal module
 import {
@@ -51,6 +52,7 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     isNHSPensionMember = false,
     previousYearPensionablePay = null,
     taxYear: providedTaxYear,
+    niCategory = 'A' as NICategory,
   } = details;
 
   const taxYear = providedTaxYear || getCurrentTaxYear();
@@ -137,6 +139,16 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
 
   // --- End input validation ---
 
+  const VALID_NI_CATEGORIES: NICategory[] = ['A', 'B', 'C', 'M', 'H', 'Z', 'J', 'V'];
+  if (details.niCategory && !VALID_NI_CATEGORIES.includes(details.niCategory)) {
+    throw new PayrollCalculationError(
+      'INVALID_INPUT',
+      `niCategory must be one of: ${VALID_NI_CATEGORIES.join(', ')}`,
+      undefined,
+      { employeeId, niCategory: details.niCategory }
+    );
+  }
+
   payrollLogger.debug("Starting payroll calculation", {
     employeeId,
     taxYear,
@@ -145,13 +157,14 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     hasStudentLoan: studentLoanPlan !== null,
     studentLoanPlan,
     hasPension: pensionPercentage > 0,
+    niCategory,
   });
 
   const earnings = calculateEarnings(monthlySalary, additionalEarnings);
 
   const [tax, ni, pensions] = await Promise.all([
     calculateTaxDeductions(earnings.grossPay, taxCode, taxYear, employeeId),
-    calculateNIContributions(earnings.grossPay, taxYear, employeeId),
+    calculateNIContributions(earnings.grossPay, taxYear, employeeId, niCategory),
     calculatePensionDeductions(
       earnings.grossPay,
       monthlySalary,

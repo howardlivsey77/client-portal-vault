@@ -16,6 +16,7 @@ import { PayrollDetails, PayrollResult } from "./types";
 import { payrollLogger } from "./utils/payrollLogger";
 import { roundDownToNearestPound } from "./utils/roundingUtils";
 import { PayrollCalculationError } from "./errors/PayrollCalculationError";
+import type { NICategory } from "./constants/tax-constants";
 
 // ---------------------------------------------------------------------------
 // Inter-phase result types
@@ -112,11 +113,12 @@ export async function calculateTaxDeductions(
 export async function calculateNIContributions(
   grossPay: number,
   taxYear: string,
-  employeeId: string
+  employeeId: string,
+  niCategory: NICategory = 'A'
 ): Promise<NIResult> {
   let niResult: NICalculationResult;
   try {
-    const niCalculator = new NationalInsuranceCalculator(taxYear, false);
+    const niCalculator = new NationalInsuranceCalculator(taxYear, false, niCategory);
     niResult = await niCalculator.calculate(grossPay);
   } catch (err) {
     payrollLogger.error("NI calculation failed", err, "NI_CALC");
@@ -242,6 +244,7 @@ export function assemblePayrollResult(
     additionalAllowances = [],
     additionalEarnings = [],
     isNHSPensionMember = false,
+    niCategory = 'A' as NICategory,
   } = details;
 
   const totalAdditionalDeductions = additionalDeductions.reduce(
@@ -299,5 +302,6 @@ export function assemblePayrollResult(
     nhsPensionEmployeeRate: pensions.nhsPensionEmployeeRate,
     nhsPensionEmployerRate: pensions.nhsPensionEmployerRate,
     isNHSPensionMember,
+    niCategory,
   };
 }

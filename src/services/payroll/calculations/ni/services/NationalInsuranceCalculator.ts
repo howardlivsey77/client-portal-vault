@@ -11,19 +11,23 @@ import { calculateFromBands, calculateNationalInsuranceFallback } from "../calcu
 import { payrollLogger } from "@/services/payroll/utils/payrollLogger";
 import { getCurrentTaxYear } from "@/services/payroll/utils/taxYearUtils";
 import { NICalculationIntegrityError } from "../errors";
+import type { NICategory } from "../../../constants/tax-constants";
 
 export class NationalInsuranceCalculator {
   private taxYear: string;
   private debugMode: boolean;
+  private niCategory: NICategory;
   
   /**
    * Create a new National Insurance calculator
    * @param taxYear The tax year (e.g., '2025/26') - defaults to current tax year
    * @param debugMode Enable additional debugging output
+   * @param niCategory NI category letter — defaults to 'A'
    */
-  constructor(taxYear?: string, debugMode: boolean = false) {
+  constructor(taxYear?: string, debugMode: boolean = false, niCategory: NICategory = 'A') {
     this.taxYear = taxYear ?? getCurrentTaxYear();
     this.debugMode = debugMode;
+    this.niCategory = niCategory;
     
     if (this.debugMode) {
       payrollLogger.debug(`Initialized NI calculator`, { taxYear: this.taxYear }, 'NI_CALC');
@@ -60,7 +64,9 @@ export class NationalInsuranceCalculator {
     // Threshold of £10 avoids false positives for employees earning just above the
     // Primary Threshold in a given month. Below £10 in the PT-to-UEL band, floating
     // point imprecision could produce a near-zero NI figure that rounds to 0.
-    if (sanitized.nationalInsurance === 0 && 
+    // Skip integrity check for OVER_SPA categories (C) — zero employee NI is correct.
+    const isOverSPA = this.niCategory === 'C';
+    if (!isOverSPA && sanitized.nationalInsurance === 0 && 
         (sanitized.earningsPTtoUEL > 10 || sanitized.earningsAboveUEL > 0)) {
       throw new NICalculationIntegrityError(
         'Zero NI despite taxable earnings above PT',
@@ -118,7 +124,7 @@ export class NationalInsuranceCalculator {
           }
         }
         
-        const result = calculateFromBands(monthlySalary, niBands);
+        const result = calculateFromBands(monthlySalary, niBands, this.niCategory);
         
         if (result) {
           try {
@@ -152,7 +158,7 @@ export class NationalInsuranceCalculator {
    */
   private calculateWithFallback(monthlySalary: number): NICalculationResult {
     this.log(`Using FALLBACK NI calculation`, { hasSalary: monthlySalary > 0 });
-    const result = calculateNationalInsuranceFallback(monthlySalary);
+    const result = calculateNationalInsuranceFallback(monthlySalary, this.niCategory);
     
     // Intentionally no integrity check here — fallback is the last resort.
     // If fallback also produces unexpected results, that indicates a deeper issue
