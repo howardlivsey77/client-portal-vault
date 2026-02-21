@@ -5,7 +5,6 @@
  * with secure logging (no PII) and validation
  */
 
-import { roundToTwoDecimals } from "@/lib/formatters";
 import { NICalculationResult } from "../types";
 import { fetchNIBands } from "../database";
 import { calculateFromBands, calculateNationalInsuranceFallback } from "../calculation-utils";
@@ -49,17 +48,18 @@ export class NationalInsuranceCalculator {
   private validateResult(result: NICalculationResult): NICalculationResult {
     // Clone to avoid mutation of original object
     const sanitized: NICalculationResult = {
-      nationalInsurance: Math.max(0, roundToTwoDecimals(result.nationalInsurance || 0)),
-      employerNationalInsurance: Math.max(0, roundToTwoDecimals(result.employerNationalInsurance || 0)),
-      earningsAtLEL: Math.max(0, roundToTwoDecimals(result.earningsAtLEL || 0)),
-      earningsLELtoPT: Math.max(0, roundToTwoDecimals(result.earningsLELtoPT || 0)),
-      earningsPTtoUEL: Math.max(0, roundToTwoDecimals(result.earningsPTtoUEL || 0)),
-      earningsAboveUEL: Math.max(0, roundToTwoDecimals(result.earningsAboveUEL || 0)),
-      earningsAboveST: Math.max(0, roundToTwoDecimals(result.earningsAboveST || 0)),
+      nationalInsurance: Math.max(0, result.nationalInsurance || 0),
+      employerNationalInsurance: Math.max(0, result.employerNationalInsurance || 0),
+      earningsAtLEL: Math.max(0, result.earningsAtLEL || 0),
+      earningsLELtoPT: Math.max(0, result.earningsLELtoPT || 0),
+      earningsPTtoUEL: Math.max(0, result.earningsPTtoUEL || 0),
+      earningsAboveUEL: Math.max(0, result.earningsAboveUEL || 0),
+      earningsAboveST: Math.max(0, result.earningsAboveST || 0),
     };
 
-    // Integrity check - if NI is zero but there are taxable earnings, something is wrong
-    // Throw error to trigger explicit fallback rather than silently inventing liabilities
+    // Threshold of £10 avoids false positives for employees earning just above the
+    // Primary Threshold in a given month. Below £10 in the PT-to-UEL band, floating
+    // point imprecision could produce a near-zero NI figure that rounds to 0.
     if (sanitized.nationalInsurance === 0 && 
         (sanitized.earningsPTtoUEL > 10 || sanitized.earningsAboveUEL > 0)) {
       throw new NICalculationIntegrityError(
@@ -154,15 +154,17 @@ export class NationalInsuranceCalculator {
     this.log(`Using FALLBACK NI calculation`, { hasSalary: monthlySalary > 0 });
     const result = calculateNationalInsuranceFallback(monthlySalary);
     
-    // Sanitize without integrity check for fallback (it's the last resort)
+    // Intentionally no integrity check here — fallback is the last resort.
+    // If fallback also produces unexpected results, that indicates a deeper issue
+    // with calculateNationalInsuranceFallback itself that should be caught in tests.
     return {
-      nationalInsurance: Math.max(0, roundToTwoDecimals(result.nationalInsurance || 0)),
-      employerNationalInsurance: Math.max(0, roundToTwoDecimals(result.employerNationalInsurance || 0)),
-      earningsAtLEL: Math.max(0, roundToTwoDecimals(result.earningsAtLEL || 0)),
-      earningsLELtoPT: Math.max(0, roundToTwoDecimals(result.earningsLELtoPT || 0)),
-      earningsPTtoUEL: Math.max(0, roundToTwoDecimals(result.earningsPTtoUEL || 0)),
-      earningsAboveUEL: Math.max(0, roundToTwoDecimals(result.earningsAboveUEL || 0)),
-      earningsAboveST: Math.max(0, roundToTwoDecimals(result.earningsAboveST || 0)),
+      nationalInsurance: Math.max(0, result.nationalInsurance || 0),
+      employerNationalInsurance: Math.max(0, result.employerNationalInsurance || 0),
+      earningsAtLEL: Math.max(0, result.earningsAtLEL || 0),
+      earningsLELtoPT: Math.max(0, result.earningsLELtoPT || 0),
+      earningsPTtoUEL: Math.max(0, result.earningsPTtoUEL || 0),
+      earningsAboveUEL: Math.max(0, result.earningsAboveUEL || 0),
+      earningsAboveST: Math.max(0, result.earningsAboveST || 0),
     };
   }
   
