@@ -62,7 +62,7 @@ export function FinancialDetailsFields({
             <Label htmlFor="studentLoanPlan">Student Loan Plan</Label>
             <Select 
               value={formValues.studentLoanPlan?.toString() || employee?.student_loan_plan?.toString() || "none"}
-              onValueChange={(value) => onInputChange('studentLoanPlan', value === "none" ? null : parseInt(value))}
+              onValueChange={(value) => onInputChange('studentLoanPlan', value === "none" ? null : value === "PGL" ? "PGL" : parseInt(value))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select plan" />
@@ -72,7 +72,7 @@ export function FinancialDetailsFields({
                 <SelectItem value="1">Plan 1</SelectItem>
                 <SelectItem value="2">Plan 2</SelectItem>
                 <SelectItem value="4">Plan 4</SelectItem>
-                <SelectItem value="5">Plan 5</SelectItem>
+                <SelectItem value="PGL">Postgraduate Loan</SelectItem>
               </SelectContent>
             </Select>
           </div>

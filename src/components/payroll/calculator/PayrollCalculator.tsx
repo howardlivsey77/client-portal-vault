@@ -35,7 +35,7 @@ export const PayrollCalculator = ({ employee, payPeriod }: PayrollCalculatorProp
     monthlySalary: employee.monthly_salary || 0,
     taxCode: employee.tax_code || '1257L',
     pensionPercentage: 0,
-    studentLoanPlan: employee.student_loan_plan as 1 | 2 | 4 | 5 | null,
+    studentLoanPlan: employee.student_loan_plan === 6 ? 'PGL' as const : (employee.student_loan_plan as 1 | 2 | 4 | null),
     additionalDeductions: [],
     additionalAllowances: [],
     additionalEarnings: [],

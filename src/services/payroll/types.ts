@@ -12,10 +12,13 @@ export interface PayrollDetails {
   monthlySalary: number;
   taxCode: string;
   pensionPercentage?: number;
-  studentLoanPlan?: 1 | 2 | 4 | 5 | 6 | null;
+  studentLoanPlan?: 1 | 2 | 4 | 'PGL' | null;
   additionalDeductions?: Array<{ description: string, amount: number }>;
   additionalAllowances?: Array<{ description: string, amount: number }>;
   additionalEarnings?: Array<{ description: string, amount: number }>;
+  // Non-NI-able expense reimbursements — included in gross pay for display
+  // but excluded from NI, income tax, pension, and student loan calculations.
+  reimbursements?: Array<{ description: string, amount: number }>;
   // NHS Pension fields
   isNHSPensionMember?: boolean;
   previousYearPensionablePay?: number | null;
@@ -36,12 +39,17 @@ export interface PayrollResult {
   nationalInsurance: number;
   employerNationalInsurance: number;  // Employer NI contribution
   studentLoan: number;
-  studentLoanPlan?: 1 | 2 | 4 | 5 | 6 | null;
+  studentLoanPlan?: 1 | 2 | 4 | 'PGL' | null;
   pensionContribution: number;
   pensionPercentage?: number;
   additionalDeductions: Array<{ description: string, amount: number }>;
   additionalAllowances: Array<{ description: string, amount: number }>;
   additionalEarnings: Array<{ description: string, amount: number }>;
+  // Non-NI-able expense reimbursements — passed through to result for display
+  reimbursements: Array<{ description: string, amount: number }>;
+  // NI-able gross pay (grossPay minus reimbursements) — used as earnings base
+  // for NI, income tax, pension, and student loan calculations
+  niableGrossPay: number;
   sicknessNote?: string; // Note about sickness days included in salary
   totalDeductions: number;
   totalAllowances: number;

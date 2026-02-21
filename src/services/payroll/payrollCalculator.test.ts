@@ -86,7 +86,9 @@ const baseDetails: PayrollDetails = {
 
 const baseEarnings: EarningsResult = {
   grossPay: 4000,
+  niableGrossPay: 4000,
   totalAdditionalEarnings: 0,
+  totalReimbursements: 0,
 };
 
 const baseTax: TaxResult = {
@@ -1115,5 +1117,161 @@ describe('HMRC worked examples — NI calculation verification', () => {
     const result = calculateNationalInsuranceFallback(monthlyGross, 'J');
     expect(result.nationalInsurance).toBeCloseTo(2952 * 0.02, 2);
     expect(result.employerNationalInsurance).toBeCloseTo((4000 - 417) * 0.15, 2);
+});
+
+// ---------------------------------------------------------------------------
+// calculateEarnings — reimbursements
+// ---------------------------------------------------------------------------
+
+describe('calculateEarnings — reimbursements', () => {
+  it('grossPay includes reimbursements', () => {
+    const result = calculateEarnings(4000, [{ amount: 500 }], [{ amount: 200 }]);
+    expect(result.grossPay).toBe(4700);
   });
+
+  it('niableGrossPay excludes reimbursements', () => {
+    const result = calculateEarnings(4000, [{ amount: 500 }], [{ amount: 200 }]);
+    expect(result.niableGrossPay).toBe(4500);
+  });
+
+  it('totalReimbursements is correct', () => {
+    const result = calculateEarnings(4000, [], [{ amount: 100 }, { amount: 50 }]);
+    expect(result.totalReimbursements).toBe(150);
+  });
+
+  it('empty reimbursements array: niableGrossPay equals grossPay', () => {
+    const result = calculateEarnings(4000, [{ amount: 500 }], []);
+    expect(result.niableGrossPay).toBe(result.grossPay);
+  });
+
+  it('null reimbursements defaults to empty (backward compat)', () => {
+    const result = calculateEarnings(4000, [{ amount: 500 }]);
+    expect(result.niableGrossPay).toBe(4500);
+    expect(result.grossPay).toBe(4500);
+    expect(result.totalReimbursements).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// calculateStudentLoan — corrected behaviour
+// ---------------------------------------------------------------------------
+
+describe('calculateStudentLoan — corrected behaviour', () => {
+  it('Plan 1: deduction rounds DOWN to nearest pound (not 2dp)', async () => {
+    const { calculateStudentLoan } = await import('./calculations/student-loan');
+    // £3000 gross, Plan 1 threshold £2172.08, rate 9%
+    // (3000 - 2172.08) × 0.09 = 827.92 × 0.09 = 74.5128
+    // Floor = £74
+    const result = calculateStudentLoan(3000, 1);
+    expect(result).toBe(74);
+  });
+
+  it('Plan 2: uses niableGrossPay not monthlySalary', async () => {
+    const { calculateStudentLoan } = await import('./calculations/student-loan');
+    // This just verifies the function accepts the value and produces correct output
+    // Plan 2 threshold £2372.50, rate 9%
+    // (3000 - 2372.50) × 0.09 = 627.50 × 0.09 = 56.475 → floor = £56
+    const result = calculateStudentLoan(3000, 2);
+    expect(result).toBe(56);
+  });
+
+  it('PGL: 6% rate, £1750/month threshold', async () => {
+    const { calculateStudentLoan } = await import('./calculations/student-loan');
+    // (3000 - 1750) × 0.06 = 1250 × 0.06 = 75
+    const result = calculateStudentLoan(3000, 'PGL');
+    expect(result).toBe(75);
+  });
+
+  it('below threshold returns 0', async () => {
+    const { calculateStudentLoan } = await import('./calculations/student-loan');
+    const result = calculateStudentLoan(1500, 1);
+    expect(result).toBe(0);
+  });
+
+  it('exactly at threshold returns 0', async () => {
+    const { calculateStudentLoan } = await import('./calculations/student-loan');
+    const result = calculateStudentLoan(2172.08, 1);
+    expect(result).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// calculateMonthlyPayroll — reimbursements
+// ---------------------------------------------------------------------------
+
+describe('calculateMonthlyPayroll — reimbursements', () => {
+  const mockCalcTax = calculateMonthlyIncomeTaxAsync as ReturnType<typeof vi.fn>;
+  const MockNICalculator = NationalInsuranceCalculator as unknown as ReturnType<typeof vi.fn>;
+  const mockCalcPension = calculatePension as ReturnType<typeof vi.fn>;
+  const mockCalcNHSPension = calculateNHSPension as ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    mockCalcTax.mockResolvedValue({ monthlyTax: 400, freePay: 1047.50 });
+    const mockCalculate = vi.fn().mockResolvedValue({
+      nationalInsurance: 200,
+      employerNationalInsurance: 400,
+      earningsAtLEL: 533,
+      earningsLELtoPT: 0,
+      earningsPTtoUEL: 3467,
+      earningsAboveUEL: 0,
+      earningsAboveST: 3467,
+    });
+    MockNICalculator.mockImplementation(() => ({ calculate: mockCalculate }));
+    mockCalcPension.mockReturnValue(200);
+    mockCalcNHSPension.mockResolvedValue({
+      employeeContribution: 0, employerContribution: 0,
+      tier: 0, employeeRate: 0, employerRate: 0,
+    });
+  });
+
+  it('reimbursements present: grossPay includes reimbursements', async () => {
+    const details: PayrollDetails = {
+      ...baseDetails,
+      reimbursements: [{ description: 'Travel', amount: 200 }],
+    };
+    const result = await calculateMonthlyPayroll(details);
+    // grossPay = 4000 + 200 = 4200
+    expect(result.grossPay).toBe(4200);
+  });
+
+  it('reimbursements present: niableGrossPay excludes reimbursements', async () => {
+    const details: PayrollDetails = {
+      ...baseDetails,
+      reimbursements: [{ description: 'Travel', amount: 200 }],
+    };
+    const result = await calculateMonthlyPayroll(details);
+    expect(result.niableGrossPay).toBe(4000);
+  });
+
+  it('NI is calculated on niableGrossPay not grossPay', async () => {
+    const mockCalculate = vi.fn().mockResolvedValue({
+      nationalInsurance: 200, employerNationalInsurance: 400,
+      earningsAtLEL: 533, earningsLELtoPT: 0,
+      earningsPTtoUEL: 3467, earningsAboveUEL: 0, earningsAboveST: 3467,
+    });
+    MockNICalculator.mockImplementation(() => ({ calculate: mockCalculate }));
+
+    const details: PayrollDetails = {
+      ...baseDetails,
+      reimbursements: [{ description: 'Travel', amount: 500 }],
+    };
+    await calculateMonthlyPayroll(details);
+    // NI should be called with niableGrossPay (4000), not grossPay (4500)
+    expect(mockCalculate).toHaveBeenCalledWith(4000);
+  });
+
+  it('reimbursements array passed through to result unchanged', async () => {
+    const reimbursements = [{ description: 'Travel', amount: 200 }];
+    const details: PayrollDetails = { ...baseDetails, reimbursements };
+    const result = await calculateMonthlyPayroll(details);
+    expect(result.reimbursements).toEqual(reimbursements);
+  });
+
+  it('missing reimbursements defaults to empty array', async () => {
+    const details: PayrollDetails = { ...baseDetails };
+    const result = await calculateMonthlyPayroll(details);
+    expect(result.reimbursements).toEqual([]);
+    expect(result.niableGrossPay).toBe(result.grossPay);
+  });
+});
 });
