@@ -349,18 +349,23 @@ export interface Week1Month1TaxResult {
  * This is used when employee has W1/M1 indicator on their tax code
  * or for emergency tax situations.
  * 
+ * Tax bands are fetched from the database for the given tax year,
+ * then scaled to monthly (1/12th, floored to nearest pound).
+ * 
  * @param grossPayThisPeriod - Gross pay this period only (in pounds)
  * @param taxCode - Employee tax code (e.g., '45L', 'BR', 'D0', 'D1')
+ * @param taxYear - Optional tax year for fetching correct tax bands
  * @returns Tax due this period (non-cumulative)
  * 
  * @throws ZodError if inputs fail validation
  * @throws UnrecognizedTaxCodeError if tax code is not valid
  * @throws UnsupportedTaxRegionError if Scottish/Welsh tax code used
  */
-export function calculateWeek1Month1Tax(
+export async function calculateWeek1Month1Tax(
   grossPayThisPeriod: number,
-  taxCode: string
-): Week1Month1TaxResult {
+  taxCode: string,
+  taxYear?: string
+): Promise<Week1Month1TaxResult> {
   // Validate inputs
   const validated = validateWeek1Month1Inputs(grossPayThisPeriod, taxCode);
   
@@ -427,28 +432,34 @@ export function calculateWeek1Month1Tax(
   const rawTaxable = Math.floor(validated.grossPayThisPeriod - freePayMonthly);
   const taxablePayThisPeriod = taxCodeInfo.allowance >= 0 ? Math.max(0, rawTaxable) : rawTaxable;
   
-  // Monthly tax bands (1/12 of annual limits)
-  const monthlyBasicLimit = Math.floor(37700 / 12);      // £3,141
-  const monthlyHigherLimit = Math.floor(125140 / 12);    // £10,428
+  // Fetch tax bands from database for the given tax year
+  const taxBands = await getIncomeTaxBands(taxYear);
+  
+  // Monthly tax band limits (1/12 of annual, floored to nearest pound)
+  // Thresholds are stored in pennies in the DB, convert to pounds first
+  const annualBasicTo = taxBands.HIGHER_RATE.threshold_from / 100;
+  const annualHigherTo = taxBands.ADDITIONAL_RATE.threshold_from / 100;
+  const monthlyBasicLimit = Math.floor(annualBasicTo / 12);
+  const monthlyHigherLimit = Math.floor(annualHigherTo / 12);
   
   let taxThisPeriod = 0;
   
-  // Basic rate (20%) - first £3,141 of taxable pay
+  // Basic rate - first portion of taxable pay
   if (taxablePayThisPeriod > 0) {
     const basicAmount = Math.min(taxablePayThisPeriod, monthlyBasicLimit);
-    taxThisPeriod += basicAmount * 0.2;
+    taxThisPeriod += basicAmount * taxBands.BASIC_RATE.rate;
   }
   
-  // Higher rate (40%) - £3,141 to £10,428
+  // Higher rate
   if (taxablePayThisPeriod > monthlyBasicLimit) {
     const higherAmount = Math.min(taxablePayThisPeriod - monthlyBasicLimit, monthlyHigherLimit - monthlyBasicLimit);
-    taxThisPeriod += higherAmount * 0.4;
+    taxThisPeriod += higherAmount * taxBands.HIGHER_RATE.rate;
   }
   
-  // Additional rate (45%) - over £10,428
+  // Additional rate
   if (taxablePayThisPeriod > monthlyHigherLimit) {
     const additionalAmount = taxablePayThisPeriod - monthlyHigherLimit;
-    taxThisPeriod += additionalAmount * 0.45;
+    taxThisPeriod += additionalAmount * taxBands.ADDITIONAL_RATE.rate;
   }
   
   const finalTax = roundToTwoDecimals(taxThisPeriod);
