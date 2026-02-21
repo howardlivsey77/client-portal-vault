@@ -16,7 +16,6 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
-import { roundToTwoDecimals } from "@/lib/formatters";
 import { payrollLogger } from "../utils/payrollLogger";
 
 interface NHSPensionBand {
@@ -168,8 +167,8 @@ export async function calculateNHSPension(
   const employeeRate = tierBand.employee_contribution_rate / 100;
   const employerRate = tierBand.employer_contribution_rate / 100;
   
-  const employeeContribution = roundToTwoDecimals(monthlySalary * employeeRate);
-  const employerContribution = roundToTwoDecimals(monthlySalary * employerRate);
+  const employeeContribution = monthlySalary * employeeRate;
+  const employerContribution = monthlySalary * employerRate;
 
   payrollLogger.calculation('NHS pension contributions', {
     tier: tierBand.tier_number,
