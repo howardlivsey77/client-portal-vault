@@ -1,5 +1,5 @@
 
-import { parseTaxCode } from "../utils/tax-code-utils";
+import { parseTaxCode, TaxRegion } from "../utils/tax-code-utils";
 import { getIncomeTaxBands, calculateTaxByBands } from "../utils/tax-bands-utils";
 import { 
   validateCumulativeInputs, 
@@ -7,73 +7,141 @@ import {
 } from "../validation/payroll-validators";
 import { CalculationAnomalyError } from "../errors/payroll-errors";
 import { payrollLogger } from "../utils/payrollLogger";
+
 /**
  * =============================================================================
  * HMRC Cumulative & Week 1/Month 1 Tax Calculations
  * =============================================================================
  * 
+ * Implements HMRC Specification for PAYE Tax Table Routines v23.0 (January 2025).
+ * 
  * ROUNDING STRATEGY (HMRC-aligned):
  * ---------------------------------
- * This module follows a specific rounding order to match HMRC's methodology:
- * 
  * 1. Free Pay YTD: Rounded to 2 decimal places using roundToTwoDecimals()
- *    Formula: monthlyFreePay × period
- * 
  * 2. Taxable Pay YTD: Rounded DOWN (floored) to nearest whole pound
- *    Formula: Math.floor(grossPayYTD - freePayYTD)
- *    This is per HMRC regulations - taxable pay is always whole pounds.
- * 
  * 3. Tax Due YTD: Calculated at full precision using tax bands
- * 
  * 4. Tax This Period: Rounded to 2 decimal places at OUTPUT only
- *    Formula: roundToTwoDecimals(taxDueYTD - taxPaidYTD)
  * 
- * ⚠️  DO NOT change rounding order without thorough testing against HMRC 
- *     test cases. The current order is validated by the test suite.
+ * REGULATORY LIMIT:
+ * Per HMRC spec para 4.5.2: tax deducted cannot exceed 50% of gross pay.
+ * 
+ * TAX REGIONS:
+ * - England/NI: 3 bands (20%/40%/45%)
+ * - Scotland: 6 bands (19%/20%/21%/42%/45%/48%)
+ * - Wales: Same bands as England (20%/40%/45%) per Appendix C
  * 
  * TAX CODE HANDLING:
- * ------------------
- * - Standard codes (1257L, etc.): Parsed via parseTaxCode() → positive monthlyFreePay
- * - K codes (K497, etc.): Parsed via parseTaxCode() → NEGATIVE monthlyFreePay
- *   → This correctly ADDS to taxable income rather than reducing it
- *   → Taxable pay clamping to 0 is SKIPPED for K codes
- * - Special codes (BR, D0, D1): Handled with explicit branches, flat rates applied
- * - Emergency code (0T): Handled EXPLICITLY in parseTaxCode() → returns 0 allowance
- *   → Falls through to standard banded calculation with 0 free pay
- *   → See tax-code-utils.ts for explicit 0T handling
- * - No Tax (NT): Returns 0 tax due and refunds any previously paid tax
- * 
- * DEPENDENCIES:
- * -------------
- * - parseTaxCode() from tax-code-utils.ts handles ALL tax code parsing
- * - 0T behavior is deterministic: parseTaxCode('0T') → { allowance: 0, monthlyFreePay: 0 }
- * - This module relies on parseTaxCode returning correct values for edge cases
+ * - Standard codes (1257L, etc.): positive monthlyFreePay
+ * - K codes (K497, etc.): NEGATIVE monthlyFreePay (adds to taxable income)
+ * - Special codes (BR, D0, D1): flat rate, zero free pay
+ * - Scottish: SBR=20%, SD0=42%, SD1=45%, SD2=48%
+ * - Welsh: CBR=20%, CD0=40%, CD1=45%
+ * - Emergency code (0T): 0 allowance, banded calculation
+ * - No Tax (NT): 0 tax, refunds any previously paid tax
  */
 
-/**
- * Round to two decimal places (local version to avoid null handling)
- */
 function roundToTwoDecimals(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
+// ---------------------------------------------------------------------------
+// Scottish tax bands (2025/26)
+// Source: HMRC spec Appendix B
+// ---------------------------------------------------------------------------
+
+const SCOTTISH_ANNUAL_BANDS_2025_26 = [
+  { upTo: 2827,     rate: 0.19 },  // Starter rate
+  { upTo: 14921,    rate: 0.20 },  // Basic rate
+  { upTo: 31092,    rate: 0.21 },  // Intermediate rate
+  { upTo: 62430,    rate: 0.42 },  // Higher rate
+  { upTo: 125140,   rate: 0.45 },  // Advanced rate
+  { upTo: Infinity, rate: 0.48 },  // Top rate
+];
+
 /**
- * Options for anomaly checking
+ * Calculate tax using Scottish progressive bands
  */
+function calculateScottishTax(taxableIncome: number): number {
+  if (taxableIncome <= 0) return 0;
+  
+  let tax = 0;
+  let previousUpTo = 0;
+  
+  for (const band of SCOTTISH_ANNUAL_BANDS_2025_26) {
+    if (taxableIncome <= previousUpTo) break;
+    const incomeInBand = Math.min(taxableIncome, band.upTo) - previousUpTo;
+    tax += incomeInBand * band.rate;
+    previousUpTo = band.upTo;
+  }
+  
+  return tax;
+}
+
+/**
+ * Calculate tax using Scottish monthly bands for W1/M1
+ * Per HMRC spec Definition 10: monthly limits are annual ÷ 12 rounded UP (Cvalues)
+ */
+function calculateScottishMonthlyTax(taxablePayThisPeriod: number): number {
+  if (taxablePayThisPeriod <= 0) return 0;
+  
+  let tax = 0;
+  let previousLimit = 0;
+  
+  for (const band of SCOTTISH_ANNUAL_BANDS_2025_26) {
+    const monthlyLimit = band.upTo === Infinity ? Infinity : Math.ceil(band.upTo / 12);
+    if (taxablePayThisPeriod <= previousLimit) break;
+    const incomeInBand = Math.min(taxablePayThisPeriod, monthlyLimit) - previousLimit;
+    tax += incomeInBand * band.rate;
+    previousLimit = monthlyLimit;
+  }
+  
+  return tax;
+}
+
+// ---------------------------------------------------------------------------
+// Flat-rate code resolution
+// ---------------------------------------------------------------------------
+
+interface FlatRateResult {
+  rate: number;
+  label: string;
+}
+
+/**
+ * Resolve flat-rate codes (BR, D0, D1, SD0, SD1, SD2, CBR, CD0, CD1)
+ * Returns the applicable flat tax rate, or null if not a flat-rate code.
+ */
+function resolveFlatRateCode(coreCode: string, taxRegion: TaxRegion): FlatRateResult | null {
+  if (taxRegion === 'scotland') {
+    switch (coreCode) {
+      case 'BR': return { rate: 0.20, label: 'SBR' };
+      case 'D0': return { rate: 0.42, label: 'SD0' };
+      case 'D1': return { rate: 0.45, label: 'SD1' };
+      case 'D2': return { rate: 0.48, label: 'SD2' };
+    }
+  }
+  // Wales uses same rates as England
+  switch (coreCode) {
+    case 'BR': return { rate: 0.20, label: 'BR' };
+    case 'D0': return { rate: 0.40, label: 'D0' };
+    case 'D1': return { rate: 0.45, label: 'D1' };
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Anomaly checking
+// ---------------------------------------------------------------------------
+
 interface AnomalyCheckOptions {
   taxCode?: string;
   isActualPeriodGross: boolean;
 }
 
 /**
- * Check for calculation anomalies that may indicate errors
- * 
- * Only flags percentage-based warnings when:
- * - Tax is positive (not a refund)
- * - Gross is known to be actual (not estimated)
- * - Not a flat-rate code (BR/D0/D1) or K code
- * 
- * @throws CalculationAnomalyError if anomaly detected (extreme refund)
+ * Check for calculation anomalies.
+ * Only flags warnings when tax is positive, gross is known, and not a flat-rate/K code.
+ * Uses 50% threshold per HMRC spec para 4.5.2.
  */
 function checkForAnomalies(
   taxThisPeriod: number,
@@ -82,30 +150,25 @@ function checkForAnomalies(
   options: AnomalyCheckOptions = { isActualPeriodGross: false }
 ): void {
   const upperTaxCode = options.taxCode?.toUpperCase() ?? '';
-  const isHighRateCode = ['BR', 'D0', 'D1'].includes(upperTaxCode);
-  const isKCode = upperTaxCode.startsWith('K');
+  const coreCode = upperTaxCode.replace(/^[SC]/, '');
+  const isHighRateCode = ['BR', 'D0', 'D1', 'D2'].includes(coreCode);
+  const isKCode = coreCode.startsWith('K');
   
-  // Only check % threshold if:
-  // 1. Tax is positive (not a refund)
-  // 2. Gross is known to be actual (not estimated)
-  // 3. Not a flat-rate code (BR/D0/D1) or K code
-  // 4. Using 60% threshold (more permissive than 50%)
   if (
     options.isActualPeriodGross &&
     !isHighRateCode &&
     !isKCode &&
     grossPayThisPeriod > 0 &&
     taxThisPeriod > 0 &&
-    taxThisPeriod > grossPayThisPeriod * 0.6
+    taxThisPeriod > grossPayThisPeriod * 0.5
   ) {
     payrollLogger.warn(
-      `${context}: Tax (£${taxThisPeriod.toFixed(2)}) exceeds 60% of gross pay (£${grossPayThisPeriod.toFixed(2)}). Please verify.`,
+      `${context}: Tax (£${taxThisPeriod.toFixed(2)}) exceeds 50% of gross pay (£${grossPayThisPeriod.toFixed(2)}). Please verify.`,
       { employeeId: 'unknown' },
       'TAX_CALC'
     );
   }
   
-  // Hard stop for extremely large refunds (more than £10,000)
   if (taxThisPeriod < -10000) {
     throw new CalculationAnomalyError(
       `Extremely large tax refund of £${Math.abs(taxThisPeriod).toFixed(2)} calculated. ` +
@@ -115,106 +178,126 @@ function checkForAnomalies(
   }
 }
 
+// ---------------------------------------------------------------------------
+// Cumulative tax calculation result
+// ---------------------------------------------------------------------------
+
 export interface CumulativeTaxResult {
   taxThisPeriod: number;
   taxDueYTD: number;
   freePayYTD: number;
+  freePayMonthly: number;
   taxablePayYTD: number;
 }
 
 /**
- * Calculate cumulative tax for a given period using HMRC cumulative basis
- * 
- * This is the correct HMRC method which:
- * 1. Calculates cumulative free pay (monthly allowance × period)
- * 2. Calculates taxable pay YTD (gross pay YTD - free pay YTD)
- * 3. Calculates total tax due YTD using tax bands
- * 4. Tax this period = Tax due YTD - Tax already paid YTD
- * 
- * This method correctly handles refunds when pay decreases or periods have zero pay.
+ * Calculate cumulative tax for a given period using HMRC cumulative basis.
  * 
  * @param period - Tax period (1-12 for monthly)
- * @param grossPayYTD - Gross pay year to date (in pounds)
- * @param taxCode - Employee tax code (e.g., '1257L', 'BR', 'NT', 'K497')
+ * @param grossPayYTD - Gross pay year to date including this period (in pounds)
+ * @param taxCode - Employee tax code (e.g., '1257L', 'S1257L', 'C1257L', 'K497')
  * @param taxPaidYTD - Tax already paid YTD from previous periods (in pounds)
  * @param taxYear - Optional tax year for fetching correct tax bands
+ * @param grossPayThisPeriod - Optional: gross pay this period for regulatory limit
  * @returns Tax calculation result including tax this period (can be negative for refunds)
- * 
- * @throws ZodError if inputs fail validation
- * @throws UnrecognizedTaxCodeError if tax code is not valid
- * @throws UnsupportedTaxRegionError if Scottish/Welsh tax code used
- * @throws CalculationAnomalyError if result exceeds safety thresholds
  */
 export async function calculateCumulativeTax(
   period: number,
   grossPayYTD: number,
   taxCode: string,
   taxPaidYTD: number,
-  taxYear?: string
+  taxYear?: string,
+  grossPayThisPeriod?: number
 ): Promise<CumulativeTaxResult> {
-  // Validate all inputs upfront
   const validated = validateCumulativeInputs(period, grossPayYTD, taxCode, taxPaidYTD);
   
-  // Parse tax code (throws if unrecognized)
   const taxCodeInfo = parseTaxCode(validated.taxCode);
+  const { taxRegion } = taxCodeInfo;
   
-  // Handle special tax codes
-  if (validated.taxCode === 'NT') {
-    // No Tax code - no tax due ever
+  // Handle NT code
+  if (validated.taxCode === 'NT' || validated.taxCode === 'SNT' || validated.taxCode === 'CNT') {
     return {
-      taxThisPeriod: -validated.taxPaidYTD, // Refund any previously paid tax
+      taxThisPeriod: -validated.taxPaidYTD,
       taxDueYTD: 0,
       freePayYTD: Infinity,
+      freePayMonthly: Infinity,
       taxablePayYTD: 0
     };
   }
   
-  // Step 1: Calculate cumulative free pay YTD
-  // For K codes, monthlyFreePay is negative (adds to taxable income)
-  const freePayYTD = roundToTwoDecimals(taxCodeInfo.monthlyFreePay * validated.period);
+  // Strip prefix to get core code for flat-rate check
+  let coreCode = validated.taxCode;
+  if (taxRegion === 'scotland' && coreCode.startsWith('S')) coreCode = coreCode.substring(1);
+  else if (taxRegion === 'wales' && coreCode.startsWith('C')) coreCode = coreCode.substring(1);
   
-  // Step 2: Calculate taxable pay YTD (rounded down to nearest pound)
-  // For K codes, freePayYTD is negative, so this adds to taxable income
-  // Only clamp to 0 for positive allowances; K codes can have taxable > gross
+  // Handle flat-rate codes
+  const flatRate = resolveFlatRateCode(coreCode, taxRegion);
+  if (flatRate) {
+    const taxablePayYTD = Math.floor(validated.grossPayYTD);
+    const taxDueYTD = taxablePayYTD * flatRate.rate;
+    let taxThisPeriod = roundToTwoDecimals(taxDueYTD - validated.taxPaidYTD);
+    
+    // Apply 50% regulatory limit if period gross is known
+    if (grossPayThisPeriod !== undefined && grossPayThisPeriod > 0) {
+      const limit = Math.floor(grossPayThisPeriod * 0.5 * 100) / 100;
+      taxThisPeriod = Math.min(taxThisPeriod, limit);
+    }
+    
+    checkForAnomalies(taxThisPeriod, grossPayThisPeriod ?? (validated.grossPayYTD / validated.period), `${flatRate.label} cumulative`, {
+      taxCode: validated.taxCode,
+      isActualPeriodGross: grossPayThisPeriod !== undefined
+    });
+    return {
+      taxThisPeriod,
+      taxDueYTD: roundToTwoDecimals(taxDueYTD),
+      freePayYTD: 0,
+      freePayMonthly: 0,
+      taxablePayYTD
+    };
+  }
+  
+  // Standard cumulative calculation
+  const freePayMonthly = taxCodeInfo.monthlyFreePay;
+  const freePayYTD = roundToTwoDecimals(freePayMonthly * validated.period);
+  
   const rawTaxableYTD = Math.floor(validated.grossPayYTD - freePayYTD);
   const taxablePayYTD = taxCodeInfo.allowance >= 0 ? Math.max(0, rawTaxableYTD) : rawTaxableYTD;
   
-  // Step 3: Get tax bands and calculate total tax due YTD
-  const taxBands = await getIncomeTaxBands(taxYear);
-  const taxDueYTD = calculateTaxByBands(taxablePayYTD, taxBands);
+  // Route to correct tax engine based on region
+  let taxDueYTD: number;
+  if (taxRegion === 'scotland') {
+    taxDueYTD = calculateScottishTax(taxablePayYTD);
+  } else {
+    // England/NI and Wales use the same bands
+    const taxBands = await getIncomeTaxBands(taxYear);
+    taxDueYTD = calculateTaxByBands(taxablePayYTD, taxBands);
+  }
   
-  // Step 4: Tax this period = Tax due YTD - Tax already paid YTD
-  // This can be negative (refund) if previous periods overpaid
-  const taxThisPeriod = roundToTwoDecimals(taxDueYTD - validated.taxPaidYTD);
+  let taxThisPeriod = roundToTwoDecimals(taxDueYTD - validated.taxPaidYTD);
   
-  // Check for anomalies - skip % check for cumulative (we don't have actual period pay)
-  checkForAnomalies(taxThisPeriod, 0, 'Cumulative calculation', {
+  // Apply 50% regulatory limit (HMRC spec para 4.5.2)
+  if (grossPayThisPeriod !== undefined && grossPayThisPeriod > 0 && taxThisPeriod > 0) {
+    const limit = Math.floor(grossPayThisPeriod * 0.5 * 100) / 100;
+    taxThisPeriod = Math.min(taxThisPeriod, limit);
+  }
+  
+  checkForAnomalies(taxThisPeriod, grossPayThisPeriod ?? 0, 'Cumulative calculation', {
     taxCode: validated.taxCode,
-    isActualPeriodGross: false
+    isActualPeriodGross: grossPayThisPeriod !== undefined
   });
   
   return {
     taxThisPeriod,
     taxDueYTD: roundToTwoDecimals(taxDueYTD),
     freePayYTD,
+    freePayMonthly,
     taxablePayYTD
   };
 }
 
 /**
  * @deprecated Use calculateCumulativeTax (async) for production payroll.
- * This synchronous version uses hardcoded 2024/25 tax bands and does not
- * support tax year variation. Retained for backward compatibility and testing.
- * 
- * LIMITATIONS:
- * - Basic rate band: Hardcoded at £37,700
- * - Higher rate threshold: Hardcoded at £125,140
- * - Does not fetch current tax bands from database
- * - Tax year parameter not supported
- * 
- * @throws ZodError if inputs fail validation
- * @throws UnrecognizedTaxCodeError if tax code is not valid
- * @throws UnsupportedTaxRegionError if Scottish/Welsh tax code used
+ * Retained for backward compatibility and testing.
  */
 export function calculateCumulativeTaxSync(
   period: number,
@@ -222,120 +305,89 @@ export function calculateCumulativeTaxSync(
   taxCode: string,
   taxPaidYTD: number
 ): CumulativeTaxResult {
-  // Validate inputs
   const validated = validateCumulativeInputs(period, grossPayYTD, taxCode, taxPaidYTD);
   
-  // Parse and validate tax code (throws if invalid)
   const taxCodeInfo = parseTaxCode(validated.taxCode);
   
-  // Handle NT code - no tax ever
   if (validated.taxCode === 'NT') {
     return {
       taxThisPeriod: roundToTwoDecimals(-validated.taxPaidYTD),
       taxDueYTD: 0,
       freePayYTD: Infinity,
+      freePayMonthly: Infinity,
       taxablePayYTD: 0
     };
   }
   
-  // Handle BR code - basic rate (20%) on ALL income, no personal allowance
+  // Flat-rate codes
   if (validated.taxCode === 'BR') {
     const taxablePayYTD = Math.floor(validated.grossPayYTD);
     const taxDueYTD = taxablePayYTD * 0.2;
     const taxThisPeriod = roundToTwoDecimals(taxDueYTD - validated.taxPaidYTD);
     checkForAnomalies(taxThisPeriod, validated.grossPayYTD / validated.period, 'BR cumulative', {
-      taxCode: 'BR',
-      isActualPeriodGross: false
+      taxCode: 'BR', isActualPeriodGross: false
     });
-    return {
-      taxThisPeriod,
-      taxDueYTD: roundToTwoDecimals(taxDueYTD),
-      freePayYTD: 0,
-      taxablePayYTD
-    };
+    return { taxThisPeriod, taxDueYTD: roundToTwoDecimals(taxDueYTD), freePayYTD: 0, freePayMonthly: 0, taxablePayYTD };
   }
   
-  // Handle D0 code - higher rate (40%) on ALL income
   if (validated.taxCode === 'D0') {
     const taxablePayYTD = Math.floor(validated.grossPayYTD);
     const taxDueYTD = taxablePayYTD * 0.4;
     const taxThisPeriod = roundToTwoDecimals(taxDueYTD - validated.taxPaidYTD);
     checkForAnomalies(taxThisPeriod, validated.grossPayYTD / validated.period, 'D0 cumulative', {
-      taxCode: 'D0',
-      isActualPeriodGross: false
+      taxCode: 'D0', isActualPeriodGross: false
     });
-    return {
-      taxThisPeriod,
-      taxDueYTD: roundToTwoDecimals(taxDueYTD),
-      freePayYTD: 0,
-      taxablePayYTD
-    };
+    return { taxThisPeriod, taxDueYTD: roundToTwoDecimals(taxDueYTD), freePayYTD: 0, freePayMonthly: 0, taxablePayYTD };
   }
   
-  // Handle D1 code - additional rate (45%) on ALL income
   if (validated.taxCode === 'D1') {
     const taxablePayYTD = Math.floor(validated.grossPayYTD);
     const taxDueYTD = taxablePayYTD * 0.45;
     const taxThisPeriod = roundToTwoDecimals(taxDueYTD - validated.taxPaidYTD);
     checkForAnomalies(taxThisPeriod, validated.grossPayYTD / validated.period, 'D1 cumulative', {
-      taxCode: 'D1',
-      isActualPeriodGross: false
+      taxCode: 'D1', isActualPeriodGross: false
     });
-    return {
-      taxThisPeriod,
-      taxDueYTD: roundToTwoDecimals(taxDueYTD),
-      freePayYTD: 0,
-      taxablePayYTD
-    };
+    return { taxThisPeriod, taxDueYTD: roundToTwoDecimals(taxDueYTD), freePayYTD: 0, freePayMonthly: 0, taxablePayYTD };
   }
   
-  // Standard cumulative calculation for other codes (1257L, K codes, 0T, etc.)
-  const freePayYTD = roundToTwoDecimals(taxCodeInfo.monthlyFreePay * validated.period);
-  
-  // Only clamp to 0 for positive allowances; K codes can have taxable > gross
+  // Standard cumulative
+  const freePayMonthly = taxCodeInfo.monthlyFreePay;
+  const freePayYTD = roundToTwoDecimals(freePayMonthly * validated.period);
   const rawTaxableYTD = Math.floor(validated.grossPayYTD - freePayYTD);
   const taxablePayYTD = taxCodeInfo.allowance >= 0 ? Math.max(0, rawTaxableYTD) : rawTaxableYTD;
   
-  // Apply tax bands
   let taxDueYTD = 0;
-  
-  // Basic rate (20%) - first £37,700
   if (taxablePayYTD > 0) {
     const basicRateAmount = Math.min(taxablePayYTD, 37700);
     taxDueYTD += basicRateAmount * 0.2;
   }
-  
-  // Higher rate (40%) - £37,700 to £125,140
   if (taxablePayYTD > 37700) {
     const higherRateAmount = Math.min(taxablePayYTD - 37700, 125140 - 37700);
     taxDueYTD += higherRateAmount * 0.4;
   }
-  
-  // Additional rate (45%) - over £125,140
   if (taxablePayYTD > 125140) {
     const additionalRateAmount = taxablePayYTD - 125140;
     taxDueYTD += additionalRateAmount * 0.45;
   }
   
   const taxThisPeriod = roundToTwoDecimals(taxDueYTD - validated.taxPaidYTD);
-  
-  // Check for anomalies - skip % check for cumulative (estimated gross)
   checkForAnomalies(taxThisPeriod, 0, 'Cumulative sync', {
-    taxCode: validated.taxCode,
-    isActualPeriodGross: false
+    taxCode: validated.taxCode, isActualPeriodGross: false
   });
   
   return {
     taxThisPeriod,
     taxDueYTD: roundToTwoDecimals(taxDueYTD),
     freePayYTD,
+    freePayMonthly,
     taxablePayYTD
   };
 }
 
-/**
- * Week 1/Month 1 Tax Result
- */
+// ---------------------------------------------------------------------------
+// Week 1/Month 1 (non-cumulative) tax calculation
+// ---------------------------------------------------------------------------
+
 export interface Week1Month1TaxResult {
   taxThisPeriod: number;
   freePayMonthly: number;
@@ -343,131 +395,91 @@ export interface Week1Month1TaxResult {
 }
 
 /**
- * Calculate tax on Week 1/Month 1 (non-cumulative) basis
- * Each period is treated independently with 1/12th of annual bands
+ * Calculate tax on Week 1/Month 1 (non-cumulative) basis.
+ * Each period is treated independently with 1/12th of annual bands.
  * 
- * This is used when employee has W1/M1 indicator on their tax code
- * or for emergency tax situations.
- * 
- * Tax bands are fetched from the database for the given tax year,
- * then scaled to monthly (1/12th, floored to nearest pound).
- * 
- * @param grossPayThisPeriod - Gross pay this period only (in pounds)
- * @param taxCode - Employee tax code (e.g., '45L', 'BR', 'D0', 'D1')
- * @param taxYear - Optional tax year for fetching correct tax bands
- * @returns Tax due this period (non-cumulative)
- * 
- * @throws ZodError if inputs fail validation
- * @throws UnrecognizedTaxCodeError if tax code is not valid
- * @throws UnsupportedTaxRegionError if Scottish/Welsh tax code used
+ * Per HMRC spec Definition 10: monthly band limits rounded UP to nearest £1 (Cvalues).
+ * Per HMRC spec para 4.5.2: tax capped at 50% of gross pay (regulatory limit).
  */
 export async function calculateWeek1Month1Tax(
   grossPayThisPeriod: number,
   taxCode: string,
   taxYear?: string
 ): Promise<Week1Month1TaxResult> {
-  // Validate inputs
   const validated = validateWeek1Month1Inputs(grossPayThisPeriod, taxCode);
   
-  // Handle NT code - no tax
-  if (validated.taxCode === 'NT') {
-    return {
-      taxThisPeriod: 0,
-      freePayMonthly: Infinity,
-      taxablePayThisPeriod: 0
-    };
-  }
-  
-  // Handle BR code - basic rate (20%) on ALL income
-  if (validated.taxCode === 'BR') {
-    const taxablePayThisPeriod = Math.floor(validated.grossPayThisPeriod);
-    const taxThisPeriod = roundToTwoDecimals(taxablePayThisPeriod * 0.2);
-    checkForAnomalies(taxThisPeriod, validated.grossPayThisPeriod, 'BR W1/M1', {
-      taxCode: 'BR',
-      isActualPeriodGross: true
-    });
-    return {
-      taxThisPeriod,
-      freePayMonthly: 0,
-      taxablePayThisPeriod
-    };
-  }
-  
-  // Handle D0 code - higher rate (40%) on ALL income
-  if (validated.taxCode === 'D0') {
-    const taxablePayThisPeriod = Math.floor(validated.grossPayThisPeriod);
-    const taxThisPeriod = roundToTwoDecimals(taxablePayThisPeriod * 0.4);
-    checkForAnomalies(taxThisPeriod, validated.grossPayThisPeriod, 'D0 W1/M1', {
-      taxCode: 'D0',
-      isActualPeriodGross: true
-    });
-    return {
-      taxThisPeriod,
-      freePayMonthly: 0,
-      taxablePayThisPeriod
-    };
-  }
-  
-  // Handle D1 code - additional rate (45%) on ALL income
-  if (validated.taxCode === 'D1') {
-    const taxablePayThisPeriod = Math.floor(validated.grossPayThisPeriod);
-    const taxThisPeriod = roundToTwoDecimals(taxablePayThisPeriod * 0.45);
-    checkForAnomalies(taxThisPeriod, validated.grossPayThisPeriod, 'D1 W1/M1', {
-      taxCode: 'D1',
-      isActualPeriodGross: true
-    });
-    return {
-      taxThisPeriod,
-      freePayMonthly: 0,
-      taxablePayThisPeriod
-    };
-  }
-  
-  // Parse tax code for monthly free pay (throws if invalid)
   const taxCodeInfo = parseTaxCode(validated.taxCode);
-  const freePayMonthly = taxCodeInfo.monthlyFreePay;
+  const { taxRegion } = taxCodeInfo;
   
-  // Calculate taxable pay (rounded down to nearest pound)
-  // Only clamp to 0 for positive allowances; K codes can have taxable > gross
+  // Handle NT code
+  if (validated.taxCode === 'NT' || validated.taxCode === 'SNT' || validated.taxCode === 'CNT') {
+    return { taxThisPeriod: 0, freePayMonthly: Infinity, taxablePayThisPeriod: 0 };
+  }
+  
+  // Strip prefix
+  let coreCode = validated.taxCode;
+  if (taxRegion === 'scotland' && coreCode.startsWith('S')) coreCode = coreCode.substring(1);
+  else if (taxRegion === 'wales' && coreCode.startsWith('C')) coreCode = coreCode.substring(1);
+  
+  // Handle flat-rate codes
+  const flatRate = resolveFlatRateCode(coreCode, taxRegion);
+  if (flatRate) {
+    const taxablePayThisPeriod = Math.floor(validated.grossPayThisPeriod);
+    let taxThisPeriod = roundToTwoDecimals(taxablePayThisPeriod * flatRate.rate);
+    
+    // Apply 50% regulatory limit
+    const regulatoryLimit = Math.floor(validated.grossPayThisPeriod * 0.5 * 100) / 100;
+    taxThisPeriod = Math.min(taxThisPeriod, regulatoryLimit);
+    
+    checkForAnomalies(taxThisPeriod, validated.grossPayThisPeriod, `${flatRate.label} W1/M1`, {
+      taxCode: validated.taxCode, isActualPeriodGross: true
+    });
+    return { taxThisPeriod, freePayMonthly: 0, taxablePayThisPeriod };
+  }
+  
+  // Standard W1/M1 calculation
+  const freePayMonthly = taxCodeInfo.monthlyFreePay;
   const rawTaxable = Math.floor(validated.grossPayThisPeriod - freePayMonthly);
   const taxablePayThisPeriod = taxCodeInfo.allowance >= 0 ? Math.max(0, rawTaxable) : rawTaxable;
   
-  // Fetch tax bands from database for the given tax year
-  const taxBands = await getIncomeTaxBands(taxYear);
-  
-  // Monthly tax band limits (1/12 of annual, floored to nearest pound)
-  // Thresholds are stored in pennies in the DB, convert to pounds first
-  const annualBasicTo = taxBands.HIGHER_RATE.threshold_from / 100;
-  const annualHigherTo = taxBands.ADDITIONAL_RATE.threshold_from / 100;
-  const monthlyBasicLimit = Math.floor(annualBasicTo / 12);
-  const monthlyHigherLimit = Math.floor(annualHigherTo / 12);
-  
   let taxThisPeriod = 0;
   
-  // Basic rate - first portion of taxable pay
-  if (taxablePayThisPeriod > 0) {
-    const basicAmount = Math.min(taxablePayThisPeriod, monthlyBasicLimit);
-    taxThisPeriod += basicAmount * taxBands.BASIC_RATE.rate;
+  if (taxRegion === 'scotland') {
+    taxThisPeriod = calculateScottishMonthlyTax(taxablePayThisPeriod);
+  } else {
+    // England/NI and Wales
+    const taxBands = await getIncomeTaxBands(taxYear);
+    
+    // Monthly band limits: annual ÷ 12 rounded UP per HMRC spec Definition 10
+    const annualBasicTo = taxBands.HIGHER_RATE.threshold_from / 100;
+    const annualHigherTo = taxBands.ADDITIONAL_RATE.threshold_from / 100;
+    const monthlyBasicLimit = Math.ceil(annualBasicTo / 12);
+    const monthlyHigherLimit = Math.ceil(annualHigherTo / 12);
+    
+    if (taxablePayThisPeriod > 0) {
+      const basicAmount = Math.min(taxablePayThisPeriod, monthlyBasicLimit);
+      taxThisPeriod += basicAmount * taxBands.BASIC_RATE.rate;
+    }
+    if (taxablePayThisPeriod > monthlyBasicLimit) {
+      const higherAmount = Math.min(taxablePayThisPeriod - monthlyBasicLimit, monthlyHigherLimit - monthlyBasicLimit);
+      taxThisPeriod += higherAmount * taxBands.HIGHER_RATE.rate;
+    }
+    if (taxablePayThisPeriod > monthlyHigherLimit) {
+      const additionalAmount = taxablePayThisPeriod - monthlyHigherLimit;
+      taxThisPeriod += additionalAmount * taxBands.ADDITIONAL_RATE.rate;
+    }
   }
   
-  // Higher rate
-  if (taxablePayThisPeriod > monthlyBasicLimit) {
-    const higherAmount = Math.min(taxablePayThisPeriod - monthlyBasicLimit, monthlyHigherLimit - monthlyBasicLimit);
-    taxThisPeriod += higherAmount * taxBands.HIGHER_RATE.rate;
+  let finalTax = roundToTwoDecimals(taxThisPeriod);
+  
+  // Apply 50% regulatory limit (HMRC spec para 4.5.2)
+  if (finalTax > 0) {
+    const regulatoryLimit = Math.floor(validated.grossPayThisPeriod * 0.5 * 100) / 100;
+    finalTax = Math.min(finalTax, regulatoryLimit);
   }
   
-  // Additional rate
-  if (taxablePayThisPeriod > monthlyHigherLimit) {
-    const additionalAmount = taxablePayThisPeriod - monthlyHigherLimit;
-    taxThisPeriod += additionalAmount * taxBands.ADDITIONAL_RATE.rate;
-  }
-  
-  const finalTax = roundToTwoDecimals(taxThisPeriod);
-  
-  // Check for anomalies - W1/M1 has actual period gross
   checkForAnomalies(finalTax, validated.grossPayThisPeriod, 'W1/M1 calculation', {
-    taxCode: validated.taxCode,
-    isActualPeriodGross: true
+    taxCode: validated.taxCode, isActualPeriodGross: true
   });
   
   return {

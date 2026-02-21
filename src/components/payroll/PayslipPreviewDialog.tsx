@@ -131,6 +131,12 @@ export function PayslipPreviewDialog({
         niCategory: 'A',
         reimbursements: [],
         niableGrossPay: grossPay,
+        period: 1,
+        grossPayYTD: grossPay,
+        taxPaidYTD: incomeTax,
+        isMonth1Basis: false,
+        taxablePayYTD: grossPay,
+        freePayYTD: 0,
       };
 
       const filename = `${employeeName.replace(/\s+/g, '-').toLowerCase()}-payslip-${payPeriod.replace(/\s+/g, '-').toLowerCase()}.pdf`;

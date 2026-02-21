@@ -31,8 +31,10 @@ export interface EarningsResult {
 
 export interface TaxResult {
   incomeTax: number;
-  freePay: number;
-  taxablePay: number;
+  freePay: number;          // monthly free pay for payslip display
+  freePayYTD: number;       // cumulative free pay used in calculation
+  taxablePay: number;       // period taxable pay for payslip display
+  taxablePayYTD: number;    // YTD taxable pay from cumulative engine
 }
 
 export interface NIResult {
@@ -90,11 +92,23 @@ export async function calculateTaxDeductions(
   grossPay: number,
   taxCode: string,
   taxYear: string,
-  employeeId: string
+  employeeId: string,
+  period: number = 1,
+  grossPayYTD: number = 0,
+  taxPaidYTD: number = 0,
+  isMonth1Basis: boolean = false
 ): Promise<TaxResult> {
   let incomeTaxResult;
   try {
-    incomeTaxResult = await calculateMonthlyIncomeTaxAsync(grossPay, taxCode, taxYear);
+    incomeTaxResult = await calculateMonthlyIncomeTaxAsync(
+      grossPay,
+      taxCode,
+      taxYear,
+      period,
+      grossPayYTD,
+      taxPaidYTD,
+      isMonth1Basis
+    );
   } catch (err) {
     payrollLogger.error("Income tax calculation failed", err, "TAX_CALC");
     throw new PayrollCalculationError(
@@ -105,14 +119,14 @@ export async function calculateTaxDeductions(
     );
   }
 
-  const { monthlyTax: incomeTax, freePay } = incomeTaxResult;
+  const { monthlyTax: incomeTax, freePay, freePayYTD, taxablePayYTD } = incomeTaxResult;
 
-  // Round down to nearest pound — HMRC requirement
+  // Period taxable pay for payslip display
   const taxablePay = roundDownToNearestPound(grossPay - freePay);
 
-  payrollLogger.calculation("Income tax", { incomeTax, freePay, taxablePay });
+  payrollLogger.calculation("Income tax", { incomeTax, freePay, freePayYTD, taxablePay, taxablePayYTD });
 
-  return { incomeTax, freePay, taxablePay };
+  return { incomeTax, freePay, freePayYTD, taxablePay, taxablePayYTD };
 }
 
 // ---------------------------------------------------------------------------
@@ -255,6 +269,10 @@ export function assemblePayrollResult(
     reimbursements = [],
     isNHSPensionMember = false,
     niCategory = 'A' as NICategory,
+    period = 1,
+    grossPayYTD = 0,
+    taxPaidYTD = 0,
+    isMonth1Basis = false,
   } = details;
 
   const totalAdditionalDeductions = additionalDeductions.reduce(
@@ -315,5 +333,12 @@ export function assemblePayrollResult(
     nhsPensionEmployerRate: pensions.nhsPensionEmployerRate,
     isNHSPensionMember,
     niCategory,
+    // Tax calculation audit fields
+    period,
+    grossPayYTD: roundToTwoDecimals(grossPayYTD + earnings.niableGrossPay),
+    taxPaidYTD: roundToTwoDecimals(taxPaidYTD + tax.incomeTax),
+    isMonth1Basis,
+    taxablePayYTD: roundToTwoDecimals(tax.taxablePayYTD),
+    freePayYTD: roundToTwoDecimals(tax.freePayYTD),
   };
 }

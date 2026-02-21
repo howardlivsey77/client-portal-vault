@@ -5,6 +5,7 @@ import {
   clearTaxBandsCache, 
   calculateTaxByBands 
 } from "../utils/tax-bands-utils";
+import { calculateCumulativeTax, calculateWeek1Month1Tax } from "./cumulative-tax";
 
 /**
  * Re-export cumulative tax calculation for external use
@@ -21,16 +22,68 @@ export {
 export { clearTaxBandsCache, getIncomeTaxBands };
 
 /**
+ * Calculate monthly tax using HMRC-compliant cumulative or W1/M1 method.
+ *
+ * @param monthlySalary   - Gross pay this period (niableGrossPay from orchestrator)
+ * @param taxCode         - Employee tax code
+ * @param taxYear         - Tax year string
+ * @param period          - Tax month 1–12 (defaults to 1 if absent)
+ * @param grossPayYTD     - Gross pay YTD before this period (defaults to 0)
+ * @param taxPaidYTD      - Tax paid YTD before this period (defaults to 0)
+ * @param isMonth1Basis   - true = W1/M1 non-cumulative basis
+ */
+export async function calculateMonthlyIncomeTaxAsync(
+  monthlySalary: number,
+  taxCode: string,
+  taxYear?: string,
+  period: number = 1,
+  grossPayYTD: number = 0,
+  taxPaidYTD: number = 0,
+  isMonth1Basis: boolean = false
+): Promise<{
+  monthlyTax: number;
+  freePay: number;
+  freePayYTD: number;
+  taxablePayYTD: number;
+}> {
+  if (isMonth1Basis) {
+    const result = await calculateWeek1Month1Tax(monthlySalary, taxCode, taxYear);
+    return {
+      monthlyTax: result.taxThisPeriod,
+      freePay: result.freePayMonthly,
+      freePayYTD: result.freePayMonthly, // For M1, freePayYTD = freePayMonthly
+      taxablePayYTD: result.taxablePayThisPeriod, // For M1, no YTD concept
+    };
+  }
+
+  // Cumulative basis: grossPayYTD passed in is BEFORE this period's pay
+  const cumulativeGrossYTD = grossPayYTD + monthlySalary;
+
+  const result = await calculateCumulativeTax(
+    period,
+    cumulativeGrossYTD,
+    taxCode,
+    taxPaidYTD,
+    taxYear,
+    monthlySalary // Pass period gross for regulatory limit
+  );
+
+  return {
+    monthlyTax: result.taxThisPeriod,
+    freePay: result.freePayMonthly,
+    freePayYTD: result.freePayYTD,
+    taxablePayYTD: result.taxablePayYTD,
+  };
+}
+
+/**
  * Calculate annual income tax based on salary and tax code (async version)
  */
 export async function calculateIncomeTaxAsync(annualSalary: number, taxCode: string, taxYear?: string): Promise<number> {
   const { allowance } = parseTaxCode(taxCode);
   const taxableIncome = Math.max(0, annualSalary - allowance);
   
-  // Get tax bands (dynamic from database, fallback to constants)
   const taxBands = await getIncomeTaxBands(taxYear);
-  
-  // Calculate tax using our utility function
   const tax = calculateTaxByBands(taxableIncome, taxBands);
   
   return tax;
@@ -38,7 +91,7 @@ export async function calculateIncomeTaxAsync(annualSalary: number, taxCode: str
 
 /**
  * @deprecated BROKEN — fires an async call but returns 0 synchronously.
- * Use `calculateIncomeTaxAsync` instead. This function will be removed in a future release.
+ * Use `calculateIncomeTaxAsync` instead.
  * @throws {Error} Always throws to prevent silent incorrect results.
  */
 export function calculateIncomeTax(_annualSalary: number, _taxCode: string): never {
@@ -49,33 +102,8 @@ export function calculateIncomeTax(_annualSalary: number, _taxCode: string): nev
 }
 
 /**
- * Calculate monthly tax and free pay based on monthly salary and tax code (async version)
- */
-export async function calculateMonthlyIncomeTaxAsync(monthlySalary: number, taxCode: string, taxYear?: string): Promise<{
-  monthlyTax: number;
-  freePay: number;
-}> {
-  // Get tax code info and monthly free pay
-  const taxCodeInfo = parseTaxCode(taxCode);
-  const monthlyFreePay = taxCodeInfo.monthlyFreePay;
-  
-  // Calculate annual equivalents
-  const annualSalary = monthlySalary * 12;
-  
-  // Calculate annual tax using the async method
-  const annualTax = await calculateIncomeTaxAsync(annualSalary, taxCode, taxYear);
-  
-  // Return full precision — rounding happens at the output boundary
-  // in assemblePayrollResult (payrollCalculator.ts)
-  return {
-    monthlyTax: annualTax / 12,
-    freePay: monthlyFreePay
-  };
-}
-
-/**
  * @deprecated BROKEN — delegates to calculateIncomeTax which is broken.
- * Use `calculateMonthlyIncomeTaxAsync` instead. This function will be removed in a future release.
+ * Use `calculateMonthlyIncomeTaxAsync` instead.
  * @throws {Error} Always throws to prevent silent incorrect results.
  */
 export function calculateMonthlyIncomeTax(_monthlySalary: number, _taxCode: string): never {
@@ -89,18 +117,14 @@ export function calculateMonthlyIncomeTax(_monthlySalary: number, _taxCode: stri
  * Calculate income tax based on YTD taxable pay (async version)
  */
 export async function calculateIncomeTaxFromYTDAsync(taxablePayYTD: number, taxCode: string, taxYear?: string): Promise<number> {
-  // Get tax bands (dynamic from database, fallback to constants)
   const taxBands = await getIncomeTaxBands(taxYear);
-  
-  // Calculate tax using our utility function
   const tax = calculateTaxByBands(taxablePayYTD, taxBands);
-  
   return tax;
 }
 
 /**
  * @deprecated BROKEN — fires an async call but returns 0 synchronously.
- * Use `calculateIncomeTaxFromYTDAsync` instead. This function will be removed in a future release.
+ * Use `calculateIncomeTaxFromYTDAsync` instead.
  * @throws {Error} Always throws to prevent silent incorrect results.
  */
 export function calculateIncomeTaxFromYTD(_taxablePayYTD: number, _taxCode: string): never {
