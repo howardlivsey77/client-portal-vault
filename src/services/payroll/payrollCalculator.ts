@@ -13,8 +13,6 @@
  */
 
 import { calculateStudentLoan } from "./calculations/student-loan";
-import { calculatePension } from "./calculations/pension";
-import { calculateNHSPension } from "./calculations/nhs-pension";
 import { PayrollDetails, PayrollResult } from "./types";
 import { payrollLogger } from "./utils/payrollLogger";
 import { getCurrentTaxYear } from "./utils/taxYearUtils";
@@ -25,65 +23,9 @@ import {
   calculateEarnings,
   calculateTaxDeductions,
   calculateNIContributions,
+  calculatePensionDeductions,
   assemblePayrollResult,
 } from "./payrollCalculator.internal";
-
-// Re-export internal types for use by the orchestrator (not part of public API)
-import type { PensionResult } from "./payrollCalculator.internal";
-
-// ---------------------------------------------------------------------------
-// Phase 4 — Pension deductions (stays here — not tested yet)
-// ---------------------------------------------------------------------------
-
-async function calculatePensionDeductions(
-  grossPay: number,
-  monthlySalary: number,
-  pensionPercentage: number,
-  previousYearPensionablePay: number | null,
-  taxYear: string,
-  isNHSPensionMember: boolean,
-  employeeId: string
-): Promise<PensionResult> {
-  const pensionContribution = calculatePension(grossPay, pensionPercentage);
-
-  let nhsPensionResult;
-  try {
-    nhsPensionResult = await calculateNHSPension(
-      monthlySalary,
-      previousYearPensionablePay,
-      taxYear,
-      isNHSPensionMember
-    );
-  } catch (err) {
-    payrollLogger.error("NHS pension calculation failed", err, "PENSION");
-    throw new PayrollCalculationError(
-      "NHS_PENSION_FAILED",
-      "Failed to calculate NHS pension contributions",
-      err instanceof Error ? err : undefined,
-      { taxYear, employeeId, isNHSPensionMember }
-    );
-  }
-
-  payrollLogger.calculation(
-    "Pension",
-    {
-      pensionContribution,
-      employeeContribution: nhsPensionResult.employeeContribution,
-      employerContribution: nhsPensionResult.employerContribution,
-      tier: nhsPensionResult.tier,
-    },
-    "PENSION"
-  );
-
-  return {
-    pensionContribution,
-    nhsPensionEmployeeContribution: nhsPensionResult.employeeContribution,
-    nhsPensionEmployerContribution: nhsPensionResult.employerContribution,
-    nhsPensionTier: nhsPensionResult.tier,
-    nhsPensionEmployeeRate: nhsPensionResult.employeeRate,
-    nhsPensionEmployerRate: nhsPensionResult.employerRate,
-  };
-}
 
 // ---------------------------------------------------------------------------
 // Orchestrator (public API — signature unchanged)

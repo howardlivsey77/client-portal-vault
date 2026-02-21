@@ -10,6 +10,8 @@ import { roundToTwoDecimals } from "@/lib/formatters";
 import { calculateMonthlyIncomeTaxAsync } from "./calculations/income-tax";
 import { NICalculationResult } from "./calculations/national-insurance";
 import { NationalInsuranceCalculator } from "./calculations/ni/services/NationalInsuranceCalculator";
+import { calculatePension } from "./calculations/pension";
+import { calculateNHSPension } from "./calculations/nhs-pension";
 import { PayrollDetails, PayrollResult } from "./types";
 import { payrollLogger } from "./utils/payrollLogger";
 import { roundDownToNearestPound } from "./utils/roundingUtils";
@@ -158,6 +160,60 @@ export async function calculateNIContributions(
     earningsPTtoUEL,
     earningsAboveUEL,
     earningsAboveST,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Phase 4 — Pension deductions
+// ---------------------------------------------------------------------------
+
+export async function calculatePensionDeductions(
+  grossPay: number,
+  monthlySalary: number,
+  pensionPercentage: number,
+  previousYearPensionablePay: number | null,
+  taxYear: string,
+  isNHSPensionMember: boolean,
+  employeeId: string
+): Promise<PensionResult> {
+  const pensionContribution = calculatePension(grossPay, pensionPercentage);
+
+  let nhsPensionResult;
+  try {
+    nhsPensionResult = await calculateNHSPension(
+      monthlySalary,
+      previousYearPensionablePay,
+      taxYear,
+      isNHSPensionMember
+    );
+  } catch (err) {
+    payrollLogger.error("NHS pension calculation failed", err, "PENSION");
+    throw new PayrollCalculationError(
+      "NHS_PENSION_FAILED",
+      "Failed to calculate NHS pension contributions",
+      err instanceof Error ? err : undefined,
+      { taxYear, employeeId, isNHSPensionMember }
+    );
+  }
+
+  payrollLogger.calculation(
+    "Pension",
+    {
+      pensionContribution,
+      employeeContribution: nhsPensionResult.employeeContribution,
+      employerContribution: nhsPensionResult.employerContribution,
+      tier: nhsPensionResult.tier,
+    },
+    "PENSION"
+  );
+
+  return {
+    pensionContribution,
+    nhsPensionEmployeeContribution: nhsPensionResult.employeeContribution,
+    nhsPensionEmployerContribution: nhsPensionResult.employerContribution,
+    nhsPensionTier: nhsPensionResult.tier,
+    nhsPensionEmployeeRate: nhsPensionResult.employeeRate,
+    nhsPensionEmployerRate: nhsPensionResult.employerRate,
   };
 }
 
