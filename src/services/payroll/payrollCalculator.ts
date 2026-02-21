@@ -329,12 +329,96 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     pensionPercentage = 0,
     studentLoanPlan = null,
     additionalEarnings = [],
+    additionalDeductions = [],
+    additionalAllowances = [],
     isNHSPensionMember = false,
     previousYearPensionablePay = null,
     taxYear: providedTaxYear,
   } = details;
 
   const taxYear = providedTaxYear || getCurrentTaxYear();
+
+  // --- Input validation ---
+
+  if (!employeeId?.trim()) {
+    throw new PayrollCalculationError(
+      'INVALID_INPUT',
+      'employeeId is required',
+      undefined,
+      { employeeId }
+    );
+  }
+
+  if (typeof monthlySalary !== 'number' || isNaN(monthlySalary) || monthlySalary < 0) {
+    throw new PayrollCalculationError(
+      'INVALID_INPUT',
+      'monthlySalary must be a non-negative number',
+      undefined,
+      { employeeId }
+    );
+  }
+
+  if (!taxCode?.trim()) {
+    throw new PayrollCalculationError(
+      'INVALID_INPUT',
+      'taxCode is required',
+      undefined,
+      { employeeId }
+    );
+  }
+
+  if (pensionPercentage < 0 || pensionPercentage > 100) {
+    throw new PayrollCalculationError(
+      'INVALID_INPUT',
+      'pensionPercentage must be between 0 and 100',
+      undefined,
+      { employeeId, pensionPercentage }
+    );
+  }
+
+  if (previousYearPensionablePay !== null && previousYearPensionablePay < 0) {
+    throw new PayrollCalculationError(
+      'INVALID_INPUT',
+      'previousYearPensionablePay must be non-negative if provided',
+      undefined,
+      { employeeId }
+    );
+  }
+
+  for (const item of additionalEarnings) {
+    if (typeof item.amount !== 'number' || isNaN(item.amount)) {
+      throw new PayrollCalculationError(
+        'INVALID_INPUT',
+        'All additionalEarnings items must have a numeric amount',
+        undefined,
+        { employeeId }
+      );
+    }
+  }
+
+  for (const item of additionalDeductions) {
+    if (typeof item.amount !== 'number' || isNaN(item.amount) || item.amount < 0) {
+      throw new PayrollCalculationError(
+        'INVALID_INPUT',
+        'All additionalDeductions items must have a non-negative numeric amount',
+        undefined,
+        { employeeId }
+      );
+    }
+  }
+
+  for (const item of additionalAllowances) {
+    if (typeof item.amount !== 'number' || isNaN(item.amount) || item.amount < 0) {
+      throw new PayrollCalculationError(
+        'INVALID_INPUT',
+        'All additionalAllowances items must have a non-negative numeric amount',
+        undefined,
+        { employeeId }
+      );
+    }
+  }
+
+  // --- End input validation ---
 
   payrollLogger.debug("Starting payroll calculation", {
     employeeId,
