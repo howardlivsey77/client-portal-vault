@@ -15,7 +15,7 @@
 import { calculateStudentLoan } from "./calculations/student-loan";
 import { PayrollDetails, PayrollResult } from "./types";
 import { payrollLogger } from "./utils/payrollLogger";
-import { getCurrentTaxYear } from "./utils/taxYearUtils";
+import { getCurrentTaxYear, getTaxPeriod } from "./utils/taxYearUtils";
 import { PayrollCalculationError } from "./errors/PayrollCalculationError";
 import type { NICategory } from "./constants/tax-constants";
 
@@ -54,6 +54,10 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     previousYearPensionablePay = null,
     taxYear: providedTaxYear,
     niCategory = 'A' as NICategory,
+    period = getTaxPeriod(),
+    grossPayYTD = 0,
+    taxPaidYTD = 0,
+    isMonth1Basis = false,
   } = details;
 
   const taxYear = providedTaxYear || getCurrentTaxYear();
@@ -100,6 +104,33 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     throw new PayrollCalculationError(
       'INVALID_INPUT',
       'previousYearPensionablePay must be non-negative if provided',
+      undefined,
+      { employeeId }
+    );
+  }
+
+  if (typeof period !== 'number' || period < 1 || period > 12) {
+    throw new PayrollCalculationError(
+      'INVALID_INPUT',
+      'period must be between 1 and 12',
+      undefined,
+      { employeeId }
+    );
+  }
+
+  if (grossPayYTD < 0) {
+    throw new PayrollCalculationError(
+      'INVALID_INPUT',
+      'grossPayYTD must be non-negative',
+      undefined,
+      { employeeId }
+    );
+  }
+
+  if (taxPaidYTD < 0) {
+    throw new PayrollCalculationError(
+      'INVALID_INPUT',
+      'taxPaidYTD must be non-negative',
       undefined,
       { employeeId }
     );
@@ -171,12 +202,23 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
     studentLoanPlan,
     hasPension: pensionPercentage > 0,
     niCategory,
+    period,
+    isMonth1Basis,
   });
 
   const earnings = calculateEarnings(monthlySalary, additionalEarnings, reimbursements);
 
   const [tax, ni, pensions] = await Promise.all([
-    calculateTaxDeductions(earnings.niableGrossPay, taxCode, taxYear, employeeId),
+    calculateTaxDeductions(
+      earnings.niableGrossPay,
+      taxCode,
+      taxYear,
+      employeeId,
+      period,
+      grossPayYTD,
+      taxPaidYTD,
+      isMonth1Basis
+    ),
     calculateNIContributions(earnings.niableGrossPay, taxYear, employeeId, niCategory),
     calculatePensionDeductions(
       earnings.niableGrossPay,
@@ -190,7 +232,6 @@ export async function calculateMonthlyPayroll(details: PayrollDetails): Promise<
   ]);
 
   // Student loan: calculated on NI-able gross pay per HMRC spec
-  // (earnings subject to Class 1 NI contributions, excluding non-NI-able reimbursements)
   const studentLoan = calculateStudentLoan(earnings.niableGrossPay, studentLoanPlan);
 
   const result = assemblePayrollResult(details, taxYear, earnings, tax, ni, pensions, studentLoan);

@@ -94,7 +94,9 @@ const baseEarnings: EarningsResult = {
 const baseTax: TaxResult = {
   incomeTax: 400,
   freePay: 1047.50,
+  freePayYTD: 1047.50,
   taxablePay: 2952,
+  taxablePayYTD: 2952,
 };
 
 const baseNI: NIResult = {
@@ -218,7 +220,7 @@ describe('assemblePayrollResult', () => {
     });
 
     it('netPay is correct with no deductions or allowances', () => {
-      const zeroTax: TaxResult = { incomeTax: 0, freePay: 4000, taxablePay: 0 };
+      const zeroTax: TaxResult = { incomeTax: 0, freePay: 4000, freePayYTD: 4000, taxablePay: 0, taxablePayYTD: 0 };
       const zeroNI: NIResult = { ...baseNI, nationalInsurance: 0 };
       const zeroPensions: PensionResult = { ...basePensions, pensionContribution: 0 };
       const result = assemblePayrollResult(baseDetails, '2025/26', baseEarnings, zeroTax, zeroNI, zeroPensions, 0);
@@ -248,7 +250,7 @@ describe('assemblePayrollResult', () => {
 
   describe('rounding (HMRC compliance)', () => {
     it('all monetary output fields are rounded to 2 decimal places', () => {
-      const fractionalTax: TaxResult = { incomeTax: 400.456, freePay: 1047.503, taxablePay: 2952.999 };
+      const fractionalTax: TaxResult = { incomeTax: 400.456, freePay: 1047.503, freePayYTD: 1047.503, taxablePay: 2952.999, taxablePayYTD: 2952.999 };
       const fractionalNI: NIResult = {
         nationalInsurance: 200.111,
         employerNationalInsurance: 400.999,

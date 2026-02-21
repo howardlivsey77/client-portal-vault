@@ -26,6 +26,18 @@ export interface PayrollDetails {
   taxYear?: string;
   // NI category letter - optional, defaults to 'A' if not provided
   niCategory?: NICategory;
+
+  // Tax calculation basis
+  // isMonth1Basis: true = non-cumulative (W1/M1), false/absent = cumulative
+  isMonth1Basis?: boolean;
+
+  // YTD figures — required for cumulative calculation.
+  // For new starters or migrations, pass starter figures from P45 or previous system.
+  // For ongoing employees, the app calculates and stores these each period.
+  // If absent, defaults to 0 (correct for period 1 of the tax year).
+  period?: number;          // Tax month (1–12). Defaults to current period if absent.
+  grossPayYTD?: number;     // Gross pay year to date BEFORE this period's pay is added.
+  taxPaidYTD?: number;      // Income tax paid year to date BEFORE this period.
 }
 
 export interface PayrollResult {
@@ -54,7 +66,7 @@ export interface PayrollResult {
   totalDeductions: number;
   totalAllowances: number;
   netPay: number;
-  freePay: number;
+  freePay: number;          // Monthly free pay for payslip display
   taxCode: string;
   // Add NI earnings band fields
   earningsAtLEL: number;
@@ -71,4 +83,12 @@ export interface PayrollResult {
   isNHSPensionMember: boolean;
   // NI category
   niCategory: NICategory;
+
+  // Tax calculation audit fields
+  period: number;
+  grossPayYTD: number;      // Gross pay YTD AFTER this period (input grossPayYTD + niableGrossPay)
+  taxPaidYTD: number;       // Tax paid YTD AFTER this period (input taxPaidYTD + incomeTax)
+  isMonth1Basis: boolean;
+  taxablePayYTD: number;    // Cumulative taxable pay from the tax engine
+  freePayYTD: number;       // Free pay used in YTD calculation
 }
