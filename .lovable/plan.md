@@ -1,48 +1,49 @@
 
 
-# Refactor: Decompose `payrollCalculator.ts` into Phase Functions
+# Fix: Remove Early Rounding in Pension Calculations
 
-## Summary
+## Problem
 
-Replace the current ~230-line monolithic `calculateMonthlyPayroll` function with 5 focused phase helpers plus a lightweight orchestrator. The user has provided the complete target code -- this is a direct replacement.
+Two pension calculation files round their results before passing them to `assemblePayrollResult`, which rounds again at the output boundary. This double-rounding violates the documented HMRC rounding strategy ("all rounding occurs at the OUTPUT boundary only") and risks penny drift in edge cases.
 
-## What Changes
+**Affected files:**
+- `src/services/payroll/calculations/nhs-pension.ts` (lines 171-172)
+- `src/services/payroll/calculations/pension.ts` (line 9)
 
-Single file: `src/services/payroll/payrollCalculator.ts`
+## Changes
 
-| Section | Current | After |
-|---------|---------|-------|
-| `calculateMonthlyPayroll` | ~190 lines, all logic inline | ~35 lines, orchestrator only |
-| Earnings | Inline (lines 67-74) | `calculateEarnings()` ~15 lines |
-| Tax | Inline (lines 77-98) | `calculateTaxDeductions()` ~25 lines |
-| NI | Inline (lines 100-133) | `calculateNIContributions()` ~30 lines |
-| Pension | Inline (lines 139-166) | `calculatePensionDeductions()` ~35 lines |
-| Result assembly | Inline (lines 168-217) | `assemblePayrollResult()` ~45 lines |
+### 1. `src/services/payroll/calculations/pension.ts`
 
-## Key Improvements
+Remove the `roundToTwoDecimals` call and the now-unused import:
 
-- **Parallel execution**: Tax, NI, and pension run concurrently via `Promise.all` (performance win)
-- **Every function under 50 lines**: All phase helpers stay within the target
-- **Inter-phase types**: `EarningsResult`, `TaxResult`, `NIResult`, `PensionResult` make data flow explicit
-- **Individually testable**: `calculateEarnings` and `assemblePayrollResult` are pure functions; the async phases can be tested with mocked dependencies
+```text
+Before:  return roundToTwoDecimals(monthlySalary * (pensionPercentage / 100));
+After:   return monthlySalary * (pensionPercentage / 100);
+```
 
-## What Does NOT Change
+Remove the `import { roundToTwoDecimals }` line since it will no longer be used.
 
-- Public API: `calculateMonthlyPayroll` signature and `PayrollResult` return type are identical
-- Error handling: Same `PayrollCalculationError` codes and patterns
-- Rounding strategy: All `roundToTwoDecimals` calls remain in `assemblePayrollResult` only
-- Re-exports at the bottom of the file
-- No new files, dependencies, or database changes
+### 2. `src/services/payroll/calculations/nhs-pension.ts`
 
-## Type Verification
+Remove the two `roundToTwoDecimals` calls on lines 171-172:
 
-- `nhsPensionTier` is `number` in both the proposed `PensionResult` interface and the existing `PayrollResult` type -- confirmed aligned
+```text
+Before:  const employeeContribution = roundToTwoDecimals(monthlySalary * employeeRate);
+         const employerContribution = roundToTwoDecimals(monthlySalary * employerRate);
 
-## Technical Detail
+After:   const employeeContribution = monthlySalary * employeeRate;
+         const employerContribution = monthlySalary * employerRate;
+```
 
-The file will be replaced with the user-provided code in full. The implementation:
-1. Adds 4 private inter-phase interfaces (`EarningsResult`, `TaxResult`, `NIResult`, `PensionResult`)
-2. Adds 5 private helper functions (not exported -- internal to the module)
-3. Rewrites `calculateMonthlyPayroll` as a pipeline orchestrator
-4. Preserves all imports and re-exports exactly as they are
+If `roundToTwoDecimals` is no longer used elsewhere in this file, remove that import too.
+
+## What does NOT change
+
+- `assemblePayrollResult` in `payrollCalculator.ts` already applies `roundToTwoDecimals` to both `pensionContribution`, `nhsPensionEmployeeContribution`, and `nhsPensionEmployerContribution` at the output boundary -- no changes needed there
+- Public API signatures and return types remain identical
+- No database or dependency changes
+
+## Risk
+
+Minimal. In most cases the output will be identical since `assemblePayrollResult` re-rounds anyway. In rare edge cases where double-rounding caused a 1p drift, results will now be more accurate.
 
