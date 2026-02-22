@@ -1,72 +1,57 @@
 
 
-# Unit Tests for Payroll Phase Functions
+# Get the FPS Edge Function Production-Ready
 
-## Overview
+The `generate-fps` edge function code is complete. Here's what remains to make it deployable and callable from the frontend.
 
-Create a comprehensive test suite for 4 of the 5 phase functions in `payrollCalculator.ts`. Since the phase functions are currently private (not exported), we need to expose them for testing without changing the public API.
+---
 
-## Step 1 — Extract phase functions to an internal module
+## Step 1: Add HMRC Secrets
 
-Create `src/services/payroll/payrollCalculator.internal.ts` containing:
-- The 4 inter-phase result type interfaces (`EarningsResult`, `TaxResult`, `NIResult`, `PensionResult`)
-- The 4 phase functions: `calculateEarnings`, `calculateTaxDeductions`, `calculateNIContributions`, `assemblePayrollResult`
-- All necessary imports (logger, rounding utils, income-tax, NI calculator, etc.)
+The edge function requires 9 environment secrets that are not yet configured. I'll request each one from you using the secrets tool:
 
-Then update `payrollCalculator.ts` to import these functions and types from the internal module instead of defining them inline. The public API (`calculateMonthlyPayroll` signature, re-exports) stays exactly the same.
+| Secret Name | What It Is |
+|---|---|
+| `HMRC_TAX_OFFICE_NUMBER` | Your 3-digit PAYE tax office number (e.g. `120`) |
+| `HMRC_TAX_OFFICE_REFERENCE` | Your employer PAYE reference suffix (e.g. `BB58856`) |
+| `HMRC_ACCOUNTS_OFFICE_REF` | 13-character Accounts Office Reference (e.g. `120PZ01405637`) |
+| `HMRC_GATEWAY_USER_ID` | Your HMRC Government Gateway user ID |
+| `HMRC_GATEWAY_PASSWORD` | Your HMRC Government Gateway password |
+| `HMRC_VENDOR_ID` | Your registered HMRC software vendor ID |
+| `HMRC_PRODUCT_NAME` | Product name registered with HMRC |
+| `HMRC_PRODUCT_VERSION` | Product version string |
+| `HMRC_LIVE_MODE` | `true` for production, `false` for HMRC test gateway |
 
-## Step 2 — Create the test file
+---
 
-Create `src/services/payroll/payrollCalculator.test.ts` with the test structure specified.
+## Step 2: Register in config.toml
 
-### Mocking strategy
+Add the `generate-fps` entry with `verify_jwt = false` (auth is validated in code):
 
-- **payrollLogger**: Mock globally to suppress log output and prevent `import.meta.env` issues in test
-- **calculateMonthlyIncomeTaxAsync**: Mock for `calculateTaxDeductions` tests
-- **NationalInsuranceCalculator**: Mock for `calculateNIContributions` tests
-- **Supabase**: Already mocked globally in `setupTests.ts`
+```toml
+[functions.generate-fps]
+verify_jwt = false
+```
 
-### Test groups
+---
 
-**Phase 1 -- calculateEarnings** (10 tests, pure function)
-- Basic: no earnings, single item, multiple items, empty array, null/undefined fallback, totalAdditionalEarnings correctness
-- Edge: zero salary with earnings, negative amounts, large values, fractional pennies
+## Step 3: Fix CORS Headers
 
-**Phase 2 -- assemblePayrollResult** (17 tests, pure function)
-- Totals: netPay formula, totalDeductions composition, totalAllowances, zero-deduction case, with additionalDeductions, with additionalAllowances
-- Rounding: all monetary fields rounded to 2dp, nhsPensionTier NOT rounded, pensionPercentage NOT rounded, rates NOT rounded
-- Pass-through: employeeId, employeeName, payrollId, taxCode, studentLoanPlan, isNHSPensionMember, arrays passed unchanged
+The current CORS headers are missing required Supabase client headers. Update to:
 
-**Phase 3 -- calculateTaxDeductions** (9 tests, async with mock)
-- Happy path: returns incomeTax, returns freePay, taxablePay floored, taxablePay clamped to 0
-- Rounding: two specific floor scenarios
-- Errors: throws PayrollCalculationError with INCOME_TAX_FAILED, context includes taxCode/taxYear/employeeId, wraps original error
+```
+authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version
+```
 
-**Phase 4 -- calculateNIContributions** (8 tests, async with mock)
-- Happy path: returns NI, employer NI, all 5 band values, passes grossPay and taxYear correctly
-- Errors: throws PayrollCalculationError with NI_CALCULATION_FAILED, context includes taxYear/employeeId, wraps original error
+---
 
-### Shared test fixtures
+## Step 4: Deploy and Test
 
-Defined at the top of the test file: `baseDetails`, `baseEarnings`, `baseTax`, `baseNI`, `basePensions` as specified in the requirements.
+Deploy the function and call it with a test payload to verify it works end-to-end before building any UI.
 
-## Technical details
+---
 
-### Why a separate internal file (not underscore exports)?
+## Summary
 
-- Keeps the main `payrollCalculator.ts` focused on orchestration
-- Avoids polluting the public barrel exports (`export *`) with internal functions
-- The internal file is a standard pattern for exposing private functions to tests
-
-### What does NOT change
-
-- `calculateMonthlyPayroll` signature and behaviour
-- Re-exports at the bottom of `payrollCalculator.ts`
-- `calculatePensionDeductions` stays private (tested separately later)
-- Error handling in phase functions
-- The `roundToTwoDecimals` import from `@/lib/formatters` (which handles null/undefined) used in `assemblePayrollResult`
-
-### Note on roundToTwoDecimals
-
-`assemblePayrollResult` uses the version from `@/lib/formatters` which returns `number | null`. Tests will verify that for standard numeric inputs, results are rounded to 2dp. The rounding "not applied" tests for tier/percentage/rates will verify those fields keep their original values.
+No database changes needed -- `has_p45`, `p46_statement`, and the NI YTD columns are all already in place. The work is: add secrets, update config.toml, fix CORS, deploy, and test.
 
