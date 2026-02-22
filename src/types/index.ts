@@ -21,9 +21,12 @@ export {
   studentLoanPlanOptions,
   nicCodeOptions,
   statusOptions,
-  p46StatementOptions
+  p46StatementOptions,
+  HOURS_WORKED_BANDS,
+  hoursWorkedBandOptions,
+  suggestHoursBand
 } from './employee';
-export type { WorkDay, EmployeeFormValues } from './employee';
+export type { WorkDay, EmployeeFormValues, HoursWorkedBand } from './employee';
 
 // Backward compatibility re-export for employeeDetails
 export * from './employeeDetails';

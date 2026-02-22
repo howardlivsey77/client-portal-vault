@@ -2,7 +2,7 @@ import { Control } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { studentLoanPlanOptions, nicCodeOptions, EmployeeFormValues } from "@/types";
+import { studentLoanPlanOptions, nicCodeOptions, hoursWorkedBandOptions, EmployeeFormValues } from "@/types";
 import { TaxCodeInput } from "./TaxCodeInput";
 
 interface HmrcFieldsProps {
@@ -121,6 +121,36 @@ export const HmrcFields = ({ control, readOnly }: HmrcFieldsProps) => {
           )}
         />
       </div>
+
+      <FormField
+        control={control}
+        name="hours_worked_band"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Weekly Hours Normally Worked</FormLabel>
+            <Select
+              disabled={readOnly}
+              onValueChange={(value) => field.onChange(value === "null" ? null : value)}
+              value={field.value || "null"}
+            >
+              <FormControl>
+                <SelectTrigger className={readOnly ? "bg-gray-100" : ""}>
+                  <SelectValue placeholder="Select hours band" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="null">Not specified</SelectItem>
+                {hoursWorkedBandOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
 };

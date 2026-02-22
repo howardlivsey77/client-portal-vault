@@ -42,6 +42,7 @@ export interface Employee {
   week_one_month_one: boolean | null;
   nic_code: string | null;
   student_loan_plan: number | null;
+  hours_worked_band: string | null;
   
   // NHS Pension fields
   nhs_pension_member: boolean | null;

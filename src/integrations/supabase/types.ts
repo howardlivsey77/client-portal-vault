@@ -927,6 +927,7 @@ export type Database = {
           hire_date: string
           hourly_rate: number | null
           hours_per_week: number | null
+          hours_worked_band: string | null
           id: string
           invitation_sent_at: string | null
           last_name: string
@@ -973,6 +974,7 @@ export type Database = {
           hire_date?: string
           hourly_rate?: number | null
           hours_per_week?: number | null
+          hours_worked_band?: string | null
           id?: string
           invitation_sent_at?: string | null
           last_name: string
@@ -1019,6 +1021,7 @@ export type Database = {
           hire_date?: string
           hourly_rate?: number | null
           hours_per_week?: number | null
+          hours_worked_band?: string | null
           id?: string
           invitation_sent_at?: string | null
           last_name?: string
