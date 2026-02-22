@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import { hmrcInfoSchema, HmrcInfoFormValues } from "./HmrcInfoSchema";
 import { Button } from "@/components/ui/button";
-import { Employee, studentLoanPlanOptions, nicCodeOptions } from "@/types";
+import { Employee, studentLoanPlanOptions, nicCodeOptions, hoursWorkedBandOptions, HOURS_WORKED_BANDS, suggestHoursBand } from "@/types";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -25,7 +25,6 @@ export const HmrcInfoForm = ({
   toggleEditMode, 
   onSubmit 
 }: HmrcInfoFormProps) => {
-  // Setup form - remove spaces from stored NI number for OTP input
   const form = useForm<HmrcInfoFormValues>({
     resolver: zodResolver(hmrcInfoSchema),
     defaultValues: {
@@ -34,6 +33,7 @@ export const HmrcInfoForm = ({
       week_one_month_one: employee.week_one_month_one || false,
       nic_code: employee.nic_code || "",
       student_loan_plan: employee.student_loan_plan,
+      hours_worked_band: (employee.hours_worked_band as "A" | "B" | "C" | "D" | "E") || null,
     }
   });
 
@@ -43,6 +43,10 @@ export const HmrcInfoForm = ({
       toggleEditMode();
     }
   };
+
+  const currentBand = form.watch("hours_worked_band");
+  const suggestedBand = suggestHoursBand(employee.hours_per_week);
+  const showSuggestion = !currentBand && suggestedBand && employee.hours_per_week;
 
   return (
     <Form {...form}>
@@ -163,6 +167,40 @@ export const HmrcInfoForm = ({
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="hours_worked_band"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Weekly Hours Normally Worked</FormLabel>
+              <Select
+                onValueChange={(value) => field.onChange(value === "null" ? null : value)}
+                value={field.value || "null"}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select hours band" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="null">Not specified</SelectItem>
+                  {hoursWorkedBandOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {showSuggestion && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Based on contracted hours ({employee.hours_per_week} hrs/week), suggested band: {HOURS_WORKED_BANDS[suggestedBand]}
+                </p>
+              )}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         
         <div className="flex justify-end space-x-2 pt-4">
           <Button 

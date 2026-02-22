@@ -26,6 +26,7 @@ export interface EmployeeFormData {
   week_one_month_one: boolean;
   nic_code: string;
   student_loan_plan: number | null;
+  hours_worked_band: string | null;
   nhs_pension_member: boolean;
   previous_year_pensionable_pay: number | null;
   nhs_pension_tier: number | null;

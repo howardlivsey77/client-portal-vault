@@ -1,5 +1,5 @@
 
-import { Employee, studentLoanPlanOptions, nicCodeOptions } from "@/types";
+import { Employee, studentLoanPlanOptions, nicCodeOptions, HOURS_WORKED_BANDS, HoursWorkedBand } from "@/types";
 import { formatNINumberForDisplay } from "../../NINumberInput";
 
 interface HmrcInfoDisplayProps {
@@ -17,6 +17,11 @@ export const HmrcInfoDisplay = ({ employee }: HmrcInfoDisplayProps) => {
     if (!codeValue) return "Not specified";
     const code = nicCodeOptions.find(c => c.value === codeValue);
     return code ? code.label : codeValue;
+  };
+
+  const getHoursWorkedBandLabel = (band: string | null) => {
+    if (!band) return "Not specified";
+    return HOURS_WORKED_BANDS[band as HoursWorkedBand] || band;
   };
 
   return (
@@ -56,6 +61,12 @@ export const HmrcInfoDisplay = ({ employee }: HmrcInfoDisplayProps) => {
           <div className="text-sm font-medium mb-2">Student Loan Plan</div>
           <div className="p-2.5 bg-muted rounded border border-border">
             {getStudentLoanPlanLabel(employee.student_loan_plan)}
+          </div>
+        </div>
+        <div>
+          <div className="text-sm font-medium mb-2">Weekly Hours Normally Worked</div>
+          <div className="p-2.5 bg-muted rounded border border-border">
+            {getHoursWorkedBandLabel(employee.hours_worked_band)}
           </div>
         </div>
       </div>

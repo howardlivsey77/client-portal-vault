@@ -38,6 +38,9 @@ export const HmrcInfoCard = ({ employee, updateEmployeeField }: HmrcInfoCardProp
       if (values.student_loan_plan !== employee.student_loan_plan) {
         await updateEmployeeField("student_loan_plan", values.student_loan_plan);
       }
+      if (values.hours_worked_band !== employee.hours_worked_band) {
+        await updateEmployeeField("hours_worked_band", values.hours_worked_band);
+      }
       
       setIsEditing(false);
       return true;

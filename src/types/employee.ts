@@ -66,6 +66,7 @@ export const employeeSchema = z.object({
   week_one_month_one: z.boolean().optional().nullable(),
   nic_code: nicCodeValidation.nullable(),
   student_loan_plan: z.number().min(1).max(4).optional().nullable().or(z.literal(6).optional().nullable()),
+  hours_worked_band: z.enum(["A", "B", "C", "D", "E"]).optional().nullable(),
   // P45/P46 fields
   has_p45: z.boolean().optional().nullable(),
   taxable_pay_ytd: z.coerce.number().min(0, "Taxable pay YTD must be a positive number").optional().nullable(),
@@ -121,6 +122,33 @@ export const nicCodeOptions = [
   { label: "M - Under 21 Deferment", value: "M" },
   { label: "Z - No NI Contribution", value: "Z" },
 ];
+
+export const HOURS_WORKED_BANDS = {
+  A: 'Up to 15 hours per week',
+  B: 'From 16 to 23.99 hours per week',
+  C: 'From 24 to 29.99 hours per week',
+  D: '30 hours per week and above',
+  E: 'Other',
+} as const;
+
+export type HoursWorkedBand = keyof typeof HOURS_WORKED_BANDS;
+
+export const hoursWorkedBandOptions = [
+  { label: "Up to 15 hours per week", value: "A" },
+  { label: "From 16 to 23.99 hours per week", value: "B" },
+  { label: "From 24 to 29.99 hours per week", value: "C" },
+  { label: "30 hours per week and above", value: "D" },
+  { label: "Other", value: "E" },
+];
+
+export function suggestHoursBand(hoursPerWeek: number | null): HoursWorkedBand | null {
+  if (!hoursPerWeek) return null;
+  if (hoursPerWeek <= 15) return 'A';
+  if (hoursPerWeek < 24) return 'B';
+  if (hoursPerWeek < 30) return 'C';
+  if (hoursPerWeek >= 30) return 'D';
+  return 'E';
+}
 
 export const p46StatementOptions = [
   { 
