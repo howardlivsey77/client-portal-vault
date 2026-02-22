@@ -1703,8 +1703,11 @@ export type Database = {
           earnings_above_st_this_period: number
           earnings_above_uel_this_period: number
           earnings_at_lel_this_period: number
+          earnings_at_lel_ytd: number | null
           earnings_lel_to_pt_this_period: number
+          earnings_lel_to_pt_ytd: number | null
           earnings_pt_to_uel_this_period: number
+          earnings_pt_to_uel_ytd: number | null
           employee_id: string
           employee_pension_this_period: number
           employee_pension_ytd: number | null
@@ -1712,6 +1715,7 @@ export type Database = {
           employer_pension_ytd: number | null
           free_pay_this_period: number
           free_pay_ytd: number | null
+          gross_earnings_for_nics_ytd: number | null
           gross_pay_this_period: number
           gross_pay_ytd: number | null
           id: string
@@ -1752,8 +1756,11 @@ export type Database = {
           earnings_above_st_this_period: number
           earnings_above_uel_this_period: number
           earnings_at_lel_this_period: number
+          earnings_at_lel_ytd?: number | null
           earnings_lel_to_pt_this_period: number
+          earnings_lel_to_pt_ytd?: number | null
           earnings_pt_to_uel_this_period: number
+          earnings_pt_to_uel_ytd?: number | null
           employee_id: string
           employee_pension_this_period: number
           employee_pension_ytd?: number | null
@@ -1761,6 +1768,7 @@ export type Database = {
           employer_pension_ytd?: number | null
           free_pay_this_period: number
           free_pay_ytd?: number | null
+          gross_earnings_for_nics_ytd?: number | null
           gross_pay_this_period: number
           gross_pay_ytd?: number | null
           id?: string
@@ -1801,8 +1809,11 @@ export type Database = {
           earnings_above_st_this_period?: number
           earnings_above_uel_this_period?: number
           earnings_at_lel_this_period?: number
+          earnings_at_lel_ytd?: number | null
           earnings_lel_to_pt_this_period?: number
+          earnings_lel_to_pt_ytd?: number | null
           earnings_pt_to_uel_this_period?: number
+          earnings_pt_to_uel_ytd?: number | null
           employee_id?: string
           employee_pension_this_period?: number
           employee_pension_ytd?: number | null
@@ -1810,6 +1821,7 @@ export type Database = {
           employer_pension_ytd?: number | null
           free_pay_this_period?: number
           free_pay_ytd?: number | null
+          gross_earnings_for_nics_ytd?: number | null
           gross_pay_this_period?: number
           gross_pay_ytd?: number | null
           id?: string
@@ -2228,10 +2240,14 @@ export type Database = {
       payroll_ytd_summary: {
         Row: {
           company_id: string | null
+          earnings_at_lel_ytd: number | null
+          earnings_lel_to_pt_ytd: number | null
+          earnings_pt_to_uel_ytd: number | null
           employee_id: string | null
           employee_pension_ytd: number | null
           employer_pension_ytd: number | null
           free_pay_ytd: number | null
+          gross_earnings_for_nics_ytd: number | null
           gross_pay_ytd: number | null
           income_tax_ytd: number | null
           last_period: number | null
