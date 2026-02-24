@@ -209,7 +209,7 @@ export const entitlementService = {
     console.log('Used days recalculation completed');
   },
 
-  // Recalculate used days for a specific employee
+  // Recalculate used days for a specific employee using rolling 12-month window
   async recalculateEmployeeUsedDays(employeeId: string): Promise<void> {
     const currentYear = new Date().getFullYear();
     const yearStart = `${currentYear}-01-01`;
@@ -253,16 +253,30 @@ export const entitlementService = {
       }
     }
 
-    // Get all sickness records for current year, sorted by date
-    const { data: records, error } = await supabase
+    // Fetch ALL sickness records (no date filter) to find the most recent event
+    const { data: allRecords, error } = await supabase
       .from('employee_sickness_records')
-      .select('total_days, start_date')
+      .select('total_days, start_date, end_date')
       .eq('employee_id', employeeId)
-      .gte('start_date', yearStart)
-      .lte('start_date', yearEnd)
-      .order('start_date', { ascending: true });
+      .order('start_date', { ascending: false });
 
     if (error) throw error;
+
+    if (!allRecords || allRecords.length === 0) {
+      await this.updateUsedDays(employeeId, { fullPayUsed: 0, halfPayUsed: 0 });
+      return;
+    }
+
+    // Rolling 12-month window anchored to the most recent sickness event
+    const mostRecentStartDate = allRecords[0].start_date;
+    const rollingPeriod = calculationUtils.getRolling12MonthPeriod(mostRecentStartDate);
+
+    // Filter records that overlap the rolling window
+    const records = allRecords.filter(record => {
+      const recordStart = record.start_date;
+      const recordEnd = record.end_date || record.start_date;
+      return recordStart <= rollingPeriod.end && recordEnd >= rollingPeriod.start;
+    }).sort((a, b) => a.start_date.localeCompare(b.start_date)); // chronological order
 
     const fullPayAllowance = Number(entitlement?.full_pay_entitled_days || 0);
     const halfPayAllowance = Number(entitlement?.half_pay_entitled_days || 0);
@@ -273,7 +287,7 @@ export const entitlementService = {
     let availableHalfPay = halfPayAllowance;
 
     // Process each record chronologically
-    for (const record of records || []) {
+    for (const record of records) {
       const totalDays = Number(record.total_days || 0);
       
       // Apply waiting days (3 days per absence if enabled)
