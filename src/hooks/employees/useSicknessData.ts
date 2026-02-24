@@ -25,7 +25,16 @@ export const useSicknessData = (
       ]);
 
       setSicknessRecords(records);
-      setEntitlementUsage(usage);
+
+      // Always recalculate used days using rolling 12-month window
+      if (records.length > 0) {
+        await sicknessService.recalculateEmployeeUsedDays(employee.id);
+        // Re-fetch usage after recalculation
+        const refreshedUsage = await sicknessService.getEntitlementUsage(employee.id);
+        setEntitlementUsage(refreshedUsage);
+      } else {
+        setEntitlementUsage(usage);
+      }
 
       // If no entitlement usage exists and employee has a scheme, create it
       if (!usage && sicknessScheme && employee.hire_date) {

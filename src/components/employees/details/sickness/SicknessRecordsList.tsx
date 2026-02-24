@@ -92,9 +92,9 @@ export const SicknessRecordsList = ({
         });
       }
 
-      if (updatedCount > 0) {
-        onRecordsUpdated();
-      }
+      // Always recalculate entitlement used days (rolling 12-month window)
+      await sicknessService.recalculateEmployeeUsedDays(employeeId);
+      onRecordsUpdated();
     } catch (error) {
       console.error('Error recalculating totals:', error);
       toast({
