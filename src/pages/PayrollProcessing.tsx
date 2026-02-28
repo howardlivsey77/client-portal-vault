@@ -10,7 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, AlertTriangle, Settings, FileText } from "lucide-react";
+import { Upload, AlertTriangle, Settings, FileText, Building2 } from "lucide-react";
+import { FpsGenerationPanel } from "@/components/hmrc/FpsGenerationPanel";
 import { Link } from "react-router-dom";
 import { 
   AVAILABLE_FINANCIAL_YEARS, 
@@ -214,6 +215,10 @@ const PayrollProcessing = () => {
             <TabsTrigger value="calculator">Employee Calculator</TabsTrigger>
             <TabsTrigger value="batch">Batch Processing</TabsTrigger>
             <TabsTrigger value="reports">Payslips</TabsTrigger>
+            <TabsTrigger value="hmrc">
+              <Building2 className="h-4 w-4 mr-1" />
+              HMRC
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="calculator">
@@ -265,6 +270,13 @@ const PayrollProcessing = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="hmrc">
+            <FpsGenerationPanel
+              defaultTaxYear={`${selectedFinancialYear.year}/${(selectedFinancialYear.year + 1).toString().slice(-2)}`}
+              defaultTaxPeriod={selectedPayPeriod.periodNumber}
+            />
           </TabsContent>
         </Tabs>
         
