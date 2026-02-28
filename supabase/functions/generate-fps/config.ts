@@ -11,13 +11,19 @@ function requireEnv(key: string): string {
   return val;
 }
 
-export function loadEmployerConfig(companyTaxOfficeNumber?: string, companyTaxOfficeReference?: string, companyAccountsOfficeRef?: string): EmployerConfig {
+export function loadEmployerConfig(
+  companyTaxOfficeNumber: string,
+  companyTaxOfficeReference: string,
+  companyAccountsOfficeRef: string,
+  companyGatewayUserId: string,
+  companyGatewayPassword: string,
+): EmployerConfig {
   return {
-    taxOfficeNumber:    companyTaxOfficeNumber || requireEnv('HMRC_TAX_OFFICE_NUMBER'),
-    taxOfficeReference: companyTaxOfficeReference || requireEnv('HMRC_TAX_OFFICE_REFERENCE'),
-    accountsOfficeRef:  companyAccountsOfficeRef || requireEnv('HMRC_ACCOUNTS_OFFICE_REF'),
-    gatewayUserId:      requireEnv('HMRC_GATEWAY_USER_ID'),
-    gatewayPassword:    requireEnv('HMRC_GATEWAY_PASSWORD'),
+    taxOfficeNumber:    companyTaxOfficeNumber,
+    taxOfficeReference: companyTaxOfficeReference,
+    accountsOfficeRef:  companyAccountsOfficeRef,
+    gatewayUserId:      companyGatewayUserId,
+    gatewayPassword:    companyGatewayPassword,
     vendorId:           requireEnv('HMRC_VENDOR_ID'),
     productName:        requireEnv('HMRC_PRODUCT_NAME'),
     productVersion:     requireEnv('HMRC_PRODUCT_VERSION'),

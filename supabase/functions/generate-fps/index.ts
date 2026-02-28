@@ -74,7 +74,7 @@ serve(async (req) => {
     // Fetch company record for tax office details
     const { data: companyRecord, error: companyError } = await serviceClient
       .from('companies')
-      .select('tax_office_number, tax_office_reference, accounts_office_number')
+      .select('tax_office_number, tax_office_reference, accounts_office_number, hmrc_gateway_user_id, hmrc_gateway_password')
       .eq('id', body.companyId)
       .single();
 
@@ -85,11 +85,30 @@ serve(async (req) => {
       });
     }
 
-    // Load employer config, preferring company DB values over env vars
+    // Validate all required HMRC fields are present
+    const missingFields: string[] = [];
+    if (!companyRecord.tax_office_number) missingFields.push('Tax Office Number');
+    if (!companyRecord.tax_office_reference) missingFields.push('Employer PAYE Reference');
+    if (!companyRecord.accounts_office_number) missingFields.push('Accounts Office Number');
+    if (!companyRecord.hmrc_gateway_user_id) missingFields.push('Gateway User ID');
+    if (!companyRecord.hmrc_gateway_password) missingFields.push('Gateway Password');
+
+    if (missingFields.length > 0) {
+      return new Response(JSON.stringify({
+        error: `Missing HMRC configuration for this company. Please complete the following in Company Settings: ${missingFields.join(', ')}.`,
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Load employer config from company DB values
     const config = loadEmployerConfig(
-      companyRecord.tax_office_number || undefined,
-      companyRecord.tax_office_reference || undefined,
-      companyRecord.accounts_office_number || undefined,
+      companyRecord.tax_office_number,
+      companyRecord.tax_office_reference,
+      companyRecord.accounts_office_number,
+      companyRecord.hmrc_gateway_user_id,
+      companyRecord.hmrc_gateway_password,
     );
 
     // 1. Fetch payroll results for this period
