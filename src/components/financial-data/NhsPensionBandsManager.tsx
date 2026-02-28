@@ -19,13 +19,17 @@ const fields: FieldDef[] = [
   { name: "is_current", label: "Current", type: "boolean" },
 ];
 
-export function NhsPensionBandsManager() {
-  const { data, isLoading, insert, update, remove, isSubmitting } = useFinancialData("nhs_pension_bands");
+interface NhsPensionBandsManagerProps {
+  taxYear: string;
+}
+
+export function NhsPensionBandsManager({ taxYear }: NhsPensionBandsManagerProps) {
+  const { data, isLoading, insert, update, remove, isSubmitting } = useFinancialData("nhs_pension_bands", { taxYear });
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | undefined>();
   const { confirm, confirmationProps } = useConfirmation();
 
-  const handleAdd = () => { setEditing(undefined); setFormOpen(true); };
+  const handleAdd = () => { setEditing({ tax_year: taxYear }); setFormOpen(true); };
   const handleEdit = (row: Record<string, unknown>) => { setEditing(row); setFormOpen(true); };
   const handleDelete = (id: string) => {
     confirm({
@@ -55,7 +59,6 @@ export function NhsPensionBandsManager() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Tax Year</TableHead>
               <TableHead>Tier</TableHead>
               <TableHead>Pay From (£)</TableHead>
               <TableHead>Pay To (£)</TableHead>
@@ -68,7 +71,6 @@ export function NhsPensionBandsManager() {
           <TableBody>
             {data.map((row: any) => (
               <TableRow key={row.id}>
-                <TableCell>{row.tax_year}</TableCell>
                 <TableCell>{row.tier_number}</TableCell>
                 <TableCell>{row.annual_pensionable_pay_from?.toLocaleString()}</TableCell>
                 <TableCell>{row.annual_pensionable_pay_to?.toLocaleString() ?? "—"}</TableCell>
@@ -84,7 +86,7 @@ export function NhsPensionBandsManager() {
               </TableRow>
             ))}
             {data.length === 0 && (
-              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No NHS pension bands found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No NHS pension bands found for {taxYear}</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
@@ -95,7 +97,7 @@ export function NhsPensionBandsManager() {
         fields={fields}
         defaultValues={editing}
         onSubmit={handleSubmit}
-        title={editing ? "Edit Pension Band" : "Add Pension Band"}
+        title={editing?.id ? "Edit Pension Band" : "Add Pension Band"}
         isSubmitting={isSubmitting}
       />
       <ConfirmationDialog {...confirmationProps} />

@@ -1,108 +1,39 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Trash2, Plus, Loader2 } from "lucide-react";
-import { useFinancialData } from "./useFinancialData";
-import { FinancialDataForm, FieldDef } from "./FinancialDataForm";
-import { useConfirmation } from "@/hooks/useConfirmation";
-import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
+import { Loader2 } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { NicThresholdsGrid } from "./NicThresholdsGrid";
+import { NicRatesGrid } from "./NicRatesGrid";
 
-const fields: FieldDef[] = [
-  { name: "tax_year", label: "Tax Year", type: "text", required: true, placeholder: "2025-26" },
-  { name: "name", label: "Name", type: "text", required: true },
-  { name: "ni_class", label: "NI Class", type: "text", required: true, placeholder: "A" },
-  { name: "region", label: "Region", type: "text", required: true, placeholder: "UK" },
-  { name: "contribution_type", label: "Contribution Type", type: "text", required: true, placeholder: "Employee" },
-  { name: "threshold_from", label: "Threshold From (£)", type: "number", required: true },
-  { name: "threshold_to", label: "Threshold To (£)", type: "number" },
-  { name: "rate", label: "Rate (%)", type: "number", required: true },
-  { name: "effective_from", label: "Effective From", type: "date", required: true },
-  { name: "effective_to", label: "Effective To", type: "date" },
-  { name: "is_current", label: "Current", type: "boolean" },
-];
+interface NicBandsManagerProps {
+  taxYear: string;
+}
 
-export function NicBandsManager() {
-  const { data, isLoading, insert, update, remove, isSubmitting } = useFinancialData("nic_bands");
-  const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<Record<string, unknown> | undefined>();
-  const { confirm, confirmationProps } = useConfirmation();
-
-  const handleAdd = () => { setEditing(undefined); setFormOpen(true); };
-  const handleEdit = (row: Record<string, unknown>) => { setEditing(row); setFormOpen(true); };
-  const handleDelete = (id: string) => {
-    confirm({
-      title: "Delete NIC band?",
-      description: "This action cannot be undone.",
-      onConfirm: () => remove(id),
-      variant: "destructive",
-    });
-  };
-
-  const handleSubmit = async (values: Record<string, unknown>) => {
-    if (editing?.id) {
-      await update({ id: editing.id, ...values });
-    } else {
-      await insert(values);
-    }
-  };
-
-  if (isLoading) return <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+export function NicBandsManager({ taxYear }: NicBandsManagerProps) {
+  if (!taxYear) return <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={handleAdd} size="sm"><Plus className="mr-2 h-4 w-4" />Add NIC Band</Button>
-      </div>
-      <div className="rounded-md border overflow-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Tax Year</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Class</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>From (£)</TableHead>
-              <TableHead>To (£)</TableHead>
-              <TableHead>Rate (%)</TableHead>
-              <TableHead>Current</TableHead>
-              <TableHead className="w-20">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.map((row: any) => (
-              <TableRow key={row.id}>
-                <TableCell>{row.tax_year}</TableCell>
-                <TableCell>{row.name}</TableCell>
-                <TableCell>{row.ni_class}</TableCell>
-                <TableCell>{row.contribution_type}</TableCell>
-                <TableCell>{row.threshold_from?.toLocaleString()}</TableCell>
-                <TableCell>{row.threshold_to?.toLocaleString() ?? "—"}</TableCell>
-                <TableCell>{row.rate}</TableCell>
-                <TableCell>{row.is_current ? "✓" : "—"}</TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(row)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {data.length === 0 && (
-              <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No NIC bands found</TableCell></TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <FinancialDataForm
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        fields={fields}
-        defaultValues={editing}
-        onSubmit={handleSubmit}
-        title={editing ? "Edit NIC Band" : "Add NIC Band"}
-        isSubmitting={isSubmitting}
-      />
-      <ConfirmationDialog {...confirmationProps} />
+      <Accordion type="multiple" defaultValue={["thresholds", "employee-rates", "employer-rates"]} className="space-y-3">
+        <AccordionItem value="thresholds" className="border rounded-lg px-4">
+          <AccordionTrigger className="text-base font-semibold">National Insurance Thresholds</AccordionTrigger>
+          <AccordionContent>
+            <NicThresholdsGrid taxYear={taxYear} />
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="employee-rates" className="border rounded-lg px-4">
+          <AccordionTrigger className="text-base font-semibold">Employee Contribution Rates</AccordionTrigger>
+          <AccordionContent>
+            <NicRatesGrid taxYear={taxYear} contributionType="Employee" />
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="employer-rates" className="border rounded-lg px-4">
+          <AccordionTrigger className="text-base font-semibold">Employer Contribution Rates</AccordionTrigger>
+          <AccordionContent>
+            <NicRatesGrid taxYear={taxYear} contributionType="Employer" />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 }

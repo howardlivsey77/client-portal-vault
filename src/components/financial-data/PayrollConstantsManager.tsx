@@ -8,6 +8,8 @@ import { useConfirmation } from "@/hooks/useConfirmation";
 import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import { Badge } from "@/components/ui/badge";
 
+const NI_CATEGORIES = ["NI_THRESHOLDS", "NI_EMPLOYEE_RATES", "NI_EMPLOYER_RATES"];
+
 const fields: FieldDef[] = [
   { name: "key", label: "Key", type: "text", required: true },
   { name: "category", label: "Category", type: "text", required: true },
@@ -15,18 +17,26 @@ const fields: FieldDef[] = [
   { name: "value_numeric", label: "Numeric Value", type: "number" },
   { name: "value_text", label: "Text Value", type: "text" },
   { name: "region", label: "Region", type: "text", required: true, placeholder: "UK" },
+  { name: "tax_year", label: "Tax Year", type: "text", required: true, placeholder: "2025-26" },
   { name: "effective_from", label: "Effective From", type: "date", required: true },
   { name: "effective_to", label: "Effective To", type: "date" },
   { name: "is_current", label: "Current", type: "boolean" },
 ];
 
-export function PayrollConstantsManager() {
-  const { data, isLoading, insert, update, remove, isSubmitting } = useFinancialData("payroll_constants");
+interface PayrollConstantsManagerProps {
+  taxYear: string;
+}
+
+export function PayrollConstantsManager({ taxYear }: PayrollConstantsManagerProps) {
+  const { data, isLoading, insert, update, remove, isSubmitting } = useFinancialData("payroll_constants", {
+    taxYear,
+    excludeCategories: NI_CATEGORIES,
+  });
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | undefined>();
   const { confirm, confirmationProps } = useConfirmation();
 
-  const handleAdd = () => { setEditing(undefined); setFormOpen(true); };
+  const handleAdd = () => { setEditing({ tax_year: taxYear }); setFormOpen(true); };
   const handleEdit = (row: Record<string, unknown>) => { setEditing(row); setFormOpen(true); };
   const handleDelete = (id: string) => {
     confirm({
@@ -61,7 +71,6 @@ export function PayrollConstantsManager() {
               <TableHead>Description</TableHead>
               <TableHead>Value</TableHead>
               <TableHead>Region</TableHead>
-              <TableHead>Effective From</TableHead>
               <TableHead>Current</TableHead>
               <TableHead className="w-20">Actions</TableHead>
             </TableRow>
@@ -74,7 +83,6 @@ export function PayrollConstantsManager() {
                 <TableCell className="max-w-[200px] truncate">{row.description}</TableCell>
                 <TableCell>{row.value_numeric ?? row.value_text ?? "—"}</TableCell>
                 <TableCell>{row.region}</TableCell>
-                <TableCell>{row.effective_from}</TableCell>
                 <TableCell>{row.is_current ? "✓" : "—"}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
@@ -85,7 +93,7 @@ export function PayrollConstantsManager() {
               </TableRow>
             ))}
             {data.length === 0 && (
-              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No payroll constants found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No payroll constants found for {taxYear}</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
@@ -96,7 +104,7 @@ export function PayrollConstantsManager() {
         fields={fields}
         defaultValues={editing}
         onSubmit={handleSubmit}
-        title={editing ? "Edit Constant" : "Add Constant"}
+        title={editing?.id ? "Edit Constant" : "Add Constant"}
         isSubmitting={isSubmitting}
       />
       <ConfirmationDialog {...confirmationProps} />

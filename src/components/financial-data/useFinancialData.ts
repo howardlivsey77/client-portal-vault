@@ -11,15 +11,31 @@ const orderConfig: Record<TableName, string> = {
   tax_bands: "tax_year,threshold_from",
 };
 
-export function useFinancialData(table: TableName) {
+interface UseFinancialDataOptions {
+  taxYear?: string;
+  excludeCategories?: string[];
+}
+
+export function useFinancialData(table: TableName, options?: UseFinancialDataOptions) {
   const queryClient = useQueryClient();
-  const queryKey = ["financial-data", table];
+  const taxYear = options?.taxYear;
+  const excludeCategories = options?.excludeCategories;
+  const queryKey = ["financial-data", table, taxYear ?? "all", excludeCategories?.join(",") ?? ""];
 
   const query = useQuery({
     queryKey,
     queryFn: async () => {
       const orderFields = orderConfig[table].split(",");
       let q = supabase.from(table).select("*");
+
+      if (taxYear) {
+        q = q.eq("tax_year", taxYear);
+      }
+
+      if (excludeCategories?.length && table === "payroll_constants") {
+        q = q.not("category", "in", `(${excludeCategories.join(",")})`);
+      }
+
       for (const field of orderFields) {
         q = q.order(field, { ascending: true });
       }
@@ -36,7 +52,8 @@ export function useFinancialData(table: TableName) {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ["financial-data", table] });
+      queryClient.invalidateQueries({ queryKey: ["tax-years-distinct"] });
       toast({ title: "Record created successfully" });
     },
     onError: (err: Error) => {
@@ -51,7 +68,7 @@ export function useFinancialData(table: TableName) {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ["financial-data", table] });
       toast({ title: "Record updated successfully" });
     },
     onError: (err: Error) => {
@@ -65,7 +82,8 @@ export function useFinancialData(table: TableName) {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ["financial-data", table] });
+      queryClient.invalidateQueries({ queryKey: ["tax-years-distinct"] });
       toast({ title: "Record deleted successfully" });
     },
     onError: (err: Error) => {
