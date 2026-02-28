@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.delete-invitation]
 verify_jwt = true
+
+[functions.generate-fps]
+verify_jwt = false
