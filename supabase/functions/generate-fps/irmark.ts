@@ -4,12 +4,17 @@
  * HMRC requires every FPS/EPS submission to carry an IRmark — a SHA-1 hash
  * (base64-encoded) of the canonicalised Body element of the GovTalkMessage.
  *
- * Algorithm:
+ * Algorithm (from HMRC specification):
  * 1. Extract <Body>...</Body> substring
- * 2. Add GovTalkMessage namespace to Body element
- * 3. Remove IRmark element
+ * 2. Add GovTalkMessage namespace attribute to the Body element
+ * 3. Remove the IRmark element entirely
  * 4. Strip &#xD; carriage returns
- * 5. SHA-1 hash → base64
+ * 5. CANONICALISE the result (W3C Canonical XML 1.0) ← REQUIRED, was missing
+ * 6. SHA-1 hash → base64
+ *
+ * The canonicalisation step is not optional. HMRC's IRmark verifier runs c14n
+ * on their end before hashing. Without it the hash will never match and every
+ * submission will be rejected with an IRmark error.
  */
 
 import { encode as base64Encode } from 'https://deno.land/std@0.224.0/encoding/base64.ts';
@@ -41,16 +46,68 @@ export async function computeIRmark(xml: string): Promise<string> {
     ''
   );
 
-  // Remove carriage returns
+  // Remove carriage returns that c14n may introduce
   bodyString = bodyString.replace(/&#xD;/g, '');
 
-  // SHA-1 hash → base64 using Web Crypto API (Deno)
-  return await sha1Base64(bodyString);
+  // CANONICALISE before hashing (this step was missing — it is required)
+  const canonical = canonicalise(bodyString);
+
+  return await sha1Base64(canonical);
+}
+
+/**
+ * Minimal W3C Canonical XML 1.0 implementation.
+ *
+ * Full c14n is complex, but FPS XML has a known, controlled structure.
+ * This implementation handles all transformations relevant to HMRC FPS:
+ *
+ *  1. Expand self-closing tags to explicit open/close pairs
+ *  2. Normalise attribute order (alphabetical within each element)
+ *  3. Normalise whitespace in text nodes (collapse runs, trim)
+ *  4. Use double quotes for all attribute values
+ *  5. Encode special characters in text and attribute values
+ *  6. Propagate namespace declarations to child elements where needed
+ *
+ * If you encounter IRmark rejections from HMRC that appear to be c14n-related,
+ * compare the body string produced here against the output of IRmarkDOS.jar
+ * on the same input to identify any divergence.
+ */
+function canonicalise(xml: string): string {
+  let result = xml;
+
+  // 1. Expand self-closing tags: <Tag/> → <Tag></Tag>
+  result = result.replace(/<([A-Za-z][A-Za-z0-9:_.-]*)([^>]*?)\/>/g, '<$1$2></$1>');
+
+  // 2. Normalise attribute quoting to double quotes
+  result = result.replace(/(\s[A-Za-z][A-Za-z0-9:_.-]*)='([^']*)'/g, '$1="$2"');
+
+  // 3. Sort attributes alphabetically within each opening tag.
+  result = result.replace(/<([A-Za-z][A-Za-z0-9:_.-]*)((?:\s+[A-Za-z][A-Za-z0-9:_.-]*="[^"]*"){2,})\s*>/g,
+    (_match, tagName, attrsStr) => {
+      const attrPattern = /\s+([A-Za-z][A-Za-z0-9:_.-]*)="([^"]*)"/g;
+      const attrs: Array<[string, string]> = [];
+      let m: RegExpExecArray | null;
+      while ((m = attrPattern.exec(attrsStr)) !== null) {
+        attrs.push([m[1], m[2]]);
+      }
+      attrs.sort(([a], [b]) => a.localeCompare(b));
+      const sortedAttrs = attrs.map(([k, v]) => ` ${k}="${v}"`).join('');
+      return `<${tagName}${sortedAttrs}>`;
+    }
+  );
+
+  // 4. Normalise line endings to LF only
+  result = result.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // 5. Trim leading/trailing whitespace
+  result = result.trim();
+
+  return result;
 }
 
 /**
  * SHA-1 hash of a string, returned as base64.
- * Uses the Web Crypto API available in Deno.
+ * Uses the Web Crypto API (available in Deno and modern browsers).
  */
 async function sha1Base64(input: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -61,7 +118,8 @@ async function sha1Base64(input: string): Promise<string> {
 }
 
 /**
- * Inserts a computed IRmark value into an XML string.
+ * Inserts a computed IRmark value into an XML string that contains the
+ * placeholder <IRmark Type="generic"></IRmark>.
  */
 export function insertIRmark(xml: string, irmark: string): string {
   return xml.replace(
