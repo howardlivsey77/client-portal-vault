@@ -1,27 +1,37 @@
 
 
-# Fix: Trigger Entitlement Recalculation
+# FPS XML Generation UI
 
-## The Problem
+## Overview
+Build a dialog component that lets users generate HMRC FPS XML files by selecting a tax year and tax period, then preview/download the resulting XML. The dialog will be accessible from the HMRC dashboard card.
 
-The rolling 12-month calculation logic is correct in `entitlementService.ts`, but it never gets called. The "Recalculate Totals" button only updates working days per record — it does not recalculate the entitlement used days. The display reads stale stored values from the database.
+## Changes
 
-## The Fix
+### 1. Add `generate-fps` to `supabase/config.toml`
+Add the function entry with `verify_jwt = false` (it handles auth internally).
 
-Two changes ensure the new rolling window logic actually runs:
+### 2. Create `src/components/hmrc/GenerateFpsDialog.tsx`
+A dialog with:
+- **Tax Year** select dropdown (generated from `generateFinancialYears()` helper, same pattern as `HmrcDashboardCard`)
+- **Tax Period** select dropdown (1-12, with month labels like "Period 1 (Apr)")
+- **Final Submission** checkbox (optional, for year-end)
+- **Generate** button that calls `supabase.functions.invoke('generate-fps', { body: { companyId, taxYear, taxPeriod, finalSubmission } })`
+- Loading state during generation
+- On success: display employee count and generation timestamp, show the XML in a scrollable `<pre>` block, and provide a **Download XML** button that triggers a file download
+- On error: display the error message via toast
 
-### 1. `src/components/employees/details/sickness/SicknessRecordsList.tsx`
+### 3. Update `src/components/dashboard/HmrcDashboardCard.tsx`
+Add a "Generate FPS" button to the card header (next to the year selector) that opens the `GenerateFpsDialog`. Import and render the dialog, passing the currently selected year as a default.
 
-Add a call to `sicknessService.recalculateEmployeeUsedDays(employeeId)` at the end of `handleRecalculateTotals`, so clicking "Recalculate Totals" also recalculates entitlement used days (not just working days per record). Then call `onRecordsUpdated()` to refresh the UI.
+### 4. Create `src/hooks/hmrc/useGenerateFps.ts`
+A custom hook encapsulating the edge function call:
+- Accepts `{ companyId, taxYear, taxPeriod, finalSubmission }`
+- Returns `{ generate, isLoading, result, error }`
+- Uses `supabase.functions.invoke('generate-fps', ...)` 
+- Handles response parsing and error extraction
 
-### 2. `src/hooks/employees/useSicknessData.ts`
-
-Add a call to `sicknessService.recalculateEmployeeUsedDays(employee.id)` inside `fetchSicknessData`, after records are loaded but before setting state. This ensures entitlement used days are always recalculated on page load using the rolling window logic, so the display is never stale.
-
-## Expected Result
-
-After these changes:
-- Opening the employee sickness page will automatically recalculate used days with the rolling 12-month window
-- Clicking "Recalculate Totals" will also update entitlement used days
-- The display should show the correct totals accounting for all 3 sickness records (Oct 2025, Nov 2025, Feb 2026)
+## Technical Notes
+- The `generate-fps` edge function already validates auth via the `Authorization` header and checks `user_has_payroll_access`, so the frontend just needs to pass the session token (which the Supabase client does automatically).
+- The nine HMRC secrets (e.g., `HMRC_GATEWAY_USER_ID`) are **not yet configured** in Supabase. The function will fail at runtime until those are set. This UI will surface that error clearly so you know when to add them.
+- The XML download will use a `Blob` + `URL.createObjectURL` pattern for client-side file save.
 
