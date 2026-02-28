@@ -1483,6 +1483,7 @@ export type Database = {
           is_current: boolean
           key: string
           region: string
+          tax_year: string | null
           updated_at: string
           user_id: string | null
           value_numeric: number | null
@@ -1498,6 +1499,7 @@ export type Database = {
           is_current?: boolean
           key: string
           region?: string
+          tax_year?: string | null
           updated_at?: string
           user_id?: string | null
           value_numeric?: number | null
@@ -1513,6 +1515,7 @@ export type Database = {
           is_current?: boolean
           key?: string
           region?: string
+          tax_year?: string | null
           updated_at?: string
           user_id?: string | null
           value_numeric?: number | null

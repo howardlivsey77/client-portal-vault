@@ -19,13 +19,17 @@ const fields: FieldDef[] = [
   { name: "is_current", label: "Current", type: "boolean" },
 ];
 
-export function TaxBandsManager() {
-  const { data, isLoading, insert, update, remove, isSubmitting } = useFinancialData("tax_bands");
+interface TaxBandsManagerProps {
+  taxYear: string;
+}
+
+export function TaxBandsManager({ taxYear }: TaxBandsManagerProps) {
+  const { data, isLoading, insert, update, remove, isSubmitting } = useFinancialData("tax_bands", { taxYear });
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | undefined>();
   const { confirm, confirmationProps } = useConfirmation();
 
-  const handleAdd = () => { setEditing(undefined); setFormOpen(true); };
+  const handleAdd = () => { setEditing({ tax_year: taxYear }); setFormOpen(true); };
   const handleEdit = (row: Record<string, unknown>) => { setEditing(row); setFormOpen(true); };
   const handleDelete = (id: string) => {
     confirm({
@@ -55,7 +59,6 @@ export function TaxBandsManager() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Tax Year</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Region</TableHead>
               <TableHead>From (£)</TableHead>
@@ -68,7 +71,6 @@ export function TaxBandsManager() {
           <TableBody>
             {data.map((row: any) => (
               <TableRow key={row.id}>
-                <TableCell>{row.tax_year}</TableCell>
                 <TableCell>{row.name}</TableCell>
                 <TableCell>{row.region}</TableCell>
                 <TableCell>{row.threshold_from?.toLocaleString()}</TableCell>
@@ -84,7 +86,7 @@ export function TaxBandsManager() {
               </TableRow>
             ))}
             {data.length === 0 && (
-              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No tax bands found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No tax bands found for {taxYear}</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
@@ -95,7 +97,7 @@ export function TaxBandsManager() {
         fields={fields}
         defaultValues={editing}
         onSubmit={handleSubmit}
-        title={editing ? "Edit Tax Band" : "Add Tax Band"}
+        title={editing?.id ? "Edit Tax Band" : "Add Tax Band"}
         isSubmitting={isSubmitting}
       />
       <ConfirmationDialog {...confirmationProps} />
