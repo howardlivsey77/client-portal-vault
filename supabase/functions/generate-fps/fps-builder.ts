@@ -10,11 +10,6 @@ const fmt = (n: number): string => n.toFixed(2);
 const fmtOrNull = (n: number | null | undefined): string | null =>
   n != null && n !== 0 ? fmt(n) : null;
 
-// Penny-to-pounds: DB stores all monetary values in pennies
-const p = (n: number): string => (n / 100).toFixed(2);
-const pOrNull = (n: number | null | undefined): string | null =>
-  n != null && n !== 0 ? p(n) : null;
-
 function resolveHoursWorkedBand(
   band: 'A' | 'B' | 'C' | 'D' | 'E' | null
 ): 'A' | 'B' | 'C' | 'D' | 'E' {
@@ -72,15 +67,15 @@ function resolveStarterInfo(
 function buildNiData(emp: EmployeeRow, result: PayrollResultRow): NiBandData {
   return {
     letter: emp.nic_code,
-    grossEarningsForNICsInPd: p(result.gross_pay ?? 0),
-    grossEarningsForNICsYtd:  p(result.gross_earnings_for_nics_ytd ?? 0),
-    atLelYtd:                 p(result.earnings_at_lel_ytd ?? 0),
-    lelToPtYtd:               p(result.earnings_lel_to_pt_ytd ?? 0),
-    ptToUelYtd:               p(result.earnings_pt_to_uel_ytd ?? 0),
-    totalEmpNICInPd:          p(result.nic_employer ?? 0),
-    totalEmpNICYtd:           p(result.nic_employer_ytd ?? 0),
-    empeeContribnsInPd:       p(result.nic_employee ?? 0),
-    empeeContribnsYtd:        p(result.nic_employee_ytd ?? 0),
+    grossEarningsForNICsInPd: fmt(result.gross_pay ?? 0),
+    grossEarningsForNICsYtd:  fmt(result.gross_earnings_for_nics_ytd ?? 0),
+    atLelYtd:                 fmt(result.earnings_at_lel_ytd ?? 0),
+    lelToPtYtd:               fmt(result.earnings_lel_to_pt_ytd ?? 0),
+    ptToUelYtd:               fmt(result.earnings_pt_to_uel_ytd ?? 0),
+    totalEmpNICInPd:          fmt(result.nic_employer ?? 0),
+    totalEmpNICYtd:           fmt(result.nic_employer_ytd ?? 0),
+    empeeContribnsInPd:       fmt(result.nic_employee ?? 0),
+    empeeContribnsYtd:        fmt(result.nic_employee_ytd ?? 0),
   };
 }
 
@@ -98,7 +93,7 @@ function resolveStudentLoan(
       isPostgrad: false,
       studentLoanRecovered: null,
       postgradLoanRecovered: null,
-      studentLoansYtd: ytd > 0 ? p(ytd) : null,
+      studentLoansYtd: ytd > 0 ? fmt(ytd) : null,
     };
   }
 
@@ -106,9 +101,9 @@ function resolveStudentLoan(
   return {
     studentLoanPlan: plan,
     isPostgrad,
-    studentLoanRecovered: isPostgrad ? null : p(amount),
-    postgradLoanRecovered: isPostgrad ? p(amount) : null,
-    studentLoansYtd: ytd > 0 ? p(ytd) : null,
+    studentLoanRecovered: isPostgrad ? null : fmt(amount),
+    postgradLoanRecovered: isPostgrad ? fmt(amount) : null,
+    studentLoansYtd: ytd > 0 ? fmt(ytd) : null,
   };
 }
 
@@ -169,22 +164,22 @@ export function buildFpsEmployees(
       taxPeriod: result.tax_period,
       payFrequency: 'M1',
 
-      taxablePay:             p(result.taxable_pay),
-      taxDeductedOrRefunded:  p(result.income_tax),
-      payAfterStatDedns:      p(result.net_pay),
-      empeePenContribnsPaid:  empPension > 0 ? p(empPension) : null,
+      taxablePay:             fmt(result.taxable_pay),
+      taxDeductedOrRefunded:  fmt(result.income_tax),
+      payAfterStatDedns:      fmt(result.net_pay),
+      empeePenContribnsPaid:  empPension > 0 ? fmt(empPension) : null,
       studentLoanRecovered,
       postgradLoanRecovered,
 
-      taxablePayYtd:          p(result.taxable_pay_ytd),
-      totalTaxYtd:            p(result.income_tax_ytd),
-      empeePenContribnsYtd:   empPensionYtd > 0 ? p(empPensionYtd) : null,
+      taxablePayYtd:          fmt(result.taxable_pay_ytd),
+      totalTaxYtd:            fmt(result.income_tax_ytd),
+      empeePenContribnsYtd:   empPensionYtd > 0 ? fmt(empPensionYtd) : null,
       studentLoansYtd,
 
-      smpYtd:  pOrNull(result.smp_ytd),
-      sppYtd:  pOrNull(result.spp_ytd),
-      sapYtd:  pOrNull(result.sap_ytd),
-      shppYtd: pOrNull(result.shpp_ytd),
+      smpYtd:  fmtOrNull(result.smp_ytd),
+      sppYtd:  fmtOrNull(result.spp_ytd),
+      sapYtd:  fmtOrNull(result.sap_ytd),
+      shppYtd: fmtOrNull(result.shpp_ytd),
 
       niData,
     };
