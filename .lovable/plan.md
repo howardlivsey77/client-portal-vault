@@ -1,61 +1,73 @@
 
 
-# Split General Settings into Independent Editable Sections
+# Split PAYE Reference into Tax Office Number and Reference
 
 ## Overview
-Break the single-form General Settings page into three independent cards, each with its own Edit/Save functionality. Address fields will be merged into the Contact Information section.
+Replace the single `paye_ref` column with two separate fields: a 3-digit **Tax Office Number** (e.g. "120") and the **Employer PAYE Reference** (e.g. "BB58856"). These map directly to the HMRC FPS XML fields `TaxOfficeNumber` and `TaxOfficeReference`.
 
-## Layout (3 Cards)
+## Database Migration
+- Add two new columns to `companies`: `tax_office_number` (text) and `tax_office_reference` (text)
+- Migrate existing `paye_ref` data by splitting on the "/" delimiter (e.g. "120/BB58856" becomes "120" and "BB58856")
+- Drop the `paye_ref` column after migration
 
-1. **Company Information** -- Company Name, Trading As, Logo Upload, Payroll Migration Settings
-2. **Contact Information** -- Address (Lines 1-4, Post Code), Contact Name, Email, Phone
-3. **HMRC Information** -- PAYE Reference, Accounts Office Number, Gateway User ID, Gateway Password
-
-Each card will have an "Edit" button that toggles fields from read-only to editable, and a "Save" / "Cancel" button pair when editing.
+## UI Changes (HmrcInfoSection)
+Replace the single "PAYE Reference" field with two fields displayed side-by-side:
+- **Tax Office Number** -- 3-character input with `maxLength={3}`, placeholder "e.g. 120"
+- **Employer PAYE Reference** -- text input, placeholder "e.g. BB58856"
 
 ## Technical Changes
 
-### 1. Create `src/features/company-settings/components/EditableSettingsCard.tsx`
-A reusable wrapper component that manages edit/save state for a section:
-- Props: `title`, `description`, `children` (render prop with `isEditing`), `onSave`, `isSaving`
-- Displays an "Edit" button in the card header; when clicked, shows form fields as editable with "Save" and "Cancel" buttons
-- Wraps content in a Card with CardHeader/CardContent
+### 1. Database migration
+```sql
+ALTER TABLE companies ADD COLUMN tax_office_number text;
+ALTER TABLE companies ADD COLUMN tax_office_reference text;
 
-### 2. Rewrite `src/features/company-settings/tabs/GeneralSettingsTab.tsx`
-- Remove the single wrapping Form/Card
-- Render three `EditableSettingsCard` instances, each with its own `useForm` + submit handler
-- **Card 1 (Company Information)**: `CompanyInfoSection`, `LogoUploadSection`, `PayrollSettingsSection`
-- **Card 2 (Contact Information)**: `AddressSection` + `ContactInfoSection` combined
-- **Card 3 (HMRC Information)**: `HmrcInfoSection`
+UPDATE companies
+SET tax_office_number = split_part(paye_ref, '/', 1),
+    tax_office_reference = split_part(paye_ref, '/', 2)
+WHERE paye_ref IS NOT NULL AND paye_ref LIKE '%/%';
 
-### 3. Split `useCompanyForm.ts` into section-specific hooks
-Create three focused hooks (or one parameterized hook) that each handle loading and saving only their subset of fields:
-- `useCompanyInfoForm` -- name, tradingAs, logoUrl, payrollStartYear, payrollStartPeriod
-- `useContactInfoForm` -- addressLine1-4, postCode, contactName, contactEmail, contactPhone
-- `useHmrcInfoForm` -- payeRef, accountsOfficeNumber, hmrcGatewayUserId, hmrcGatewayPassword
+ALTER TABLE companies DROP COLUMN paye_ref;
+```
 
-Each hook follows the same pattern as the current `useCompanyForm`: loads from `currentCompany`, saves via `supabase.from("companies").update(...)`.
+### 2. Update types
+- `src/types/company.ts` -- replace `paye_ref` with `tax_office_number` and `tax_office_reference`
+- `src/integrations/supabase/types.ts` -- same replacement in Row/Insert/Update types
+- `src/features/company-settings/types.ts` -- replace `payeRef` with `taxOfficeNumber` and `taxOfficeReference`
 
-### 4. Update section components
-- `ContactInfoSection` -- add the address fields (currently in `AddressSection`) into this component, or render both `AddressSection` and `ContactInfoSection` together within the Contact card
-- All section components gain a `disabled` prop so fields can be read-only when not editing
+### 3. Update HMRC form hook (`useHmrcInfoForm.ts`)
+- Change form values interface: replace `payeRef` with `taxOfficeNumber` and `taxOfficeReference`
+- Update `reset()` and `onSubmit()` to use the two new DB columns
 
-### 5. Clean up
-- `AddressSection` can be kept as a sub-component rendered inside the Contact card, or merged into `ContactInfoSection`
-- Remove the old single `useCompanyForm` hook once all three new hooks are in place
+### 4. Update HmrcInfoSection component
+- Replace single PAYE Reference field with two fields in a sub-grid
+- Tax Office Number: `maxLength={3}`, small width
+- Employer PAYE Reference: standard width
+
+### 5. Update FPS edge function (`generate-fps/config.ts`)
+- Instead of reading from environment secrets, load `tax_office_number` and `tax_office_reference` from the company record in the database (passed in the request or queried)
+- This removes the need for `HMRC_TAX_OFFICE_NUMBER` and `HMRC_TAX_OFFICE_REFERENCE` environment secrets
+
+### 6. Update other consumers
+- `src/features/company-management/components/CompanyForm.tsx` -- split paye_ref into two fields
+- `src/components/dashboard/reports/payslip/PayslipReport.tsx` -- construct display as `${tax_office_number}/${tax_office_reference}`
+- `src/components/dashboard/reports/payslip/mockData.ts` -- update mock data
+- `src/hooks/reports/useP11Report.ts` -- update query to select new columns; construct combined ref for display
 
 ## Files Changed
+
 | File | Action |
 |------|--------|
-| `src/features/company-settings/components/EditableSettingsCard.tsx` | Create |
-| `src/features/company-settings/hooks/useCompanyInfoForm.ts` | Create |
-| `src/features/company-settings/hooks/useContactInfoForm.ts` | Create |
-| `src/features/company-settings/hooks/useHmrcInfoForm.ts` | Create |
-| `src/features/company-settings/tabs/GeneralSettingsTab.tsx` | Rewrite |
-| `src/features/company-settings/components/AddressSection.tsx` | Add `disabled` prop |
-| `src/features/company-settings/components/ContactInfoSection.tsx` | Add `disabled` prop |
-| `src/features/company-settings/components/CompanyInfoSection.tsx` | Add `disabled` prop |
-| `src/features/company-settings/components/HmrcInfoSection.tsx` | Add `disabled` prop |
-| `src/features/company-settings/components/PayrollSettingsSection.tsx` | Add `disabled` prop |
-| `src/features/company-settings/hooks/useCompanyForm.ts` | Remove (replaced by 3 hooks) |
+| Migration SQL | Create (add columns, migrate data, drop old column) |
+| `src/types/company.ts` | Edit (replace paye_ref) |
+| `src/integrations/supabase/types.ts` | Edit (replace paye_ref) |
+| `src/features/company-settings/types.ts` | Edit (replace payeRef) |
+| `src/features/company-settings/hooks/useHmrcInfoForm.ts` | Edit (two fields) |
+| `src/features/company-settings/components/HmrcInfoSection.tsx` | Edit (two inputs) |
+| `src/features/company-management/components/CompanyForm.tsx` | Edit (split field) |
+| `src/components/dashboard/reports/payslip/PayslipReport.tsx` | Edit (construct from two fields) |
+| `src/components/dashboard/reports/payslip/mockData.ts` | Edit (update mock) |
+| `src/hooks/reports/useP11Report.ts` | Edit (query new columns) |
+| `supabase/functions/generate-fps/config.ts` | Edit (use DB values) |
+| `supabase/functions/generate-fps/types.ts` | No change needed (already has separate fields) |
 
