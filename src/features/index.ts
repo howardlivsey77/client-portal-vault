@@ -16,7 +16,9 @@ export { ContactInfoSection } from "./company-settings/components/ContactInfoSec
 export { HmrcInfoSection } from "./company-settings/components/HmrcInfoSection";
 export { LogoUploadSection } from "./company-settings/components/LogoUploadSection";
 export { SicknessSchemeForm } from "./company-settings/components/SicknessSchemeForm";
-export { useCompanyForm } from "./company-settings/hooks/useCompanyForm";
+export { useCompanyInfoForm } from "./company-settings/hooks/useCompanyInfoForm";
+export { useContactInfoForm } from "./company-settings/hooks/useContactInfoForm";
+export { useHmrcInfoForm } from "./company-settings/hooks/useHmrcInfoForm";
 export { useSicknessSchemes } from "./company-settings/hooks/useSicknessSchemes";
 export { default as DepartmentsSettingsTab } from "./company-settings/tabs/DepartmentsSettingsTab";
 export { default as GeneralSettingsTab } from "./company-settings/tabs/GeneralSettingsTab";

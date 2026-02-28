@@ -1,15 +1,15 @@
 import { Control } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CompanyFormValues } from "../types";
 import { AVAILABLE_FINANCIAL_YEARS, generatePayPeriodsForFinancialYear } from "@/services/payroll/utils/financial-year-utils";
 import { AlertCircle, Info } from "lucide-react";
 
 interface PayrollSettingsSectionProps {
-  control: Control<CompanyFormValues>;
+  control: Control<any>;
+  disabled?: boolean;
 }
 
-export function PayrollSettingsSection({ control }: PayrollSettingsSectionProps) {
+export function PayrollSettingsSection({ control, disabled }: PayrollSettingsSectionProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -34,6 +34,7 @@ export function PayrollSettingsSection({ control }: PayrollSettingsSectionProps)
               <Select
                 onValueChange={(value) => field.onChange(parseInt(value))}
                 value={field.value?.toString() || ""}
+                disabled={disabled}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -60,7 +61,6 @@ export function PayrollSettingsSection({ control }: PayrollSettingsSectionProps)
           control={control}
           name="payrollStartPeriod"
           render={({ field }) => {
-            // Get the selected year to show corresponding periods
             const selectedYear = control._formValues?.payrollStartYear;
             const periods = selectedYear ? generatePayPeriodsForFinancialYear(selectedYear) : [];
             
@@ -70,6 +70,7 @@ export function PayrollSettingsSection({ control }: PayrollSettingsSectionProps)
                 <Select
                   onValueChange={(value) => field.onChange(parseInt(value))}
                   value={field.value?.toString() || ""}
+                  disabled={disabled}
                 >
                   <FormControl>
                     <SelectTrigger>

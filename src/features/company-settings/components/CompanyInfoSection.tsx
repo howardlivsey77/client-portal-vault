@@ -2,16 +2,15 @@
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Control } from "react-hook-form";
-import { CompanyFormValues } from "../types";
 
 interface CompanyInfoSectionProps {
-  control: Control<CompanyFormValues>;
+  control: Control<any>;
+  disabled?: boolean;
 }
 
-export const CompanyInfoSection = ({ control }: CompanyInfoSectionProps) => {
+export const CompanyInfoSection = ({ control, disabled }: CompanyInfoSectionProps) => {
   return (
     <>
-      {/* Company Name */}
       <FormField
         control={control}
         name="name"
@@ -19,14 +18,12 @@ export const CompanyInfoSection = ({ control }: CompanyInfoSectionProps) => {
           <FormItem>
             <FormLabel>Company Name</FormLabel>
             <FormControl>
-              <Input placeholder="Enter company name" {...field} />
+              <Input placeholder="Enter company name" {...field} disabled={disabled} />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-      
-      {/* Trading As */}
       <FormField
         control={control}
         name="tradingAs"
@@ -34,7 +31,7 @@ export const CompanyInfoSection = ({ control }: CompanyInfoSectionProps) => {
           <FormItem>
             <FormLabel>Trading As (optional)</FormLabel>
             <FormControl>
-              <Input placeholder="Enter trading name" {...field} />
+              <Input placeholder="Enter trading name" {...field} disabled={disabled} />
             </FormControl>
             <FormMessage />
           </FormItem>
