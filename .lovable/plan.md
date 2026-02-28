@@ -1,73 +1,50 @@
 
 
-# Split PAYE Reference into Tax Office Number and Reference
+# Use Per-Company HMRC Credentials for FPS Generation
 
-## Overview
-Replace the single `paye_ref` column with two separate fields: a 3-digit **Tax Office Number** (e.g. "120") and the **Employer PAYE Reference** (e.g. "BB58856"). These map directly to the HMRC FPS XML fields `TaxOfficeNumber` and `TaxOfficeReference`.
+## Problem
+The FPS edge function currently reads gateway credentials (`HMRC_GATEWAY_USER_ID`, `HMRC_GATEWAY_PASSWORD`) from environment variables, which means all companies share the same credentials. It also falls back to env vars for tax office number, reference, and accounts office number. Since each company has its own HMRC credentials stored in the `companies` table, the function should use those directly.
 
-## Database Migration
-- Add two new columns to `companies`: `tax_office_number` (text) and `tax_office_reference` (text)
-- Migrate existing `paye_ref` data by splitting on the "/" delimiter (e.g. "120/BB58856" becomes "120" and "BB58856")
-- Drop the `paye_ref` column after migration
+## Changes
 
-## UI Changes (HmrcInfoSection)
-Replace the single "PAYE Reference" field with two fields displayed side-by-side:
-- **Tax Office Number** -- 3-character input with `maxLength={3}`, placeholder "e.g. 120"
-- **Employer PAYE Reference** -- text input, placeholder "e.g. BB58856"
+### 1. Update `supabase/functions/generate-fps/index.ts`
+- Expand the `select` query on line 77 to also fetch `hmrc_gateway_user_id` and `hmrc_gateway_password` from the company record
+- Pass all five company-specific values to `loadEmployerConfig`
+- Add a validation check: if any of the required HMRC fields are missing from the company record (tax_office_number, tax_office_reference, accounts_office_number, hmrc_gateway_user_id, hmrc_gateway_password), return a clear 400 error telling the user to complete their Company Settings
 
-## Technical Changes
+### 2. Update `supabase/functions/generate-fps/config.ts`
+- Change `loadEmployerConfig` to accept all five company-level fields (add `gatewayUserId` and `gatewayPassword` parameters)
+- Use the company DB values directly for all five fields instead of falling back to env vars
+- Keep env var fallback only for vendor/product-level settings (`vendorId`, `productName`, `productVersion`, `liveMode`) since those are global, not per-company
 
-### 1. Database migration
-```sql
-ALTER TABLE companies ADD COLUMN tax_office_number text;
-ALTER TABLE companies ADD COLUMN tax_office_reference text;
+### 3. Redeploy the edge function
+- Deploy the updated `generate-fps` function after the code changes
 
-UPDATE companies
-SET tax_office_number = split_part(paye_ref, '/', 1),
-    tax_office_reference = split_part(paye_ref, '/', 2)
-WHERE paye_ref IS NOT NULL AND paye_ref LIKE '%/%';
+## Technical Detail
 
-ALTER TABLE companies DROP COLUMN paye_ref;
+**`config.ts` signature change:**
+```typescript
+export function loadEmployerConfig(
+  companyTaxOfficeNumber: string,
+  companyTaxOfficeReference: string,
+  companyAccountsOfficeRef: string,
+  companyGatewayUserId: string,
+  companyGatewayPassword: string,
+): EmployerConfig
 ```
 
-### 2. Update types
-- `src/types/company.ts` -- replace `paye_ref` with `tax_office_number` and `tax_office_reference`
-- `src/integrations/supabase/types.ts` -- same replacement in Row/Insert/Update types
-- `src/features/company-settings/types.ts` -- replace `payeRef` with `taxOfficeNumber` and `taxOfficeReference`
+**`index.ts` select change:**
+```typescript
+.select('tax_office_number, tax_office_reference, accounts_office_number, hmrc_gateway_user_id, hmrc_gateway_password')
+```
 
-### 3. Update HMRC form hook (`useHmrcInfoForm.ts`)
-- Change form values interface: replace `payeRef` with `taxOfficeNumber` and `taxOfficeReference`
-- Update `reset()` and `onSubmit()` to use the two new DB columns
-
-### 4. Update HmrcInfoSection component
-- Replace single PAYE Reference field with two fields in a sub-grid
-- Tax Office Number: `maxLength={3}`, small width
-- Employer PAYE Reference: standard width
-
-### 5. Update FPS edge function (`generate-fps/config.ts`)
-- Instead of reading from environment secrets, load `tax_office_number` and `tax_office_reference` from the company record in the database (passed in the request or queried)
-- This removes the need for `HMRC_TAX_OFFICE_NUMBER` and `HMRC_TAX_OFFICE_REFERENCE` environment secrets
-
-### 6. Update other consumers
-- `src/features/company-management/components/CompanyForm.tsx` -- split paye_ref into two fields
-- `src/components/dashboard/reports/payslip/PayslipReport.tsx` -- construct display as `${tax_office_number}/${tax_office_reference}`
-- `src/components/dashboard/reports/payslip/mockData.ts` -- update mock data
-- `src/hooks/reports/useP11Report.ts` -- update query to select new columns; construct combined ref for display
+**Validation in `index.ts`:**
+Before calling `loadEmployerConfig`, check that all five fields are present. If not, return a descriptive error like: "Missing HMRC configuration for this company. Please complete Tax Office Number, Employer PAYE Reference, Accounts Office Number, Gateway User ID, and Gateway Password in Company Settings."
 
 ## Files Changed
 
 | File | Action |
 |------|--------|
-| Migration SQL | Create (add columns, migrate data, drop old column) |
-| `src/types/company.ts` | Edit (replace paye_ref) |
-| `src/integrations/supabase/types.ts` | Edit (replace paye_ref) |
-| `src/features/company-settings/types.ts` | Edit (replace payeRef) |
-| `src/features/company-settings/hooks/useHmrcInfoForm.ts` | Edit (two fields) |
-| `src/features/company-settings/components/HmrcInfoSection.tsx` | Edit (two inputs) |
-| `src/features/company-management/components/CompanyForm.tsx` | Edit (split field) |
-| `src/components/dashboard/reports/payslip/PayslipReport.tsx` | Edit (construct from two fields) |
-| `src/components/dashboard/reports/payslip/mockData.ts` | Edit (update mock) |
-| `src/hooks/reports/useP11Report.ts` | Edit (query new columns) |
-| `supabase/functions/generate-fps/config.ts` | Edit (use DB values) |
-| `supabase/functions/generate-fps/types.ts` | No change needed (already has separate fields) |
+| `supabase/functions/generate-fps/index.ts` | Edit (fetch gateway creds from DB, add validation) |
+| `supabase/functions/generate-fps/config.ts` | Edit (accept gateway creds as params, remove env var fallback for per-company fields) |
 
