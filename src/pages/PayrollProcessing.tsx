@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, AlertTriangle, Settings, FileText, Building2 } from "lucide-react";
+import { Upload, AlertTriangle, Settings, Building2 } from "lucide-react";
 import { FpsGenerationPanel } from "@/components/hmrc/FpsGenerationPanel";
 import { Link } from "react-router-dom";
 import { 
@@ -214,7 +214,6 @@ const PayrollProcessing = () => {
           <TabsList>
             <TabsTrigger value="calculator">Employee Calculator</TabsTrigger>
             <TabsTrigger value="batch">Batch Processing</TabsTrigger>
-            <TabsTrigger value="reports">Payslips</TabsTrigger>
             <TabsTrigger value="hmrc">
               <Building2 className="h-4 w-4 mr-1" />
               HMRC
@@ -245,27 +244,6 @@ const PayrollProcessing = () => {
                   <Button onClick={() => setShowWizard(true)}>
                     <Upload className="h-4 w-4 mr-2" />
                     Import Payroll Data
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="reports">
-            <Card>
-              <CardHeader>
-                <CardTitle>Employee Payslips</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <p className="text-muted-foreground">
-                    View and download individual employee payslips for {selectedPayPeriod.description}.
-                  </p>
-                  <Button asChild>
-                    <Link to="/client-reports?report=payslips">
-                      <FileText className="h-4 w-4 mr-2" />
-                      View Payslips
-                    </Link>
                   </Button>
                 </div>
               </CardContent>
