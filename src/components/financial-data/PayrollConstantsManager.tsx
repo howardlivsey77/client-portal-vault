@@ -17,7 +17,7 @@ const fields: FieldDef[] = [
   { name: "value_numeric", label: "Numeric Value", type: "number" },
   { name: "value_text", label: "Text Value", type: "text" },
   { name: "region", label: "Region", type: "text", required: true, placeholder: "UK" },
-  { name: "tax_year", label: "Tax Year", type: "text", required: true, placeholder: "2025-26" },
+  { name: "tax_year", label: "Tax Year", type: "text", required: true, placeholder: "2025/26" },
   { name: "effective_from", label: "Effective From", type: "date", required: true },
   { name: "effective_to", label: "Effective To", type: "date" },
   { name: "is_current", label: "Current", type: "boolean" },
