@@ -2,11 +2,10 @@ import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Building2, FileText } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { useHmrcDashboardData, HmrcPeriodData } from "@/hooks";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useBrandColors } from "@/brand";
-import { GenerateFpsDialog } from "@/components/hmrc/GenerateFpsDialog";
 
 function generateFinancialYears(): string[] {
   const currentDate = new Date();
@@ -107,7 +106,6 @@ function formatCurrency(amount: number): string {
 export function HmrcDashboardCard() {
   const financialYears = useMemo(() => generateFinancialYears(), []);
   const [selectedYear, setSelectedYear] = useState(financialYears[1]);
-  const [fpsDialogOpen, setFpsDialogOpen] = useState(false);
   const brandColors = useBrandColors();
   
   const { data: periodData, isLoading } = useHmrcDashboardData(selectedYear);
@@ -152,15 +150,6 @@ export function HmrcDashboardCard() {
             </h3>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs gap-1"
-              onClick={() => setFpsDialogOpen(true)}
-            >
-              <FileText className="h-3.5 w-3.5" />
-              FPS
-            </Button>
             <Select value={selectedYear} onValueChange={setSelectedYear}>
               <SelectTrigger className="w-[100px] h-7 text-xs">
                 <SelectValue placeholder="Year" />
@@ -235,11 +224,6 @@ export function HmrcDashboardCard() {
           </div>
         )}
       </CardContent>
-      <GenerateFpsDialog
-        open={fpsDialogOpen}
-        onOpenChange={setFpsDialogOpen}
-        defaultTaxYear={selectedYear}
-      />
     </Card>
   );
 }
