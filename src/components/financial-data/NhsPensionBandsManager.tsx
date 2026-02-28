@@ -8,7 +8,7 @@ import { useConfirmation } from "@/hooks/useConfirmation";
 import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 
 const fields: FieldDef[] = [
-  { name: "tax_year", label: "Tax Year", type: "text", required: true, placeholder: "2025-26" },
+  { name: "tax_year", label: "Tax Year", type: "text", required: true, placeholder: "2025/26" },
   { name: "tier_number", label: "Tier Number", type: "number", required: true },
   { name: "annual_pensionable_pay_from", label: "Pay From (£)", type: "number", required: true },
   { name: "annual_pensionable_pay_to", label: "Pay To (£)", type: "number" },

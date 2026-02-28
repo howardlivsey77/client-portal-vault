@@ -19,7 +19,7 @@ interface CopyTaxYearDialogProps {
 const TABLES_TO_COPY = ["payroll_constants", "nic_bands", "nhs_pension_bands", "tax_bands"] as const;
 
 function deriveEffectiveDates(newYear: string) {
-  const startYear = parseInt(newYear.split("-")[0]);
+  const startYear = parseInt(newYear.split("/")[0]);
   return {
     effective_from: `${startYear}-04-06`,
     effective_to: `${startYear + 1}-04-05`,
@@ -33,8 +33,8 @@ export function CopyTaxYearDialog({ open, onOpenChange, existingYears, onCreated
   const queryClient = useQueryClient();
 
   const handleCreate = async () => {
-    if (!newYear.match(/^\d{4}-\d{2}$/)) {
-      toast({ title: "Invalid format", description: "Use format like 2026-27", variant: "destructive" });
+    if (!newYear.match(/^\d{4}\/\d{2}$/)) {
+      toast({ title: "Invalid format", description: "Use format like 2026/27", variant: "destructive" });
       return;
     }
     if (existingYears.includes(newYear)) {
@@ -95,7 +95,7 @@ export function CopyTaxYearDialog({ open, onOpenChange, existingYears, onCreated
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label>New Tax Year</Label>
-            <Input placeholder="2026-27" value={newYear} onChange={(e) => setNewYear(e.target.value)} />
+            <Input placeholder="2026/27" value={newYear} onChange={(e) => setNewYear(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label>Copy data from (optional)</Label>
