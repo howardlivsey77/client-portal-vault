@@ -189,7 +189,13 @@ export async function preparePayrollData(result: PayrollResult, payPeriod: PayPe
       nhs_pension_employee_ytd: ytdData.nhsPensionEmployeeYTD, // FIXED: Now cumulative
       nhs_pension_employer_ytd: ytdData.nhsPensionEmployerYTD, // FIXED: Now cumulative
       free_pay_ytd: ytdData.freePayYTD,
-      net_pay_ytd: ytdData.netPayYTD
+      net_pay_ytd: ytdData.netPayYTD,
+      
+      // NI earnings band YTDs — required for FPS NIlettersAndValues block
+      gross_earnings_for_nics_ytd: ytdData.grossEarningsForNicsYTD,
+      earnings_at_lel_ytd:         ytdData.earningsAtLelYTD,
+      earnings_lel_to_pt_ytd:      ytdData.earningsLelToPtYTD,
+      earnings_pt_to_uel_ytd:      ytdData.earningsPtToUelYTD,
     };
     
     console.log(`[PREPARE] Final payroll data prepared successfully with company_id ${companyId}`);

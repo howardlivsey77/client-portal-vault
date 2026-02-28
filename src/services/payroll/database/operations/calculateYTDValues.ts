@@ -24,6 +24,10 @@ export interface YTDCalculationResult {
   nhsPensionEmployerYTD: number;
   freePayYTD: number;
   netPayYTD: number;
+  grossEarningsForNicsYTD: number;
+  earningsAtLelYTD: number;
+  earningsLelToPtYTD: number;
+  earningsPtToUelYTD: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   previousYTD: Record<string, any> | null;
 }
@@ -148,6 +152,33 @@ export async function calculateYTDValues(
     const netPayYTD = previousNetPayYTD + Math.round(result.netPay * 100);
     
     // ============================================================
+    // NI EARNINGS BAND YTDs - Cumulative from prior period
+    // Required for FPS NIlettersAndValues block (GrossEarningsForNICsYTD,
+    // AtLELYTD, LELtoPTYTD, PTtoUELYTD).
+    // These are earnings accumulators, not contribution amounts —
+    // they record how much pay fell in each NI threshold band YTD.
+    // ============================================================
+    const previousGrossEarningsForNicsYTD = previousYTD
+      ? (previousYTD.gross_earnings_for_nics_ytd || 0) : 0;
+    const grossEarningsForNicsYTD = previousGrossEarningsForNicsYTD
+      + Math.round((result.grossPay || 0) * 100);
+
+    const previousEarningsAtLelYTD = previousYTD
+      ? (previousYTD.earnings_at_lel_ytd || 0) : 0;
+    const earningsAtLelYTD = previousEarningsAtLelYTD
+      + Math.round((result.earningsAtLEL || 0) * 100);
+
+    const previousEarningsLelToPtYTD = previousYTD
+      ? (previousYTD.earnings_lel_to_pt_ytd || 0) : 0;
+    const earningsLelToPtYTD = previousEarningsLelToPtYTD
+      + Math.round((result.earningsLELtoPT || 0) * 100);
+
+    const previousEarningsPtToUelYTD = previousYTD
+      ? (previousYTD.earnings_pt_to_uel_ytd || 0) : 0;
+    const earningsPtToUelYTD = previousEarningsPtToUelYTD
+      + Math.round((result.earningsPTtoUEL || 0) * 100);
+    
+    // ============================================================
     // Convert values to pence for storage
     // ============================================================
     const grossPayYTDPence = Math.round(grossPayYTD * 100);
@@ -186,6 +217,10 @@ export async function calculateYTDValues(
         nhsPensionEmployerYTD,
         freePayYTD,
         netPayYTD,
+        grossEarningsForNicsYTD,
+        earningsAtLelYTD,
+        earningsLelToPtYTD,
+        earningsPtToUelYTD,
         previousYTD
       }
     };
