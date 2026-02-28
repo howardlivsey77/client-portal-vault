@@ -31,6 +31,7 @@ import AuthInviteGuard from "./components/auth/AuthInviteGuard";
 import CreatePassword from "./pages/CreatePassword";
 import Setup2FA from "./pages/Setup2FA";
 import SicknessDataFixer from "./components/admin/SicknessDataFixer";
+import FinancialData from "./pages/FinancialData";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,7 @@ const App = () => (
                   {/* Admin-only routes with 2FA requirement */}
                   <Route element={<ProtectedLayout adminOnly />}>
                     <Route path="/invites" element={<InviteManagement />} />
+                    <Route path="/financial-data" element={<FinancialData />} />
                   </Route>
                   
                   {/* Catch-all */}
