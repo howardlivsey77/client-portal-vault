@@ -34,7 +34,8 @@ export const CompanyForm = ({
     contact_name: "",
     contact_email: "",
     contact_phone: "",
-    paye_ref: "",
+    tax_office_number: "",
+    tax_office_reference: "",
     accounts_office_number: "",
   });
   const [loading, setLoading] = useState(false);
@@ -54,7 +55,8 @@ export const CompanyForm = ({
         contact_name: company.contact_name || "",
         contact_email: company.contact_email || "",
         contact_phone: company.contact_phone || "",
-        paye_ref: company.paye_ref || "",
+        tax_office_number: company.tax_office_number || "",
+        tax_office_reference: company.tax_office_reference || "",
         accounts_office_number: company.accounts_office_number || "",
       });
     } else {
@@ -69,7 +71,8 @@ export const CompanyForm = ({
         contact_name: "",
         contact_email: "",
         contact_phone: "",
-        paye_ref: "",
+        tax_office_number: "",
+        tax_office_reference: "",
         accounts_office_number: "",
       });
     }
@@ -310,13 +313,24 @@ export const CompanyForm = ({
               <h3 className="text-sm font-medium mb-2">HMRC Information</h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="paye_ref">PAYE Reference</Label>
+                  <Label htmlFor="tax_office_number">Tax Office Number</Label>
                   <Input
-                    id="paye_ref"
-                    name="paye_ref"
-                    value={formData.paye_ref}
+                    id="tax_office_number"
+                    name="tax_office_number"
+                    value={formData.tax_office_number}
                     onChange={handleInputChange}
-                    placeholder="PAYE reference"
+                    placeholder="e.g. 120"
+                    maxLength={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tax_office_reference">Employer PAYE Ref</Label>
+                  <Input
+                    id="tax_office_reference"
+                    name="tax_office_reference"
+                    value={formData.tax_office_reference}
+                    onChange={handleInputChange}
+                    placeholder="e.g. BB58856"
                   />
                 </div>
                 <div className="space-y-2">
