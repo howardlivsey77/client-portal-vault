@@ -2,19 +2,16 @@
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Control } from "react-hook-form";
-import { CompanyFormValues } from "../types";
 
 interface ContactInfoSectionProps {
-  control: Control<CompanyFormValues>;
+  control: Control<any>;
+  disabled?: boolean;
 }
 
-export const ContactInfoSection = ({ control }: ContactInfoSectionProps) => {
+export const ContactInfoSection = ({ control, disabled }: ContactInfoSectionProps) => {
   return (
     <>
-      <h3 className="text-lg font-medium mb-4">Contact Information</h3>
-      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Contact Name */}
         <FormField
           control={control}
           name="contactName"
@@ -22,14 +19,12 @@ export const ContactInfoSection = ({ control }: ContactInfoSectionProps) => {
             <FormItem>
               <FormLabel>Contact Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter contact name" {...field} />
+                <Input placeholder="Enter contact name" {...field} disabled={disabled} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
-        {/* Contact Email */}
         <FormField
           control={control}
           name="contactEmail"
@@ -37,20 +32,14 @@ export const ContactInfoSection = ({ control }: ContactInfoSectionProps) => {
             <FormItem>
               <FormLabel>Contact Email</FormLabel>
               <FormControl>
-                <Input 
-                  type="email" 
-                  placeholder="Enter contact email" 
-                  {...field} 
-                />
+                <Input type="email" placeholder="Enter contact email" {...field} disabled={disabled} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
       </div>
-      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-        {/* Contact Phone */}
         <FormField
           control={control}
           name="contactPhone"
@@ -58,7 +47,7 @@ export const ContactInfoSection = ({ control }: ContactInfoSectionProps) => {
             <FormItem>
               <FormLabel>Contact Phone</FormLabel>
               <FormControl>
-                <Input placeholder="Enter contact phone" {...field} />
+                <Input placeholder="Enter contact phone" {...field} disabled={disabled} />
               </FormControl>
               <FormMessage />
             </FormItem>
