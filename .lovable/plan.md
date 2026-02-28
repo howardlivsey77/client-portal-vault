@@ -1,129 +1,102 @@
 
 
-# Financial Data Admin Section
+# Reorganise Financial Data by Tax Year with NIC Grid Layout
 
 ## Overview
-Create a new "Financial Data" section in the sidebar, visible only to admin users, providing full CRUD management for the four reference data tables used by the payroll engine: **Payroll Constants**, **NIC Bands**, **NHS Pension Bands**, and **Tax Bands**.
+Restructure the Financial Data page to be driven by a **global tax year selector** at the top, and redesign the NIC Bands tab to show data in **collapsible grid panels** matching the reference images (Thresholds grid + Employee Rates grid + Employer Rates grid), with inline editing. Also add a "Copy from previous year" feature when creating a new tax year.
 
-## What You'll Get
-- A new "Financial Data" item in the sidebar (admin-only, with a suitable icon like `Database` or `Landmark`)
-- A dedicated page at `/financial-data` with a tabbed interface to switch between the four data tables
-- Each tab shows a data table with inline editing, add new, and delete capabilities
-- All changes write directly to the existing Supabase tables
-- The page is protected so only admin users can access it
+## What Changes
 
-## Structure
+### 1. Add `tax_year` column to `payroll_constants`
+The `payroll_constants` table currently uses `effective_from`/`effective_to` but has no `tax_year` column. The other three tables (nic_bands, nhs_pension_bands, tax_bands) already have `tax_year`. A migration will:
+- Add a `tax_year TEXT` column to `payroll_constants`
+- Back-fill existing rows with the appropriate tax year derived from `effective_from` (e.g. rows effective from 2025-04-06 get "2025-26")
 
-```text
-/financial-data
-  +-- Tab: Payroll Constants
-  |     Table view grouped by category
-  |     Columns: key, category, description, value_numeric, value_text, region, effective_from, effective_to, is_current
-  |     Add / Edit / Delete rows
-  |
-  +-- Tab: NIC Bands
-  |     Columns: tax_year, ni_class, name, region, contribution_type, threshold_from, threshold_to, rate, effective_from, is_current
-  |     Add / Edit / Delete rows
-  |
-  +-- Tab: NHS Pension Bands
-  |     Columns: tax_year, tier_number, annual_pensionable_pay_from, annual_pensionable_pay_to, employee_contribution_rate, employer_contribution_rate, effective_from, is_current
-  |     Add / Edit / Delete rows
-  |
-  +-- Tab: Tax Bands
-  |     Columns: tax_year, name, region, threshold_from, threshold_to, rate, effective_from, is_current
-  |     Add / Edit / Delete rows
-```
+### 2. Global Tax Year Selector
+Replace the current flat layout with a **tax year dropdown** at the top of the Financial Data page:
+- Populated from distinct `tax_year` values found across all four tables
+- An "Add Tax Year" button to create a new year (with option to copy from an existing year)
+- Selected year is passed down to all four tab components, which filter their data accordingly
 
-## Technical Plan
+### 3. NIC Bands Tab - Grid Layout
+Redesign `NicBandsManager.tsx` to show three **collapsible accordion sections** for the selected tax year:
 
-### 1. Add sidebar navigation item
-**File**: `src/components/layout/sidebar/SidebarMainNavigation.tsx`
-- Add a new nav item with `allowedRoles: ['admin']` pointing to `/financial-data`
-- Use the `Landmark` icon from lucide-react
+**Section 1: National Insurance Thresholds**
+- Two-column grid layout (per month | per week)
+- Rows: LEL, PT, ST, UEL (and any others like UST, AUST if present)
+- Values editable inline with Save/Cancel buttons
+- Data source: `payroll_constants` where `category = 'NI_THRESHOLDS'` and `tax_year` matches
+- Weekly values derived by dividing monthly by (12/52) or stored separately
 
-### 2. Create the Financial Data page
-**File**: `src/pages/FinancialData.tsx`
-- Wrapped in `PageContainer` for consistent layout
-- Uses Radix `Tabs` component with four tabs
-- Each tab renders a dedicated management component
+**Section 2: Employee Contribution Rates**
+- Grid with NI category letters (A, B, C, H, J, M, Z, X) as rows
+- Columns: "Earnings at or above LEL up to and including PT", "Earnings above PT up to and including UEL", "Balance of earnings above UEL"
+- Values are percentages, editable inline
+- Data source: `payroll_constants` where `category = 'NI_EMPLOYEE_RATES'` and `tax_year` matches
 
-### 3. Create management components (one per table)
-**Directory**: `src/components/financial-data/`
+**Section 3: Employer Contribution Rates**
+- Same grid layout as employee rates but for employer
+- Data source: `payroll_constants` where `category = 'NI_EMPLOYER_RATES'` and `tax_year` matches
 
-Files to create:
-- `index.ts` -- barrel exports
-- `PayrollConstantsManager.tsx` -- CRUD for `payroll_constants`
-- `NicBandsManager.tsx` -- CRUD for `nic_bands`
-- `NhsPensionBandsManager.tsx` -- CRUD for `nhs_pension_bands`
-- `TaxBandsManager.tsx` -- CRUD for `tax_bands`
-- `FinancialDataForm.tsx` -- reusable dialog form for add/edit operations
-- `useFinancialData.ts` -- shared hook for fetching, inserting, updating, deleting rows from any of the four tables
+Each section has Save and Cancel buttons at the bottom (matching the reference images).
 
-Each manager component will:
-- Fetch data using `supabase.from(tableName).select('*')` ordered by `tax_year` desc, then relevant sort fields
-- Display in a table using existing UI table components
-- Provide "Add New" button opening a dialog form
-- Allow inline row editing via an edit icon that opens the same dialog pre-filled
-- Allow deletion with the existing `useConfirmation()` hook for safe destructive actions
-- Show toast notifications on success/failure
+### 4. Other Tabs - Tax Year Filtering
+- **Payroll Constants**: Filter by selected tax year, show remaining categories (STUDENT_LOAN, NI_RATES, etc.) in the existing table format. NI-specific categories are handled by the NIC tab.
+- **Tax Bands**: Filter by selected tax year (already has `tax_year` column)
+- **NHS Pension Bands**: Filter by selected tax year (already has `tax_year` column)
 
-### 4. Add RLS policies for admin write access
-**Database migration** needed for `payroll_constants`, `nic_bands`, `nhs_pension_bands`:
-- Currently these tables only have SELECT policies for authenticated users and no INSERT/UPDATE/DELETE policies
-- Add ALL policy for admins using `is_admin(auth.uid())` on each table
-- `tax_bands` table needs verification -- add matching policies if missing
+### 5. Copy from Previous Year
+When creating a new tax year:
+- Show a dialog with a text input for the new year (e.g. "2026-27") and a dropdown to select a source year to copy from
+- On confirm, duplicate all rows from the source year across all four tables, updating `tax_year`, `effective_from`, `effective_to`, and `is_current` fields appropriately
 
+## Technical Details
+
+### Database Migration
 ```sql
--- payroll_constants already has admin ALL policy, so skip
+ALTER TABLE payroll_constants ADD COLUMN IF NOT EXISTS tax_year TEXT;
 
--- NIC bands: add admin management policy
-CREATE POLICY "Admins can manage NIC bands"
-  ON public.nic_bands FOR ALL
-  TO authenticated
-  USING (is_admin(auth.uid()))
-  WITH CHECK (is_admin(auth.uid()));
-
--- NHS pension bands: add admin management policy
-CREATE POLICY "Admins can manage NHS pension bands"
-  ON public.nhs_pension_bands FOR ALL
-  TO authenticated
-  USING (is_admin(auth.uid()))
-  WITH CHECK (is_admin(auth.uid()));
-
--- Tax bands: verify and add if needed
-CREATE POLICY "Admins can manage tax bands"
-  ON public.tax_bands FOR ALL
-  TO authenticated
-  USING (is_admin(auth.uid()))
-  WITH CHECK (is_admin(auth.uid()));
+-- Back-fill based on effective_from date
+UPDATE payroll_constants
+SET tax_year = CASE
+  WHEN EXTRACT(MONTH FROM effective_from) >= 4
+  THEN EXTRACT(YEAR FROM effective_from)::TEXT || '-' ||
+       SUBSTRING((EXTRACT(YEAR FROM effective_from) + 1)::TEXT FROM 3)
+  ELSE (EXTRACT(YEAR FROM effective_from) - 1)::TEXT || '-' ||
+       SUBSTRING(EXTRACT(YEAR FROM effective_from)::TEXT FROM 3)
+END
+WHERE tax_year IS NULL;
 ```
 
-### 5. Register the route
-**File**: `src/App.tsx`
-- Add route under the `adminOnly` `ProtectedLayout` group:
-  ```tsx
-  <Route path="/financial-data" element={<FinancialData />} />
-  ```
+### Files to Create
+| File | Purpose |
+|------|---------|
+| `src/components/financial-data/TaxYearSelector.tsx` | Global year picker + "Add Tax Year" button |
+| `src/components/financial-data/CopyTaxYearDialog.tsx` | Dialog for creating a new year with copy-from option |
+| `src/components/financial-data/NicThresholdsGrid.tsx` | Inline-editable thresholds grid (LEL, PT, ST, UEL) |
+| `src/components/financial-data/NicRatesGrid.tsx` | Inline-editable rates grid (category letters x earnings bands) |
 
-### 6. Validation
-- Use zod schemas to validate form inputs before submission
-- Numeric fields (thresholds, rates) validated as numbers
-- Required fields enforced (tax_year, key/name, rates)
-- Date fields validated as valid date strings
+### Files to Edit
+| File | Change |
+|------|--------|
+| `src/pages/FinancialData.tsx` | Add global tax year state, pass to all tabs |
+| `src/components/financial-data/NicBandsManager.tsx` | Replace table with accordion of grids |
+| `src/components/financial-data/PayrollConstantsManager.tsx` | Accept `taxYear` prop, filter data, exclude NI categories |
+| `src/components/financial-data/TaxBandsManager.tsx` | Accept `taxYear` prop, filter data |
+| `src/components/financial-data/NhsPensionBandsManager.tsx` | Accept `taxYear` prop, filter data |
+| `src/components/financial-data/useFinancialData.ts` | Support optional `taxYear` filter parameter |
 
-## Files Summary
-
-| Action | File |
-|--------|------|
-| Edit | `src/components/layout/sidebar/SidebarMainNavigation.tsx` |
-| Edit | `src/App.tsx` |
-| Create | `src/pages/FinancialData.tsx` |
-| Create | `src/components/financial-data/index.ts` |
-| Create | `src/components/financial-data/PayrollConstantsManager.tsx` |
-| Create | `src/components/financial-data/NicBandsManager.tsx` |
-| Create | `src/components/financial-data/NhsPensionBandsManager.tsx` |
-| Create | `src/components/financial-data/TaxBandsManager.tsx` |
-| Create | `src/components/financial-data/useFinancialData.ts` |
-| Create | `src/components/financial-data/FinancialDataForm.tsx` |
-| Migration | RLS policies for nic_bands, nhs_pension_bands, tax_bands |
+### Data Flow
+```text
+FinancialData page
+  |-- TaxYearSelector (selected: "2025-26")
+  |-- Tabs
+       |-- NIC Bands tab
+       |    |-- NicThresholdsGrid (payroll_constants, NI_THRESHOLDS, 2025-26)
+       |    |-- NicRatesGrid (payroll_constants, NI_EMPLOYEE_RATES, 2025-26)
+       |    |-- NicRatesGrid (payroll_constants, NI_EMPLOYER_RATES, 2025-26)
+       |-- Payroll Constants tab (filtered, excl. NI categories)
+       |-- Tax Bands tab (filtered)
+       |-- NHS Pension tab (filtered)
+```
 
