@@ -106,10 +106,11 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
-          paye_ref: string | null
           payroll_start_period: number | null
           payroll_start_year: number | null
           post_code: string | null
+          tax_office_number: string | null
+          tax_office_reference: string | null
           trading_as: string | null
           updated_at: string
         }
@@ -129,10 +130,11 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name: string
-          paye_ref?: string | null
           payroll_start_period?: number | null
           payroll_start_year?: number | null
           post_code?: string | null
+          tax_office_number?: string | null
+          tax_office_reference?: string | null
           trading_as?: string | null
           updated_at?: string
         }
@@ -152,10 +154,11 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
-          paye_ref?: string | null
           payroll_start_period?: number | null
           payroll_start_year?: number | null
           post_code?: string | null
+          tax_office_number?: string | null
+          tax_office_reference?: string | null
           trading_as?: string | null
           updated_at?: string
         }

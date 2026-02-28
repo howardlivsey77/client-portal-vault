@@ -98,7 +98,7 @@ export function useP11Report(): UseP11ReportResult {
       // Fetch company details
       const { data: companyData, error: companyError } = await supabase
         .from("companies")
-        .select("name, paye_ref, accounts_office_number")
+        .select("name, tax_office_number, tax_office_reference, accounts_office_number")
         .eq("id", currentCompany.id)
         .single();
 
@@ -170,7 +170,9 @@ export function useP11Report(): UseP11ReportResult {
         },
         company: {
           name: companyData.name,
-          payeRef: companyData.paye_ref,
+          payeRef: (companyData.tax_office_number && companyData.tax_office_reference)
+            ? `${companyData.tax_office_number}/${companyData.tax_office_reference}`
+            : null,
           accountsOfficeNumber: companyData.accounts_office_number,
         },
         taxYear,

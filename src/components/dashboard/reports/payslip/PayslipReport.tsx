@@ -183,7 +183,9 @@ export function PayslipReport() {
     return {
       name: company?.name || "Company Name",
       tradingAs: company?.trading_as || undefined,
-      payeRef: company?.paye_ref || undefined,
+      payeRef: (company?.tax_office_number && company?.tax_office_reference) 
+        ? `${company.tax_office_number}/${company.tax_office_reference}` 
+        : undefined,
       addressLine1: company?.address_line1 || undefined,
       addressLine2: company?.address_line2 || undefined,
       addressLine3: company?.address_line3 || undefined,

@@ -6,7 +6,8 @@ import { useCompany } from "@/providers/CompanyProvider";
 import { supabase } from "@/integrations/supabase/client";
 
 interface HmrcInfoFormValues {
-  payeRef?: string;
+  taxOfficeNumber?: string;
+  taxOfficeReference?: string;
   accountsOfficeNumber?: string;
   hmrcGatewayUserId?: string;
   hmrcGatewayPassword?: string;
@@ -18,7 +19,8 @@ export const useHmrcInfoForm = () => {
 
   const form = useForm<HmrcInfoFormValues>({
     defaultValues: {
-      payeRef: "",
+      taxOfficeNumber: "",
+      taxOfficeReference: "",
       accountsOfficeNumber: "",
       hmrcGatewayUserId: "",
       hmrcGatewayPassword: "",
@@ -28,7 +30,8 @@ export const useHmrcInfoForm = () => {
   useEffect(() => {
     if (currentCompany) {
       form.reset({
-        payeRef: currentCompany.paye_ref || "",
+        taxOfficeNumber: currentCompany.tax_office_number || "",
+        taxOfficeReference: currentCompany.tax_office_reference || "",
         accountsOfficeNumber: currentCompany.accounts_office_number || "",
         hmrcGatewayUserId: currentCompany.hmrc_gateway_user_id || "",
         hmrcGatewayPassword: "",
@@ -47,7 +50,8 @@ export const useHmrcInfoForm = () => {
       const { error } = await supabase
         .from("companies")
         .update({
-          paye_ref: data.payeRef || null,
+          tax_office_number: data.taxOfficeNumber || null,
+          tax_office_reference: data.taxOfficeReference || null,
           accounts_office_number: data.accountsOfficeNumber || null,
           hmrc_gateway_user_id: data.hmrcGatewayUserId || null,
           ...(data.hmrcGatewayPassword ? { hmrc_gateway_password: data.hmrcGatewayPassword } : {}),
@@ -68,7 +72,8 @@ export const useHmrcInfoForm = () => {
   const resetForm = () => {
     if (currentCompany) {
       form.reset({
-        payeRef: currentCompany.paye_ref || "",
+        taxOfficeNumber: currentCompany.tax_office_number || "",
+        taxOfficeReference: currentCompany.tax_office_reference || "",
         accountsOfficeNumber: currentCompany.accounts_office_number || "",
         hmrcGatewayUserId: currentCompany.hmrc_gateway_user_id || "",
         hmrcGatewayPassword: "",

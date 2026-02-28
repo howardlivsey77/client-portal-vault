@@ -11,7 +11,8 @@ export type Company = {
   contact_name?: string | null;
   contact_email?: string | null;
   contact_phone?: string | null;
-  paye_ref?: string | null;
+  tax_office_number?: string | null;
+  tax_office_reference?: string | null;
   accounts_office_number?: string | null;
   hmrc_gateway_user_id?: string | null;
   hmrc_gateway_password?: string | null;

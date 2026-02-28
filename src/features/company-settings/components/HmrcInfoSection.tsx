@@ -11,19 +11,34 @@ interface HmrcInfoSectionProps {
 export const HmrcInfoSection = ({ control, disabled }: HmrcInfoSectionProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <FormField
-        control={control}
-        name="payeRef"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>PAYE Reference</FormLabel>
-            <FormControl>
-              <Input placeholder="Enter PAYE reference" {...field} disabled={disabled} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      <div className="grid grid-cols-[120px_1fr] gap-3 md:col-span-1">
+        <FormField
+          control={control}
+          name="taxOfficeNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tax Office No.</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. 120" maxLength={3} {...field} disabled={disabled} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name="taxOfficeReference"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Employer PAYE Ref</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. BB58856" {...field} disabled={disabled} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
       <FormField
         control={control}
         name="accountsOfficeNumber"

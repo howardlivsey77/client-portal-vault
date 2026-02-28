@@ -9,7 +9,8 @@ export interface SicknessScheme {
 export interface CompanyFormValues {
   name: string;
   tradingAs?: string;
-  payeRef?: string;
+  taxOfficeNumber?: string;
+  taxOfficeReference?: string;
   accountsOfficeNumber?: string;
   hmrcGatewayUserId?: string;
   hmrcGatewayPassword?: string;

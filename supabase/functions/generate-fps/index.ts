@@ -71,8 +71,26 @@ serve(async (req) => {
       });
     }
 
-    // Load employer config from env
-    const config = loadEmployerConfig();
+    // Fetch company record for tax office details
+    const { data: companyRecord, error: companyError } = await serviceClient
+      .from('companies')
+      .select('tax_office_number, tax_office_reference, accounts_office_number')
+      .eq('id', body.companyId)
+      .single();
+
+    if (companyError || !companyRecord) {
+      return new Response(JSON.stringify({ error: 'Company not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Load employer config, preferring company DB values over env vars
+    const config = loadEmployerConfig(
+      companyRecord.tax_office_number || undefined,
+      companyRecord.tax_office_reference || undefined,
+      companyRecord.accounts_office_number || undefined,
+    );
 
     // 1. Fetch payroll results for this period
     const payrollResults = await fetchPayrollResults(body.companyId, body.taxYear, body.taxPeriod);
