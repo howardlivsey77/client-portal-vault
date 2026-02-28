@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { CheckSquare, ChartBar, Clock, FileText, Home, Receipt, Users, Building, UserCog, Stethoscope, FileBarChart } from "lucide-react";
+import { CheckSquare, ChartBar, Clock, FileText, Home, Receipt, Users, Building, UserCog, Stethoscope, FileBarChart, Landmark } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/providers";
 import { useCompany } from "@/providers/CompanyProvider";
@@ -137,6 +137,13 @@ export function SidebarMainNavigation({ location, isExpanded = true }: SidebarMa
       to: "/invites",
       isActive: isRouteActive("/invites"),
       allowedRoles: ['admin', 'bureau'], // Admins and bureau users
+    },
+    {
+      icon: Landmark,
+      label: "Financial Data",
+      to: "/financial-data",
+      isActive: isRouteActive("/financial-data"),
+      allowedRoles: ['admin'], // Super admins only
     },
   ];
 
