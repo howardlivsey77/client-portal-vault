@@ -13,6 +13,8 @@ export type Company = {
   contact_phone?: string | null;
   paye_ref?: string | null;
   accounts_office_number?: string | null;
+  hmrc_gateway_user_id?: string | null;
+  hmrc_gateway_password?: string | null;
   logo_url?: string | null;
   payroll_start_year?: number | null;
   payroll_start_period?: number | null;

@@ -26,6 +26,8 @@ export const useCompanyForm = () => {
       contactPhone: "",
       payeRef: "",
       accountsOfficeNumber: "",
+      hmrcGatewayUserId: "",
+      hmrcGatewayPassword: "",
       logoUrl: "",
       payrollStartYear: CURRENT_FINANCIAL_YEAR.year,
       payrollStartPeriod: 1 // Default to Period 1 (April) for new companies
@@ -48,6 +50,8 @@ export const useCompanyForm = () => {
         contactPhone: currentCompany.contact_phone || "",
         payeRef: currentCompany.paye_ref || "",
         accountsOfficeNumber: currentCompany.accounts_office_number || "",
+        hmrcGatewayUserId: currentCompany.hmrc_gateway_user_id || "",
+        hmrcGatewayPassword: "",
         logoUrl: currentCompany.logo_url || "",
         payrollStartYear: currentCompany.payroll_start_year || CURRENT_FINANCIAL_YEAR.year,
         payrollStartPeriod: currentCompany.payroll_start_period || 1
@@ -80,6 +84,8 @@ export const useCompanyForm = () => {
           contact_phone: data.contactPhone || null,
           paye_ref: data.payeRef || null,
           accounts_office_number: data.accountsOfficeNumber || null,
+          hmrc_gateway_user_id: data.hmrcGatewayUserId || null,
+          ...(data.hmrcGatewayPassword ? { hmrc_gateway_password: data.hmrcGatewayPassword } : {}),
           logo_url: data.logoUrl || null,
           payroll_start_year: data.payrollStartYear || null,
           payroll_start_period: data.payrollStartPeriod || null,

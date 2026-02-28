@@ -1,5 +1,5 @@
 
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Control } from "react-hook-form";
 import { CompanyFormValues } from "../types";
@@ -39,6 +39,44 @@ export const HmrcInfoSection = ({ control }: HmrcInfoSectionProps) => {
               <FormControl>
                 <Input placeholder="Enter accounts office number" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* HMRC Gateway User ID */}
+        <FormField
+          control={control}
+          name="hmrcGatewayUserId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>HMRC Gateway User ID</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter HMRC Gateway User ID" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* HMRC Gateway Password */}
+        <FormField
+          control={control}
+          name="hmrcGatewayPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>HMRC Gateway Password</FormLabel>
+              <FormControl>
+                <Input 
+                  type="password" 
+                  placeholder="••••••••" 
+                  autoComplete="new-password"
+                  {...field} 
+                />
+              </FormControl>
+              <FormDescription className="text-xs text-muted-foreground">
+                Leave blank to keep the existing password. Once saved, the password cannot be viewed.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

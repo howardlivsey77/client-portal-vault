@@ -11,6 +11,8 @@ export interface CompanyFormValues {
   tradingAs?: string;
   payeRef?: string;
   accountsOfficeNumber?: string;
+  hmrcGatewayUserId?: string;
+  hmrcGatewayPassword?: string;
   addressLine1?: string;
   addressLine2?: string;
   addressLine3?: string;
