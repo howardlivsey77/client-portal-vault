@@ -73,7 +73,7 @@ function buildXmlStructure(opts: BuildXmlOptions & {
   lines.push(el('Class', 'HMRC-PAYE-RTI-FPS'));
   lines.push(el('Qualifier', 'request'));
   lines.push(el('Function', 'submit'));
-  lines.push('<CorrelationID/>');
+  lines.push('<CorrelationID></CorrelationID>');
   lines.push(el('Transformation', 'XML'));
   lines.push('</MessageDetails>');
   lines.push('<SenderDetails>');
