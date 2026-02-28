@@ -1,50 +1,129 @@
 
 
-# Use Per-Company HMRC Credentials for FPS Generation
+# Financial Data Admin Section
 
-## Problem
-The FPS edge function currently reads gateway credentials (`HMRC_GATEWAY_USER_ID`, `HMRC_GATEWAY_PASSWORD`) from environment variables, which means all companies share the same credentials. It also falls back to env vars for tax office number, reference, and accounts office number. Since each company has its own HMRC credentials stored in the `companies` table, the function should use those directly.
+## Overview
+Create a new "Financial Data" section in the sidebar, visible only to admin users, providing full CRUD management for the four reference data tables used by the payroll engine: **Payroll Constants**, **NIC Bands**, **NHS Pension Bands**, and **Tax Bands**.
 
-## Changes
+## What You'll Get
+- A new "Financial Data" item in the sidebar (admin-only, with a suitable icon like `Database` or `Landmark`)
+- A dedicated page at `/financial-data` with a tabbed interface to switch between the four data tables
+- Each tab shows a data table with inline editing, add new, and delete capabilities
+- All changes write directly to the existing Supabase tables
+- The page is protected so only admin users can access it
 
-### 1. Update `supabase/functions/generate-fps/index.ts`
-- Expand the `select` query on line 77 to also fetch `hmrc_gateway_user_id` and `hmrc_gateway_password` from the company record
-- Pass all five company-specific values to `loadEmployerConfig`
-- Add a validation check: if any of the required HMRC fields are missing from the company record (tax_office_number, tax_office_reference, accounts_office_number, hmrc_gateway_user_id, hmrc_gateway_password), return a clear 400 error telling the user to complete their Company Settings
+## Structure
 
-### 2. Update `supabase/functions/generate-fps/config.ts`
-- Change `loadEmployerConfig` to accept all five company-level fields (add `gatewayUserId` and `gatewayPassword` parameters)
-- Use the company DB values directly for all five fields instead of falling back to env vars
-- Keep env var fallback only for vendor/product-level settings (`vendorId`, `productName`, `productVersion`, `liveMode`) since those are global, not per-company
-
-### 3. Redeploy the edge function
-- Deploy the updated `generate-fps` function after the code changes
-
-## Technical Detail
-
-**`config.ts` signature change:**
-```typescript
-export function loadEmployerConfig(
-  companyTaxOfficeNumber: string,
-  companyTaxOfficeReference: string,
-  companyAccountsOfficeRef: string,
-  companyGatewayUserId: string,
-  companyGatewayPassword: string,
-): EmployerConfig
+```text
+/financial-data
+  +-- Tab: Payroll Constants
+  |     Table view grouped by category
+  |     Columns: key, category, description, value_numeric, value_text, region, effective_from, effective_to, is_current
+  |     Add / Edit / Delete rows
+  |
+  +-- Tab: NIC Bands
+  |     Columns: tax_year, ni_class, name, region, contribution_type, threshold_from, threshold_to, rate, effective_from, is_current
+  |     Add / Edit / Delete rows
+  |
+  +-- Tab: NHS Pension Bands
+  |     Columns: tax_year, tier_number, annual_pensionable_pay_from, annual_pensionable_pay_to, employee_contribution_rate, employer_contribution_rate, effective_from, is_current
+  |     Add / Edit / Delete rows
+  |
+  +-- Tab: Tax Bands
+  |     Columns: tax_year, name, region, threshold_from, threshold_to, rate, effective_from, is_current
+  |     Add / Edit / Delete rows
 ```
 
-**`index.ts` select change:**
-```typescript
-.select('tax_office_number, tax_office_reference, accounts_office_number, hmrc_gateway_user_id, hmrc_gateway_password')
+## Technical Plan
+
+### 1. Add sidebar navigation item
+**File**: `src/components/layout/sidebar/SidebarMainNavigation.tsx`
+- Add a new nav item with `allowedRoles: ['admin']` pointing to `/financial-data`
+- Use the `Landmark` icon from lucide-react
+
+### 2. Create the Financial Data page
+**File**: `src/pages/FinancialData.tsx`
+- Wrapped in `PageContainer` for consistent layout
+- Uses Radix `Tabs` component with four tabs
+- Each tab renders a dedicated management component
+
+### 3. Create management components (one per table)
+**Directory**: `src/components/financial-data/`
+
+Files to create:
+- `index.ts` -- barrel exports
+- `PayrollConstantsManager.tsx` -- CRUD for `payroll_constants`
+- `NicBandsManager.tsx` -- CRUD for `nic_bands`
+- `NhsPensionBandsManager.tsx` -- CRUD for `nhs_pension_bands`
+- `TaxBandsManager.tsx` -- CRUD for `tax_bands`
+- `FinancialDataForm.tsx` -- reusable dialog form for add/edit operations
+- `useFinancialData.ts` -- shared hook for fetching, inserting, updating, deleting rows from any of the four tables
+
+Each manager component will:
+- Fetch data using `supabase.from(tableName).select('*')` ordered by `tax_year` desc, then relevant sort fields
+- Display in a table using existing UI table components
+- Provide "Add New" button opening a dialog form
+- Allow inline row editing via an edit icon that opens the same dialog pre-filled
+- Allow deletion with the existing `useConfirmation()` hook for safe destructive actions
+- Show toast notifications on success/failure
+
+### 4. Add RLS policies for admin write access
+**Database migration** needed for `payroll_constants`, `nic_bands`, `nhs_pension_bands`:
+- Currently these tables only have SELECT policies for authenticated users and no INSERT/UPDATE/DELETE policies
+- Add ALL policy for admins using `is_admin(auth.uid())` on each table
+- `tax_bands` table needs verification -- add matching policies if missing
+
+```sql
+-- payroll_constants already has admin ALL policy, so skip
+
+-- NIC bands: add admin management policy
+CREATE POLICY "Admins can manage NIC bands"
+  ON public.nic_bands FOR ALL
+  TO authenticated
+  USING (is_admin(auth.uid()))
+  WITH CHECK (is_admin(auth.uid()));
+
+-- NHS pension bands: add admin management policy
+CREATE POLICY "Admins can manage NHS pension bands"
+  ON public.nhs_pension_bands FOR ALL
+  TO authenticated
+  USING (is_admin(auth.uid()))
+  WITH CHECK (is_admin(auth.uid()));
+
+-- Tax bands: verify and add if needed
+CREATE POLICY "Admins can manage tax bands"
+  ON public.tax_bands FOR ALL
+  TO authenticated
+  USING (is_admin(auth.uid()))
+  WITH CHECK (is_admin(auth.uid()));
 ```
 
-**Validation in `index.ts`:**
-Before calling `loadEmployerConfig`, check that all five fields are present. If not, return a descriptive error like: "Missing HMRC configuration for this company. Please complete Tax Office Number, Employer PAYE Reference, Accounts Office Number, Gateway User ID, and Gateway Password in Company Settings."
+### 5. Register the route
+**File**: `src/App.tsx`
+- Add route under the `adminOnly` `ProtectedLayout` group:
+  ```tsx
+  <Route path="/financial-data" element={<FinancialData />} />
+  ```
 
-## Files Changed
+### 6. Validation
+- Use zod schemas to validate form inputs before submission
+- Numeric fields (thresholds, rates) validated as numbers
+- Required fields enforced (tax_year, key/name, rates)
+- Date fields validated as valid date strings
 
-| File | Action |
-|------|--------|
-| `supabase/functions/generate-fps/index.ts` | Edit (fetch gateway creds from DB, add validation) |
-| `supabase/functions/generate-fps/config.ts` | Edit (accept gateway creds as params, remove env var fallback for per-company fields) |
+## Files Summary
+
+| Action | File |
+|--------|------|
+| Edit | `src/components/layout/sidebar/SidebarMainNavigation.tsx` |
+| Edit | `src/App.tsx` |
+| Create | `src/pages/FinancialData.tsx` |
+| Create | `src/components/financial-data/index.ts` |
+| Create | `src/components/financial-data/PayrollConstantsManager.tsx` |
+| Create | `src/components/financial-data/NicBandsManager.tsx` |
+| Create | `src/components/financial-data/NhsPensionBandsManager.tsx` |
+| Create | `src/components/financial-data/TaxBandsManager.tsx` |
+| Create | `src/components/financial-data/useFinancialData.ts` |
+| Create | `src/components/financial-data/FinancialDataForm.tsx` |
+| Migration | RLS policies for nic_bands, nhs_pension_bands, tax_bands |
 
