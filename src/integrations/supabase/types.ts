@@ -101,6 +101,8 @@ export type Database = {
           contact_phone: string | null
           created_at: string
           created_by: string | null
+          hmrc_gateway_password: string | null
+          hmrc_gateway_user_id: string | null
           id: string
           logo_url: string | null
           name: string
@@ -122,6 +124,8 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           created_by?: string | null
+          hmrc_gateway_password?: string | null
+          hmrc_gateway_user_id?: string | null
           id?: string
           logo_url?: string | null
           name: string
@@ -143,6 +147,8 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           created_by?: string | null
+          hmrc_gateway_password?: string | null
+          hmrc_gateway_user_id?: string | null
           id?: string
           logo_url?: string | null
           name?: string
