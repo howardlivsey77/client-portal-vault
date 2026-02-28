@@ -160,7 +160,7 @@ export function NicRatesGrid({ taxYear, contributionType }: NicRatesGridProps) {
                           onChange={(e) => setDraft((d) => ({ ...d, [row.id]: parseFloat(e.target.value) || 0 }))}
                         />
                       ) : (
-                        `${row.rate}%`
+                        `${(row.rate * 100).toFixed(2)}%`
                       )}
                     </TableCell>
                   );
