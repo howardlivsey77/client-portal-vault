@@ -8,7 +8,7 @@ import { useConfirmation } from "@/hooks/useConfirmation";
 import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import { Badge } from "@/components/ui/badge";
 
-const NI_CATEGORIES = ["NI_THRESHOLDS", "NI_EMPLOYEE_RATES", "NI_EMPLOYER_RATES"];
+const EXCLUDED_CATEGORIES = ["NI_THRESHOLDS", "NI_EMPLOYEE_RATES", "NI_EMPLOYER_RATES", "STUDENT_LOAN"];
 
 const fields: FieldDef[] = [
   { name: "key", label: "Key", type: "text", required: true },
@@ -30,7 +30,7 @@ interface PayrollConstantsManagerProps {
 export function PayrollConstantsManager({ taxYear }: PayrollConstantsManagerProps) {
   const { data, isLoading, insert, update, remove, isSubmitting } = useFinancialData("payroll_constants", {
     taxYear,
-    excludeCategories: NI_CATEGORIES,
+    excludeCategories: EXCLUDED_CATEGORIES,
   });
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Record<string, unknown> | undefined>();

@@ -6,6 +6,7 @@ import {
   NicBandsManager,
   NhsPensionBandsManager,
   TaxBandsManager,
+  StudentLoansManager,
 } from "@/components/financial-data";
 import { TaxYearSelector } from "@/components/financial-data/TaxYearSelector";
 import { CopyTaxYearDialog } from "@/components/financial-data/CopyTaxYearDialog";
@@ -62,8 +63,9 @@ export default function FinancialData() {
             <TabsList className="w-full justify-start">
               <TabsTrigger value="nic-bands">NIC Bands</TabsTrigger>
               <TabsTrigger value="tax-bands">Tax Bands</TabsTrigger>
+              <TabsTrigger value="student-loans">Student Loans</TabsTrigger>
               <TabsTrigger value="nhs-pension">NHS Pension Bands</TabsTrigger>
-              <TabsTrigger value="payroll-constants">Payroll Constants</TabsTrigger>
+              <TabsTrigger value="general-constants">General Constants</TabsTrigger>
             </TabsList>
             <TabsContent value="nic-bands">
               <NicBandsManager taxYear={selectedYear} />
@@ -71,10 +73,13 @@ export default function FinancialData() {
             <TabsContent value="tax-bands">
               <TaxBandsManager taxYear={selectedYear} />
             </TabsContent>
+            <TabsContent value="student-loans">
+              <StudentLoansManager taxYear={selectedYear} />
+            </TabsContent>
             <TabsContent value="nhs-pension">
               <NhsPensionBandsManager taxYear={selectedYear} />
             </TabsContent>
-            <TabsContent value="payroll-constants">
+            <TabsContent value="general-constants">
               <PayrollConstantsManager taxYear={selectedYear} />
             </TabsContent>
           </Tabs>
